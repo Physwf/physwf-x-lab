@@ -2,20 +2,20 @@
 
 enum LoGameResult
 {
-	BRR_NONE = 0,
-	BRR_INIT,
-	BRR_LOAD,
-	BRR_RACING,
-	BRR_END,
-	BRR_DEL,
-	BRR_ERROR,
+	LGR_NONE = 0,
+	LGR_INIT,
+	LGR_LOAD,
+	LGR_RACING,
+	LGR_END,
+	LGR_DEL,
+	LGR_ERROR,
 };
 
 
 class IGameCall
 {
 public:
-	virtual ~LoGameCall() = default;
+	virtual ~IGameCall() = default;
 
 	virtual char*	GetDumpPath(void) = 0;
 
@@ -33,21 +33,21 @@ public:
 class IGameLogic
 {
 public:
-	IRaceLogic();
-	virtual ~IRaceLogic() = default;
+	IGameLogic() = default;
+	virtual ~IGameLogic() = default;
 
-	virtual bool	Init();
-	virtual void	Finit();
-	virtual void	SaveAufz();
-	virtual int	GetVersion();
+	virtual bool	Init(int iThreadCount, IGameCall* pkGameCall, bool bIsServerMode=false, int iMaxCamp=4) = 0;
+	virtual void	Finit() = 0;
+	virtual void	SaveAufz(int iGameID) = 0;
+	virtual int		GetVersion() = 0;
 
 	virtual void	UpdateAus(float fDeltaTime = .0f) = 0;
 	virtual void	PlayerLeave(int iGameID,int iSeat) = 0;
 	virtual void	PlayerRelink(int iGameID,int iSeat) = 0;
 
-	virtual void	AddRace(int iGameID, int iType, int iMapID, int SrcSrvID=0,bool bHost=true) = 0;
-	virtual void	DelRace(int iGameID);
+	virtual void	AddGame(int iGameID, int iType, int iMapID, int iSrcSvrID=0,bool bHost=true) = 0;
+	virtual void	DelGame(int iGameID);
 	
-	virtual void	PushStream(int iGameID,int iOffset, void* pkData, int iSize,int iSrcSrvID) = 0;
+	virtual void	PushStream(int iGameID,int iOffset, void* pkData, int iSize,int iSrcSvrID) = 0;
 	virtual void	PushPack(int iGameID, int iPackIndex, void* pkData, int iSize) = 0;
 };

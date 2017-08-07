@@ -1,9 +1,16 @@
 
-LoPool.o:logic/LoPool.h
-LoGame.o:logic/LoGame.h
+all:common logic
 
-CoGameBuffer.o:common/CoGameBuffer.h
+logic:common force
+	make -C ./logic
 
-server_so:LoPool.o LoGame.o CoGameBuffer.o
-	cc -o server_so_x64.so -shared
+common:force
+	make -C ./common
 
+force:;
+
+.PHONY : clean  
+clean:   
+	-find ./intermediate -name "*.o" | xargs rm -f
+	-find ./bin -name "*.a" | xargs rm -f
+	-find ./bin -name "*.so" | xargs rm -f
