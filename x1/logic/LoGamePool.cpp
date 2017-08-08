@@ -82,11 +82,18 @@ LoGamePool::~LoGamePool()
 {
 }
 
-bool LoGamePool::Init(int iThreadCount, IGameCall* pkGameCall, int iCapaticy/*=4*/)
+bool LoGamePool::Init(int iThreadCount, IGameCall* pGameCall, int iCapaticy/*=4*/)
 {
 	m_iCapacity = iCapaticy;
+	m_pGameCall = pGameCall;
 	//todo poolize
-	m_pData = new LoGameData[m_iCapacity];	
+	m_pData = new LoGameData[m_iCapacity];
+
+	for(int i=0;i<iCapaticy;++i)
+	{
+		m_FreeData.push(i);
+	}
+
 	return false;
 }
 
@@ -117,6 +124,34 @@ void LoGamePool::PlayerRelink(gameid_t iGameID, int iSeat)
 
 void LoGamePool::AddGame(gameid_t iGameID, int iType,int iMapID, int iSrcSvrID/*=0*/,bool bHost/*=true*/)
 {
+	bool bAddSuc =  true;
+	if(m_FreeData.empty())
+	{
+		bAddSuc = false;
+	}
+	else
+	{
+		int iIndex = m_FreeData.top();
+		LoGameData& rData =  m_pData[iIndex];
+
+		if(rData.Init(iMapID))
+		{
+			rData.SetGameID(iGameID);
+			rData.SetHost(bHost);
+			if(bHost)
+			{
+				//rData.OnHostStart();
+			}
+			m_FreeData.pop();
+			m_GameIDMap.insert(std::make_pair(iGameID,iIndex));
+		}
+		else
+		{
+			rData.SetGameResult(LGR_DEL);
+		}
+	}
+	
+	m_pGameCall->OnAddGameRet(iGameID,bAddSuc,iType,iSrcSvrID);
 }
 
 void LoGamePool::DelGame(gameid_t iGameID)

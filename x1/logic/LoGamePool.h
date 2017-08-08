@@ -1,9 +1,14 @@
 #pragma once
 
+#include <stack>
+#include <map>
+
 #include "CoGameCmd.h"
 #include "CoGameAufz.h"
 #include "LoGame.h"
 #include "IGameLogic.h"
+
+
 
 class LoGameData
 {
@@ -48,7 +53,7 @@ public:
 	LoGamePool();
 	~LoGamePool();
 
-	virtual bool	Init(int iThreadCount, IGameCall* pkGameCall, int iCapaticy=4);
+	virtual bool	Init(int iThreadCount, IGameCall* pGameCall, int iCapaticy=4);
 	virtual void	Finit();
 	virtual void	SaveAufz(gameid_t iGameID);
 	virtual int		GetVersion();
@@ -64,8 +69,10 @@ public:
 	virtual void	PushPack(gameid_t iGameID, int iPackIndex, const void* pData, int iSize);
 private:
 	LoGameData* 	m_pData;
-	bool*			m_pUseStatus;
+	IGameCall*		m_pGameCall;
 	int 			m_iCapacity;
+	std::stack<int> m_FreeData;
+	std::map<gameid_t,int> m_GameIDMap;
 };
 
 

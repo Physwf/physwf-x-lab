@@ -24,7 +24,7 @@ public:
 	virtual void	OnGameErrorRet();
 	virtual void	OnGameSrvModelPack(const int iGameID, void* pkData, int iSize) = 0;
 
-	virtual void	OnAddRaceRet(const int iGameID,bool bAddSuc, int iType, int iSrcSrvID) = 0;
+	virtual void	OnAddGameRet(const int iGameID,bool bAddSuc, int iType, int iSrcSrvID) = 0;
 	virtual void 	OnPushStreamRet(const int iGameID, int iSrcSrvID, bool bPushRet, int iSize) = 0;
 	virtual void	OnRaceNumsRet() = 0;
 	virtual void	OnRaceOffsetRet() = 0;
