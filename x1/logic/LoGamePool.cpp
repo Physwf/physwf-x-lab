@@ -91,7 +91,7 @@ bool LoGamePool::Init(int iThreadCount, IGameCall* pGameCall, int iCapaticy/*=4*
 
 	for(int i=0;i<iCapaticy;++i)
 	{
-		m_FreeData.push(i);
+		m_oFreeData.push(i);
 	}
 
 	return false;
@@ -116,22 +116,34 @@ void LoGamePool::UpdateAus(float fDeltaTime/*=.0f*/)
 
 void LoGamePool::PlayerLeave(gameid_t iGameID,int iSeat)
 {
+	LoGameData* pGame = GetGameDataByID(iGameID);
+
+	if(pGame && pGame->GetGameResult() != LGR_ERROR)
+	{
+		//pGame->SetPlayerLinkState();
+	}
 }
 
 void LoGamePool::PlayerRelink(gameid_t iGameID, int iSeat)
 {
+	LoGameData* pGame = GetGameDataByID(iGameID);
+
+	if(pGame && pGame->GetGameResult() != LGR_ERROR)
+	{
+		//pGame->SetPlayerLinkState();
+	}
 }
 
 void LoGamePool::AddGame(gameid_t iGameID, int iType,int iMapID, int iSrcSvrID/*=0*/,bool bHost/*=true*/)
 {
 	bool bAddSuc =  true;
-	if(m_FreeData.empty())
+	if(m_oFreeData.empty())
 	{
 		bAddSuc = false;
 	}
 	else
 	{
-		int iIndex = m_FreeData.top();
+		int iIndex = m_oFreeData.top();
 		LoGameData& rData =  m_pData[iIndex];
 
 		if(rData.Init(iMapID))
@@ -142,8 +154,8 @@ void LoGamePool::AddGame(gameid_t iGameID, int iType,int iMapID, int iSrcSvrID/*
 			{
 				//rData.OnHostStart();
 			}
-			m_FreeData.pop();
-			m_GameIDMap.insert(std::make_pair(iGameID,iIndex));
+			m_oFreeData.pop();
+			m_oGameIDMap.insert(std::make_pair(iGameID,iIndex));
 		}
 		else
 		{
@@ -156,14 +168,52 @@ void LoGamePool::AddGame(gameid_t iGameID, int iType,int iMapID, int iSrcSvrID/*
 
 void LoGamePool::DelGame(gameid_t iGameID)
 {
+	LoGameData* pGame = GetGameDataByID(iGameID);
+
+	if(pGame && pGame->GetGameResult() != LGR_ERROR)
+	{
+		pGame->SetGameResult(LGR_DEL);
+	}
 }
 
 void LoGamePool::PushStream(gameid_t iGameID, int iOffset, const void* pData, int iSize, int iSrcSvrID)
 {
+	LoGameData* pGame = GetGameDataByID(iGameID);
+
+	if(pGame && pGame->GetGameResult() != LGR_ERROR)
+	{
+		pGame->PushStream(pData,iSize);
+	}
 }
 
 void LoGamePool::PushPack(gameid_t iGameID, int iPackIndex, const void* pData, int iSize)
 {
+	LoGameData* pGame = GetGameDataByID(iGameID);
+
+	if(pGame && pGame->GetGameResult() != LGR_ERROR)
+	{
+		pGame->PushStream(iPackIndex,pData,iSize);
+	}
 }
 
+const LoGameData* LoGamePool::GetGameDataByID(gameid_t iGameID) const
+{
+	auto itResult = m_oGameIDMap.find(iGameID);
+	if(itResult != m_oGameIDMap.end())
+	{
+		int iIndex = itResult->second;
+		return &m_pData[iIndex];
+	}
+	return nullptr;
+}
 
+LoGameData* LoGamePool::GetGameDataByID(gameid_t iGameID)
+{
+	auto itResult = m_oGameIDMap.find(iGameID);
+	if(itResult != m_oGameIDMap.end())
+	{
+		int iIndex = itResult->second;
+		return &m_pData[iIndex];
+	}
+	return nullptr;
+}

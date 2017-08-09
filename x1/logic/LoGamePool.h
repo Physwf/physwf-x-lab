@@ -68,11 +68,14 @@ public:
 	virtual void	PushStream(gameid_t iGameID, int iOffset, const void* pkData, int iSize, int iSrcSvrID);
 	virtual void	PushPack(gameid_t iGameID, int iPackIndex, const void* pData, int iSize);
 private:
+	const 	LoGameData*		GetGameDataByID(gameid_t iGameID) const;
+	LoGameData*				GetGameDataByID(gameid_t iGameID);
+private:
 	LoGameData* 	m_pData;
 	IGameCall*		m_pGameCall;
 	int 			m_iCapacity;
-	std::stack<int> m_FreeData;
-	std::map<gameid_t,int> m_GameIDMap;
+	std::stack<int> m_oFreeData;
+	std::map<gameid_t,int> m_oGameIDMap;
 };
 
 
