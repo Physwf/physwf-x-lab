@@ -20,7 +20,7 @@ public:
 	void			Finit();
 
 	void			SetGameID(gameid_t iGameID);
-	int				GetGameID();
+	gameid_t		GetGameID();
 
 	bool			PushStream(const void* pData,int iSize);
 	bool			PushStream(int iPackIndex,const void* pData, int iSize);

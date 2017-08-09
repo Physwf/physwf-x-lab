@@ -33,6 +33,11 @@ void LoGameData::SetGameID(gameid_t iGameID)
 	m_pGame->SetGameID(iGameID);
 }
 
+gameid_t LoGameData::GetGameID()
+{
+	return m_iGameID;
+}
+
 bool LoGameData::PushStream(const void* pData, int iSize)
 {
 	return false;
@@ -50,6 +55,7 @@ LoGameResult LoGameData::GetGameResult()
 
 void LoGameData::SetGameResult(LoGameResult eResult)
 {
+	m_eGameResult = eResult;
 }
 
 bool LoGameData::ProcCmd(IGameCall* pkCall, CoGameCmd* pkGameCmd)
@@ -112,6 +118,39 @@ int LoGamePool::GetVersion()
 
 void LoGamePool::UpdateAus(float fDeltaTime/*=.0f*/)
 {
+	for(int i = 0; i < m_iCapacity; ++i)
+	{
+		LoGameData* pGame = &(m_pData[i]);
+		LoGameResult eResult = pGame->GetGameResult();
+		gameid_t iGameID = pGame->GetGameID();
+		
+		if(LGR_INIT == eResult || LGR_LOAD == eResult || eResult == LGR_RACING)
+		{
+			pGame->UpdateAus(m_pGameCall,iGameID,fDeltaTime);
+		}
+
+		eResult = pGame->GetGameResult();
+		if(LGR_END == eResult)
+		{
+			DelGame(iGameID);
+			pGame->SetGameResult(LGR_DEL);
+		}
+		else if(LGR_ERROR == eResult)
+		{
+			pGame->SetGameResult(LGR_DEL);
+		}
+	}
+
+	for(int i = 0; i< m_iCapacity; ++i)
+	{
+		LoGameData* pGame = &(m_pData[i]);
+		if(LGR_DEL == pGame->GetGameResult())
+		{
+			//todo:send last data
+			m_oFreeData.push(i);
+			m_oGameIDMap.erase(pGame->GetGameID());
+		}
+	}
 }
 
 void LoGamePool::PlayerLeave(gameid_t iGameID,int iSeat)
