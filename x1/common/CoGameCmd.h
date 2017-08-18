@@ -113,4 +113,4 @@ struct CoGameFrame : public CoGameCmd
 	CoGameFrame():CoGameCmd(CGC_FRAME) {}
 };
 
-
+int GetCmdSize(const void* pData,int iSize);

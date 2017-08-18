@@ -1,3 +1,5 @@
+#include "FoTime.h"
+
 #include "LoGamePool.h"
 
 LoGameData::LoGameData()
@@ -8,6 +10,7 @@ LoGameData::LoGameData()
 	m_pGame = nullptr;
 	m_pCall = nullptr;
 	m_bServerMode = false;
+	m_fLastUpdateTime = 0.0f;
 }
 
 LoGameData::~LoGameData()
@@ -69,6 +72,32 @@ void LoGameData::UpdateAus(IGameCall* pkCall, gameid_t iGameID, int iFrame)
 
 LoGameResult LoGameData::Update(IGameCall* pkCall, gameid_t iGameID,float fDeltaTime/*=.0f*/)
 {
+	if(fDeltaTime != 0.0f)
+	{
+		m_fLastUpdateTime += fDeltaTime;
+	}
+	else
+	{
+		m_fLastUpdateTime = GetProcessTime();
+	}
+
+	if(m_pGame->GetState() == LGS_RACING && m_oGameAufz.IsWatching() )
+	{
+		m_oGameAufz.Update(m_fLastUpdateTime,5*GAME_FRAME_TIME);
+	}
+
+	CoGameCmd* pCmd = m_oGameAufz.GetCmd();
+	if(pCmd && pCmd->uiFrame == 0)
+	{
+		ProcCmd(m_pCall,pCmd);
+	}
+	
+	uint32 uiCurrentFrame = m_oGameAufz.GetCurrentFrame();
+	while(m_pGame->GetFrameCount() < uiCurrentFrame && m_pGame->GetState() != LGS_OVER)
+	{
+
+	}
+
 	return LGR_NONE;
 }
 

@@ -43,8 +43,9 @@ private:
 	LoGame*			m_pGame;
 	IGameCall*		m_pCall;
 	bool 			m_bServerMode;
-
-	CoGameAufz		m_kGameAufz;
+	
+	float			m_fLastUpdateTime;
+	CoGameAufz		m_oGameAufz;
 };
 
 class LoGamePool : public IGameLogic
