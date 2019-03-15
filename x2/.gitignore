@@ -31,9 +31,7 @@
 *.out
 *.app
 
-# Executables
-*.vs
-
+# CMake
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -45,3 +43,6 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+Win32
+libx1.dir
+Debug
