@@ -1,4 +1,4 @@
-#include "gl.h"
+﻿#include "gl.h"
 #include "gl_context.h"
 
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x)
@@ -127,7 +127,7 @@ NAIL_API void glDisableVertexAttribArray(GLuint index)
 
 NAIL_API GLuint glCreateShader(GLEnum type)
 {
-
+	return 0;
 }
 
 NAIL_API void glDeleteShader(GLuint shader)
@@ -137,7 +137,7 @@ NAIL_API void glDeleteShader(GLuint shader)
 
 NAIL_API GLuint glCreateProgram()
 {
-
+	return 0;
 }
 
 NAIL_API void glAttachShader(GLuint program, GLuint shader)
