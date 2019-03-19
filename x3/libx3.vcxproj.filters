@@ -1,22 +1,45 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.cpp">
+      <Filter>Source\BSDSockets</Filter>
     </ClCompile>
-    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.cpp">
+      <Filter>Source\BSDSockets</Filter>
     </ClCompile>
-    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.cpp">
+      <Filter>Source\BSDSockets</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\physwf-x-lab\x3\CMakeLists.txt" />
+    <ClInclude Include="D:\physwf-x-lab\x3\Include\SoketTypes.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.h">
+      <Filter>Source\BSDSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.h">
+      <Filter>Source\BSDSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.h">
+      <Filter>Source\BSDSockets</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSDPrivate.h">
+      <Filter>Source\BSDSockets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{899AB982-CA73-3794-A1E1-E68F96231706}</UniqueIdentifier>
+    <CustomBuild Include="D:\physwf-x-lab\x3\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{216BA906-F59B-39E5-AED5-0A0E6E11DAA2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{DA79D6FC-C03E-35B5-98D8-16E37B8807AF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\BSDSockets">
+      <UniqueIdentifier>{0F0BD61C-B00E-3F18-8FF6-F14B33FC7A67}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 2.6)
+project (x-lab)
+add_subdirectory(x3)
+set(DIR_PROJECT "./demo")
+add_executable(x-lab ${DIR_PROJECT}/main.cpp)  

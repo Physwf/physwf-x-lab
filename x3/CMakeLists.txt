@@ -1,12 +1,30 @@
-﻿set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-cmake_minimum_required (VERSION 2.6)
-project (x3)
+﻿#[[set(DIR_PROJECT "./")
+file(GLOB_RECURSE DIR_SRC
+    "${DIR_PROJECT}/Source/*.cpp"
+    "${DIR_PROJECT}/Source/*.h"
+)
+file(GLOB_RECURSE DIR_INC
+    "${DIR_PROJECT}/Include/*.h"
+)]]#
 
-aux_source_directory(./Include DIR_Inc)
-aux_source_directory(./Source DIR_SRCS)
-aux_source_directory(./Source/BSDSockets DIR_SRCS)
-aux_source_directory(./Source/Windows DIR_SRCS)
+set(DIR_PROJECT "${CMAKE_CURRENT_SOURCE_DIR}/")
+message(${DIR_PROJECT})
+file(
+    GLOB_RECURSE _source_list 
+    LIST_DIRECTORIES false
+    "${DIR_PROJECT}/*.cpp"
+    "${DIR_PROJECT}/*.h"
+)
 
+foreach(_source IN ITEMS ${_source_list})
+    get_filename_component(_source_path "${_source}" PATH)
+	file(RELATIVE_PATH _source_path_rel "${DIR_PROJECT}" "${_source_path}")
+    string(REPLACE "/" "\\" _group_path "${_source_path_rel}")
+    source_group("${_group_path}" FILES "${_source}")
+endforeach()
+
+add_library(libx3 SHARED ${_source_list})
+set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	message(status " current platform: Linux ")
@@ -18,7 +36,3 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 else()
 	message(status "other platform: ${CMAKE_SYSTEM_NAME}")
 endif()
-
-add_library(libx3 SHARED ${DIR_Inc} ${DIR_SRCS})
-set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
-
