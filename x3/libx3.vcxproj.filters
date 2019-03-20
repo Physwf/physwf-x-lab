@@ -10,9 +10,21 @@
     <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.cpp">
       <Filter>Source\BSDSockets</Filter>
     </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\SoketSubsystem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\physwf-x-lab\x3\Include\SoketTypes.h">
+    <ClInclude Include="D:\physwf-x-lab\x3\Include\IPAddress.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Include\SocketSubsystem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Include\SocketTypes.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Include\Sockets.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.h">

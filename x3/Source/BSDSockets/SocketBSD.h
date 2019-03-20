@@ -17,11 +17,12 @@ public:
 	}
 
 	virtual bool Close();
-	virtual void Bind(const XInternetAddrBSD& Addr);
-	virtual void Connect(const XInternetAddrBSD& Addr);
+	virtual bool Bind(const XInternetAddrBSD& Addr);
+	virtual bool Connect(const XInternetAddrBSD& Addr);
+	virtual bool Listen(int MaxBackLog);
 	virtual bool Send(const unsigned char* Data, int iCount, int& BytesSent);
 	virtual bool Recv(unsigned char* Data, int BufferSize, int& BytesRead);
-
+	virtual bool SetNonBlocking(bool bNonBlocking = true);
 protected:
 	ESocketType SocketType;
 	SOCKET Socket;
