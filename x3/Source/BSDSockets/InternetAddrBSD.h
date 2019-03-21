@@ -3,10 +3,11 @@
 #include <memory.h>
 #include <stdlib.h>
 
+#include "IPAddress.h"
 #include "SocketSubsystemBSDPrivate.h"
 
 
-class XInternetAddrBSD
+class XInternetAddrBSD : public XInternetAddr
 {
 protected:
 	sockaddr_in Addr;

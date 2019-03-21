@@ -325,6 +325,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.h" />
     <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSDPrivate.h" />
     <ClCompile Include="D:\physwf-x-lab\x3\Source\SoketSubsystem.cpp" />
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.cpp" />
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:\physwf-x-lab\ZERO_CHECK.vcxproj">

@@ -1,8 +1,14 @@
 #pragma once
 
+class XInternetAddr;
+
 class XSocketSubsystem
 {
 	virtual ~XSocketSubsystem() { }
 
-	virtual class FSocket* CreateSocket(const FName& SocketType, const FString& SocketDescription, bool bForceUDP = false) = 0;
+	virtual class XSocket* CreateSocket(bool bForceUDP = false) = 0;
+
+	virtual void DestroySocket(class XSocket* InSocket) = 0;
+
+	virtual bool GetHostByName(const char* HostName, XInternetAddr& OutAddr) = 0;
 };

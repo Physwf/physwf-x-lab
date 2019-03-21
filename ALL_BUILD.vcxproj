@@ -166,6 +166,12 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
+    <ProjectReference Include="D:\physwf-x-lab\x2\libx2.vcxproj">
+      <Project>{163CC8E5-62F0-36BA-BEDB-025D14B67D8D}</Project>
+      <Name>libx2</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
     <ProjectReference Include="D:\physwf-x-lab\x3\libx3.vcxproj">
       <Project>{A2106F12-981D-38CF-AC60-E099AB8A74BA}</Project>
       <Name>libx3</Name>

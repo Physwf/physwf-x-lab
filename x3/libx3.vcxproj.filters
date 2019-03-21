@@ -13,6 +13,9 @@
     <ClCompile Include="D:\physwf-x-lab\x3\Source\SoketSubsystem.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.cpp">
+      <Filter>Source\Windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D:\physwf-x-lab\x3\Include\IPAddress.h">
@@ -39,6 +42,9 @@
     <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSDPrivate.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.h">
+      <Filter>Source\Windows</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\physwf-x-lab\x3\CMakeLists.txt" />
@@ -52,6 +58,9 @@
     </Filter>
     <Filter Include="Source\BSDSockets">
       <UniqueIdentifier>{0F0BD61C-B00E-3F18-8FF6-F14B33FC7A67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Windows">
+      <UniqueIdentifier>{02C2375A-85E7-3EA6-9B65-FB1710054481}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

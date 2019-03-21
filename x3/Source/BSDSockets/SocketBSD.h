@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "SoketTypes.h"
+#include "Sockets.h"
 #include "InternetAddrBSD.h"
 
-class XSocketBSD
+class XSocketBSD : public XSocket
 {
 public:
 	XSocketBSD(SOCKET InSocket, ESocketType InSocketType):

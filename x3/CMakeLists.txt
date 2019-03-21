@@ -24,8 +24,9 @@ foreach(_source IN ITEMS ${_source_list})
 endforeach()
 
 add_library(libx3 SHARED ${_source_list})
-#set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
+set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx3 PRIVATE "./Include")
+
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	message(status " current platform: Linux ")
