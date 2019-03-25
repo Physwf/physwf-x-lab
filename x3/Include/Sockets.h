@@ -18,7 +18,7 @@ public:
 		eSocketType(eType)
 	{ }
 
-	~XSocket()
+	virtual ~XSocket()
 	{}
 
 	virtual bool Close() = 0;

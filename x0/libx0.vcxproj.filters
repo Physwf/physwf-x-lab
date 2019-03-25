@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\physwf-x-lab\x0\CMakeFiles\3.14.0-rc4\CompilerIdCXX\CMakeCXXCompilerId.cpp">
+      <Filter>CMakeFiles\3.14.0-rc4\CompilerIdCXX</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\GenericPlatform\GenericPlatformMemory.cpp">
+      <Filter>Source\HAL\GenericPlatform</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\MemoryBase.cpp">
+      <Filter>Source\HAL</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\XMemory.cpp">
+      <Filter>Source\HAL</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\CoreTypes.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatform.h">
+      <Filter>Include\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatformMemory.h">
+      <Filter>Include\GenericPlatform</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\MemoryBase.h">
+      <Filter>Include\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\Platform.h">
+      <Filter>Include\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\XMemeory.h">
+      <Filter>Include\HAL</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Linux\LinuxPlatform.h">
+      <Filter>Include\Linux</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Unix\UnixPlatform.h">
+      <Filter>Include\Unix</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\physwf-x-lab\x0\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMakeFiles">
+      <UniqueIdentifier>{1D73B25F-1715-3DC9-B4EF-5A6008DE4CEB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CMakeFiles\3.14.0-rc4">
+      <UniqueIdentifier>{FB8DCC80-583B-305F-8EF8-56BD3E032342}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CMakeFiles\3.14.0-rc4\CompilerIdCXX">
+      <UniqueIdentifier>{6516CDB7-4693-3D46-865C-1B0ED061097C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{216BA906-F59B-39E5-AED5-0A0E6E11DAA2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\GenericPlatform">
+      <UniqueIdentifier>{A749EB2D-BB21-39AF-AC36-78CD328C84B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\HAL">
+      <UniqueIdentifier>{721E8771-D14A-33DB-B40D-59F406DBD4C4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Linux">
+      <UniqueIdentifier>{9DAEDCF8-839C-38B4-BB68-5F1D06418BBE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Unix">
+      <UniqueIdentifier>{526F5E04-59DC-3B21-A0B5-3530A86642D7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Windows">
+      <UniqueIdentifier>{A35757CE-E0D7-3D5B-9CC9-8B922CA97D8C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{DA79D6FC-C03E-35B5-98D8-16E37B8807AF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\HAL">
+      <UniqueIdentifier>{08176DA0-A381-3792-9C1B-4C2DE52C4D08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\HAL\GenericPlatform">
+      <UniqueIdentifier>{8368B172-D0D5-3737-99E0-7E666E38D5CF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

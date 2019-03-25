@@ -1,10 +1,11 @@
 ﻿#pragma once
 
-#include <memory.h>
-#include <stdlib.h>
 
 #include "IPAddress.h"
 #include "SocketSubsystemBSDPrivate.h"
+
+#include <stdlib.h>
+#include <memory.h>
 
 
 class XInternetAddrBSD : public XInternetAddr

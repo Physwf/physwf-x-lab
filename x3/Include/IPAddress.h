@@ -21,4 +21,4 @@ public:
 	virtual void SetAnyAddress() = 0;
 
 	virtual void SetBroadcastAddress() = 0;
-}
+};

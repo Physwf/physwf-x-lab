@@ -7,7 +7,7 @@ class XSocketBSD : public XSocket
 {
 public:
 	XSocketBSD(SOCKET InSocket, ESocketType InSocketType):
-		SocketType(InSocketType),
+		XSocket(InSocketType),
 		Socket(InSocket) 
 	{}
 

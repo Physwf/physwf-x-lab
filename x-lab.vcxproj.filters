@@ -4,6 +4,9 @@
     <ClCompile Include="D:\physwf-x-lab\demo\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\demo\x3demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\physwf-x-lab\CMakeLists.txt" />
