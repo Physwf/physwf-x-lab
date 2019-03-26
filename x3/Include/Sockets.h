@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "SocketTypes.h"
 
@@ -28,6 +28,8 @@ public:
 	virtual bool Connect(const XInternetAddr& InInternetAddr) = 0;
 
 	virtual bool Listen(int MaxBackLog) = 0;
+
+	virtual class XSocket* Accept() = 0;
 
 	virtual bool Send(const unsigned char* Data, int iCount, int& BytesSent) = 0;
 

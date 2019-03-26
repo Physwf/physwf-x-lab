@@ -13,13 +13,14 @@ class XInternetAddrBSD : public XInternetAddr
 protected:
 	sockaddr_in Addr;
 
+public:
 	XInternetAddrBSD()
 	{
 		memset(&Addr, 0, sizeof(sockaddr_in));
 		Addr.sin_family = AF_INET;
 	}
 
-	virtual void SetIp(unsigned int InAddr)
+	virtual void SetIp(unsigned int InAddr) override
 	{
 		Addr.sin_addr.s_addr = htonl(InAddr);
 	}
@@ -29,7 +30,7 @@ protected:
 		Addr.sin_addr = IpAddr;
 	}
 
-	virtual void SetIp(const char* InAddr,bool& bValid)
+	virtual void SetIp(const char* InAddr,bool& bValid) override
 	{
 		if (InAddr == nullptr)
 		{
@@ -80,14 +81,44 @@ protected:
 		}
 	}
 
+	virtual void GetIp(unsigned int& OutIp) const override
+	{
+		OutIp = Addr.sin_addr.s_addr;
+	}
+
 	virtual void SetPort(unsigned short InPort)
 	{
 		Addr.sin_port = htons(InPort);
+	}
+
+	virtual void GetPort(unsigned short& OutPort) const override
+	{
+		OutPort = Addr.sin_port;
+	}
+
+	virtual unsigned short GetPort() const
+	{
+		return Addr.sin_port;
 	}
 
 	virtual void SetAnyAddress()
 	{
 		SetIp(INADDR_ANY);
 		SetPort(0);
+	}
+
+	virtual void SetBroadcastAddress() override
+	{
+
+	}
+
+	operator sockaddr*(void)
+	{
+		return (sockaddr*)&Addr;
+	}
+
+	operator const sockaddr*(void) const
+	{
+		return (const sockaddr*)&Addr;
 	}
 };

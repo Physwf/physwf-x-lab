@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #if !defined(PLATFORM_WINDOWS)
 	#define PLATFORM_WINDOWS 0
@@ -28,6 +28,11 @@ typedef XPlatformTypes::int64		int64;
 typedef XPlatformTypes::ANSICHAR	ANSICHAR;
 typedef XPlatformTypes::WIDECHAR	WIDECHAR;
 typedef XPlatformTypes::TCHAR		TCHAR;
+
+typedef XPlatformTypes::UPTRINT		UPTRINT;
+typedef XPlatformTypes::PTRINT		PTRINT;
+typedef XPlatformTypes::SIZE_T		SIZE_T;
+typedef XPlatformTypes::SSIZE_T		SSIZE_T;
 
 
 

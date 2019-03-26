@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreTypes.h"
 #include <wchar.h>
 #include <string.h>
 
+class XMAlloc;
 
 class XGenericPlatformMemory
 {
@@ -56,7 +57,7 @@ private:
 
 	static void MemswapGreaterThan8(void* Ptr1, void* Ptr2, SIZE_T Size);
 public:
-	static inline void Memswap(void* Ptr1, void Ptr2, SIZE_T Size)
+	static inline void Memswap(void* Ptr1, void* Ptr2, SIZE_T Size)
 	{
 		switch (Size)
 		{

@@ -1,5 +1,8 @@
-cmake_minimum_required (VERSION 2.6)
+﻿cmake_minimum_required (VERSION 3.4)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+
+
 project (x-lab)
 add_subdirectory(x0)
 include_directories(x0)
@@ -8,4 +11,29 @@ add_subdirectory(x3)
 include_directories(x3/Include)
 set(DIR_PROJECT "./demo")
 add_executable(x-lab ${DIR_PROJECT}/main.cpp ${DIR_PROJECT}/x3demo.cpp)
-target_link_libraries(x-lab x0 x3)
+target_link_libraries(x-lab libx0 libx3)
+add_dependencies(x-lab libx0 libx3)
+link_directories("x0/Debug" "x3/Debug")
+
+
+MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
+
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+	MESSAGE(STATUS "current platform: Linux ")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
+	MESSAGE(STATUS "current platform: Windows")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+	MESSAGE(STATUS "current platform: FreeBSD")
+ELSE ()
+	MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
+ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+MESSAGE(STSTUS "###################################")
+
+IF (WIN32)
+	MESSAGE(STATUS "Now is windows")
+ELSEIF (APPLE)
+	MESSAGE(STATUS "Now is Apple systens.")
+ELSEIF (UNIX)
+	MESSAGE(STATUS "Now is UNIX-like OS's. Including aPPLE os x  and CygWin")
+ENDIF ()

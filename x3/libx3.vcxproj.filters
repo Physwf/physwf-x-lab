@@ -1,66 +1,70 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.cpp">
       <Filter>Source\BSDSockets</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.cpp">
       <Filter>Source\BSDSockets</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.cpp">
       <Filter>Source\BSDSockets</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x3\Source\SoketSubsystem.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x3\Source\SoketSubsystem.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.cpp">
       <Filter>Source\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\physwf-x-lab\x3\Include\IPAddress.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\IPAddress.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Include\SocketSubsystem.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\SocketSubsystem.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Include\SocketTypes.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\SocketSubsystemModule.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Include\Sockets.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\SocketTypes.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\Sockets.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketBSD.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSD.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSDPrivate.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Source\BSDSockets\SocketSubsystemBSDPrivate.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.h">
+    <ClInclude Include="E:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.h">
       <Filter>Source\Windows</Filter>
     </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x3\x3_export.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="D:\physwf-x-lab\x3\CMakeLists.txt" />
+    <CustomBuild Include="E:\physwf-x-lab\x3\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">
-      <UniqueIdentifier>{216BA906-F59B-39E5-AED5-0A0E6E11DAA2}</UniqueIdentifier>
+      <UniqueIdentifier>{7DCA985B-2A0F-3B6C-AF8A-D3797C3E22C4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
-      <UniqueIdentifier>{DA79D6FC-C03E-35B5-98D8-16E37B8807AF}</UniqueIdentifier>
+      <UniqueIdentifier>{F523BFEE-5079-343C-8BF3-F7DB44B588EF}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\BSDSockets">
-      <UniqueIdentifier>{0F0BD61C-B00E-3F18-8FF6-F14B33FC7A67}</UniqueIdentifier>
+      <UniqueIdentifier>{BE04CA99-A2E4-3724-BD19-6F19E47B83A6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Windows">
-      <UniqueIdentifier>{02C2375A-85E7-3EA6-9B65-FB1710054481}</UniqueIdentifier>
+      <UniqueIdentifier>{B228BEC2-A31F-3214-9495-CDEA97F0E8DA}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

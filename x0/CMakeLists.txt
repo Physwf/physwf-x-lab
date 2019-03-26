@@ -23,9 +23,12 @@ foreach(_source IN ITEMS ${_source_list})
     source_group("${_group_path}" FILES "${_source}")
 endforeach()
 
-add_library(libx0 SHARED ${_source_list})
+add_library(libx0 ${_source_list})
 set_target_properties(libx0 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx0 PRIVATE "./Include")
+target_include_directories(libx0 PRIVATE "./Source")
+include(GenerateExportHeader)
+generate_export_header(libx0 BASE_NAME X0)
 
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")

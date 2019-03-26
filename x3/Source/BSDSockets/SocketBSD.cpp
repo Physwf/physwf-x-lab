@@ -11,12 +11,12 @@ bool XSocketBSD::Close()
 	return false;
 }
 
-bool XSocketBSD::Bind(const XInternetAddrBSD& Addr)
+bool XSocketBSD::Bind(const XInternetAddr& Addr)
 {
-	return bind(Socket, (sockaddr*)&Addr, sizeof(sockaddr_in)) == 0;
+	return bind(Socket, (sockaddr*)(XInternetAddrBSD&)Addr, sizeof(sockaddr_in)) == 0;
 }
 
-bool XSocketBSD::Connect(const XInternetAddrBSD& Addr)
+bool XSocketBSD::Connect(const XInternetAddr& Addr)
 {
 	int iError = connect(Socket, (sockaddr*)&Addr, sizeof(sockaddr_in));
 
@@ -26,6 +26,17 @@ bool XSocketBSD::Connect(const XInternetAddrBSD& Addr)
 bool XSocketBSD::Listen(int MaxBackLog)
 {
 	return listen(Socket, MaxBackLog) == 0;
+}
+
+class XSocket* XSocketBSD::Accept()
+{
+	SOCKET NewSocket = accept(Socket, NULL, NULL);
+	if (NewSocket != INVALID_SOCKET)
+	{
+		XSocketSubsystemBSD* SocketSubsystemBSD = static_cast<XSocketSubsystemBSD*>(SocketSubsystem);
+		return SocketSubsystemBSD->InternalBSDSocketFactory(NewSocket, SocketType);
+	}
+	return nullptr;
 }
 
 bool XSocketBSD::Send(const unsigned char* Data, int iCount, int& BytesSent)

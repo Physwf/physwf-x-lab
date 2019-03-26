@@ -8,7 +8,6 @@ file(GLOB_RECURSE DIR_INC
 )]]#
 
 set(DIR_PROJECT "${CMAKE_CURRENT_SOURCE_DIR}/")
-message(${DIR_PROJECT})
 file(
     GLOB_RECURSE _source_list 
     LIST_DIRECTORIES false
@@ -23,11 +22,21 @@ foreach(_source IN ITEMS ${_source_list})
     source_group("${_group_path}" FILES "${_source}")
 endforeach()
 
-add_library(libx3 SHARED ${_source_list})
+add_library(libx3 ${_source_list})
 set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx3 PRIVATE "./Include")
 target_include_directories(libx3 PRIVATE "./Source")
+target_include_directories(libx3 PRIVATE "../x0/Include")
+add_dependencies(libx3 libx0)
 
+message("PROJECT_BINARY_DIR=" ${PROJECT_BINARY_DIR})
+include(GenerateExportHeader)
+generate_export_header(libx0 
+						BASE_NAME X3 
+						EXPORT_MACRO_NAME X3_API
+						DEPRECATED_MACRO_NAME X3_DEPRECATED_API
+						NO_DEPRECATED_MACRO_NAME X3_DEPRECATED_NO_API
+						)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	message(status " current platform: Linux ")
@@ -35,8 +44,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	message(status " current platform: Windows")
 	add_definitions(-DPLATFORM_WINDOWS)
 	target_link_libraries (libx3 "ws2_32.lib")
-elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-	message(status " current platform: FreeBSD")
 else()
 	message(status "other platform: ${CMAKE_SYSTEM_NAME}")
 endif()
