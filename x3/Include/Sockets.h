@@ -29,6 +29,10 @@ public:
 
 	virtual bool Listen(int MaxBackLog) = 0;
 
+	virtual bool WaitForPendingConnection(bool& bHasPendingConnection, int InMS) = 0;
+
+	virtual bool Wait(ESocketWaitConditions::Type Condition, int InMS) = 0;
+
 	virtual class XSocket* Accept() = 0;
 
 	virtual bool Send(const unsigned char* Data, int iCount, int& BytesSent) = 0;

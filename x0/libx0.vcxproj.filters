@@ -1,82 +1,94 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="E:\physwf-x-lab\x0\Source\HAL\GenericPlatform\GenericPlatformMemory.cpp">
+    <ClCompile Include="D:\physwf-x-lab\x0\CMakeFiles\3.14.0-rc4\CompilerIdCXX\CMakeCXXCompilerId.cpp">
+      <Filter>CMakeFiles\3.14.0-rc4\CompilerIdCXX</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\GenericPlatform\GenericPlatformMemory.cpp">
       <Filter>Source\HAL\GenericPlatform</Filter>
     </ClCompile>
-    <ClCompile Include="E:\physwf-x-lab\x0\Source\HAL\MemoryBase.cpp">
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\MemoryBase.cpp">
       <Filter>Source\HAL</Filter>
     </ClCompile>
-    <ClCompile Include="E:\physwf-x-lab\x0\Source\HAL\XMemory.cpp">
+    <ClCompile Include="D:\physwf-x-lab\x0\Source\HAL\XMemory.cpp">
       <Filter>Source\HAL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\CoreTypes.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\CoreTypes.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatform.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatform.h">
       <Filter>Include\GenericPlatform</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatformMemory.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\GenericPlatform\GenericPlatformMemory.h">
       <Filter>Include\GenericPlatform</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\HAL\MemoryBase.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\MemoryBase.h">
       <Filter>Include\HAL</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\HAL\Platform.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\Platform.h">
       <Filter>Include\HAL</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\HAL\XMemeory.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\HAL\XMemeory.h">
       <Filter>Include\HAL</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\Linux\LinuxPlatform.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Linux\LinuxPlatform.h">
       <Filter>Include\Linux</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\Modules\ModuleInterface.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Modules\ModuleInterface.h">
       <Filter>Include\Modules</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\Unix\UnixPlatform.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Unix\UnixPlatform.h">
       <Filter>Include\Unix</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">
+    <ClInclude Include="D:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">
       <Filter>Include\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\x0_export.h" />
+    <ClInclude Include="D:\physwf-x-lab\x0\x0_export.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\physwf-x-lab\x0\CMakeLists.txt" />
+    <CustomBuild Include="D:\physwf-x-lab\x0\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="CMakeFiles">
+      <UniqueIdentifier>{1D73B25F-1715-3DC9-B4EF-5A6008DE4CEB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CMakeFiles\3.14.0-rc4">
+      <UniqueIdentifier>{FB8DCC80-583B-305F-8EF8-56BD3E032342}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CMakeFiles\3.14.0-rc4\CompilerIdCXX">
+      <UniqueIdentifier>{6516CDB7-4693-3D46-865C-1B0ED061097C}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Include">
-      <UniqueIdentifier>{7DCA985B-2A0F-3B6C-AF8A-D3797C3E22C4}</UniqueIdentifier>
+      <UniqueIdentifier>{216BA906-F59B-39E5-AED5-0A0E6E11DAA2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\GenericPlatform">
-      <UniqueIdentifier>{AD6EC721-5851-39E8-93BB-E6C7CACFA2FF}</UniqueIdentifier>
+      <UniqueIdentifier>{A749EB2D-BB21-39AF-AC36-78CD328C84B1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\HAL">
-      <UniqueIdentifier>{5DCE1788-41E8-3EC1-A451-E2D3E8736FBE}</UniqueIdentifier>
+      <UniqueIdentifier>{721E8771-D14A-33DB-B40D-59F406DBD4C4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\Linux">
-      <UniqueIdentifier>{76036B7D-09A6-3B7E-A69E-D63A8E4573C9}</UniqueIdentifier>
+      <UniqueIdentifier>{9DAEDCF8-839C-38B4-BB68-5F1D06418BBE}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\Modules">
-      <UniqueIdentifier>{1E7CEE2A-A253-3561-B4D4-87F73B6C3ED9}</UniqueIdentifier>
+      <UniqueIdentifier>{BA9736C1-CC29-3445-BEEA-F8D0B07AD22B}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\Unix">
-      <UniqueIdentifier>{2A948C6C-80F5-331B-9285-7B876C6C2C7A}</UniqueIdentifier>
+      <UniqueIdentifier>{526F5E04-59DC-3B21-A0B5-3530A86642D7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\Windows">
-      <UniqueIdentifier>{91D61D05-F984-34D7-9BCB-466EA0A3D374}</UniqueIdentifier>
+      <UniqueIdentifier>{A35757CE-E0D7-3D5B-9CC9-8B922CA97D8C}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
-      <UniqueIdentifier>{F523BFEE-5079-343C-8BF3-F7DB44B588EF}</UniqueIdentifier>
+      <UniqueIdentifier>{DA79D6FC-C03E-35B5-98D8-16E37B8807AF}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\HAL">
-      <UniqueIdentifier>{D26E3D5F-8F34-3C55-AABF-39730DC1DD5A}</UniqueIdentifier>
+      <UniqueIdentifier>{08176DA0-A381-3792-9C1B-4C2DE52C4D08}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\HAL\GenericPlatform">
-      <UniqueIdentifier>{B2B0E305-99EC-3804-9233-1EF500032DA9}</UniqueIdentifier>
+      <UniqueIdentifier>{8368B172-D0D5-3737-99E0-7E666E38D5CF}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
