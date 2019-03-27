@@ -1,45 +1,45 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="D:\physwf-x-lab\x2\dllmain.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x2\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x2\gl_context.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x2\gl_context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x2\gl_memory.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x2\gl_memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x2\gl_shader.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x2\gl_shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\x2\gl_vertex_attribute.cpp">
+    <ClCompile Include="E:\physwf-x-lab\x2\gl_vertex_attribute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\physwf-x-lab\x2\gl.h">
+    <ClInclude Include="E:\physwf-x-lab\x2\gl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x2\gl_context.h">
+    <ClInclude Include="E:\physwf-x-lab\x2\gl_context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x2\gl_memory.h">
+    <ClInclude Include="E:\physwf-x-lab\x2\gl_memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="D:\physwf-x-lab\x2\gl_utilities.h">
+    <ClInclude Include="E:\physwf-x-lab\x2\gl_utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="D:\physwf-x-lab\x2\CMakeLists.txt" />
+    <CustomBuild Include="E:\physwf-x-lab\x2\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{C1E0606A-DC51-3D28-B664-51EE9E0BEB79}</UniqueIdentifier>
+      <UniqueIdentifier>{8EC28C74-0706-3CD3-9578-A80ADEE5BA62}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{EDF8D699-814A-3D7C-AB9A-6985B26B26F0}</UniqueIdentifier>
+      <UniqueIdentifier>{2C9E25C8-9E85-3A4C-8881-995A89492020}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -43,6 +43,16 @@ bool XSocketSubsystemBSD::GetHostByName(const char* HostName, XInternetAddr& Out
 	return false;
 }
 
+ESocketErrors XSocketSubsystemBSD::GetLastErrorCode()
+{
+	return TranslateErrorCode(errno);
+}
+
+ESocketErrors XSocketSubsystemBSD::TranslateErrorCode(int Code)
+{
+	return ESocketErrors::SE_NO_ERROR;
+}
+
 class XSocketBSD* XSocketSubsystemBSD::InternalBSDSocketFactory(SOCKET Socket, ESocketType eSocketType)
 {
 	return new XSocketBSD(Socket, eSocketType, this);

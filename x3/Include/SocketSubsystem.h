@@ -22,5 +22,9 @@ public:
 	virtual void DestroySocket(class XSocket* InSocket) = 0;
 
 	virtual bool GetHostByName(const char* HostName, XInternetAddr& OutAddr) = 0;
+
+	virtual ESocketErrors GetLastErrorCode() = 0;
+
+	virtual ESocketErrors TranslateErrorCode(int Code) = 0;
 };
 

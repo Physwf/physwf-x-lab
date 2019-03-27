@@ -37,7 +37,7 @@ public:
 
 	virtual bool Send(const unsigned char* Data, int iCount, int& BytesSent) = 0;
 
-	virtual bool Recv(unsigned char* Data, int BufferSize, int& BytesRead) = 0;
+	virtual bool Recv(unsigned char* Data, int BufferSize, int& BytesRead, ESocketReceiveFlags::Type Flags = ESocketReceiveFlags::None) = 0;
 
 	virtual bool SetNonBlocking(bool bNonBlocking = true) = 0;
 };

@@ -14,6 +14,10 @@ public:
 
 	virtual bool GetHostByName(const char* HostName, XInternetAddr& OutAddr) override;
 
+	virtual ESocketErrors GetLastErrorCode() override;
+
+	virtual ESocketErrors TranslateErrorCode(int Code) override;
+
 protected:
 	virtual class XSocketBSD* InternalBSDSocketFactory(SOCKET Socket, ESocketType eSocketType);
 

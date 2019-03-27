@@ -44,14 +44,13 @@ public:
 	virtual bool Wait(ESocketWaitConditions::Type Condition, int InMS) override;
 	virtual class XSocket* Accept() override;
 	virtual bool Send(const unsigned char* Data, int iCount, int& BytesSent) override;
-	virtual bool Recv(unsigned char* Data, int BufferSize, int& BytesRead) override;
+	virtual bool Recv(unsigned char* Data, int BufferSize, int& BytesRead, ESocketReceiveFlags::Type Flags = ESocketReceiveFlags::None) override;
 	virtual bool SetNonBlocking(bool bNonBlocking = true) override;
 
 protected:
 
 	virtual ESocketBSDReturn HasState(ESocketBSDParam State, int InMS = 0);
 
-	ESocketType SocketType;
 	SOCKET Socket;
 
 	ISocketSubsystem* SocketSubsystem;

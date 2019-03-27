@@ -1,5 +1,25 @@
 ﻿#include "SocketBSD.h"
 
+inline int TranslateFlags(ESocketReceiveFlags::Type Flags)
+{
+	int iTranslateFlags = 0;
+
+	if (Flags & ESocketReceiveFlags::Peek)
+	{
+		iTranslateFlags |= MSG_PEEK;
+#if PLATFORM_HAS_BSD_SOCKET_FEATURE_MSG_DONTWAIT
+		TranslatedFlags |= MSG_DONTWAIT;
+#endif // PLATFORM_HAS_BSD_SOCKET_FEATURE_MSG_DONTWAIT
+	}
+
+	if (Flags & ESocketReceiveFlags::WaitAll)
+	{
+		iTranslateFlags |= MSG_WAITALL;
+	}
+
+	return iTranslateFlags;
+}
+
 bool XSocketBSD::Close()
 {
 	if (Socket != INVALID_SOCKET)
@@ -34,7 +54,7 @@ bool XSocketBSD::WaitForPendingConnection(bool& bHasPendingConnection, int InMS)
 	bHasPendingConnection = false;
 	if (HasState(ESocketBSDParam::HasError) == ESocketBSDReturn::No)
 	{
-		ESocketBSDReturn State = HasState(ESocketBSDParam::CanRead);
+		ESocketBSDReturn State = HasState(ESocketBSDParam::CanRead, InMS);
 
 		bHasSucceeded = State != ESocketBSDReturn::EncounteredError;
 		bHasPendingConnection = State == ESocketBSDReturn::Yes;
@@ -46,7 +66,7 @@ bool XSocketBSD::Wait(ESocketWaitConditions::Type Condition, int InMS)
 {
 	if (Condition == ESocketWaitConditions::WaitForRead || Condition == ESocketWaitConditions::WaitForReadOrWrite)
 	{
-		if (HasState(ESocketBSDParam::CanRead) == ESocketBSDReturn::Yes)
+		if (HasState(ESocketBSDParam::CanRead, InMS) == ESocketBSDReturn::Yes)
 		{
 			return true;
 		}
@@ -54,7 +74,7 @@ bool XSocketBSD::Wait(ESocketWaitConditions::Type Condition, int InMS)
 
 	if (Condition == ESocketWaitConditions::WaitForWrite || Condition == ESocketWaitConditions::WaitForReadOrWrite)
 	{
-		if (HasState(ESocketBSDParam::CanWrite) == ESocketBSDReturn::Yes)
+		if (HasState(ESocketBSDParam::CanWrite, InMS) == ESocketBSDReturn::Yes)
 		{
 			return true;
 		}
@@ -69,19 +89,38 @@ class XSocket* XSocketBSD::Accept()
 	if (NewSocket != INVALID_SOCKET)
 	{
 		XSocketSubsystemBSD* SocketSubsystemBSD = static_cast<XSocketSubsystemBSD*>(SocketSubsystem);
-		return SocketSubsystemBSD->InternalBSDSocketFactory(NewSocket, SocketType);
+		return SocketSubsystemBSD->InternalBSDSocketFactory(NewSocket, eSocketType);
 	}
 	return nullptr;
 }
 
 bool XSocketBSD::Send(const unsigned char* Data, int iCount, int& BytesSent)
 {
-	return false;
+	BytesSent = send(Socket, (const char*)(Data), iCount, 0);
+
+	bool bSuccess = BytesSent >= 0;
+
+	return bSuccess;
 }
 
-bool XSocketBSD::Recv(unsigned char* Data, int BufferSize, int& BytesRead)
+bool XSocketBSD::Recv(unsigned char* Data, int BufferSize, int& BytesRead, ESocketReceiveFlags::Type Flags/* = ESocketReceiveFlags::None*/)
 {
-	return false;
+	bool bIsStreamSocket = eSocketType == SOCKTYPE_Sreaming;
+	int iTranslateFlags = TranslateFlags(Flags);
+	bool bSuccess = false;
+
+	BytesRead = recv(Socket, (char*)Data, BufferSize, iTranslateFlags);
+
+	if (BytesRead >= 0)
+	{
+		bSuccess = !bIsStreamSocket || BytesRead > 0;
+	}
+	else
+	{
+		bSuccess = bIsStreamSocket && (SocketSubsystem->TranslateErrorCode(BytesRead) == SE_EWOULDBLOCK);
+		BytesRead = 0;
+	}
+	return bSuccess;
 }
 
 bool XSocketBSD::SetNonBlocking(bool bNonBlocking /*= true*/)
@@ -95,8 +134,8 @@ bool XSocketBSD::SetNonBlocking(bool bNonBlocking /*= true*/)
 ESocketBSDReturn XSocketBSD::HasState(ESocketBSDParam State, int InMS /*= 0*/)
 {
 	timeval Time;
-	Time.tv_sec = InMS / 1000;
-	Time.tv_usec = InMS % 1000;
+	Time.tv_sec = InMS / 1000000;
+	Time.tv_usec = InMS % 1000000;
 
 	fd_set SocketSet;
 	FD_ZERO(&SocketSet);
@@ -106,13 +145,13 @@ ESocketBSDReturn XSocketBSD::HasState(ESocketBSDParam State, int InMS /*= 0*/)
 	switch (State)
 	{
 	case ESocketBSDParam::CanRead:
-		select(Socket + 1, &SocketSet, nullptr, nullptr, &Time);
+		iSelectStatus = select(Socket + 1, &SocketSet, nullptr, nullptr, &Time);
 		break;
 	case ESocketBSDParam::CanWrite:
-		select(Socket + 1, nullptr, &SocketSet, nullptr, &Time);
+		iSelectStatus = select(Socket + 1, nullptr, &SocketSet, nullptr, &Time);
 		break;
 	case ESocketBSDParam::HasError:
-		select(Socket + 1,  nullptr, nullptr, &SocketSet, &Time);
+		iSelectStatus = select(Socket + 1,  nullptr, nullptr, &SocketSet, &Time);
 		break;
 	}
 

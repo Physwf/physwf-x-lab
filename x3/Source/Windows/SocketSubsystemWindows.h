@@ -15,6 +15,9 @@ public:
 
 	virtual class XSocket* CreateSocket(int SocketType, bool bForceUDP) override;
 
+	virtual ESocketErrors GetLastErrorCode() override;
+
+	virtual ESocketErrors TranslateErrorCode(int Code) override;
 protected:
 	static XSocketSubsystemWindows* SocketSingleton;
 };
