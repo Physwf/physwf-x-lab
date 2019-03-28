@@ -42,7 +42,9 @@
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">
       <Filter>Include\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x0\x0_export.h" />
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\X0.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="E:\physwf-x-lab\x0\CMakeLists.txt" />

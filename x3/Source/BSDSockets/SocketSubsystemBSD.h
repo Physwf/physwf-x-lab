@@ -3,7 +3,7 @@
 #include "SocketSubsystem.h"
 #include "SocketSubsystemBSDPrivate.h"
 
-class XSocketSubsystemBSD : public ISocketSubsystem
+class X3_API XSocketSubsystemBSD : public ISocketSubsystem
 {
 public:
 	virtual class XSocket* CreateSocket(int SocketType, bool bForceUDP /* = false */) override;

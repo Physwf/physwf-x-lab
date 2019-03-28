@@ -1,10 +1,11 @@
 ﻿#pragma once
 
+#include "X3.h"
 #include "SocketTypes.h"
 
 class XInternetAddr;
 
-class ISocketSubsystem
+class X3_API ISocketSubsystem
 {
 public:
 	static ISocketSubsystem* Get();

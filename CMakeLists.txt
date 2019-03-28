@@ -1,8 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.4)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-
-
 project (x-lab)
 add_subdirectory(x0)
 include_directories(x0)
@@ -28,7 +25,7 @@ ELSE ()
 	MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
-MESSAGE(STSTUS "###################################")
+MESSAGE(STATUS "###################################")
 
 IF (WIN32)
 	MESSAGE(STATUS "Now is windows")

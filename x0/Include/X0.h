@@ -1,18 +1,18 @@
 
-#ifndef X0_EXPORT_H
-#define X0_EXPORT_H
+#ifndef X0_API_H
+#define X0_API_H
 
 #ifdef X0_STATIC_DEFINE
-#  define X0_EXPORT
+#  define X0_API
 #  define X0_NO_EXPORT
 #else
-#  ifndef X0_EXPORT
+#  ifndef X0_API
 #    ifdef libx0_EXPORTS
         /* We are building this library */
-#      define X0_EXPORT 
+#      define X0_API __declspec(dllexport)
 #    else
         /* We are using this library */
-#      define X0_EXPORT 
+#      define X0_API __declspec(dllimport)
 #    endif
 #  endif
 
@@ -26,7 +26,7 @@
 #endif
 
 #ifndef X0_DEPRECATED_EXPORT
-#  define X0_DEPRECATED_EXPORT X0_EXPORT X0_DEPRECATED
+#  define X0_DEPRECATED_EXPORT X0_API X0_DEPRECATED
 #endif
 
 #ifndef X0_DEPRECATED_NO_EXPORT
@@ -39,4 +39,4 @@
 #  endif
 #endif
 
-#endif /* X0_EXPORT_H */
+#endif /* X0_API_H */

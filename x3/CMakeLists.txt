@@ -22,20 +22,18 @@ foreach(_source IN ITEMS ${_source_list})
     source_group("${_group_path}" FILES "${_source}")
 endforeach()
 
-add_library(libx3 ${_source_list})
+add_library(libx3 SHARED ${_source_list})
 set_target_properties(libx3 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx3 PRIVATE "./Include")
 target_include_directories(libx3 PRIVATE "./Source")
 target_include_directories(libx3 PRIVATE "../x0/Include")
-add_dependencies(libx3 libx0)
+target_link_libraries(libx3 libx0)
 
-message("PROJECT_BINARY_DIR=" ${PROJECT_BINARY_DIR})
 include(GenerateExportHeader)
-generate_export_header(libx0 
-						BASE_NAME X3 
+generate_export_header(libx3 
+						BASE_NAME X3
 						EXPORT_MACRO_NAME X3_API
-						DEPRECATED_MACRO_NAME X3_DEPRECATED_API
-						NO_DEPRECATED_MACRO_NAME X3_DEPRECATED_NO_API
+						EXPORT_FILE_NAME ./Include/X3.h
 						)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")

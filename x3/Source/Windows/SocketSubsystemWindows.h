@@ -2,7 +2,7 @@
 
 #include "BSDSockets/SocketSubsystemBSD.h"
 
-class XSocketSubsystemWindows : public XSocketSubsystemBSD
+class X3_API XSocketSubsystemWindows : public XSocketSubsystemBSD
 {
 public:
 	static XSocketSubsystemWindows* Create();

@@ -7,12 +7,12 @@
 #  define X3_NO_EXPORT
 #else
 #  ifndef X3_API
-#    ifdef libx0_EXPORTS
+#    ifdef libx3_EXPORTS
         /* We are building this library */
-#      define X3_API 
+#      define X3_API __declspec(dllexport)
 #    else
         /* We are using this library */
-#      define X3_API 
+#      define X3_API __declspec(dllimport)
 #    endif
 #  endif
 
@@ -21,21 +21,21 @@
 #  endif
 #endif
 
-#ifndef X3_DEPRECATED_API
-#  define X3_DEPRECATED_API __declspec(deprecated)
+#ifndef X3_DEPRECATED
+#  define X3_DEPRECATED __declspec(deprecated)
 #endif
 
-#ifndef X3_DEPRECATED_API_EXPORT
-#  define X3_DEPRECATED_API_EXPORT X3_API X3_DEPRECATED_API
+#ifndef X3_DEPRECATED_EXPORT
+#  define X3_DEPRECATED_EXPORT X3_API X3_DEPRECATED
 #endif
 
-#ifndef X3_DEPRECATED_API_NO_EXPORT
-#  define X3_DEPRECATED_API_NO_EXPORT X3_NO_EXPORT X3_DEPRECATED_API
+#ifndef X3_DEPRECATED_NO_EXPORT
+#  define X3_DEPRECATED_NO_EXPORT X3_NO_EXPORT X3_DEPRECATED
 #endif
 
 #if 0 /* DEFINE_NO_DEPRECATED */
-#  ifndef X3_DEPRECATED_NO_API
-#    define X3_DEPRECATED_NO_API
+#  ifndef X3_NO_DEPRECATED
+#    define X3_NO_DEPRECATED
 #  endif
 #endif
 

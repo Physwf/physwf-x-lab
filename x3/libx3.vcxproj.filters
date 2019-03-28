@@ -33,6 +33,9 @@
     <ClInclude Include="E:\physwf-x-lab\x3\Include\Sockets.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x3\Include\X3.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x3\Source\BSDSockets\InternetAddrBSD.h">
       <Filter>Source\BSDSockets</Filter>
     </ClInclude>
@@ -48,7 +51,6 @@
     <ClInclude Include="E:\physwf-x-lab\x3\Source\Windows\SocketSubsystemWindows.h">
       <Filter>Source\Windows</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x3\x3_export.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="E:\physwf-x-lab\x3\CMakeLists.txt" />
