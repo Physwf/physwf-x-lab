@@ -1,6 +1,8 @@
 #pragma once
 
-struct XWindowsPlatformTypes : public XGenericPlatformTypes
+#include "X0.h"
+
+struct X0_API XWindowsPlatformTypes : public XGenericPlatformTypes
 {
 #ifdef _WIN64
 	typedef	unsigned __int64 SIZE_T;
