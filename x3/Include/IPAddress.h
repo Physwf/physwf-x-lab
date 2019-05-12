@@ -1,7 +1,8 @@
 #pragma once
 
+#include "X3.h"
 
-class XInternetAddr
+class X3_API XInternetAddr
 {
 
 public:

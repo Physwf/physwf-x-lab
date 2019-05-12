@@ -1,5 +1,6 @@
 #pragma once
 
+#include "X0.h"
 #include "CoreTypes.h"
 
 enum
@@ -17,7 +18,7 @@ class XUseSystemMallocForNew
 	void operator	delete[](void* Ptr);
 };
 
-class XMAlloc : public XUseSystemMallocForNew
+class X0_API XMAlloc : public XUseSystemMallocForNew
 {
 	virtual void* Malloc(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT) = 0;
 	virtual void* Realloc(SIZE_T Count, uint32 Aligment = DEFAULT_ALIGNMENT) = 0;

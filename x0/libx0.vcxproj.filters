@@ -10,6 +10,9 @@
     <ClCompile Include="E:\physwf-x-lab\x0\Source\HAL\XMemory.cpp">
       <Filter>Source\HAL</Filter>
     </ClCompile>
+    <ClCompile Include="E:\physwf-x-lab\x0\Source\Modules\ModuleManger.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\CoreTypes.h">
@@ -36,8 +39,14 @@
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Modules\ModuleInterface.h">
       <Filter>Include\Modules</Filter>
     </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\Modules\ModuleManager.h">
+      <Filter>Include\Modules</Filter>
+    </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Unix\UnixPlatform.h">
       <Filter>Include\Unix</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\MinWindows.h">
+      <Filter>Include\Windows</Filter>
     </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">
       <Filter>Include\Windows</Filter>
@@ -79,6 +88,9 @@
     </Filter>
     <Filter Include="Source\HAL\GenericPlatform">
       <UniqueIdentifier>{B2B0E305-99EC-3804-9233-1EF500032DA9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Modules">
+      <UniqueIdentifier>{8D142187-4F1E-362D-9643-551CDC759309}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

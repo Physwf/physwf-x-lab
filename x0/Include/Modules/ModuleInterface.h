@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-class IModuleInterface
+#include "X0.h"
+
+class X0_API IModuleInterface
 {
 public:
 
