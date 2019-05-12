@@ -9,6 +9,12 @@ class XMAlloc;
 class XGenericPlatformMemory
 {
 public:
+	static void Init();
+
+	static void SetupMemoryPools();
+
+	static uint32 GetBackMemoryPoolSize();
+
 	XMAlloc* BaseAllocator();
 
 	static inline void* Memmove(void* Dest, const void* Src, SIZE_T Count)

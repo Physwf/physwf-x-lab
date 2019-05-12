@@ -1,18 +1,5 @@
-﻿cmake_minimum_required (VERSION 3.4)
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-project (x-lab)
-add_subdirectory(x0)
-include_directories(x0)
-add_subdirectory(x2)
-add_subdirectory(x3)
-add_subdirectory(dx11demo)
-include_directories(x3/Include)
-set(DIR_PROJECT "./demo")
-add_executable(x-lab ${DIR_PROJECT}/main.cpp ${DIR_PROJECT}/x3demo.cpp)
-target_link_libraries(x-lab libx0 libx3)
-add_dependencies(x-lab libx0 libx3)
-link_directories("x0/Debug" "x3/Debug")
-
+﻿set(DIR_PROJECT ".")
+add_executable(dx11demo ${DIR_PROJECT}/main.cpp)
 
 MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
 
