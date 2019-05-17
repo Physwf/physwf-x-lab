@@ -23,6 +23,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassEx(&wc);
 
+	RECT wr = { 0,0,500,400 };
+	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
 	hWind = CreateWindowEx
 	(
 		NULL,
@@ -31,8 +34,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		WS_OVERLAPPEDWINDOW,
 		300,
 		300,
-		500,
-		400,
+		wr.right - wr.left,
+		wr.bottom - wr.top,
 		NULL,
 		NULL,
 		hInstance,
@@ -42,11 +45,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ShowWindow(hWind, nCmdShow);
 
 	MSG msg;
-	while (GetMessage(&msg, NULL, 0, 0))
+	while (true)
 	{
-		TranslateMessage(&msg);
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+			if (msg.message == WM_QUIT)
+			{
+				break;
+			}
+		}
+		else
+		{
 
-		DispatchMessage(&msg);
+		}
 	}
 
 	return msg.wParam;

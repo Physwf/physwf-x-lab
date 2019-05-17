@@ -15,6 +15,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\CoreMinimal.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\CoreTypes.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -46,6 +49,15 @@
       <Filter>Include\Unix</Filter>
     </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\MinWindows.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\PostWindowsApi.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\PreWindowsApi.h">
+      <Filter>Include\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\WindowsHWraper.h">
       <Filter>Include\Windows</Filter>
     </ClInclude>
     <ClInclude Include="E:\physwf-x-lab\x0\Include\Windows\WindowsPlatform.h">

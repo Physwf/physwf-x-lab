@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\physwf-x-lab\x5\Source\D3D11RHI.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\physwf-x-lab\x5\Source\Windows\WindowsD3D11Device.cpp">
+      <Filter>Source\Windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\physwf-x-lab\x5\Include\D3D11RHIPrivate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x5\Source\D3D11RHI.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\physwf-x-lab\x5\Source\Windows\D3D11RHIBasePrivate.h">
+      <Filter>Source\Windows</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\physwf-x-lab\x5\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{7DCA985B-2A0F-3B6C-AF8A-D3797C3E22C4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{F523BFEE-5079-343C-8BF3-F7DB44B588EF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Windows">
+      <UniqueIdentifier>{B228BEC2-A31F-3214-9495-CDEA97F0E8DA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

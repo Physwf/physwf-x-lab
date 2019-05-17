@@ -1,5 +1,8 @@
 ﻿set(DIR_PROJECT ".")
+
 add_executable(dx11demo ${DIR_PROJECT}/main.cpp)
+add_definitions(-DUNICODE -D_UNICODE)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 
 MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
 
