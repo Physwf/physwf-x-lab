@@ -1,16 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="E:\physwf-x-lab\dx11demo\main.cpp">
+    <ClCompile Include="D:\physwf-x-lab\dx11demo\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\physwf-x-lab\dx11demo\CMakeLists.txt" />
+    <CustomBuild Include="D:\physwf-x-lab\dx11demo\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{2C9E25C8-9E85-3A4C-8881-995A89492020}</UniqueIdentifier>
+      <UniqueIdentifier>{EDF8D699-814A-3D7C-AB9A-6985B26B26F0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

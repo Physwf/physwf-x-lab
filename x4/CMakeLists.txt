@@ -29,7 +29,12 @@ target_include_directories(libx4 PRIVATE "./Source")
 target_include_directories(libx4 PRIVATE "../x0/Include")
 target_link_libraries(libx4 libx0)
 
-
+include(GenerateExportHeader)
+generate_export_header(libx4 
+						BASE_NAME X4
+						EXPORT_MACRO_NAME X4_API
+						EXPORT_FILE_NAME ./Include/X4.h
+						)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	message(status " current platform: Linux ")

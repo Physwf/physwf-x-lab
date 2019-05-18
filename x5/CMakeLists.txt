@@ -23,11 +23,14 @@ foreach(_source IN ITEMS ${_source_list})
 endforeach()
 
 add_library(libx5 SHARED ${_source_list})
+add_definitions(-DUNICODE -D_UNICODE)
 set_target_properties(libx5 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx5 PRIVATE "./Include")
 target_include_directories(libx5 PRIVATE "./Source")
 target_include_directories(libx5 PRIVATE "../x0/Include")
+target_include_directories(libx5 PRIVATE "../x4/Include")
 target_link_libraries(libx5 libx0)
+target_link_libraries(libx5 libx4)
 
 
 
@@ -37,6 +40,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 	message(status " current platform: Windows")
 	add_definitions(-DPLATFORM_WINDOWS)
 	target_link_libraries (libx5 "d3d11.lib")
+	target_link_libraries (libx5 "DXGI.lib")
 else()
 	message(status "other platform: ${CMAKE_SYSTEM_NAME}")
 endif()

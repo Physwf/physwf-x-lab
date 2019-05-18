@@ -1,8 +1,9 @@
 #pragma once
 
+#include "Modules/ModuleInterface.h"
 #include "RHIDefinitions.h"
 
-class XDynamicRHI
+class X4_API XDynamicRHI
 {
 public:
 	virtual ~XDynamicRHI() {}
@@ -15,7 +16,7 @@ public:
 
 };
 
-class IDynamicRHIModule : public IModuleInterface
+class X4_API IDynamicRHIModule : public IModuleInterface
 {
 	virtual bool IsSupported() = 0;
 

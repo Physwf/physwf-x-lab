@@ -1,7 +1,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DynamicRHI.h"
+
 #include "Windows/D3D11RHIBasePrivate.h"
+
+#include "D3D11Util.h"
 
 class XD3D11DynamicRHI
 {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "X4.h"
+
 namespace ERHIFeatureLevel
 {
 	enum Type
