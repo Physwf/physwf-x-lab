@@ -5,10 +5,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 	WPARAM wParam,
 	LPARAM lParam);
 
+HWND g_hWind = NULL;
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	HWND hWind;
-
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
@@ -26,7 +26,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	RECT wr = { 0,0,500,400 };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
-	hWind = CreateWindowEx
+	g_hWind = CreateWindowEx
 	(
 		NULL,
 		L"WindowClass1",
@@ -42,7 +42,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		NULL
 	);
 
-	ShowWindow(hWind, nCmdShow);
+	ShowWindow(g_hWind, nCmdShow);
+
+	//extern void EnumAdapters();
+	//EnumAdapters();
+	extern bool D3D11Setup();
+	extern void CreateTriangleBuffer();
+	extern void RenderTriangle();
+
+	if (!D3D11Setup())
+	{
+		return 1;
+	}
+
+	CreateTriangleBuffer();
 
 	MSG msg;
 	while (true)
@@ -58,7 +71,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		else
 		{
-
+			RenderTriangle();
 		}
 	}
 
