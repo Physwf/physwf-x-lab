@@ -1,19 +1,15 @@
-﻿set(DIR_PROJECT ".")
+﻿cmake_minimum_required (VERSION 3.4)
 
-file(COPY ${DIR_PROJECT}/Triangle.vs DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-file(COPY ${DIR_PROJECT}/Triangle.ps DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-configure_file(${DIR_PROJECT}/Triangle.vs ${CMAKE_CURRENT_BINARY_DIR}/Triangle.vs COPYONLY)
-configure_file(${DIR_PROJECT}/Triangle.ps ${CMAKE_CURRENT_BINARY_DIR}/Triangle.ps COPYONLY)
+set(DIR_PROJECT ".")
+configure_file(${DIR_PROJECT}/Triangle.hlsl ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 add_executable(dx11demo 
 ${DIR_PROJECT}/main.cpp
 ${DIR_PROJECT}/EnumAdapter.cpp
 ${DIR_PROJECT}/D3D11Triangle.cpp
-${DIR_PROJECT}/Triangle.vs
-${DIR_PROJECT}/Triangle.ps
 )
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-
+configure_file(${DIR_PROJECT}/Triangle.hlsl ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
 

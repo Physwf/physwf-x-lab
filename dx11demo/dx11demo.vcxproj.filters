@@ -15,10 +15,6 @@
     <CustomBuild Include="D:\physwf-x-lab\dx11demo\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="D:\physwf-x-lab\dx11demo\Triangle.vs" />
-    <None Include="D:\physwf-x-lab\dx11demo\Triangle.ps" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{EDF8D699-814A-3D7C-AB9A-6985B26B26F0}</UniqueIdentifier>
     </Filter>

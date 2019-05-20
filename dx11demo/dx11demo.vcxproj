@@ -268,7 +268,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.ps;D:\physwf-x-lab\dx11demo\Triangle.vs;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.hlsl;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\physwf-x-lab\dx11demo\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule D:/physwf-x-lab/dx11demo/CMakeLists.txt</Message>
@@ -281,7 +281,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.ps;D:\physwf-x-lab\dx11demo\Triangle.vs;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.hlsl;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\physwf-x-lab\dx11demo\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule D:/physwf-x-lab/dx11demo/CMakeLists.txt</Message>
@@ -294,7 +294,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.ps;D:\physwf-x-lab\dx11demo\Triangle.vs;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.hlsl;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">D:\physwf-x-lab\dx11demo\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkObjects>
       <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule D:/physwf-x-lab/dx11demo/CMakeLists.txt</Message>
@@ -307,7 +307,7 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.ps;D:\physwf-x-lab\dx11demo\Triangle.vs;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:/physwf-x-lab/dx11demo/CMakeLists.txt;D:\physwf-x-lab\dx11demo\CMakeLists.txt;D:\physwf-x-lab\dx11demo\Triangle.hlsl;D:\physwf-x-lab\dx11demo\CMakeLists.txt;%(AdditionalInputs)</AdditionalInputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">D:\physwf-x-lab\dx11demo\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">false</LinkObjects>
     </CustomBuild>
@@ -316,8 +316,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\physwf-x-lab\dx11demo\main.cpp" />
     <ClCompile Include="D:\physwf-x-lab\dx11demo\EnumAdapter.cpp" />
     <ClCompile Include="D:\physwf-x-lab\dx11demo\D3D11Triangle.cpp" />
-    <None Include="D:\physwf-x-lab\dx11demo\Triangle.vs" />
-    <None Include="D:\physwf-x-lab\dx11demo\Triangle.ps" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:\physwf-x-lab\ZERO_CHECK.vcxproj">

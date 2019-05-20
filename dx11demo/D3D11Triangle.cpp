@@ -116,7 +116,7 @@ bool D3D11Setup()
 		SwapChainDesc.SampleDesc.Quality = 0;
 		SwapChainDesc.Windowed = TRUE;
 		SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		SwapChainDesc.Flags = 0;
+		SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 
 		hr = DXGIFactory->CreateSwapChain(D3D11Device, &SwapChainDesc, &DXGISwapChain);
@@ -207,7 +207,7 @@ void CreateTriangleBuffer()
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
 	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
 
-	hr = D3DCompileFromFile(TEXT("Triangle.vs"), NULL, NULL, "VS_Main", VSTarget, VSFlags, 0, &VSBytecode, &OutErrorMsg);
+	hr = D3DCompileFromFile(TEXT("Triangle.hlsl"), NULL, NULL, "VS_Main", VSTarget, VSFlags, 0, &VSBytecode, &OutErrorMsg);
 	if (FAILED(hr))
 	{
 		X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
@@ -229,7 +229,7 @@ void CreateTriangleBuffer()
 	LPCSTR PSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
 	UINT PSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
 
-	hr = D3DCompileFromFile(TEXT("Triangle.ps"), NULL, NULL, "PS_Main", PSTarget, PSFlags, 0, &PSBytecode, &OutErrorMsg);
+	hr = D3DCompileFromFile(TEXT("Triangle.hlsl"), NULL, NULL, "PS_Main", PSTarget, PSFlags, 0, &PSBytecode, &OutErrorMsg);
 	if (FAILED(hr))
 	{
 		X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
@@ -250,8 +250,8 @@ void CreateTriangleBuffer()
 	//create input layout
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] =
 	{
-		{ "POSITION",	0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
-		{ "COLOR",		0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,12,D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "POSITION",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "COLOR",		0,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 12,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 	UINT NumElements = ARRAYSIZE(InputDesc);
 	hr = D3D11Device->CreateInputLayout(InputDesc, NumElements, VSBytecode->GetBufferPointer(), VSBytecode->GetBufferSize(), &InputLayout);
@@ -261,11 +261,11 @@ void CreateTriangleBuffer()
 		return;
 	}
 
-	VSBytecode->Release();
-	PSBytecode->Release();
+	//VSBytecode->Release();
+	//PSBytecode->Release();
 	//create render target view
 	ID3D11Texture2D* BackBuffer = NULL;
-	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&BackBuffer);
+	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&BackBuffer);
 	if (FAILED(hr))
 	{
 		X_LOG("GetBuffer failed!");
@@ -299,7 +299,8 @@ void RenderTriangle()
 	float ClearColor[] = { 0.1f, 0.0f, 0.1f, 1.0f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 	//D3D11DeviceContext->DrawIndexed(3, 0, 0);
-	//D3D11DeviceContext->Draw(3, 0);
+	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	D3D11DeviceContext->Draw(3, 0);
 
 	DXGISwapChain->Present(0, 0);
 }
