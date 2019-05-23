@@ -2,11 +2,17 @@
 
 set(DIR_PROJECT ".")
 configure_file(${DIR_PROJECT}/Triangle.hlsl ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
 add_executable(dx11demo 
 ${DIR_PROJECT}/main.cpp
 ${DIR_PROJECT}/EnumAdapter.cpp
 ${DIR_PROJECT}/D3D11Triangle.cpp
+${DIR_PROJECT}/FBXImporter.h
+${DIR_PROJECT}/FBXImporter.cpp
 )
+MESSAGE(STATUS "FBX_SDK_HOME="$ENV{FBX_SDK_HOME})
+target_include_directories(dx11demo PRIVATE $ENV{FBX_SDK_HOME}/include)
+
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 configure_file(${DIR_PROJECT}/Triangle.hlsl ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

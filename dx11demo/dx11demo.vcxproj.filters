@@ -1,22 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="D:\physwf-x-lab\dx11demo\main.cpp">
+    <ClCompile Include="E:\physwf-x-lab\dx11demo\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\dx11demo\EnumAdapter.cpp">
+    <ClCompile Include="E:\physwf-x-lab\dx11demo\EnumAdapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\physwf-x-lab\dx11demo\D3D11Triangle.cpp">
+    <ClCompile Include="E:\physwf-x-lab\dx11demo\D3D11Triangle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\physwf-x-lab\dx11demo\FBXImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="D:\physwf-x-lab\dx11demo\CMakeLists.txt" />
+    <ClInclude Include="E:\physwf-x-lab\dx11demo\FBXImporter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="E:\physwf-x-lab\dx11demo\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{8EC28C74-0706-3CD3-9578-A80ADEE5BA62}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{EDF8D699-814A-3D7C-AB9A-6985B26B26F0}</UniqueIdentifier>
+      <UniqueIdentifier>{2C9E25C8-9E85-3A4C-8881-995A89492020}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
