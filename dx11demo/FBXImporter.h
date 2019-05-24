@@ -2,11 +2,11 @@
 
 #include "fbxsdk.h"
 
-class FBXImporter
+class FBXWalker
 {
 public:
-	FBXImporter() {}
-	~FBXImporter() {}
+	FBXWalker() {}
+	~FBXWalker() {}
 
 	void Initialize();
 private:
