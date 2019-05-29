@@ -1,13 +1,8 @@
 #include <dxgi.h>
 #include <d3d11.h>
-
 #include <stdio.h>
+#include "log.h"
 
-#define X_LOG(Format,...) do {									\
-		char Info[1024] = {0};									\
-		sprintf_s(Info, sizeof(Info), Format, __VA_ARGS__);		\
-		OutputDebugStringA((Info));								\
-	} while(0);
 
 void EnumAdapters()
 {
@@ -16,7 +11,7 @@ void EnumAdapters()
 	HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&DXGIFactory);
 	if (FAILED(hr))
 	{
-		X_LOG(("CreateDXGIFactory failed!"));
+		X_LOG("CreateDXGIFactory failed!");
 		return;
 	}
 

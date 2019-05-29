@@ -3,13 +3,7 @@
 #include <DirectXMath.h>
 #include <D3Dcompiler.h>
 #include <stdio.h>
-
-
-#define X_LOG(Format,...) do {									\
-		char Info[1024] = {0};									\
-		sprintf_s(Info, sizeof(Info), Format, __VA_ARGS__);		\
-		OutputDebugStringA((Info));								\
-	} while(0);
+#include "log.h"
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;

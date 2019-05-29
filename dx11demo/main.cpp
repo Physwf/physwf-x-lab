@@ -1,4 +1,11 @@
 #include <windows.h>
+#include "FBXWalker.h"
+#include "Mesh.h"
+
+void OutputDebug(const char* Format)
+{
+	OutputDebugStringA(Format);
+}
 
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT message,
@@ -43,6 +50,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	);
 
 	ShowWindow(g_hWind, nCmdShow);
+
+	Mesh M;
+	M.ImportFromFBX("ironman2.fbx");
 
 	//extern void EnumAdapters();
 	//EnumAdapters();

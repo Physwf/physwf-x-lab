@@ -1,30 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="E:\physwf-x-lab\x4\Source\DynamicRHI.cpp">
+    <ClCompile Include="D:\physwf-x-lab\x4\Source\DynamicRHI.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="E:\physwf-x-lab\x4\Include\DynamicRHI.h">
+    <ClInclude Include="D:\physwf-x-lab\x4\Include\DynamicRHI.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x4\Include\RHIDefinitions.h">
+    <ClInclude Include="D:\physwf-x-lab\x4\Include\RHIDefinitions.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="E:\physwf-x-lab\x4\Include\X4.h">
+    <ClInclude Include="D:\physwf-x-lab\x4\Include\X4.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="E:\physwf-x-lab\x4\CMakeLists.txt" />
+    <CustomBuild Include="D:\physwf-x-lab\x4\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">
-      <UniqueIdentifier>{7DCA985B-2A0F-3B6C-AF8A-D3797C3E22C4}</UniqueIdentifier>
+      <UniqueIdentifier>{216BA906-F59B-39E5-AED5-0A0E6E11DAA2}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source">
-      <UniqueIdentifier>{F523BFEE-5079-343C-8BF3-F7DB44B588EF}</UniqueIdentifier>
+      <UniqueIdentifier>{DA79D6FC-C03E-35B5-98D8-16E37B8807AF}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

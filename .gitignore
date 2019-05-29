@@ -49,3 +49,4 @@ _deps
 Win32
 *.dir
 Debug
+*.fbx
