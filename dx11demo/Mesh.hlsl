@@ -12,13 +12,14 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-float4x4 MOV; 
+float4x4 View;
+float4x4 Proj; 
 
 VertexOut VS_Main(VertexIn vin)
 {
     VertexOut vout;
 
-    vout.PosH = MOV * float4(vin.Position,1.0);
+    vout.PosH = Proj * View * float4(vin.Position,1.0);
     vout.Color = vin.Color;
 
     return vout;

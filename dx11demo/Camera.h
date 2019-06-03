@@ -1,19 +1,32 @@
 #pragma once
 
-#include <DirectXMath.h>
+#include "DirectXMath.h"
+
+using namespace DirectX;
 
 class Camera
 {
 public:
-	Camera() {};
+	Camera();
 	~Camera() {};
 
-	void SetViewport(int iWidth, int iHeight);
-	void SetFarPlan();
+	void SetPostion(XMVECTOR Position);
+	void LookAt(XMVECTOR Target);
+	void SetViewport(float fWidth, float fHeight);
+	void SetLen(float fNear, float fFar);
 private:
-	XMFLOAT4X4 Matrix;
+	void UpdateViewMatrix();
+	void UpdateProjMatrix();
+private:
+	XMMATRIX ViewMatrix;
+	XMMATRIX ProjMatrix;
 
-	int iViewportX;
-	int iViewportY;
+	XMVECTOR Eye;
+	XMVECTOR LookDir;
+	XMVECTOR Up;
 
+	float Near;
+	float Far;
+	float fViewportWidth;
+	float fViewportHeight;
 };
