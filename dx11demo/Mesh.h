@@ -1,19 +1,24 @@
 #pragma once
 
 #include <vector>
+#include <d3d11.h>
 
-struct SubMesh
+struct FVector
 {
-	struct Vetex
-	{
-		float x, y, z;
-		float u1, v1;
-		float u2, v2;
-		float nx, ny, nz;
-	};
+	float X, Y, Z;
+};
 
-	std::vector<Vetex> mVertices;
-	std::vector<unsigned short> mIndices;
+struct FVector2
+{
+	float X, Y, Z;
+};
+
+struct Vertex
+{
+	FVector Postion;
+	FVector2 UV1;
+	FVector2 UV2;
+	FVector Normal;
 };
 
 class Mesh
@@ -23,6 +28,20 @@ public:
 	~Mesh() {}
 
 	void ImportFromFBX(const char* pFileName);
+
+	void InitResource();
+	void ReleaseResource();
+
+	void Draw();
 private:
-	std::vector<SubMesh> mSubMeshes;
+	int CreateVertex();
+private:
+	std::vector<Vertex> mVertices;
+	std::vector<unsigned short> mIndices;
+
+	ID3D11InputLayout* InputLayout = NULL;
+	ID3D11Buffer* VertexBuffer = NULL;
+	ID3D11Buffer* IndexBuffer = NULL;
+	ID3D11VertexShader* VertexShader = NULL;
+	ID3D11PixelShader* PixelShader = NULL;
 };

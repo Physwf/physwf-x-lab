@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
 
 inline void XLOG(const char* format, ...)

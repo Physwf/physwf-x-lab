@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "FBXWalker.h"
+#include "D3D11RHI.h"
 #include "Mesh.h"
 
 void OutputDebug(const char* Format)
@@ -52,11 +53,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ShowWindow(g_hWind, nCmdShow);
 
 	Mesh M;
-	M.ImportFromFBX("ironman2.fbx");
+	M.ImportFromFBX("ironman.fbx");
 
 	//extern void EnumAdapters();
 	//EnumAdapters();
-	extern bool D3D11Setup();
 	extern void CreateTriangleBuffer();
 	extern void RenderTriangle();
 
@@ -81,6 +81,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		else
 		{
+			D3D11ClearViewTarget();
 			RenderTriangle();
 		}
 	}

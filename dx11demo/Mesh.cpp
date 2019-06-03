@@ -1,6 +1,8 @@
 #include "Mesh.h"
 #include "fbxsdk.h"
 #include "log.h"
+#include "D3D11RHI.h"
+#include <d3dcompiler.h>
 #include <vector>
 
 void FillFbxArray(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray)
@@ -12,11 +14,11 @@ void FillFbxArray(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray)
 
 	for (int i = 0; i < pNode->GetChildCount(); ++i)
 	{
-		FillFbxArray(pNode->GetChild(i));
+		FillFbxArray(pNode->GetChild(i),pOutMeshArray);
 	}
 }
 
-FbxAMatrix ComputeTotalMatrix(FbxScene* pScence, FbxNode* pNode)
+FbxAMatrix ComputeTotalMatrix(FbxScene* pScence, FbxNode* pNode, bool bTransformVertexToAbsolute,bool bBakePivotInVertex)
 {
 	FbxAMatrix Geometry;
 	FbxVector4 Translation, Rotation, Scaling;
@@ -28,9 +30,37 @@ FbxAMatrix ComputeTotalMatrix(FbxScene* pScence, FbxNode* pNode)
 	Geometry.SetS(Scaling);
 
 	FbxAMatrix& GlobalTransform = pScence->GetAnimationEvaluator()->GetNodeGlobalTransform(pNode);
+	if (!bTransformVertexToAbsolute)
+	{
+		if (bBakePivotInVertex)
+		{
+			FbxAMatrix PivotGeometry;
+			FbxVector4 RotationPivot = pNode->GetRotationPivot(FbxNode::eSourcePivot);
+			FbxVector4 FullPivot;
+			FullPivot[0] = -RotationPivot[0];
+			FullPivot[1] = -RotationPivot[1];
+			FullPivot[2] = -RotationPivot[2];
+			PivotGeometry.SetT(FullPivot);
+			Geometry = Geometry * PivotGeometry;
+		}
+		else
+		{
+			Geometry.SetIdentity();
+		}
+	}
 
+	FbxAMatrix TotalMatrix = bTransformVertexToAbsolute ? GlobalTransform * Geometry : Geometry;
 
+	return TotalMatrix;
+}
 
+FVector ConvertPos(FbxVector4 pPos)
+{
+	FVector Result;
+	Result.X = (float)pPos[0];
+	Result.Y = -(float)pPos[1];
+	Result.Z = (float)pPos[2];
+	return Result;
 }
 
 void Mesh::ImportFromFBX(const char* pFileName)
@@ -57,9 +87,9 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 	FbxGeometryConverter* GeometryConverter = new FbxGeometryConverter(lFbxManager);
 
-	for (auto i = 0; i < lOutMeshArray.size(); ++i)
+	for (int Index = 0; Index < (int)lOutMeshArray.size(); ++Index)
 	{
-		FbxNode* lNode = lOutMeshArray[i];
+		FbxNode* lNode = lOutMeshArray[Index];
 
 		if (lNode->GetMesh())
 		{
@@ -108,7 +138,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			FbxLayerElement::EMappingMode VertexColorMappingMode(FbxLayerElement::eByControlPoint);
 			if (LayerElementVertexColor)
 			{
-				VertexColorMappingMode = LayerElementVertexColor->GetReferenceMode();
+				VertexColorReferenceMode = LayerElementVertexColor->GetReferenceMode();
 				VertexColorMappingMode = LayerElementVertexColor->GetMappingMode();
 			}
 
@@ -144,11 +174,156 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			FbxAMatrix TotalMatrix;
 			FbxAMatrix TotalMatrixForNormal;
+			TotalMatrix = ComputeTotalMatrix(lScene, lNode, true, false);
+			TotalMatrixForNormal = TotalMatrix.Inverse();
+			TotalMatrixForNormal = TotalMatrixForNormal.Transpose();
+			int PolygonCount = lMesh->GetPolygonCount();
 
+			int VertexCount = lMesh->GetControlPointsCount();
+			auto VertexOffset = mVertices.size();
+
+			for (auto VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
+			{
+				int RealVertexIndex = VertexOffset + VertexIndex;
+				FbxVector4 FbxPosition = lMesh->GetControlPoints()[VertexIndex];
+				FbxPosition = TotalMatrix.MultT(FbxPosition);
+				FVector const VectorPositon = ConvertPos(FbxPosition);
+				int VertexID = CreateVertex();
+				mVertices[VertexID].Postion = VectorPositon;
+			}
 		}
 	}
 
 	delete GeometryConverter;
 	GeometryConverter = nullptr;
+}
+
+void Mesh::InitResource()
+{
+	HRESULT hr;
+
+	D3D11_BUFFER_DESC VertexDesc;
+	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
+	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
+	VertexDesc.ByteWidth = sizeof(Vertex) * 3;
+	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	VertexDesc.CPUAccessFlags = 0;
+	VertexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = &mVertices[0];
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	hr = D3D11Device->CreateBuffer(&VertexDesc, &InitData, &VertexBuffer);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateBuffer failed!");
+		return;
+	}
+
+	ID3DBlob* VSByteCode;
+	ID3DBlob* PSByteCode;
+	ID3DBlob* ErrorMsg;
+	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() > D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
+	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+
+	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"),NULL,NULL,"VS_Main", VSTarget, VSFlags, 0, &VSByteCode, &ErrorMsg);
+	if (FAILED(hr))
+	{
+		X_LOG("D3DCompileFromFile failed!");
+		return;
+	}
+
+	LPCSTR PSTarget = D3D11Device->GetFeatureLevel() > D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
+	UINT PSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"), NULL, NULL, "PS_Main", PSTarget, PSFlags, 0, &PSByteCode, &ErrorMsg);
+	if (FAILED(hr))
+	{
+		X_LOG("D3DCompileFromFile failed!");
+		return;
+	}
+
+	hr = D3D11Device->CreateVertexShader(VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), NULL, &VertexShader);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateVertexShader failed!");
+		return;
+	}
+	hr = D3D11Device->CreatePixelShader(PSByteCode->GetBufferPointer(), PSByteCode->GetBufferSize(), NULL, &PixelShader);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreatePixelShader failed!");
+		return;
+	}
+
+	if (VSByteCode)
+	{
+		VSByteCode->Release();
+	}
+	if (PSByteCode)
+	{
+		PSByteCode->Release();
+	}
+	if (ErrorMsg)
+	{
+		ErrorMsg->Release();
+	}
+
+	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
+	{
+		{"Position",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"TexCoord1",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"TexCoord2",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 20, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"Normal",		0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 28, D3D11_INPUT_PER_VERTEX_DATA,	0},
+	};
+
+	UINT NumElement = ARRAYSIZE(InputDesc);
+
+	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateInputLayout failed!");
+		return;
+	}
+}
+
+void Mesh::ReleaseResource()
+{
+	if (VertexBuffer)
+	{
+		VertexBuffer->Release();
+	}
+	if (VertexShader)
+	{
+		VertexShader->Release();
+	}
+	if (PixelShader)
+	{
+		PixelShader->Release();
+	}
+	if (InputLayout)
+	{
+		InputLayout->Release();
+	}
+}
+
+void Mesh::Draw()
+{
+	D3D11DeviceContext->IASetInputLayout(InputLayout);
+	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	UINT Stride = sizeof(Vertex);
+	UINT Offset = 0;
+	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	D3D11DeviceContext->VSSetShader(VertexShader, 0, 0);
+	D3D11DeviceContext->PSSetShader(PixelShader, 0, 0);
+	D3D11DeviceContext->Draw(mVertices.size(), 0);
+}
+
+int Mesh::CreateVertex()
+{
+	mVertices.push_back(Vertex());
+	return (int)(mVertices.size() - 1);
 }
 
