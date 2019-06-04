@@ -2,6 +2,7 @@
 #include "FBXWalker.h"
 #include "D3D11RHI.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 void OutputDebug(const char* Format)
 {
@@ -52,8 +53,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	Mesh M;
-	M.ImportFromFBX("ironman.fbx");
+
 
 	//extern void EnumAdapters();
 	//EnumAdapters();
@@ -65,7 +65,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 1;
 	}
 
-	CreateTriangleBuffer();
+	//CreateTriangleBuffer();
+
+	Mesh M;
+	M.ImportFromFBX("ironman.fbx");
+	Camera C;
+	C.SetViewport(500, 400);
+	C.SetLen(100, 1000);
+
+	C.InitResource();
+	M.InitResource();
 
 	MSG msg;
 	while (true)
@@ -82,7 +91,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		else
 		{
 			D3D11ClearViewTarget();
-			RenderTriangle();
+			//RenderTriangle();
+			C.Render();
+			M.Draw();
+			D3D11Present();
 		}
 	}
 

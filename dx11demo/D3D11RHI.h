@@ -17,4 +17,4 @@ extern UINT WindowHeight;
 
 bool D3D11Setup();
 void D3D11ClearViewTarget();
-void D3D11Draw();
+void D3D11Present();

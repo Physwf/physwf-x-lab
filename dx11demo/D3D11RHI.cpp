@@ -149,7 +149,7 @@ void D3D11ClearViewTarget()
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 }
 
-void D3D11Draw()
+void D3D11Present()
 {
 	DXGISwapChain->Present(0, 0);
 }

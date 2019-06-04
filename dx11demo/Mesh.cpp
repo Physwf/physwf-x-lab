@@ -205,7 +205,7 @@ void Mesh::InitResource()
 	D3D11_BUFFER_DESC VertexDesc;
 	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
 	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
-	VertexDesc.ByteWidth = sizeof(Vertex) * 3;
+	VertexDesc.ByteWidth = sizeof(Vertex) * mVertices.size();
 	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	VertexDesc.CPUAccessFlags = 0;
 	VertexDesc.MiscFlags = 0;
@@ -232,7 +232,7 @@ void Mesh::InitResource()
 	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"),NULL,NULL,"VS_Main", VSTarget, VSFlags, 0, &VSByteCode, &ErrorMsg);
 	if (FAILED(hr))
 	{
-		X_LOG("D3DCompileFromFile failed!");
+		X_LOG("D3DCompileFromFile failed! %s", (const char*)ErrorMsg->GetBufferPointer());
 		return;
 	}
 
@@ -241,7 +241,7 @@ void Mesh::InitResource()
 	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"), NULL, NULL, "PS_Main", PSTarget, PSFlags, 0, &PSByteCode, &ErrorMsg);
 	if (FAILED(hr))
 	{
-		X_LOG("D3DCompileFromFile failed!");
+		X_LOG("D3DCompileFromFile failed! %s", (const char*)ErrorMsg->GetBufferPointer());
 		return;
 	}
 
@@ -258,6 +258,25 @@ void Mesh::InitResource()
 		return;
 	}
 
+
+
+	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
+	{
+		{"POSITION",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"NORMAL",		0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"TEXCOORD",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 24, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"TEXCOORD",	1,	DXGI_FORMAT_R32G32_FLOAT,		0, 32, D3D11_INPUT_PER_VERTEX_DATA,	0},
+	};
+
+	UINT NumElement = ARRAYSIZE(InputDesc);
+
+	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &InputLayout);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateInputLayout failed!");
+		return;
+	}
+
 	if (VSByteCode)
 	{
 		VSByteCode->Release();
@@ -269,23 +288,6 @@ void Mesh::InitResource()
 	if (ErrorMsg)
 	{
 		ErrorMsg->Release();
-	}
-
-	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
-	{
-		{"Position",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"TexCoord1",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"TexCoord2",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 20, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"Normal",		0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 28, D3D11_INPUT_PER_VERTEX_DATA,	0},
-	};
-
-	UINT NumElement = ARRAYSIZE(InputDesc);
-
-	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &InputLayout);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateInputLayout failed!");
-		return;
 	}
 }
 

@@ -1,8 +1,15 @@
 #pragma once
 
 #include "DirectXMath.h"
+#include "D3D11RHI.h"
 
 using namespace DirectX;
+
+struct VS_CONSTANT_BUFFER
+{
+	XMMATRIX ViewMatrix;
+	XMMATRIX ProjMatrix;
+};
 
 class Camera
 {
@@ -14,12 +21,15 @@ public:
 	void LookAt(XMVECTOR Target);
 	void SetViewport(float fWidth, float fHeight);
 	void SetLen(float fNear, float fFar);
+
+	void InitResource();
+	void ReleaseResource();
+	void Render();
 private:
 	void UpdateViewMatrix();
 	void UpdateProjMatrix();
 private:
-	XMMATRIX ViewMatrix;
-	XMMATRIX ProjMatrix;
+	VS_CONSTANT_BUFFER VSConstBuffer;
 
 	XMVECTOR Eye;
 	XMVECTOR LookDir;
@@ -29,4 +39,6 @@ private:
 	float Far;
 	float fViewportWidth;
 	float fViewportHeight;
+
+	ID3D11Buffer* ConstantBuffer;
 };

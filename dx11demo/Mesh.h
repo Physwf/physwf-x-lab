@@ -16,9 +16,9 @@ struct FVector2
 struct Vertex
 {
 	FVector Postion;
+	FVector Normal;
 	FVector2 UV1;
 	FVector2 UV2;
-	FVector Normal;
 };
 
 class Mesh
