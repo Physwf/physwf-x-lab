@@ -32,7 +32,7 @@ private:
 	VS_CONSTANT_BUFFER VSConstBuffer;
 
 	XMVECTOR Eye;
-	XMVECTOR LookDir;
+	XMVECTOR LookAtTarget;
 	XMVECTOR Up;
 
 	float Near;

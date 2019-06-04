@@ -145,7 +145,7 @@ bool D3D11Setup()
 
 void D3D11ClearViewTarget()
 {
-	float ClearColor[] = { 0.1f, 0.0f, 0.1f, 1.0f };
+	float ClearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 }
 

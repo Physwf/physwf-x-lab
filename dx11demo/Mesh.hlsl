@@ -18,14 +18,17 @@ cbuffer VS_CONSTANT_BUFFER : register(b0)
 	float4x4 Proj;
 };
  
+cbuffer	float4x4 World : register(b1);
+
 VertexOut VS_Main(VertexIn vin)
 {
     VertexOut vout;
 
-	float4x4 WVP = mul(Proj, View);
-    vout.PosH = mul(WVP,float4(vin.Position,1.0));
+    float4 WorldPostion = mul(World,float4(vin.Position,1.0));
+	float4x4 VP = mul(Proj, View);
+    vout.PosH = mul(VP,WorldPostion);
     vout.Color = float4(1,0,0,1);
-
+    
     return vout;
 }
 

@@ -70,8 +70,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Mesh M;
 	M.ImportFromFBX("ironman.fbx");
 	Camera C;
+	C.SetPostion(XMVectorSet(-120, -180, 0, 1));
+	C.LookAt(XMVectorSet(0, 0, 0, 1));
 	C.SetViewport(500, 400);
-	C.SetLen(100, 1000);
+	C.SetLen(1, 500);
 
 	C.InitResource();
 	M.InitResource();

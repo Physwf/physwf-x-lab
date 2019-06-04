@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <d3d11.h>
+#include <DirectXMath.h>
+#include "Actor.h"
 
 struct FVector
 {
@@ -21,7 +23,7 @@ struct Vertex
 	FVector2 UV2;
 };
 
-class Mesh
+class Mesh : public Actor
 {
 public:
 	Mesh() {}
@@ -40,6 +42,7 @@ private:
 	std::vector<unsigned short> mIndices;
 
 	ID3D11InputLayout* InputLayout = NULL;
+	ID3D11Buffer* ConstantBuffer = NULL;
 	ID3D11Buffer* VertexBuffer = NULL;
 	ID3D11Buffer* IndexBuffer = NULL;
 	ID3D11VertexShader* VertexShader = NULL;

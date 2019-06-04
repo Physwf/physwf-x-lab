@@ -223,6 +223,25 @@ void Mesh::InitResource()
 		return;
 	}
 
+	D3D11_BUFFER_DESC ConstBufferDesc;
+	ZeroMemory(&ConstBufferDesc, sizeof(D3D11_BUFFER_DESC));
+	ConstBufferDesc.ByteWidth = sizeof(XMMATRIX);
+	ConstBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	ConstBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA ConstInitData;
+	XMMATRIX World;
+	InitData.pSysMem = &World;
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	hr = D3D11Device->CreateBuffer(&ConstBufferDesc, &ConstInitData, &ConstantBuffer);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateBuffer failed!");
+		return;
+	}
+
 	ID3DBlob* VSByteCode;
 	ID3DBlob* PSByteCode;
 	ID3DBlob* ErrorMsg;
@@ -317,6 +336,11 @@ void Mesh::Draw()
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	UINT Stride = sizeof(Vertex);
 	UINT Offset = 0;
+
+	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
+	XMMATRIX World = GetWorldMatrix();
+	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
+
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 	D3D11DeviceContext->VSSetShader(VertexShader, 0, 0);
 	D3D11DeviceContext->PSSetShader(PixelShader, 0, 0);

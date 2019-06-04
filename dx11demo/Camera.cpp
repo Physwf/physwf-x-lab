@@ -1,13 +1,10 @@
 #include "Camera.h"
 #include "log.h"
 
-Camera::Camera()
+Camera::Camera():Near(1.0f), Far(1000.0f)
 {
 	ConstantBuffer = NULL;
-	Eye = XMVectorSet(0,0,0,1);
-	LookDir = XMVectorSet(0, 0, 1, 1);
 	Up = XMVectorSet(0, 1, 0, 1);
-	UpdateViewMatrix();
 }
 
 void Camera::SetPostion(XMVECTOR Position)
@@ -18,8 +15,7 @@ void Camera::SetPostion(XMVECTOR Position)
 
 void Camera::LookAt(XMVECTOR Target)
 {
-	if (XMVector3Equal(Target, Eye)) return;
-	LookDir = Target - Eye;
+	LookAtTarget = Target;
 	UpdateViewMatrix();
 }
 
@@ -74,18 +70,13 @@ void Camera::Render()
 
 void Camera::UpdateViewMatrix()
 {
-	Up /= XMVectorGetByIndex(XMVector3Dot(Up, Up),0);
-	LookDir /= XMVectorGetByIndex(XMVector3Dot(LookDir,LookDir), 0);
-	XMVECTOR X = XMVector3Cross(Up, LookDir);
-	X /= XMVectorGetByIndex(XMVector2Dot(X,X), 0);
-	Up = XMVector3Cross(LookDir, X);
-	uint32_t Zero[] = { 0,0,0,1 };
-	VSConstBuffer.ViewMatrix = XMMATRIX(X, Up, LookDir, XMLoadInt4(Zero));
+	VSConstBuffer.ViewMatrix = XMMatrixLookAtLH(Eye,LookAtTarget,Up);
 }
 
 void Camera::UpdateProjMatrix()
 {
-	VSConstBuffer.ProjMatrix = XMMATRIX
+	VSConstBuffer.ProjMatrix = XMMatrixPerspectiveFovLH(60, fViewportWidth / fViewportHeight, Near, Far);
+	XMMATRIX
 	(
 		2*Near/fViewportWidth,	0,						0,						0,
 		0,						2*Near/fViewportHeight,	0,						0,
