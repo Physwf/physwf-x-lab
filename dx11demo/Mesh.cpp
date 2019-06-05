@@ -177,7 +177,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			TotalMatrix = ComputeTotalMatrix(lScene, lNode, true, false);
 			TotalMatrixForNormal = TotalMatrix.Inverse();
 			TotalMatrixForNormal = TotalMatrixForNormal.Transpose();
-			int PolygonCount = lMesh->GetPolygonCount();
+
 
 			int VertexCount = lMesh->GetControlPointsCount();
 			auto VertexOffset = mVertices.size();
@@ -190,6 +190,18 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				FVector const VectorPositon = ConvertPos(FbxPosition);
 				int VertexID = CreateVertex();
 				mVertices[VertexID].Postion = VectorPositon;
+			}
+
+			int PolygonCount = lMesh->GetPolygonCount();
+
+			for (auto PolygonIndex = 0; PolygonIndex < PolygonCount; ++PolygonIndex)
+			{
+				int PolygonVertexCount = lMesh->GetPolygonSize(PolygonIndex);
+				for (auto CornerIndex = 0; CornerIndex < PolygonVertexCount; ++CornerIndex)
+				{
+					const int iControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+					mIndices.push_back(iControlPointIndex + VertexOffset);
+				}
 			}
 		}
 	}
@@ -217,6 +229,27 @@ void Mesh::InitResource()
 	InitData.SysMemSlicePitch = 0;
 
 	hr = D3D11Device->CreateBuffer(&VertexDesc, &InitData, &VertexBuffer);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateBuffer failed!");
+		return;
+	}
+
+	D3D11_BUFFER_DESC IndexDesc;
+	ZeroMemory(&IndexDesc, sizeof(IndexDesc));
+	IndexDesc.Usage = D3D11_USAGE_DEFAULT;
+	IndexDesc.ByteWidth = sizeof(unsigned int) * mIndices.size();
+	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	IndexDesc.CPUAccessFlags = 0;
+	IndexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA IndexData;
+	ZeroMemory(&IndexData, sizeof(IndexData));
+	IndexData.pSysMem = &mIndices[0];
+	IndexData.SysMemPitch = 0;
+	IndexData.SysMemSlicePitch = 0;
+
+	hr = D3D11Device->CreateBuffer(&IndexDesc, &IndexData, &IndexBuffer);
 	if (FAILED(hr))
 	{
 		X_LOG("D3D11Device->CreateBuffer failed!");
@@ -333,7 +366,7 @@ void Mesh::ReleaseResource()
 void Mesh::Draw()
 {
 	D3D11DeviceContext->IASetInputLayout(InputLayout);
-	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	UINT Stride = sizeof(Vertex);
 	UINT Offset = 0;
 
@@ -343,9 +376,10 @@ void Mesh::Draw()
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+	D3D11DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	D3D11DeviceContext->VSSetShader(VertexShader, 0, 0);
 	D3D11DeviceContext->PSSetShader(PixelShader, 0, 0);
-	D3D11DeviceContext->Draw(mVertices.size(), 0);
+	D3D11DeviceContext->DrawIndexed(mIndices.size(), 0, 0);
 }
 
 int Mesh::CreateVertex()

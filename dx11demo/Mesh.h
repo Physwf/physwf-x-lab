@@ -39,7 +39,7 @@ private:
 	int CreateVertex();
 private:
 	std::vector<Vertex> mVertices;
-	std::vector<unsigned short> mIndices;
+	std::vector<unsigned int> mIndices;
 
 	ID3D11InputLayout* InputLayout = NULL;
 	ID3D11Buffer* ConstantBuffer = NULL;
