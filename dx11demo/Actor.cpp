@@ -21,21 +21,22 @@ void Actor::SetRotation(float fRoll, float fPitch, float fYall)
 	Rotation = XMVectorSet(fRoll, fPitch, fYall, 1);
 }
 
-void Actor::Roll(float fValue)
-{
-	float fNewRoll = XMVectorGetX(Rotation) + fValue;
-	XMVectorSetX(Rotation, fNewRoll);
-}
-
 void Actor::Pitch(float fValue)
 {
-	float fNewPitch = XMVectorGetY(Rotation) + fValue;
-	XMVectorSetY(Rotation, fNewPitch);
+	float fNewPitch = XMVectorGetX(Rotation) + fValue;
+	Rotation = XMVectorSetX(Rotation, fNewPitch);
 }
 
 void Actor::Yall(float fValue)
 {
-	float fNewYall = XMVectorGetZ(Rotation) + fValue;
-	XMVectorSetZ(Rotation, fNewYall);
+	float fNewYall = XMVectorGetY(Rotation) + fValue;
+	Rotation = XMVectorSetY(Rotation, fNewYall);
 }
+
+void Actor::Roll(float fValue)
+{
+	float fNewRoll = XMVectorGetZ(Rotation) + fValue;
+	Rotation = XMVectorSetZ(Rotation, fNewRoll);
+}
+
 

@@ -12,13 +12,16 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-cbuffer VS_CONSTANT_BUFFER : register(b0)
+cbuffer CAMERA_CBUFFER : register(b0)
 {
 	float4x4 View;
 	float4x4 Proj;
 };
  
-cbuffer	float4x4 World : register(b1);
+cbuffer	ACTOR_CBUFFER : register(b1)
+{
+	float4x4 World;
+};
 
 VertexOut VS_Main(VertexIn vin)
 {

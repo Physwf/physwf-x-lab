@@ -5,7 +5,7 @@
 
 using namespace DirectX;
 
-struct VS_CONSTANT_BUFFER
+struct CAMERA_CBUFFER
 {
 	XMMATRIX ViewMatrix;
 	XMMATRIX ProjMatrix;
@@ -29,7 +29,7 @@ private:
 	void UpdateViewMatrix();
 	void UpdateProjMatrix();
 private:
-	VS_CONSTANT_BUFFER VSConstBuffer;
+	CAMERA_CBUFFER VSConstBuffer;
 
 	XMVECTOR Eye;
 	XMVECTOR LookAtTarget;

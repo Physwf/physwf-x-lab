@@ -37,7 +37,7 @@ void Camera::InitResource()
 {
 	D3D11_BUFFER_DESC Desc;
 	ZeroMemory(&Desc, sizeof(D3D11_BUFFER_DESC));
-	Desc.ByteWidth = sizeof(VS_CONSTANT_BUFFER);
+	Desc.ByteWidth = sizeof(CAMERA_CBUFFER);
 	Desc.Usage = D3D11_USAGE_DEFAULT;
 	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
@@ -75,12 +75,6 @@ void Camera::UpdateViewMatrix()
 
 void Camera::UpdateProjMatrix()
 {
-	VSConstBuffer.ProjMatrix = XMMatrixPerspectiveFovLH(60, fViewportWidth / fViewportHeight, Near, Far);
-	XMMATRIX
-	(
-		2*Near/fViewportWidth,	0,						0,						0,
-		0,						2*Near/fViewportHeight,	0,						0,
-		0,						0,						Far/(Far-Near),			-(Near*Far)/ (Far - Near),
-		0,						0,						1,						0
-	);
+	float fRad = 90.0f * ( XM_PI / 180.0f);
+	VSConstBuffer.ProjMatrix = XMMatrixPerspectiveFovLH(fRad, fViewportWidth / fViewportHeight, Near, Far);
 }

@@ -12,14 +12,14 @@ public:
 
 	void SetPosition(float fX, float fY, float fZ);
 	void SetRotation(float fRoll, float fPitch, float fYall);
-	void Roll(float fValue);
 	void Pitch(float fValue);
 	void Yall(float fValue);
+	void Roll(float fValue);
 	
 protected:
 	XMMATRIX GetWorldMatrix() 
 	{ 
-		return XMMatrixRotationRollPitchYawFromVector(Rotation) + XMMatrixTranslationFromVector(Position);
+		return XMMatrixRotationRollPitchYawFromVector(Rotation) * XMMatrixTranslationFromVector(Position);
 	}
 
 	XMVECTOR Position;

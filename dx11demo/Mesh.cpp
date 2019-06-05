@@ -58,7 +58,7 @@ FVector ConvertPos(FbxVector4 pPos)
 {
 	FVector Result;
 	Result.X = (float)pPos[0];
-	Result.Y = -(float)pPos[1];
+	Result.Y = (float)pPos[1];
 	Result.Z = (float)pPos[2];
 	return Result;
 }
@@ -230,10 +230,10 @@ void Mesh::InitResource()
 	ConstBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA ConstInitData;
-	XMMATRIX World;
-	InitData.pSysMem = &World;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
+	XMMATRIX World = XMMatrixIdentity();
+	ConstInitData.pSysMem = &World;
+	ConstInitData.SysMemPitch = 0;
+	ConstInitData.SysMemSlicePitch = 0;
 
 	hr = D3D11Device->CreateBuffer(&ConstBufferDesc, &ConstInitData, &ConstantBuffer);
 	if (FAILED(hr))
@@ -338,6 +338,7 @@ void Mesh::Draw()
 	UINT Offset = 0;
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
+	Yall(0.01f);
 	XMMATRIX World = GetWorldMatrix();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 

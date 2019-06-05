@@ -70,10 +70,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Mesh M;
 	M.ImportFromFBX("ironman.fbx");
 	Camera C;
-	C.SetPostion(XMVectorSet(-120, -180, 0, 1));
-	C.LookAt(XMVectorSet(0, 0, 0, 1));
+	C.SetPostion(XMVectorSet(0, 100, -200, 1));
+	C.LookAt(XMVectorSet(0, 100, 0, 1));
 	C.SetViewport(500, 400);
-	C.SetLen(1, 500);
+	C.SetLen(1, 400);
 
 	C.InitResource();
 	M.InitResource();
@@ -98,6 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			M.Draw();
 			D3D11Present();
 		}
+		Sleep(10);
 	}
 
 	return msg.wParam;
