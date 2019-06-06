@@ -8,6 +8,8 @@
 struct FVector
 {
 	float X, Y, Z;
+
+
 };
 
 struct FVector2

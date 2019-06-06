@@ -63,6 +63,15 @@ FVector ConvertPos(FbxVector4 pPos)
 	return Result;
 }
 
+FVector ConvertDir(FbxVector4 Vector)
+{
+	FVector Result;
+	Result.X = (float)Vector[0];
+	Result.Y = (float)Vector[1];
+	Result.Z = (float)Vector[2];
+	return Result;
+}
+
 void Mesh::ImportFromFBX(const char* pFileName)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
@@ -181,6 +190,8 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			int VertexCount = lMesh->GetControlPointsCount();
 			auto VertexOffset = mVertices.size();
+			auto VertexInstanceOffset = mIndices.size();
+
 
 			for (auto VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 			{
@@ -193,14 +204,36 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			}
 
 			int PolygonCount = lMesh->GetPolygonCount();
+			int CurrentVertexInstanceIndex = 0;
+			int SkippedVertexInstance = 0;
 
 			for (auto PolygonIndex = 0; PolygonIndex < PolygonCount; ++PolygonIndex)
 			{
 				int PolygonVertexCount = lMesh->GetPolygonSize(PolygonIndex);
-				for (auto CornerIndex = 0; CornerIndex < PolygonVertexCount; ++CornerIndex)
+				for (auto CornerIndex = 0; CornerIndex < PolygonVertexCount; ++CornerIndex, CurrentVertexInstanceIndex++)
 				{
+					//int VertexInstanceIndex = vertex
 					const int iControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
 					mIndices.push_back(iControlPointIndex + VertexOffset);
+					int RealFbxVertexIndex = SkippedVertexInstance + CurrentVertexInstanceIndex;
+
+					if (LayerElementVertexColor)
+					{
+						int VertexColorMappingIndex = (VertexColorMappingMode == FbxLayerElement::eByControlPoint) ? lMesh->GetPolygonVertex(PolygonIndex, CornerIndex) : RealFbxVertexIndex;
+						int VertexColorIndex = (VertexColorReferenceMode == FbxLayerElement::eDirect) ? VertexColorMappingIndex : LayerElementVertexColor->GetIndexArray().GetAt(VertexColorMappingIndex);
+						FbxColor VertexColor = LayerElementVertexColor->GetDirectArray().GetAt(VertexColorIndex);
+						//todo setcolor
+					}
+
+					if (LayerElementNormal)
+					{
+						int NormalMapIndex = (NormalMappingMode == FbxLayerElement::eByControlPoint) ? iControlPointIndex : RealFbxVertexIndex;
+						int NormalValueIndex = (NormalReferenceMode == FbxLayerElement::eDirect) ? NormalMapIndex : LayerElementNormal->GetIndexArray().GetAt(NormalMapIndex);
+						FbxVector4 TempValue = LayerElementNormal->GetDirectArray().GetAt(NormalValueIndex);
+						TempValue = TotalMatrixForNormal.MultT(TempValue);
+						FVector TangentZ = ConvertDir(TempValue);
+						mVertices;
+					}
 				}
 			}
 		}
