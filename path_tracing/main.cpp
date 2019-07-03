@@ -28,7 +28,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassEx(&wc);
 
-	RECT wr = { 0,0,500,400 };
+	RECT wr = { 0,0,500,500 };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hWind = CreateWindowEx
@@ -49,6 +49,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShowWindow(g_hWind, nCmdShow);
 
+	extern void SetUpScene();
+	SetUpScene();
 
 	MSG msg;
 	while (true)
@@ -72,6 +74,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	switch (message)
 	{
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc;   // DC(可画图的内存对象) 的句柄
+
+		// 通过窗口句柄获取该窗口的 DC
+		hdc = BeginPaint(hWnd, &ps);
+
+		extern void Render(int &W, int &H, unsigned int** Colors);
+		int W, H;
+		unsigned int* Colors;
+		Render(W, H, &Colors);
+		for (int i = 0; i < H; i++)
+		{
+			for (int j = 0; j < W; ++j)
+			{
+				SetPixel(hdc, i, j, Colors[i*W+j]);
+			}
+		}
+		EndPaint(hWnd, &ps);
+		break;
+	}
 	case WM_DESTROY:
 	{
 		PostQuitMessage(0);
