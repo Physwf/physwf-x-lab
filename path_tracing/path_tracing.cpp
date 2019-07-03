@@ -272,7 +272,7 @@ struct Scene
 
 	Color Radiance(const Ray& InRay, int Depth)
 	{
-		if (Depth > 1000)
+		if (Depth > 10)
 		{
 			return Color::Black;
 		}
@@ -303,43 +303,43 @@ Scene S;
 
 void SetUpScene()
 {
-	S.C.SetPosition({ 0,0,-500 });
+	S.C.SetPosition({ 0,250,-500 });
 	S.C.SetUp({ 0.0f,1.0f,0.0f });
 	S.C.SetViewport(500, 500);
-	S.C.LookAt({ 0,0,0 });
+	S.C.LookAt({ 0,250,250 });
 	S.C.SetLen(400.0f);
 
-	S.Walls[0].Center = {0,0,500};
+	S.Walls[0].Center = {0,250,500};
 	S.Walls[0].Normal = { 0,0,-1.0f };
 	S.Walls[0].Width = 500;
 	S.Walls[0].M.Emittance = { 0,0,0 };
 	S.Walls[0].M.Reflectance = { 0.4f,0.5f,0.4f };
 
-	S.Walls[1].Center = { -250,0,250 };
+	S.Walls[1].Center = { -250,250,250 };
 	S.Walls[1].Normal = { 1.0f ,0,.0f };
 	S.Walls[1].Width = 500;
 	S.Walls[1].M.Emittance = { 0,0,0 };
 	S.Walls[1].M.Reflectance = { 0.4f,0.5f,0.4f };
 
-	S.Walls[2].Center = { 0,250,250 };
+	S.Walls[2].Center = { 0,500,250 };
 	S.Walls[2].Normal = { 0,-1,0 };
 	S.Walls[2].Width = 500;
 	S.Walls[2].M.Emittance = { 0,0,0 };
 	S.Walls[2].M.Reflectance = { 0.4f,0.5f,0.4f };
 
-	S.Walls[3].Center = { 250,0,250 };
+	S.Walls[3].Center = { 250,250,250 };
 	S.Walls[3].Normal = { -1.0f, 0,.0f };
 	S.Walls[3].Width = 500;
 	S.Walls[3].M.Emittance = { 0,0,0 };
 	S.Walls[3].M.Reflectance = { 0.4f,0.5f,0.4f };
 
-	S.Walls[4].Center = { 0,-250.0f,250.0f };
+	S.Walls[4].Center = { 0,0.0f,250.0f };
 	S.Walls[4].Normal = { 0, 1.0f, 0.0f };
 	S.Walls[4].Width = 500;
 	S.Walls[4].M.Emittance = { 0,0,0 };
 	S.Walls[4].M.Reflectance = { 0.4f,0.5f,0.4f };
 
-	S.Balls[0].Position = { 0,0,250 };
+	S.Balls[0].Position = { 0,250,250 };
 	S.Balls[0].fRadius = 80.0f;
 	S.Balls[0].M.Emittance = { 0,0,0 };
 	S.Balls[0].M.Reflectance = { 0.8f,0.7f,0.7f };
