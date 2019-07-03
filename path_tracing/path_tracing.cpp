@@ -33,6 +33,7 @@ struct Ray
 	Vec Dir;
 };
 
+
 struct Material
 {
 
@@ -81,10 +82,22 @@ struct Light
 
 };
 
+struct HitResult
+{
+	float t;
+	Material M;
+};
+
+
 struct Scene
 {
 	Square Walls[5];
 	Sphere Ball[1];
+
+	HitResult Trace(const Ray& Ray)
+	{
+
+	}
 
 	Vec Radiance(Ray InRay)
 	{
