@@ -14,6 +14,9 @@ HWND g_hWind = NULL;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	extern void SetUpScene();
+	SetUpScene();
+
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
@@ -47,10 +50,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		NULL
 	);
 
+
+
 	ShowWindow(g_hWind, nCmdShow);
 
-	extern void SetUpScene();
-	SetUpScene();
+
 
 	MSG msg;
 	while (true)
@@ -90,7 +94,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			for (int j = 0; j < W; ++j)
 			{
-				SetPixel(hdc, i, j, Colors[i*W+j]);
+				SetPixel(hdc, j, i, Colors[i*W + j]);
+				//SetPixel(hdc, j, i, 0x00FF00);
 			}
 		}
 		EndPaint(hWnd, &ps);

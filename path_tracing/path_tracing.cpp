@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <assert.h>
 
 struct Vec
 {
@@ -61,6 +62,15 @@ struct Color
 	{
 		return { R / fValue, G / fValue, B / fValue };
 	}
+	void Clamp()
+	{
+		if (R < 0.0f) R = 0.0f;
+		else if(R > 1.0f) R = 1.0f;
+		if (G < 0.0f) G = 0.0f;
+		else if (G > 1.0f) G = 1.0f;
+		if (B < 0.0f) B = 0.0f;
+		else if (B > 1.0f) B = 1.0f;
+	}
 	static Color Black;
 	static Color White;
 };
@@ -108,17 +118,23 @@ struct Square
 		Result.bHitted = false;
 		float fDenominator = InRay.Dir * Normal;
 		if (fabsf(fDenominator) <= 0.00000001f) return false;
-		Result.t = (Center - InRay.Position)*Normal / fDenominator;
+		float t = (Center - InRay.Position)*Normal / fDenominator;
+		if (t <= 0.0f) return false;
 		Result.HitPoint =
 		{ 
-			InRay.Position.X + InRay.Dir.X * Result.t,
-			InRay.Position.Y + InRay.Dir.Y * Result.t,
-			InRay.Position.Z + InRay.Dir.Z * Result.t
+			InRay.Position.X + InRay.Dir.X * t,
+			InRay.Position.Y + InRay.Dir.Y * t,
+			InRay.Position.Z + InRay.Dir.Z * t
 		};
 		float fHalfW = Width / 2.0f;
-		Result.M = M;
-		Result.Normal = Normal;
 		Result.bHitted = (fabsf(Result.HitPoint.X - Center.X) < fHalfW) && (fabsf(Result.HitPoint.Y - Center.Y) < fHalfW) && (fabsf(Result.HitPoint.Z - Center.Z) < fHalfW);
+		if (Result.bHitted)
+		{
+			Result.M = M;
+			Result.Normal = Normal;
+			Result.t = t;
+		}
+
 		return Result.bHitted;
 	}
 };
@@ -138,13 +154,23 @@ struct Sphere
 		float fLen = PositionVec.Length();
 		float fPart2 = fValue * fValue - (fLen * fLen - fRadius * fRadius);
 		if (fPart2 < 0.0f) return false;
-		float fPart1 = -(InRay.Dir*PositionVec);
+		float fPart1 = -fValue;
 		//float t1 = fPart1 + fPart2;
+		float t1 = fPart1 + sqrtf(fPart2);
+		float t2 = fPart1 - sqrtf(fPart2);
+		float t = t1 < t2 ? t1 : t2;
+		if (t <= 0.0f) return false;
+		Result.t = t;
 		Result.bHitted = true;
 		Result.M = M;
-		Result.t = fPart1 - fPart2;
-		Result.HitPoint = InRay.Position + Result.t * InRay.Dir;
+		Result.HitPoint = InRay.Position + t * InRay.Dir;
+		float dist = (Result.HitPoint - Position).Length();
+// 		if (fabsf(dist - fRadius) < 0.001)
+// 		{
+// 			dist *= 1;
+// 		}
 		Result.Normal = Result.HitPoint - Position;
+		Result.Normal.Normalize();
 		return true;
 	}
 };
@@ -161,16 +187,22 @@ struct Circle
 		Result.bHitted = false;
 		float fDenominator = InRay.Dir * Normal;
 		if (fabsf(fDenominator) <= 0.00000001f) return false;
-		Result.t = (Center - InRay.Position)*Normal / fDenominator;
+		float t = (Center - InRay.Position)*Normal / fDenominator;
+		if (t <= 0.0f) return false;
 		Result.HitPoint =
 		{
-			InRay.Position.X + InRay.Dir.X * Result.t,
-			InRay.Position.Y + InRay.Dir.Y * Result.t,
-			InRay.Position.Z + InRay.Dir.Z * Result.t
+			InRay.Position.X + InRay.Dir.X * t,
+			InRay.Position.Y + InRay.Dir.Y * t,
+			InRay.Position.Z + InRay.Dir.Z * t
 		};
-		Result.M = M;
-		Result.Normal = Normal;
+		
 		Result.bHitted = (Center - Result.HitPoint).Length() < fRadius;
+		if (Result.bHitted)
+		{
+			Result.t = t;
+			Result.M = M;
+			Result.Normal = Normal;
+		}
 		return Result.bHitted;
 	}
 };
@@ -200,7 +232,7 @@ struct Camera
 		HorizentalVec.Normalize();
 		Ray Result;
 		Result.Position = Eye;
-		Result.Dir = (ScreenCenter + (iPixelX - Width / 2)*HorizentalVec + ( Height / 2 - iPixelY)*Up) - Eye;
+		Result.Dir = ScreenCenter + (iPixelX - Width / 2)*HorizentalVec + ( Height / 2 - iPixelY)*Up;
 		Result.Dir.Normalize();
 		return Result;
 	}
@@ -225,35 +257,38 @@ struct Scene
 		{
 			if (l.Intersect(InRay, Temp))
 			{
+				assert(Temp.t != 0.0f);
 				if (Result.t > Temp.t)
 				{
 					Result = Temp;
 				}
 			}
 		}
-
+		
 		for (Sphere& b : Balls)
 		{
 			if (b.Intersect(InRay, Temp))
 			{
+				assert(Temp.t != 0.0f);
 				if (Result.t > Temp.t)
 				{
 					Result = Temp;
 				}
 			}
 		}
-
+		
 		for (Square& o : Walls)
 		{
 			if (o.Intersect(InRay, Temp))
 			{
+				assert(Temp.t != 0.0f);
 				if (Result.t > Temp.t)
 				{
 					Result = Temp;
 				}
 			}
 		}
-
+		
 		return Result;
 	}
 
@@ -265,9 +300,11 @@ struct Scene
 		RandomVec.Normalize();
 		Vec Tangent = Normal.Multiply(RandomVec);
 		Tangent.Normalize();
-		float theta = (rand() / (RAND_MAX + 1.0f))*0.5f * 3.1415926f;
+		float theta = (rand() / (RAND_MAX + 1.0f)) * 3.1415926f / 2.0f;
 		float costheta = cosf(theta);
-		return (costheta * Normal) + (1.0f - costheta)*(Normal*Tangent)*Tangent;// +sinf(thda) * (Tangent.Multiply(Normal));
+		Vec Result = (costheta * Normal) + (1.0f - costheta)*(Normal*Tangent)*Tangent + sinf(theta) * (Tangent.Multiply(Normal));
+		Result.Normalize();
+		return Result;
 	}
 
 	Color Radiance(const Ray& InRay, int Depth)
@@ -286,16 +323,17 @@ struct Scene
 		Ray newRay;
 		newRay.Position = Result.HitPoint;
 		newRay.Dir = RandomUnitVectorInHemisphereOf(Result.Normal);
-		newRay.Dir.Normalize();
 
-		const float p = 1 / (2 * 3.1415926f);
+		const float p = 1.0f / (2 * 3.1415926f);
 
 		float cos_theta = newRay.Dir * Result.Normal;
 		Color BRDF = Result.M.Reflectance / 3.1415926f;
 
 		Color Incomming = Radiance(newRay, Depth + 1);
-
-		return Result.M.Emittance + ((cos_theta / p) * BRDF * Incomming );
+		//assert(Incomming.R == Incomming.G);
+		//assert(Incomming.G == Incomming.B);
+		Color C = Result.M.Emittance + ((cos_theta / p) * BRDF * Incomming);
+		return C;
 	}
 };
 
@@ -309,48 +347,48 @@ void SetUpScene()
 	S.C.LookAt({ 0,250,250 });
 	S.C.SetLen(400.0f);
 
-	S.Walls[0].Center = {0,250,500};
-	S.Walls[0].Normal = { 0,0,-1.0f };
+	S.Walls[0].Center = { 0, 250, 500 };
+	S.Walls[0].Normal = { 0, 0,	-1.0f };
 	S.Walls[0].Width = 500;
 	S.Walls[0].M.Emittance = { 0,0,0 };
-	S.Walls[0].M.Reflectance = { 0.4f,0.5f,0.4f };
+	S.Walls[0].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
-	S.Walls[1].Center = { -250,250,250 };
-	S.Walls[1].Normal = { 1.0f ,0,.0f };
+	S.Walls[1].Center = { -250, 250, 250 };
+	S.Walls[1].Normal = { 1, 0, 0 };
 	S.Walls[1].Width = 500;
 	S.Walls[1].M.Emittance = { 0,0,0 };
-	S.Walls[1].M.Reflectance = { 0.4f,0.5f,0.4f };
+	S.Walls[1].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
 	S.Walls[2].Center = { 0,500,250 };
 	S.Walls[2].Normal = { 0,-1,0 };
 	S.Walls[2].Width = 500;
 	S.Walls[2].M.Emittance = { 0,0,0 };
-	S.Walls[2].M.Reflectance = { 0.4f,0.5f,0.4f };
+	S.Walls[2].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
 	S.Walls[3].Center = { 250,250,250 };
 	S.Walls[3].Normal = { -1.0f, 0,.0f };
 	S.Walls[3].Width = 500;
 	S.Walls[3].M.Emittance = { 0,0,0 };
-	S.Walls[3].M.Reflectance = { 0.4f,0.5f,0.4f };
+	S.Walls[3].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
-	S.Walls[4].Center = { 0,0.0f,250.0f };
+	S.Walls[4].Center = { 0.0f, 0.0f,250.0f };
 	S.Walls[4].Normal = { 0, 1.0f, 0.0f };
 	S.Walls[4].Width = 500;
 	S.Walls[4].M.Emittance = { 0,0,0 };
-	S.Walls[4].M.Reflectance = { 0.4f,0.5f,0.4f };
+	S.Walls[4].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
-	S.Balls[0].Position = { 0,250,250 };
-	S.Balls[0].fRadius = 80.0f;
+	S.Balls[0].Position = { 0,80,250 };
+	S.Balls[0].fRadius = 100.0f;
 	S.Balls[0].M.Emittance = { 0,0,0 };
-	S.Balls[0].M.Reflectance = { 0.8f,0.7f,0.7f };
+	S.Balls[0].M.Reflectance = { 0.6f,0.6f,0.6f };
 
-	S.Lights[0].Center = { 0,250,250 };
-	S.Lights[0].fRadius = 200;
+	S.Lights[0].Center = { 0,500,250 };
+	S.Lights[0].fRadius = 100;
 	S.Lights[0].Normal = { 0,-1,0 };
-	S.Lights[0].M.Emittance = { 1,1,1 };
+	S.Lights[0].M.Emittance = {0.6f,0.5f,0.7f };
 	S.Lights[0].M.Reflectance = { 0,0,0 };
 }
-
+#include <stdio.h>
 void Render(int &W, int &H, unsigned int** Colors)
 {
 	W = 500;
@@ -363,12 +401,20 @@ void Render(int &W, int &H, unsigned int** Colors)
 			//Ray R = S.C.GetPixelRay(250, 10);
 			Ray R = S.C.GetPixelRay(x, y);
 			Color C = { 0,0,0 };
-			for (int i = 0; i < 8; ++i)
+			for (int i = 0; i < 16; ++i)
 			{
 				C = C + S.Radiance(R, 0);
+				//assert(C.R == C.G);
+				//assert(C.R == C.B);
+				//assert(C.R == C.B);
 			}
-			C = C / 8.0f;
-			Pixel[y * 500 + x] = C.R*255 * 0x10000 + C.G * 255 * 0x100 + C.B * 255 ;
+			C = C / 16.0;
+			C.Clamp();
+			unsigned char r = (unsigned char)(C.R * 255);
+			unsigned char g = (unsigned char)(C.G * 255);
+			unsigned char b = (unsigned char)(C.B * 255);
+			unsigned int c = (r << 16) + (g << 8 )+ b;
+			Pixel[y * 500 + x] = c;
 		}
 	}
 	*Colors = Pixel;
