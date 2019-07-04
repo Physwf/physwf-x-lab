@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
 
 struct Vec
 {
@@ -228,7 +229,7 @@ struct Camera
 		Vec Dir = LookAtTarget - Eye;
 		Dir.Normalize();
 		Vec ScreenCenter = Len*Dir;
-		Vec HorizentalVec = Dir.Multiply(Up);
+		Vec HorizentalVec = Up.Multiply(Dir);// Dir.Multiply(Up);
 		HorizentalVec.Normalize();
 		Ray Result;
 		Result.Position = Eye;
@@ -292,12 +293,12 @@ struct Scene
 		return Result;
 	}
 
+
 	Vec RandomUnitVectorInHemisphereOf(Vec Normal)
 	{
-		Vec RandomVec = { rand() / (RAND_MAX + 1.0f),rand() / (RAND_MAX + 1.0f),rand() / (RAND_MAX + 1.0f) };
-		if (RandomVec == Normal) return RandomUnitVectorInHemisphereOf(Normal);
-		Normal.Normalize();
+		Vec RandomVec = { (float)(RAND_MAX / 2 - rand()) ,(float)(RAND_MAX / 2 - rand()) ,(float)(RAND_MAX / 2 - rand()) };
 		RandomVec.Normalize();
+		if (RandomVec == Normal) return RandomUnitVectorInHemisphereOf(Normal);
 		Vec Tangent = Normal.Multiply(RandomVec);
 		Tangent.Normalize();
 		float theta = (rand() / (RAND_MAX + 1.0f)) * 3.1415926f / 2.0f;
@@ -309,7 +310,7 @@ struct Scene
 
 	Color Radiance(const Ray& InRay, int Depth)
 	{
-		if (Depth > 10)
+		if (Depth > 8)
 		{
 			return Color::Black;
 		}
@@ -341,7 +342,7 @@ Scene S;
 
 void SetUpScene()
 {
-	S.C.SetPosition({ 0,250,-500 });
+	S.C.SetPosition({ 0,250,-400 });
 	S.C.SetUp({ 0.0f,1.0f,0.0f });
 	S.C.SetViewport(500, 500);
 	S.C.LookAt({ 0,250,250 });
@@ -377,16 +378,19 @@ void SetUpScene()
 	S.Walls[4].M.Emittance = { 0,0,0 };
 	S.Walls[4].M.Reflectance = { 0.7f, 0.7f, 0.7f };
 
-	S.Balls[0].Position = { 0,80,250 };
+	S.Balls[0].Position = { 0,100,250 };
 	S.Balls[0].fRadius = 100.0f;
 	S.Balls[0].M.Emittance = { 0,0,0 };
-	S.Balls[0].M.Reflectance = { 0.6f,0.6f,0.6f };
+	S.Balls[0].M.Reflectance = { 1.f,1.f,1.f };
 
 	S.Lights[0].Center = { 0,500,250 };
-	S.Lights[0].fRadius = 100;
+	S.Lights[0].fRadius = 150;
 	S.Lights[0].Normal = { 0,-1,0 };
 	S.Lights[0].M.Emittance = {0.6f,0.5f,0.7f };
 	S.Lights[0].M.Reflectance = { 0,0,0 };
+
+	time_t t;
+	srand((unsigned int)time(&t));
 }
 #include <stdio.h>
 void Render(int &W, int &H, unsigned int** Colors)
@@ -401,14 +405,14 @@ void Render(int &W, int &H, unsigned int** Colors)
 			//Ray R = S.C.GetPixelRay(250, 10);
 			Ray R = S.C.GetPixelRay(x, y);
 			Color C = { 0,0,0 };
-			for (int i = 0; i < 16; ++i)
+			for (int i = 0; i < 2000; ++i)
 			{
 				C = C + S.Radiance(R, 0);
 				//assert(C.R == C.G);
 				//assert(C.R == C.B);
 				//assert(C.R == C.B);
 			}
-			C = C / 16.0;
+			C = C / 2000;
 			C.Clamp();
 			unsigned char r = (unsigned char)(C.R * 255);
 			unsigned char g = (unsigned char)(C.G * 255);
