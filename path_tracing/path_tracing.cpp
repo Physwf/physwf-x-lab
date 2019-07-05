@@ -393,7 +393,7 @@ void SetUpScene()
 	srand((unsigned int)time(&t));
 }
 #include <stdio.h>
-void Render(int &W, int &H, unsigned int** Colors)
+void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 {
 	W = 500;
 	H = 500;
@@ -405,14 +405,14 @@ void Render(int &W, int &H, unsigned int** Colors)
 			//Ray R = S.C.GetPixelRay(250, 10);
 			Ray R = S.C.GetPixelRay(x, y);
 			Color C = { 0,0,0 };
-			for (int i = 0; i < 2000; ++i)
+			for (int i = 0; i < iNumSample; ++i)
 			{
 				C = C + S.Radiance(R, 0);
 				//assert(C.R == C.G);
 				//assert(C.R == C.B);
 				//assert(C.R == C.B);
 			}
-			C = C / 2000;
+			C = C / iNumSample;
 			C.Clamp();
 			unsigned char r = (unsigned char)(C.R * 255);
 			unsigned char g = (unsigned char)(C.G * 255);

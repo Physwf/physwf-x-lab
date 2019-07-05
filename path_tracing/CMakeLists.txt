@@ -6,6 +6,7 @@ add_executable(path_tracing
 ${DIR_PROJECT}/main.cpp
 ${DIR_PROJECT}/path_tracing.cpp
 ${DIR_PROJECT}/log.h
+${DIR_PROJECT}/utils.cpp
 )
 
 add_definitions(-DUNICODE -D_UNICODE)
@@ -17,6 +18,8 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	MESSAGE(STATUS "current platform: Linux ")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
 	MESSAGE(STATUS "current platform: Windows")
+	target_link_libraries (path_tracing "gdiplus.lib")
+	target_link_libraries (path_tracing "Shlwapi.lib")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	MESSAGE(STATUS "current platform: FreeBSD")
 ELSE ()

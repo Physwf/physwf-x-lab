@@ -86,16 +86,24 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		// 通过窗口句柄获取该窗口的 DC
 		hdc = BeginPaint(hWnd, &ps);
 
-		extern void Render(int &W, int &H, unsigned int** Colors);
+		extern void Render(int &W, int &H, int iNumSample, unsigned int** Colors);
+		extern bool SavePixelsToPNG(const WCHAR* pFileName, int W, int H, unsigned int* pPixels);
 		int W, H;
 		unsigned int* Colors;
-		Render(W, H, &Colors);
+		const int numSample = 100;
+		Render(W, H, numSample, &Colors);
+		WCHAR FileName[128] = { 0 };
+		wsprintf(FileName, L".\\PT%d.png", numSample);
+		SavePixelsToPNG(FileName, W, H, Colors);
 		for (int i = 0; i < H; i++)
 		{
 			for (int j = 0; j < W; ++j)
 			{
-				SetPixel(hdc, j, i, Colors[i*W + j]);
-				//SetPixel(hdc, j, i, 0x00FF00);
+				unsigned char R = (Colors[i*W + j] & 0xFF0000) >> 16;
+				unsigned char G = (Colors[i*W + j] & 0x00FF00) >> 8;
+				unsigned char B = Colors[i*W + j] & 0x0000FF;
+				SetPixel(hdc, j, i, RGB( R , G , B));
+				//SetPixel(hdc, j, i, 0x0000FF);
 			}
 		}
 		EndPaint(hWnd, &ps);
