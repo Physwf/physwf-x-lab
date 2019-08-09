@@ -25,6 +25,11 @@ struct Vertex
 	FVector2 UV2;
 };
 
+class FStaticMeshRenderData
+{
+
+};
+
 class Mesh : public Actor
 {
 public:

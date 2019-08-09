@@ -70,6 +70,11 @@ public:
 		return Reference != nullptr;
 	}
 
+	void SafeRelease()
+	{
+		*this = nullptr;
+	}
+
 	uint32 GetRefCount()
 	{
 		uint32 Result = 0;
