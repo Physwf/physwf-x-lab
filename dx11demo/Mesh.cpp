@@ -104,6 +104,8 @@ void Mesh::ImportFromFBX(const char* pFileName)
 		{
 			FbxMesh* lMesh = lNode->GetMesh();
 
+			XStaticMeshSection Section;
+
 			lMesh->RemoveBadPolygons();
 
 			if (!lMesh->IsTriangleMesh())
@@ -192,6 +194,9 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			auto VertexOffset = mVertices.size();
 			auto VertexInstanceOffset = mIndices.size();
 
+			Section.FirstIndex = VertexInstanceOffset;
+			Section.MinVertexIndex = VertexInstanceOffset;
+			Section.MaxVertexIndex = VertexInstanceOffset + VertexCount;
 
 			for (auto VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 			{
@@ -206,6 +211,9 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			int PolygonCount = lMesh->GetPolygonCount();
 			int CurrentVertexInstanceIndex = 0;
 			int SkippedVertexInstance = 0;
+
+			Section.NumTriangles = lMesh->GetPolygonCount();
+			Sections.push_back(Section);
 
 			for (auto PolygonIndex = 0; PolygonIndex < PolygonCount; ++PolygonIndex)
 			{
@@ -412,7 +420,10 @@ void Mesh::Draw()
 	D3D11DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	D3D11DeviceContext->VSSetShader(VertexShader, 0, 0);
 	D3D11DeviceContext->PSSetShader(PixelShader, 0, 0);
-	D3D11DeviceContext->DrawIndexed(mIndices.size(), 0, 0);
+	for (const auto& Section : Sections)
+	{
+		D3D11DeviceContext->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
+	}
 }
 
 int Mesh::CreateVertex()

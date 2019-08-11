@@ -60,6 +60,13 @@ private:
 	uint32 Usage;
 };
 
+class XRHISampleState : public XRHIResource {};
+class XRHIRasterizerState : public XRHIResource
+{
+public:
+	virtual bool GetInitializer
+};
+
 class XRHIVertexBuffer : public XRHIResource
 {
 public:

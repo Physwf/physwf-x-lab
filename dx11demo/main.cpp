@@ -32,7 +32,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassEx(&wc);
 
-	RECT wr = { 0,0,500,400 };
+	RECT wr = { 0,0,720,720 };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hWind = CreateWindowEx
@@ -72,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Camera C;
 	C.SetPostion(XMVectorSet(0, 100, -200, 1));
 	C.LookAt(XMVectorSet(0, 100, 0, 1));
-	C.SetViewport(500, 400);
+	C.SetViewport(720, 720);
 	C.SetLen(1, 400);
 
 	C.InitResource();

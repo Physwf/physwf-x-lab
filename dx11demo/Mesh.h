@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Actor.h"
+#include "Rendering/StaticMeshResources.h"
 
 struct FVector
 {
@@ -47,6 +48,8 @@ private:
 private:
 	std::vector<Vertex> mVertices;
 	std::vector<unsigned int> mIndices;
+	
+	std::vector<XStaticMeshSection> Sections;
 
 	ID3D11InputLayout* InputLayout = NULL;
 	ID3D11Buffer* ConstantBuffer = NULL;
