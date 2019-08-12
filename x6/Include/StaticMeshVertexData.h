@@ -4,14 +4,14 @@
 #include "Rendering/StaticMeshVertexDataInterface.h"
 
 template <typename VertexDataType>
-class TStaicMeshVertexData :
+class TStaticMeshVertexData :
 	public XStaticMeshVertexDataInterface
 {
 	TResourceArray<VertexDataType, VERTEXBUFFER_ALIGNMENT> Data;
 
 public:
 
-	TStaicMeshVertexData(bool bNeedCPUAccess = false)
+	TStaticMeshVertexData(bool bNeedCPUAccess = false)
 		:Data(bNeedCPUAccess)
 	{
 

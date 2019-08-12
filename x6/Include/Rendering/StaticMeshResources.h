@@ -11,3 +11,9 @@ struct XStaticMeshSection
 	uint32 MinVertexIndex;
 	uint32 MaxVertexIndex;
 };
+
+struct XStaticMeshVertexBuffers
+{
+	XStaticMeshVertexBuffer StaticMeshVertexBuffer;
+	XPositionVetexBuffer PositionVertexBuffer;
+};

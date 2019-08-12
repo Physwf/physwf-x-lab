@@ -60,6 +60,7 @@ private:
 	uint32 Usage;
 };
 
+class XRHIShaderResourceView : public XRenderResource {};
 class XRHISampleState : public XRHIResource {};
 class XRHIRasterizerState : public XRHIResource
 {
@@ -89,3 +90,6 @@ typedef TRefCountPtr<XRHIVertexBuffer>	XVertexBufferRef;
 
 typedef XRHIIndexBuffer*				XIndexBufferRHIParamRef;
 typedef TRefCountPtr<XRHIIndexBuffer>	XIndexBufferRef;
+
+typedef XRHIShaderResourceView*					XShaderResourceViewRHIParamRef;
+typedef TRefCountPtr<XRHIShaderResourceView>	XShaderResourceViewRHIRef;
