@@ -41,6 +41,28 @@ void XColorVertexBuffer::Init(uint32 InNumVertices)
 	Data = NumVertices ? VertexData->GetDataPointer() : nullptr;
 }
 
+uint32 XColorVertexBuffer::GetAllocatedSize() const
+{
+	if (VertexData)
+	{
+		return VertexData->GetResourceSize();
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void XColorVertexBuffer::InitRHI()
+{
+
+}
+
+void XColorVertexBuffer::ReleaseRHI()
+{
+
+}
+
 void XColorVertexBuffer::AllocateData(bool bNeedCPUAccess /*= true*/)
 {
 
