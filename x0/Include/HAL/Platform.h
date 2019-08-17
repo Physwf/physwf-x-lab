@@ -28,11 +28,23 @@ typedef XPlatformTypes::int64		int64;
 typedef XPlatformTypes::ANSICHAR	ANSICHAR;
 typedef XPlatformTypes::WIDECHAR	WIDECHAR;
 typedef XPlatformTypes::TCHAR		TCHAR;
+typedef XPlatformTypes::CHAR8		UTF8CHAR;
+typedef XPlatformTypes::CHAR16		UCS2CHAR;
+typedef XPlatformTypes::CHAR16		UTF16CHAR;
+typedef XPlatformTypes::CHAR32		UTF32CHAR;
 
 typedef XPlatformTypes::UPTRINT		UPTRINT;
 typedef XPlatformTypes::PTRINT		PTRINT;
 typedef XPlatformTypes::SIZE_T		SIZE_T;
 typedef XPlatformTypes::SSIZE_T		SSIZE_T;
 
+
+#ifndef PLATFORM_TCHAR_IS_4_BYTES
+#define PLATFORM_TCHAR_IS_4_BYTES			0
+#endif
+
+#ifndef PLATFORM_TCHAR_IS_CHAR16
+#define PLATFORM_TCHAR_IS_CHAR16			0
+#endif
 
 

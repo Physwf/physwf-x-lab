@@ -32,6 +32,9 @@ struct XGenericPlatformTypes
 
 	typedef char				ANSICHAR;
 	typedef wchar_t				WIDECHAR;
+	typedef uint8				CHAR8;
+	typedef uint16				CHAR16;
+	typedef uint32				CHAR32;
 	typedef WIDECHAR			TCHAR;
 
 	typedef SelectIntPointerType<uint32, uint64, sizeof(void*)>::TIntPointer UPTRINT;
