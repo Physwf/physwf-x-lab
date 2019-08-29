@@ -134,4 +134,145 @@ struct XMicrosoftPlatformString : public XGenericPlatformString
 		va_end(ArgPtr);
 		return Result;
 	}
+
+	static FORCEINLINE ANSICHAR* Strcpy(ANSICHAR* Dest, SIZE_T DestCount, const ANSICHAR* Src)
+	{
+#if USE_SECURE_CRT
+		strcpy_s(Dest, DestCount, Src);
+		return Dest;
+#else
+		return (ANSICHAR*)strcpy(Dest, Src);
+#endif
+	}
+
+	static FORCEINLINE void Strncpy(ANSICHAR* Dest, const ANSICHAR* Src, SIZE_T MaxLen)
+	{
+#if USE_SECURE_CRT
+		strncpy_s(Dest, MaxLen, Src, MaxLen - 1);
+#else
+		strncpy(Dest, Src, MaxLen);
+		return Dest[MaxLen - 1] = 0;
+#endif
+	}
+
+	static FORCEINLINE ANSICHAR* Strcat(ANSICHAR* Dest, SIZE_T DestCount, const ANSICHAR* Src)
+	{
+#if USE_SECURE_CRT
+		strcat_s(Dest, DestCount, Src);
+		return Dest;
+#else
+		return (ANSICHAR*)strcat(Dest, Src);
+	}
+
+	static FORCEINLINE ANSICHAR* Strupr(ANSICHAR* Dest, SIZE_T DestCount)
+	{
+#if USE_SECURE_CRT
+		_strupr_s(Dest, DestCount);
+		return Dest;
+#else
+		return (ANSICHAR*)strupr(Dest);
+#endif
+	}
+
+	static FORCEINLINE int32 Strcmp(const ANSICHAR* String1, const ANSICHAR* String2)
+	{
+		return strcmp(String1, String2);
+	}
+
+	static FORCEINLINE int32 Strncmp(const ANSICHAR* String1, const ANSICHAR* String2, SIZE_T Count)
+	{
+		return strncmp(String1, String2, Count);
+	}
+
+	static FORCEINLINE int32 Stricmp(const ANSICHAR* String1, const ANSICHAR* String2)
+	{
+		return _stricmp(String1, String2);
+	}
+
+	template<typename CharType1,typename CharType2>
+	static FORCEINLINE int32 Stricmp(const CharType1* String1, const CharType2* String2)
+	{
+		return XGenericPlatformStricmp::Stricmp(String1, String2);
+	}
+
+	static FORCEINLINE int32 Strnicmp(const ANSICHAR* String1, const ANSICHAR* String2, SIZE_T Count)
+	{
+		return _strnicmp(String1, String2, Count);
+	}
+
+	static FORCEINLINE int32 Strlen(const ANSICHAR* String)
+	{
+		return strlen(String);
+	}
+
+	static FORCEINLINE const ANSICHAR* Strstr(const ANSICHAR* String, const ANSICHAR* Find)
+	{
+		return strstr(String, Find);
+	}
+	
+	static FORCEINLINE const ANSICHAR* Strchar(const ANSICHAR* String, ANSICHAR C)
+	{
+		return strchr(String, C);
+	}
+
+	static FORCEINLINE const ANSICHAR* Strrchr(const ANSICHAR* String, ANSICHAR C)
+	{
+		return strrchr(String, C);
+	}
+
+	static FORCEINLINE int32 Atoi(const ANSICHAR* String)
+	{
+		return atoi(String);
+	}
+
+	static FORCEINLINE int64 Atoi64(const ANSICHAR* String)
+	{
+		return _strtoi64(String, NULL, 10);
+	}
+
+	static FORCEINLINE float Atof(const ANSICHAR* String)
+	{
+		return (float)atof(String);
+	}
+
+	static FORCEINLINE double Atod(const ANSICHAR* String)
+	{
+		return atof(String);
+	}
+
+	static FORCEINLINE int32 Strtoi(const ANSICHAR* Start, ANSICHAR** End, Base)
+	{
+		return strtol(Start, End, Base);
+	}
+
+	static FORCEINLINE int64 Strtoi64(const ANSICHAR* Start, ANSICHAR** End, Base)
+	{
+		return _strtoi64(Start, End, Base);
+	}
+
+	static FORCEINLINE uint64 Strtoui64(const ANSICHAR* Start, ANSICHAR** End, Base)
+	{
+		return _strtoui64(Start, End, Base);
+	}
+
+	static FORCEINLINE ANSICHAR* Strtok(ANSICHAR* StrToken, const ANSICHAR* Delim, ANSICHAR** Context)
+	{
+		return strtok_s(StrToken, Delim, Context);
+	}
+
+	static FORCEINLINE int32 GetVarArgs(ANSICHAR* Dest, SIZE_T DestSize, int32 Count, const ANSICHAR*& Fmt, va_list ArgPtr)
+	{
+#if USE_SECURE_CRT
+		int32 Result = _vsnprintf_s(Dest, DestSize, Count, Fmt, ArgPtr);
+#else
+		int32 Result = _vsnprintf(Dest, Count, Fmt, ArgPtr);
+#endif
+		va_end(ArgPtr);
+		return Result;
+	}
+
+	static FORCEINLINE int32 Strlen(const UCS2CHAR* String)
+	{
+		return _tcslen((const WIDECHAR*)String);
+	}
 };
