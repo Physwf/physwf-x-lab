@@ -6,3 +6,5 @@
 #include "Windows/WindowsPlatformString.h"
 #elif PLATFORM_LINUX
 #endif
+
+typedef XWindowsPlatformString XPlatformString;
