@@ -7,12 +7,12 @@
 
 gl_context glContext;
 
-void glContextInit(GLuint width, GLuint height)
+void glContextInit()
 {
 	glClearError();
 
-	glContext.buffer_width	=	glClamp(width, (GLuint)MIN_BUFFER_WIDTH,  (GLuint)MAX_BUFFER_WIDTH);
-	glContext.buffer_height =	glClamp(width, (GLuint)MIN_BUFFER_HEIGHT, (GLuint)MAX_BUFFER_HEIGHT);
+	glContext.buffer_width = 0; //glClamp(width, (GLuint)MIN_BUFFER_WIDTH, (GLuint)MAX_BUFFER_WIDTH);
+	glContext.buffer_height = 0;// glClamp(width, (GLuint)MIN_BUFFER_HEIGHT, (GLuint)MAX_BUFFER_HEIGHT);
 
 	glContext.buffer = (gl_fragment*)glMAlloc(glContext.buffer_width * glContext.buffer_height * sizeof(gl_fragment));
 
@@ -40,7 +40,7 @@ void glClearError()
 	glContext.error_desc[0] = 0;
 }
 
-void glSetError(GLEnum error, const GLchar* szErrorDesc)
+void glSetError(GLenum error, const GLchar* szErrorDesc)
 {
 	glContext.error = error;
 	assert(strlen(szErrorDesc) < MAX_ERROR_DESC_LEGHT);

@@ -1,6 +1,7 @@
 #pragma once
 
-typedef unsigned int	GLEnum;
+typedef unsigned int	GLbitfield;
+typedef unsigned int	GLenum;
 typedef char			GLchar;
 typedef signed char		GLbyte;
 typedef unsigned char	GLubyte;
@@ -10,10 +11,34 @@ typedef short			GLshort;
 typedef unsigned short  GLushort;
 typedef int				GLsizei;
 typedef float			GLfloat;
+typedef float			GLclampf;
 typedef bool			GLbool;
+typedef void			GLvoid;
+
+//DataType
+
+#define GL_BYTE								0x0100
+#define GL_UNSIGNED_BYTE					0x0101
+#define GL_SHORT							0x0104
+#define GL_UNSIGNED_SHORT					0x0103
+#define GL_INT								0x0104
+#define GL_UNSIGNED_INT						0x0405
+#define GL_FLOAT							0x0406
+#define GL_DOUBLE							0x0406
+
+//Primitives
+#define GL_POINTS							0x0000
+#define GL_LINES							0x0001
+#define GL_LINE_LOOP						0x0002
+#define GL_LINE_STRIP						0x0003
+#define GL_TRIANGLES						0x0004
+#define GL_TRIANGLE_STRIP					0x0005
+#define GL_TRIANGLE_FAN						0x0006
+#define GL_QUADS							0x0007
+#define GL_QUAD_STRIP						0x0008
+#define GL_POLYGON							0x0009
 
 //GLerros
-
 #define GL_NO_ERROR							0
 #define GL_INVALID_ENUM						0x00100
 #define GL_INVALID_FRAMEBUFFER_OPERATION	0x00101
@@ -26,6 +51,9 @@ typedef bool			GLbool;
 
 #define NAIL_API
 
+NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
+NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
+NAIL_API void glClearDepth(GLclampf d);
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x);
 NAIL_API void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y);
 NAIL_API void glVertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z);
@@ -36,12 +64,15 @@ NAIL_API void glVertexAttrib2fv(GLuint index, const GLfloat* values);
 NAIL_API void glVertexAttrib3fv(GLuint index, const GLfloat* values);
 NAIL_API void glVertexAttrib4fv(GLuint index, const GLfloat* values);
 
-NAIL_API void glVertexAttribPointer(GLuint index, GLint size, GLEnum type, GLbool normalized, GLsizei stride, const void* ptr);
+NAIL_API void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLbool normalized, GLsizei stride, const void* ptr);
 
 NAIL_API void glEnableVertexAttribArray(GLuint index);
 NAIL_API void glDisableVertexAttribArray(GLuint index);
 
-NAIL_API GLuint glCreateShader(GLEnum type);
+NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count);
+NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+
+NAIL_API GLuint glCreateShader(GLenum type);
 NAIL_API void glDeleteShader(GLuint shader);
 NAIL_API GLuint glCreateProgram();
 NAIL_API void glAttachShader(GLuint program, GLuint shader);

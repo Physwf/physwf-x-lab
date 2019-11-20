@@ -29,7 +29,7 @@ struct gl_atrribute_pointer
 {
 	GLbool bEnabled;
 	const void* pointer;
-	GLEnum type;
+	GLenum type;
 	GLsizei stride;
 	gl_atrribute_pointer() :pointer(nullptr) {}
 };
@@ -96,6 +96,9 @@ struct gl_context
 {
 	GLuint			buffer_width;
 	GLuint			buffer_height;
+	gl_atrribute<GLfloat> clear_color;
+	GLclampf		clear_depth;
+
 	gl_fragment*	buffer;
 
 	gl_atrribute<GLfloat>			vertex_attributes[MAX_VERTEX_ATTRIBUTE];
@@ -105,7 +108,7 @@ struct gl_context
 	gl_fragment_shader_object_node*		fragment_shaders;
 	gl_program_object_node*				programs;
 
-	GLEnum error;
+	GLenum error;
 	GLchar error_desc[MAX_ERROR_DESC_LEGHT];
 };
 
@@ -113,7 +116,7 @@ struct gl_context
 
 extern gl_context glContext;
 
-void glContextInit(GLuint width, GLuint height);
+void glContextInit();
 void glContextDestroy();
 void glClearError();
-void glSetError(GLEnum error, const GLchar* szErrorDesc);
+void glSetError(GLenum error, const GLchar* szErrorDesc);
