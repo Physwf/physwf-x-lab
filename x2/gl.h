@@ -6,10 +6,12 @@ typedef char			GLchar;
 typedef signed char		GLbyte;
 typedef unsigned char	GLubyte;
 typedef int				GLint;
+typedef int				GLintptr;
 typedef unsigned int	GLuint;
 typedef short			GLshort;
 typedef unsigned short  GLushort;
 typedef int				GLsizei;
+typedef int				GLsizeiptr;
 typedef float			GLfloat;
 typedef float			GLclampf;
 typedef bool			GLbool;
@@ -27,16 +29,15 @@ typedef void			GLvoid;
 #define GL_DOUBLE							0x0406
 
 //Primitives
-#define GL_POINTS							0x0000
-#define GL_LINES							0x0001
-#define GL_LINE_LOOP						0x0002
+#define GL_POINT_LIST						0x0000
+#define GL_LINE_LIST						0x0001
+#define GL_LINE_LIST_ADJ					0x0002
 #define GL_LINE_STRIP						0x0003
-#define GL_TRIANGLES						0x0004
-#define GL_TRIANGLE_STRIP					0x0005
-#define GL_TRIANGLE_FAN						0x0006
-#define GL_QUADS							0x0007
-#define GL_QUAD_STRIP						0x0008
-#define GL_POLYGON							0x0009
+#define GL_LINE_STRIP_ADJ					0x0004
+#define GL_TRIANGLE_LIST					0x0005
+#define GL_TRIANGLE_LIST_ADJ				0x0006
+#define GL_TRIANGLE_STRIP					0x0007
+#define GL_TRIANGLE_STRIP_ADJ				0x0008
 
 //GLerros
 #define GL_NO_ERROR							0
@@ -69,6 +70,15 @@ NAIL_API void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboo
 NAIL_API void glEnableVertexAttribArray(GLuint index);
 NAIL_API void glDisableVertexAttribArray(GLuint index);
 
+NAIL_API void glGenBuffer(GLsizei n, GLuint* buffers);
+
+
+NAIL_API void glBindBuffer(GLenum target, GLuint buffer);
+NAIL_API void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
+NAIL_API void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data);
+NAIL_API void glGenVertexArrays(GLsizei n, GLuint* buffers);
+NAIL_API void glDeleteVertexArrays(GLsizei n, GLuint* buffers);
+NAIL_API void glBindVertexArray(GLuint buffer);
 NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 

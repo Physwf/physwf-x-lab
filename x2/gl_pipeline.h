@@ -15,24 +15,20 @@ struct gl_vector4
 	float x, y, z, w;
 };
 
-struct gl_point
+struct gl_primitive_list
 {
-	gl_vector3 v;
+	gl_vector3* vertices;
+	GLsizei		vertices_number;
+	GLenum		primitive_type;
 };
 
-struct gl_line
+struct gl_ia_stage
 {
-	gl_vector3 v1, v2;
-};
+	GLvoid* indices_copy;
+	GLenum index_type;
+	GLsizei indices_number;
 
-struct gl_triangle
-{
-	gl_vector3 v1, v2, v3;
-};
-
-struct gl_quad
-{
-	gl_vector3 v1, v2, v3, v4;
+	gl_primitive_list		primitives;
 };
 
 void gl_input_assemble()

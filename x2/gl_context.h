@@ -96,8 +96,9 @@ struct gl_context
 {
 	GLuint			buffer_width;
 	GLuint			buffer_height;
-	gl_atrribute<GLfloat> clear_color;
-	GLclampf		clear_depth;
+
+	gl_atrribute<GLfloat>	clear_color;
+	GLclampf				clear_depth;
 
 	gl_fragment*	buffer;
 

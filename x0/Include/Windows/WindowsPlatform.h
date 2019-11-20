@@ -15,6 +15,12 @@ struct X0_API XWindowsPlatformTypes : public XGenericPlatformTypes
 
 typedef XWindowsPlatformTypes XPlatformTypes;
 
+#define PLATFORM_DESKTOP					1
+#if defined( _WIN64 )
+#define PLATFORM_64BITS					1
+#else
+#define PLATFORM_64BITS					0
+#endif
 
 #define PLATFORM_LITTLE_ENDIAN						1
 #define PLATFORM_SUPPORTS_UNALIGNED_INT_LOAD		1
@@ -22,6 +28,11 @@ typedef XWindowsPlatformTypes XPlatformTypes;
 
 #define PLATFORM_SUPPORTS_PRAGMA_PACK				1
 
+#if defined(__clang__)
+#define PLATFORM_ENABLE_VECTORINTRINSICS				0
+#else
+#define PLATFORM_ENABLE_VECTORINTRINSICS				1
+#endif
 
 #define PLATFORM_HAS_BSD_TIME						1
 #define PLATFORM_USE_PTHREAD						1
