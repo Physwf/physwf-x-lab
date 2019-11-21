@@ -14,24 +14,28 @@ void glContextInit()
 	glContext.buffer_width = 0; //glClamp(width, (GLuint)MIN_BUFFER_WIDTH, (GLuint)MAX_BUFFER_WIDTH);
 	glContext.buffer_height = 0;// glClamp(width, (GLuint)MIN_BUFFER_HEIGHT, (GLuint)MAX_BUFFER_HEIGHT);
 
-	glContext.buffer = (gl_fragment*)glMAlloc(glContext.buffer_width * glContext.buffer_height * sizeof(gl_fragment));
+	glContext.array_buffer = 0;
+	glContext.index_buffer = 0;
 
-	for (gl_atrribute<GLfloat>& attrib : glContext.vertex_attributes)
-	{
-		attrib.values[0] = attrib.values[1] = attrib.values[2] = attrib.values[3] = .0f;
-	}
+	glContext.indices_copy = nullptr;
+	//glContext.buffer = (gl_fragment*)gl_malloc(glContext.buffer_width * glContext.buffer_height * sizeof(gl_fragment));
 
-	for (gl_atrribute_pointer& attrib_ptr : glContext.vertex_attribute_pointers)
-	{
-		attrib_ptr.pointer = nullptr;
-		attrib_ptr.stride = 0;
-	}
+// 	for (gl_atrribute<GLfloat>& attrib : glContext.vertex_attributes)
+// 	{
+// 		attrib.values[0] = attrib.values[1] = attrib.values[2] = attrib.values[3] = .0f;
+// 	}
+
+// 	for (gl_atrribute_pointer& attrib_ptr : glContext.vertex_attribute_pointers)
+// 	{
+// 		attrib_ptr.pointer = nullptr;
+// 		attrib_ptr.stride = 0;
+// 	}
 }
 
 void glContextDestroy()
 {
 	glClearError();
-	glFree(glContext.buffer);
+	gl_free(glContext.buffer);
 }
 
 void glClearError()

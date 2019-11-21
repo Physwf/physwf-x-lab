@@ -71,14 +71,14 @@ NAIL_API void glEnableVertexAttribArray(GLuint index);
 NAIL_API void glDisableVertexAttribArray(GLuint index);
 
 NAIL_API void glGenBuffer(GLsizei n, GLuint* buffers);
-
-
 NAIL_API void glBindBuffer(GLenum target, GLuint buffer);
 NAIL_API void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage);
 NAIL_API void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data);
+
 NAIL_API void glGenVertexArrays(GLsizei n, GLuint* buffers);
 NAIL_API void glDeleteVertexArrays(GLsizei n, GLuint* buffers);
 NAIL_API void glBindVertexArray(GLuint buffer);
+
 NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 

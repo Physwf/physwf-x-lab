@@ -2,6 +2,6 @@
 
 #include "gl.h"
 
-int	  glMInit();
-void* glMAlloc(GLuint iSize);
-void  glFree(void* pData);
+int	  gl_minit();
+void* gl_malloc(GLuint iSize);
+void  gl_free(void* pData);

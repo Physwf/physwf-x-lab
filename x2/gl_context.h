@@ -27,9 +27,9 @@ union gl_atrribute
 
 struct gl_atrribute_pointer
 {
-	GLbool bEnabled;
-	const void* pointer;
-	GLenum type;
+	GLbool	bEnabled;
+	const GLvoid* pointer;
+	GLenum	type;
 	GLsizei stride;
 	gl_atrribute_pointer() :pointer(nullptr) {}
 };
@@ -102,8 +102,16 @@ struct gl_context
 
 	gl_fragment*	buffer;
 
+	GLuint			array_buffer;
+	GLuint			index_buffer;
+
 	gl_atrribute<GLfloat>			vertex_attributes[MAX_VERTEX_ATTRIBUTE];
 	gl_atrribute_pointer			vertex_attribute_pointers[MAX_VERTEX_ATTRIBUTE];
+
+	GLvoid* indices_copy;
+	GLsizei count;
+	GLenum	indices_type;
+	GLenum	primitive_type;
 
 	gl_vertex_shader_object_node*		vertex_shaders;
 	gl_fragment_shader_object_node*		fragment_shaders;

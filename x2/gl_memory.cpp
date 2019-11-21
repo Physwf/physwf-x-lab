@@ -1,17 +1,17 @@
 #include "gl_memory.h"
 #include <stdlib.h>
 
-int glMInit()
+int gl_minit()
 {
 	return 0;
 }
 
-void* glMAlloc(GLuint iSize)
+void* gl_malloc(GLuint iSize)
 {
 	return ::malloc(iSize);
 }
 
-void glFree(void* pData)
+void gl_free(void* pData)
 {
 	::free(pData);
 }

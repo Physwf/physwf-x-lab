@@ -1,37 +1,93 @@
 #include "gl_memory.h"
+#include "gl_context.h"
 
 struct gl_vector2
 {
-	float x, y;
+	union 
+	{
+		float x, y;
+		float u, v;
+	};
 };
 
 struct gl_vector3
 {
-	float x, y, z;
+	union
+	{
+		float x, y, z;
+		float u, v, t;
+	};
 };
 
 struct gl_vector4
 {
-	float x, y, z, w;
+	union
+	{
+		float x, y, z, w;
+		float r, g, b, a;
+	};
 };
 
 struct gl_primitive_list
 {
-	gl_vector3* vertices;
+	GLvoid*		vertices;
 	GLsizei		vertices_number;
 	GLenum		primitive_type;
 };
 
-struct gl_ia_stage
+struct gl_ia_state
 {
-	GLvoid* indices_copy;
-	GLenum index_type;
-	GLsizei indices_number;
-
 	gl_primitive_list		primitives;
 };
 
-void gl_input_assemble()
+struct gl_vs_state
 {
 
+};
+
+struct gl_rs_state
+{
+
+};
+
+struct gl_ps_state
+{
+
+};
+
+struct gl_om_state
+{
+
+};
+
+struct gl_pipeline
+{
+	gl_ia_state ia;
+	gl_vs_state vs;
+	gl_rs_state rs;
+	gl_ps_state ps;
+	gl_om_state om;
+};
+
+gl_pipeline glPpeline;
+
+template<typename TVertexIn>
+void gl_input_assemble()
+{
+	if (glContext.indices_copy)
+	{
+		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
+		{
+			if (glContext.vertex_attribute_pointers[i].bEnabled)
+			{
+
+			}
+		}
+	}
+	else
+	{
+
+	}
+
+	
 }

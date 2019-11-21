@@ -13,15 +13,11 @@ NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
 	glClearError();
-	r = glClamp(r, 0.0f, 0.1f);
-	g = glClamp(g, 0.0f, 0.1f);
-	b = glClamp(b, 0.0f, 0.1f);
-	a = glClamp(a, 0.0f, 0.1f);
 
-	glContext.clear_color.r = r;
-	glContext.clear_color.g = g;
-	glContext.clear_color.b = b;
-	glContext.clear_color.a = a;
+	glContext.clear_color.r = glClamp(r, 0.0f, 0.1f);
+	glContext.clear_color.g = glClamp(g, 0.0f, 0.1f);
+	glContext.clear_color.b = glClamp(b, 0.0f, 0.1f);
+	glContext.clear_color.a = glClamp(a, 0.0f, 0.1f);
 }
 
 NAIL_API void glClearDepth(GLclampf d)
@@ -166,25 +162,18 @@ NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 
 	switch (mode)
 	{
-	case GL_POINTS:
-		break;
-	case GL_LINES:
-		break;
-	case GL_LINE_LOOP:
-		break;
+	case GL_POINT_LIST:
+	case GL_LINE_LIST:
+	case GL_LINE_LIST_ADJ:
 	case GL_LINE_STRIP:
-		break;
-	case GL_TRIANGLES:
-		break;
+	case GL_LINE_STRIP_ADJ:
+	case GL_TRIANGLE_LIST:
+	case GL_TRIANGLE_LIST_ADJ:
 	case GL_TRIANGLE_STRIP:
-		break;
-	case GL_TRIANGLE_FAN:
-		break;
-	case GL_QUADS:
-		break;
-	case GL_QUAD_STRIP:
-		break;
-	case GL_POLYGON:
+	case GL_TRIANGLE_STRIP_ADJ:
+		glContext.primitive_type = mode;
+		glContext.indices_copy = nullptr;
+		glContext.count = count;
 		break;
 	default:
 		glSetError(GL_INVALID_ENUM, "Illegal mode argument!");
@@ -199,25 +188,21 @@ NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvo
 
 	switch (mode)
 	{
-	case GL_POINTS:
-		break;
-	case GL_LINES:
-		break;
-	case GL_LINE_LOOP:
-		break;
+	case GL_POINT_LIST:
+	case GL_LINE_LIST:
+	case GL_LINE_LIST_ADJ:
 	case GL_LINE_STRIP:
-		break;
-	case GL_TRIANGLES:
-		break;
+	case GL_LINE_STRIP_ADJ:
+	case GL_TRIANGLE_LIST:
+	case GL_TRIANGLE_LIST_ADJ:
 	case GL_TRIANGLE_STRIP:
-		break;
-	case GL_TRIANGLE_FAN:
-		break;
-	case GL_QUADS:
-		break;
-	case GL_QUAD_STRIP:
-		break;
-	case GL_POLYGON:
+	case GL_TRIANGLE_STRIP_ADJ:
+		glContext.primitive_type = mode;
+		GLsizei indices_size = type == GL_SHORT ? count * 2 : count;
+		glContext.indices_copy = gl_malloc(indices_size);
+		memcpy_s(glContext.indices_copy, indices_size, indices, indices_size);
+		glContext.count = count;
+		glContext.indices_type = type;
 		break;
 	default:
 		glSetError(GL_INVALID_ENUM, "Illegal mode argument!");
