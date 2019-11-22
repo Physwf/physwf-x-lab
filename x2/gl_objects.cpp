@@ -1,4 +1,4 @@
-#include "gl_context.h"
+#include "gl_frontend.h"
 #include "gl_buffer.h"
 
 NAIL_API void glGenBuffer(GLsizei n, GLuint* buffers)

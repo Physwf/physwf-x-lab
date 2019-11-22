@@ -1,11 +1,11 @@
-#include "gl_context.h"
+#include "gl_frontend.h"
 #include "gl_utilities.h"
 #include "gl_memory.h"
 
 #include <assert.h>
 #include <string.h>
 
-gl_context glContext;
+gl_frontend glContext;
 
 void glContextInit()
 {

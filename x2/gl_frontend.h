@@ -29,6 +29,7 @@ struct gl_atrribute_pointer
 {
 	GLbool	bEnabled;
 	const GLvoid* pointer;
+	GLint size;
 	GLenum	type;
 	GLsizei stride;
 	gl_atrribute_pointer() :pointer(nullptr) {}
@@ -92,7 +93,7 @@ struct gl_program_object_node
 	gl_program_object_node* next;
 };
 
-struct gl_context
+struct gl_frontend
 {
 	GLuint			buffer_width;
 	GLuint			buffer_height;
@@ -123,7 +124,7 @@ struct gl_context
 
 
 
-extern gl_context glContext;
+extern gl_frontend glContext;
 
 void glContextInit();
 void glContextDestroy();

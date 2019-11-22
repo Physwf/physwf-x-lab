@@ -1,4 +1,4 @@
-#include "gl_context.h"
+#include "gl_frontend.h"
 
 NAIL_API GLuint glCreateShader(GLenum type)
 {

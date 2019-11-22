@@ -13,6 +13,7 @@ typedef unsigned short  GLushort;
 typedef int				GLsizei;
 typedef int				GLsizeiptr;
 typedef float			GLfloat;
+typedef double			GLdouble;
 typedef float			GLclampf;
 typedef bool			GLbool;
 typedef void			GLvoid;

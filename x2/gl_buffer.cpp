@@ -1,5 +1,5 @@
 #include "gl_buffer.h"
-#include "gl_context.h"
+#include "gl_frontend.h"
 
 #include <memory>
 

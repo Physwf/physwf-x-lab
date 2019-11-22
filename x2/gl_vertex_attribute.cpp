@@ -1,6 +1,8 @@
 ﻿#include "gl.h"
-#include "gl_context.h"
+#include "gl_frontend.h"
 #include "gl_utilities.h"
+#include "gl_memory.h"
+#include <memory>
 
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 {
@@ -197,12 +199,14 @@ NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvo
 	case GL_TRIANGLE_LIST_ADJ:
 	case GL_TRIANGLE_STRIP:
 	case GL_TRIANGLE_STRIP_ADJ:
+	{
 		glContext.primitive_type = mode;
 		GLsizei indices_size = type == GL_SHORT ? count * 2 : count;
 		glContext.indices_copy = gl_malloc(indices_size);
 		memcpy_s(glContext.indices_copy, indices_size, indices, indices_size);
 		glContext.count = count;
 		glContext.indices_type = type;
+	}
 		break;
 	default:
 		glSetError(GL_INVALID_ENUM, "Illegal mode argument!");
