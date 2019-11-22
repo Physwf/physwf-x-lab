@@ -154,6 +154,33 @@ gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr
 	}
 }
 
+bool gl_check_input_validity()
+{
+	//check validity(todo)
+	switch (glContext.primitive_type)
+	{
+	case GL_POINT_LIST:
+		break;
+	case GL_LINE_LIST:
+		break;
+	case GL_LINE_LIST_ADJ:
+		break;
+	case GL_LINE_STRIP:
+		break;
+	case GL_LINE_STRIP_ADJ:
+		break;
+	case GL_TRIANGLE_LIST:
+		break;
+	case GL_TRIANGLE_LIST_ADJ:
+		break;
+	case GL_TRIANGLE_STRIP:
+		break;
+	case GL_TRIANGLE_STRIP_ADJ:
+		break;
+	}
+	return true;
+}
+
 template<typename TVertexIn>
 void gl_input_assemble()
 {
@@ -169,6 +196,8 @@ void gl_input_assemble()
 	{
 		vertex_count = glContext.count;
 	}
+	
+	if (!gl_check_input_validity()) return;
 
 	glPpeline.ia.primitives = gl_malloc(vertex_size*vertex_count);
 	gl_vector4* primitives = (gl_vector4*)glPpeline.ia.primitives;
@@ -177,16 +206,24 @@ void gl_input_assemble()
 	{
 		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
 		{
+			gl_vector4& attribute = primitives[v*vertex_size + i * sizeof(gl_vector4)];
 			if (glContext.vertex_attribute_pointers[i].bEnabled)
 			{
-				gl_vector4& attribute = primitives[v*vertex_size + i * sizeof(gl_vector4)];
 				attribute = get_attribute_from_attribute_pointer(glContext.vertex_attribute_pointers[i],v);
 			}
 			else
 			{
-
+				attribute.x = glContext.vertex_attributes[i].x;
+				attribute.y = glContext.vertex_attributes[i].y;
+				attribute.z = glContext.vertex_attributes[i].z;
+				attribute.w = glContext.vertex_attributes[i].w;
 			}
 		}
 	}
+
+}
+
+void gl_vertex_shader()
+{
 
 }

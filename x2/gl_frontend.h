@@ -14,11 +14,19 @@
 template <typename T>
 union gl_atrribute
 {
+	typename T Type;
+
 	union
 	{
 		T values[4];
-		T x, y, z, w;
-		T r, g, b, a;
+		struct 
+		{
+			T x, y, z, w;
+		};
+		struct
+		{
+			T r, g, b, a;
+		};
 	};
 
 	gl_atrribute() :values{0,0,0,0} {}
@@ -46,14 +54,22 @@ struct gl_fragment
 	gl_atrribute<GLfloat> color;
 };
 
+template<typename TVertexIn, typename TVertexOut>
 struct gl_vertex_processor
 {
-	virtual void process() = 0;
+	typedef TVertexIn	InType;
+	typedef TVertexOut	OutType;
+
+	virtual TVertexOut process(TVertexIn) = 0;
 };
 
+template<typename TFragmentIn, typename TFragmentOut>
 struct gl_fragment_processor
 {
-	virtual void process() = 0;
+	typedef TFragmentIn		InType;
+	typedef TFragmentOut	OutType;
+
+	virtual TFragmentOut process(TFragmentIn) = 0;
 };
 
 struct gl_vertex_shader_object
