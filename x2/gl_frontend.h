@@ -54,61 +54,6 @@ struct gl_fragment
 	gl_atrribute<GLfloat> color;
 };
 
-template<typename TVertexIn, typename TVertexOut>
-struct gl_vertex_processor
-{
-	typedef TVertexIn	InType;
-	typedef TVertexOut	OutType;
-
-	virtual TVertexOut process(TVertexIn) = 0;
-};
-
-template<typename TFragmentIn, typename TFragmentOut>
-struct gl_fragment_processor
-{
-	typedef TFragmentIn		InType;
-	typedef TFragmentOut	OutType;
-
-	virtual TFragmentOut process(TFragmentIn) = 0;
-};
-
-struct gl_vertex_shader_object
-{
-	GLuint name;
-	gl_vertex_processor* processor;
-};
-
-struct gl_fragment_shader_object
-{
-	GLuint name;
-	gl_fragment_processor* processor;
-};
-
-struct gl_vertex_shader_object_node
-{
-	gl_vertex_shader_object shader;
-	gl_vertex_shader_object_node* next;
-};
-
-struct gl_fragment_shader_object_node
-{
-	gl_vertex_shader_object shader;
-	gl_vertex_shader_object_node* next;
-};
-
-struct gl_program_object
-{
-	GLuint name;
-	gl_vertex_shader_object vertex_shader_object;
-	gl_fragment_shader_object fragment_shader_object;
-};
-
-struct gl_program_object_node
-{
-	gl_program_object program;
-	gl_program_object_node* next;
-};
-
 struct gl_frontend
 {
 	GLuint			buffer_width;
@@ -125,14 +70,12 @@ struct gl_frontend
 	gl_atrribute<GLfloat>			vertex_attributes[MAX_VERTEX_ATTRIBUTE];
 	gl_atrribute_pointer			vertex_attribute_pointers[MAX_VERTEX_ATTRIBUTE];
 
-	GLvoid* indices_copy;
+	const GLvoid* indices_pointer;
+	GLenum indices_type;
 	GLsizei count;
-	GLenum	indices_type;
-	GLenum	primitive_type;
+	GLenum	draw_mode;
 
-	gl_vertex_shader_object_node*		vertex_shaders;
-	gl_fragment_shader_object_node*		fragment_shaders;
-	gl_program_object_node*				programs;
+	GLuint program;
 
 	GLenum error;
 	GLchar error_desc[MAX_ERROR_DESC_LEGHT];

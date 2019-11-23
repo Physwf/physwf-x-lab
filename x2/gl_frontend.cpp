@@ -17,7 +17,10 @@ void glContextInit()
 	glContext.array_buffer = 0;
 	glContext.index_buffer = 0;
 
-	glContext.indices_copy = nullptr;
+	glContext.indices_pointer = nullptr;
+
+	glContext.program = 0;
+
 	//glContext.buffer = (gl_fragment*)gl_malloc(glContext.buffer_width * glContext.buffer_height * sizeof(gl_fragment));
 
 // 	for (gl_atrribute<GLfloat>& attrib : glContext.vertex_attributes)

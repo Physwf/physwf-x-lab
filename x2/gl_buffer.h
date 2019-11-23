@@ -1,3 +1,5 @@
+#pragma once
+
 #include "gl_memory.h"
 #include "gl_utilities.h"
 

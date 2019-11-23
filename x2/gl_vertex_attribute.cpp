@@ -152,6 +152,7 @@ NAIL_API void glDisableVertexAttribArray(GLuint index)
 	glContext.vertex_attribute_pointers[index].bEnabled = false;
 }
 
+
 NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	glClearError();
@@ -173,8 +174,9 @@ NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count)
 	case GL_TRIANGLE_LIST_ADJ:
 	case GL_TRIANGLE_STRIP:
 	case GL_TRIANGLE_STRIP_ADJ:
-		glContext.primitive_type = mode;
-		glContext.indices_copy = nullptr;
+		glContext.draw_mode = mode;
+		glContext.indices_pointer = nullptr;
+		glContext.indices_type = GL_SHORT;
 		glContext.count = count;
 		break;
 	default:
@@ -200,12 +202,20 @@ NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvo
 	case GL_TRIANGLE_STRIP:
 	case GL_TRIANGLE_STRIP_ADJ:
 	{
-		glContext.primitive_type = mode;
-		GLsizei indices_size = type == GL_SHORT ? count * 2 : count;
-		glContext.indices_copy = gl_malloc(indices_size);
-		memcpy_s(glContext.indices_copy, indices_size, indices, indices_size);
+		glContext.draw_mode = mode;
 		glContext.count = count;
+		glContext.indices_pointer = indices;
 		glContext.indices_type = type;
+
+		switch (type)
+		{
+		case GL_BYTE:
+		case GL_SHORT:
+			break;
+		default:
+			glSetError(GL_INVALID_ENUM, "Illegal type argument!");
+		}
+	
 	}
 		break;
 	default:
