@@ -67,20 +67,24 @@ struct gl_vector4
 	}
 };
 
-struct gl_primitive_list
+struct gl_primitive_node
 {
 	GLvoid*		vertices;
-	GLsizei		vertices_number;
-	GLenum		primitive_type;
+	GLsizei		vertices_count;
+	gl_primitive_node* next;
 };
 
 //input assemble
 struct gl_ia_state
 {
+	GLvoid*	 indices_copy;
+	GLenum   indices_type;
+
 	GLshort* indices;
 	GLsizei  indices_count;
 	GLvoid*	 vertices;
 	GLsizei  vertices_count;
+	GLenum	 primitive_type;
 };
 //vertex shahder 
 struct gl_vs_state
@@ -90,7 +94,10 @@ struct gl_vs_state
 
 struct gl_pa_state
 {
-	gl_primitive_list		primitives;
+	GLsizei					vertex_size;
+	GLsizei					primitive_count;
+	GLenum					primitive_type;
+	gl_primitive_node*		primitives;
 };
 
 struct gl_rs_state
@@ -108,7 +115,7 @@ struct gl_om_state
 
 };
 
-struct gl_pipeline
+struct gl_draw_command
 {
 	gl_ia_state ia;
 	gl_vs_state vs;
@@ -116,61 +123,54 @@ struct gl_pipeline
 	gl_rs_state rs;
 	gl_ps_state ps;
 	gl_om_state om;
+
+	gl_draw_command* next;
+};
+
+struct gl_pipeline
+{
+	gl_draw_command* command_list;
 };
 
 extern gl_pipeline glPpeline;
 
 bool gl_pipeline_init();
 
+void gl_emit_draw_command();
+
 template<typename TIndex>
-void gl_fill_indices_copy(const TIndex* index_data, GLsizei count)
+void gl_fill_indices_copy(gl_draw_command* cmd, const TIndex* index_data, GLsizei count)
 {
 	GLsizei indices_size = count * sizeof(GLshort);
-	glPpeline.ia.indices_count = count;
+	cmd->ia.indices_count = count;
 
-	if (glPpeline.ia.indices == nullptr)
+	if (cmd->ia.indices == nullptr)
 	{
-		glPpeline.ia.indices = (GLshort*)gl_malloc(indices_size);
+		cmd->ia.indices = (GLshort*)gl_malloc(indices_size);
 	}
 	else
 	{
-		glPpeline.ia.indices = (GLshort*)gl_realloc(glPpeline.ia.indices, indices_size);
+		cmd->ia.indices = (GLshort*)gl_realloc(cmd->ia.indices, indices_size);
 	}
 
 	if (index_data == nullptr)
 	{
 		for (GLsizei i = 0; i < count; ++i)
 		{
-			glPpeline.ia.indices[i] = i;
+			cmd->ia.indices[i] = i;
 		}
 	}
 	else
 	{
 		for (GLsizei i = 0; i < count; ++i)
 		{
-			glPpeline.ia.indices[i] = index_data[i];
+			cmd->ia.indices[i] = index_data[i];
 		}
 	}
 }
 
 
-GLsizei get_vertex_count_from_indices()
-{
-	GLsizei num_vertex = 0;
-	if (glContext.indices_pointer)
-	{
-		GLshort* indices = (GLshort*)glContext.indices_pointer;
-		for (GLsizei i = 0; i < glContext.count; ++i)
-		{
-			GLshort current_index = glPpeline.ia.indices[i] + 1;
-			if (num_vertex < current_index)
-			{
-				num_vertex = current_index;
-			}
-		}
-	}
-	return num_vertex;
-}
+GLsizei get_vertex_count_from_indices(gl_draw_command* cmd);
 
 template <typename T>
 gl_vector4 to_vector4_from_attribute(const GLvoid* pointer, GLsizei index, GLsizei stride, GLsizei size)
@@ -183,39 +183,41 @@ gl_vector4 to_vector4_from_attribute(const GLvoid* pointer, GLsizei index, GLsiz
 
 gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr_pointer,GLsizei index);
 
-bool gl_check_input_validity();
+bool gl_check_input_validity(gl_draw_command* cmd);
 
 template<typename TVertexIn>
-void gl_input_assemble()
+void gl_input_assemble(gl_draw_command* cmd)
 {
 	static const GLsizei vertex_size = sizeof(TVertexIn);
 
+	cmd->ia.primitive_type = glContext.draw_mode;
+
 	//assemble indices
-	switch (glContext.indices_type)
+	switch (cmd->ia.indices_type)
 	{
 	case GL_BYTE:
-		gl_fill_indices_copy<GLbyte>(glContext.indices_pointer, glContext.count);
+		gl_fill_indices_copy<GLbyte>(cmd, cmd->ia.indices_copy, cmd->ia.indices_count);
 		break;
 	case GL_SHORT:
-		gl_fill_indices_copy<GLshort>(glContext.indices_pointer, glContext.count);
+		gl_fill_indices_copy<GLshort>(cmd, cmd->ia.indices_copy, cmd->ia.indices_count);
 		break;
 	default:
 		return;
 	}
 	//assemble vertices
 	GLsizei vertex_count = get_vertex_count_from_indices();
-	glPpeline.ia.vertices_count = vertex_count;
+	cmd->ia.vertices_count = vertex_count;
 
-	if (glPpeline.ia.vertices == nullptr)
+	if (cmd->ia.vertices == nullptr)
 	{
-		glPpeline.ia.vertices = gl_malloc(vertex_size*vertex_count);
+		cmd->ia.vertices = gl_malloc(vertex_size*vertex_count);
 	}
 	else
 	{
-		glPpeline.ia.vertices = gl_realloc(glPpeline.ia.vertices, vertex_size*vertex_count);
+		cmd->ia.vertices = gl_realloc(cmd->ia.vertices, vertex_size*vertex_count);
 	}
 
-	gl_vector4* vertices = (gl_vector4*)glPpeline.ia.vertices;
+	gl_vector4* vertices = (gl_vector4*)cmd->ia.vertices;
 
 	for (int v = 0; v < vertex_count; ++v)
 	{
@@ -236,29 +238,10 @@ void gl_input_assemble()
 		}
 	}
 
-	if (!gl_check_input_validity()) return;
+	if (!gl_check_input_validity(cmd)) return;
 }
 
-void gl_vertex_shader()
-{
-	if (glContext.program == 0) return;
-	gl_program_object* program_object = gl_find_program_object(glContext.program);
-	if (program_object == nullptr) return;
-	gl_shader_object* vs_object = program_object->vertex_shader_object;
-	if (vs_object == nullptr) return;
-	gl_shader* vs = vs_object->shader;
-	if (vs == nullptr) return;
+void gl_vertex_shader(gl_draw_command* cmd);
 
-	glPpeline.vs.vertices_result = gl_malloc(glPpeline.ia.vertices_count * vs->output_size);
-	for (GLsizei i = 0; i < glPpeline.ia.vertices_count; ++i)
-	{
-		GLvoid* vs_out = vs->process((GLbyte*)glPpeline.ia.vertices + i * vs->input_size);
-		memcpy_s((GLbyte*)glPpeline.vs.vertices_result + i * vs->input_size, vs->output_size, vs_out, vs->output_size);
-	}
-}
-
-void gl_primitive_assemable()
-{
-
-}
+void gl_primitive_assemble(gl_draw_command* cmd);
 

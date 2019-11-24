@@ -1,6 +1,7 @@
 #include "gl_frontend.h"
 #include "gl_utilities.h"
 #include "gl_memory.h"
+#include "gl_pipeline.h"
 
 #include <assert.h>
 #include <string.h>
@@ -38,7 +39,6 @@ void glContextInit()
 void glContextDestroy()
 {
 	glClearError();
-	gl_free(glContext.buffer);
 }
 
 void glClearError()
@@ -52,5 +52,79 @@ void glSetError(GLenum error, const GLchar* szErrorDesc)
 	glContext.error = error;
 	assert(strlen(szErrorDesc) < MAX_ERROR_DESC_LEGHT);
 	strcpy_s(glContext.error_desc, szErrorDesc);
+}
+
+NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count)
+{
+	glClearError();
+
+	if (count < 0)
+	{
+		glSetError(GL_INVALID_VALUE, "count can't be less than zero!");
+		return;
+	}
+
+	switch (mode)
+	{
+	case GL_POINT_LIST:
+	case GL_LINE_LIST:
+	case GL_LINE_LIST_ADJ:
+	case GL_LINE_STRIP:
+	case GL_LINE_STRIP_ADJ:
+	case GL_TRIANGLE_LIST:
+	case GL_TRIANGLE_LIST_ADJ:
+	case GL_TRIANGLE_STRIP:
+	case GL_TRIANGLE_STRIP_ADJ:
+		glContext.draw_mode = mode;
+		glContext.indices_pointer = nullptr;
+		glContext.indices_type = GL_SHORT;
+		glContext.count = count;
+		break;
+	default:
+		glSetError(GL_INVALID_ENUM, "Illegal mode argument!");
+		return;
+		break;
+	}
+	gl_emit_draw_command();
+}
+
+NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
+{
+	glClearError();
+
+	switch (mode)
+	{
+	case GL_POINT_LIST:
+	case GL_LINE_LIST:
+	case GL_LINE_LIST_ADJ:
+	case GL_LINE_STRIP:
+	case GL_LINE_STRIP_ADJ:
+	case GL_TRIANGLE_LIST:
+	case GL_TRIANGLE_LIST_ADJ:
+	case GL_TRIANGLE_STRIP:
+	case GL_TRIANGLE_STRIP_ADJ:
+	{
+		glContext.draw_mode = mode;
+		glContext.count = count;
+		glContext.indices_pointer = indices;
+		glContext.indices_type = type;
+
+		switch (type)
+		{
+		case GL_BYTE:
+		case GL_SHORT:
+			break;
+		default:
+			glSetError(GL_INVALID_ENUM, "Illegal type argument!");
+		}
+
+	}
+	break;
+	default:
+		glSetError(GL_INVALID_ENUM, "Illegal mode argument!");
+		return;
+		break;
+	}
+	gl_emit_draw_command();
 }
 

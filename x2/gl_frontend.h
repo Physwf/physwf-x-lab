@@ -62,8 +62,6 @@ struct gl_frontend
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;
 
-	gl_fragment*	buffer;
-
 	GLuint			array_buffer;
 	GLuint			index_buffer;
 
