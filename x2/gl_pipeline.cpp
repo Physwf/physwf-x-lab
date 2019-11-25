@@ -176,127 +176,196 @@ void gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bool bculled2, G
 {
 	gl_vector4* p1 = (gl_vector4*)v1;
 	gl_vector4* p2 = (gl_vector4*)v2;
-	
-	if (p1->x == p2->x)//垂直
+	gl_vector4* ptop = p1;
+	gl_vector4* pdown = p2;
+	gl_vector4* pleft = p1;
+	gl_vector4* pright = p2;
+	if (p1->y < p2->y)
 	{
-		GLfloat ttop =  (p1->y - 1.0f)		/ (p1->y - p2->y);
-		GLfloat tdown = (p1->y - (-1.0f))	/ (p1->y - p2->y);
-		if (ttop > 0.0f && ttop < 1.0f)
-		{
-			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
-			if (bculled1)
-			{
-				*p1 = newpoint;
-			}
-			else
-			{
-				*p2 = newpoint;
-			}
-		}
-		if (tdown > 0.0f && tdown < 1.0f)
-		{
-			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
-			if (bculled2)
-			{
-				*p2 = newpoint;
-			}
-			else
-			{
-				*p1 = newpoint;
-			}
-		}
+		ptop = p2;
+		pdown = p1;
+	}
+	if (p1->x > p2->x)
+	{
+		pleft = p2;
+		pright = p1;
+	}
+	GLfloat ttop = 0.0f;
+	GLfloat tdown = 0.0f;
+	GLfloat tleft = 0.0f;
+	GLfloat tright = 0.0f;
+	if (ptop->x == pdown->x)//垂直
+	{
+		ttop =  (ptop->y - 1.0f)	/ (ptop->y - pdown->y);
+		tdown = (ptop->y - (-1.0f))	/ (ptop->y - pdown->y);
+// 		if (ttop > 0.0f && ttop < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
+// 			if (bculled1)
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 		}
+// 		if (tdown > 0.0f && tdown < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
+// 			if (bculled2)
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 		}
 	}
 	else if (p1->y == p2->y)//水平
 	{
-		GLfloat tleft =  (p1->x - (-1.0f))	/ (p1->x - p2->x);
-		GLfloat tright = (p1->x - 1.0f)		/ (p1->x - p2->x);
-		if (tleft > 0.0f && tleft < 1.0f)
-		{
-			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
-			if (bculled1)
-			{
-				*p1 = newpoint;
-			}
-			else
-			{
-				*p2 = newpoint;
-			}
-		}
-		if (tright > 0.0f && tright < 1.0f)
-		{
-			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
-			if (bculled2)
-			{
-				*p2 = newpoint;
-			}
-			else
-			{
-				*p1 = newpoint;
-			}
-		}
+		tleft =  (pright->x - (-1.0f))	/ (pright->x - pleft->x);
+		tright = (pright->x - 1.0f)		/ (pright->x - pleft->x);
+// 		if (tleft > 0.0f && tleft < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
+// 			if (bculled1)
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 		}
+// 		if (tright > 0.0f && tright < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
+// 			if (bculled2)
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 		}
 	}
 	else
 	{
-		GLfloat ttop =		(p1->y - 1.0f)		/ (p1->y - p2->y);
-		GLfloat tdown =		(p1->y - (-1.0f))	/ (p1->y - p2->y);
-		GLfloat tleft =		(p1->x - (-1.0f))	/ (p1->x - p2->x);
-		GLfloat tright =	(p1->x - 1.0f)		/ (p1->x - p2->x);
-		if (ttop > 0.0f && ttop < 1.0f)
+		ttop =		(ptop->y - 1.0f)		/ (ptop->y - pdown->y);
+		tdown =		(ptop->y - (-1.0f))		/ (ptop->y - pdown->y);
+		tleft =		(pright->x - (-1.0f))	/ (pright->x - pleft->x);
+		tright =	(pright->x - 1.0f)		/ (pright->x - pleft->x);
+// 		if (ttop > 0.0f && ttop < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
+// 			if (bculled1)
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 		}
+// 		else if (tdown > 0.0f && tdown < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
+// 			if (bculled1)
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 		}
+// 
+// 		if (tleft > 0.0f && tleft < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
+// 			if (bculled2)
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 		}
+// 		else if (tright > 0.0f && tright < 1.0f)
+// 		{
+// 			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
+// 			if (bculled2)
+// 			{
+// 				*p2 = newpoint;
+// 			}
+// 			else
+// 			{
+// 				*p1 = newpoint;
+// 			}
+// 		}
+	}
+	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
+	if (ttop > 0.0f && ttop < 1.0f)
+	{
+		gl_vector4* p1 = ptop;
+		gl_vector4* p2 = pdown;
+		GLfloat t = ttop;
+		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
 		{
-			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
-			if (bculled1)
-			{
-				*p1 = newpoint;
-			}
-			else
-			{
-				*p2 = newpoint;
-			}
+			pt.x = p1->x * t + (1 - t) * p2->x;
+			pt.y = p1->y * t + (1 - t) * p2->y;
+			pt.z = p1->z * t + (1 - t) * p2->z;
+			pt.w = p1->w * t + (1 - t) * p2->w;
+			memcpy_s(ptop + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 		}
-		else if (tdown > 0.0f && tdown < 1.0f)
+	}
+	if (tdown > 0.0f && tdown < 1.0f)
+	{
+		gl_vector4* p1 = ptop;
+		gl_vector4* p2 = pright;
+		GLfloat t = tdown;
+		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
 		{
-			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
-			if (bculled1)
-			{
-				*p1 = newpoint;
-			}
-			else
-			{
-				*p2 = newpoint;
-			}
+			pt.x = p1->x * t + (1 - t) * p2->x;
+			pt.y = p1->y * t + (1 - t) * p2->y;
+			pt.z = p1->z * t + (1 - t) * p2->z;
+			pt.w = p1->w * t + (1 - t) * p2->w;
+			memcpy_s(pdown + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 		}
-
-		if (tleft > 0.0f && tleft < 1.0f)
+	}
+	if (tleft > 0.0f && tleft < 1.0f)
+	{
+		gl_vector4* p1 = pleft;
+		gl_vector4* p2 = pright;
+		GLfloat t = tleft;
+		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
 		{
-			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
-			if (bculled2)
-			{
-				*p2 = newpoint;
-			}
-			else
-			{
-				*p1 = newpoint;
-			}
+			pt.x = p1->x * t + (1 - t) * p2->x;
+			pt.y = p1->y * t + (1 - t) * p2->y;
+			pt.z = p1->z * t + (1 - t) * p2->z;
+			pt.w = p1->w * t + (1 - t) * p2->w;
+			memcpy_s(pleft + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 		}
-		else if (tright > 0.0f && tright < 1.0f)
+	}
+	if (tright > 0.0f && tright < 1.0f)
+	{
+		gl_vector4* p1 = pleft;
+		gl_vector4* p2 = pright;
+		GLfloat t = tright;
+		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
 		{
-			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
-			if (bculled2)
-			{
-				*p2 = newpoint;
-			}
-			else
-			{
-				*p1 = newpoint;
-			}
+			pt.x = p1->x * t + (1 - t) * p2->x;
+			pt.y = p1->y * t + (1 - t) * p2->y;
+			pt.z = p1->z * t + (1 - t) * p2->z;
+			pt.w = p1->w * t + (1 - t) * p2->w;
+			memcpy_s(pright + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 		}
 	}
 
-
-
-
-	gl_vector4* pl = nullptr;
-	gl_vector4* pr = nullptr;
 	/*
 	if (p1->x < p2->x) pl = p1;
 	
