@@ -12,8 +12,13 @@ void glContextInit()
 {
 	glClearError();
 
-	glContext.buffer_width = 0; //glClamp(width, (GLuint)MIN_BUFFER_WIDTH, (GLuint)MAX_BUFFER_WIDTH);
-	glContext.buffer_height = 0;// glClamp(width, (GLuint)MIN_BUFFER_HEIGHT, (GLuint)MAX_BUFFER_HEIGHT);
+	glContext.viewport_x = 0;
+	glContext.viewport_y = 0;
+	glContext.viewport_width = 256; //glClamp(width, (GLuint)MIN_BUFFER_WIDTH, (GLuint)MAX_BUFFER_WIDTH);
+	glContext.viewport_height = 256;// glClamp(width, (GLuint)MIN_BUFFER_HEIGHT, (GLuint)MAX_BUFFER_HEIGHT);
+
+	glContext.depth_near = 0.0f;
+	glContext.depth_far = 1.0f;
 
 	glContext.array_buffer = 0;
 	glContext.index_buffer = 0;

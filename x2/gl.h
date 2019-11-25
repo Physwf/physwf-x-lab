@@ -74,6 +74,7 @@ typedef void			GLvoid;
 #define NAIL_API
 
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
+NAIL_API void glDepthRangef(GLclampf n, GLclampf f);
 NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
 NAIL_API void glClearDepth(GLclampf d);
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x);

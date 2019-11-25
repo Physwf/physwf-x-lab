@@ -7,10 +7,22 @@
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 {
 	glClearError();
-	glContext.buffer_width = w;
-	glContext.buffer_height = h;
+	if (w <= 0 || h <= 0)
+	{
+		glSetError(GL_INVALID_VALUE, "viewport width and height must be greater than 0!");
+		return;
+	}
+	glContext.viewport_width = w;
+	glContext.viewport_height = h;
+	glContext.viewport_x = x;
+	glContext.viewport_y = y;
 }
 
+NAIL_API void glDepthRangef(GLclampf n, GLclampf f)
+{
+	glContext.depth_near = glClamp(n, 0.0f, 1.0f);
+	glContext.depth_far = glClamp(f, 0.0f, 1.0f);
+}
 
 NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {

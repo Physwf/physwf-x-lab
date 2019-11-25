@@ -56,8 +56,13 @@ struct gl_fragment
 
 struct gl_frontend
 {
-	GLuint			buffer_width;
-	GLuint			buffer_height;
+	GLint			viewport_x;
+	GLint			viewport_y;
+	GLsizei			viewport_width;
+	GLsizei			viewport_height;
+
+	GLclampf		depth_near;
+	GLclampf		depth_far;
 
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;
