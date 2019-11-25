@@ -128,7 +128,7 @@ void gl_vertex_shader(gl_draw_command* cmd)
 	cmd->pa.vertex_size = vs->output_size;
 }
 
-bool gl_is_point_cliped(const gl_vector4* p)
+bool gl_is_point_culled(const gl_vector4* p)
 {
 	if (p->x > 1.0f || p->x < -1.0f) return true;
 	if (p->y > 1.0f || p->y < -1.0f) return true;
@@ -136,26 +136,170 @@ bool gl_is_point_cliped(const gl_vector4* p)
 	return false;
 }
 
-bool gl_is_line_cliped(const gl_vector4* p1, const gl_vector4* p2)
+bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepted,bool& bculled1,bool& bculled2)
 {
-	if (p1->x < p2->x && p2->x < -1.0f) return true;
-	if (p1->x > p2->x && p2->x < 1.0f) return true;
-	if (p1->y < p2->y && p2->y < -1.0f) return true;
-	if (p1->y > p2->y && p2->y > 1.0f) return true;
-	if (p1->z > p2->z && p2->z > 1.0f) return true;
-	if (p1->z < p2->z && p2->z < 0.0f) return true;
+// 	if (p1->x <= p2->x && p2->x < -1.0f) return true;
+// 	if (p2->x <= p1->x && p1->x < -1.0f) return true;
+// 	if (p1->x >= p2->x && p2->x > 1.0f) return true;
+// 	if (p2->x >= p1->x && p1->x > 1.0f) return true;
+// 	if (p1->y <= p2->y && p2->y < -1.0f) return true;
+// 	if (p2->y <= p1->y && p2->y < -1.0f) return true;
+// 	if (p1->y >= p2->y && p2->y > 1.0f) return true;
+// 	if (p2->y >= p1->y && p1->y > 1.0f) return true;
+// 	if (p1->z >= p2->z && p2->z > 1.0f) return true;
+// 	if (p2->z >= p1->z && p1->z > 1.0f) return true;
+// 	if (p1->z <= p2->z && p2->z < 0.0f) return true;
+// 	if (p2->z <= p1->z && p1->z < 0.0f) return true;
+
+	GLbyte code1 = 0;
+	if (p1->x < -1.0f)	code1 |= 1;
+	if (p1->x > 1.0f)	code1 |= 2;
+	if (p1->y < -1.0f)	code1 |= 4;
+	if (p1->y > 1.0f)	code1 |= 8;
+	bculled1 = (code1 != 0);
+	GLbyte code2 = 0;
+	if (p2->x < -1.0f)	code2 |= 1;
+	if (p2->x > 1.0f)	code2 |= 2;
+	if (p2->y < -1.0f)	code2 |= 4;
+	if (p2->y > 1.0f)	code2 |= 8;
+	bculled2 = (code2 != 0);
+	baccepted = (code1 | code2) == 0;
+	return (code1 & code2) != 0;
+}
+
+bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3)
+{
 	return false;
 }
 
-bool gl_is_triangle_cliped(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3)
-{
-	return false;
-}
-
-void gl_do_clipping(GLvoid* v1, GLvoid* v2, bool v1cliped, bool v2cliped, GLsizei vertex_size)
+void gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bool bculled2, GLsizei vertex_size)
 {
 	gl_vector4* p1 = (gl_vector4*)v1;
 	gl_vector4* p2 = (gl_vector4*)v2;
+	
+	if (p1->x == p2->x)//´¹Ö±
+	{
+		GLfloat ttop =  (p1->y - 1.0f)		/ (p1->y - p2->y);
+		GLfloat tdown = (p1->y - (-1.0f))	/ (p1->y - p2->y);
+		if (ttop > 0.0f && ttop < 1.0f)
+		{
+			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
+			if (bculled1)
+			{
+				*p1 = newpoint;
+			}
+			else
+			{
+				*p2 = newpoint;
+			}
+		}
+		if (tdown > 0.0f && tdown < 1.0f)
+		{
+			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
+			if (bculled2)
+			{
+				*p2 = newpoint;
+			}
+			else
+			{
+				*p1 = newpoint;
+			}
+		}
+	}
+	else if (p1->y == p2->y)//Ë®Æ½
+	{
+		GLfloat tleft =  (p1->x - (-1.0f))	/ (p1->x - p2->x);
+		GLfloat tright = (p1->x - 1.0f)		/ (p1->x - p2->x);
+		if (tleft > 0.0f && tleft < 1.0f)
+		{
+			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
+			if (bculled1)
+			{
+				*p1 = newpoint;
+			}
+			else
+			{
+				*p2 = newpoint;
+			}
+		}
+		if (tright > 0.0f && tright < 1.0f)
+		{
+			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
+			if (bculled2)
+			{
+				*p2 = newpoint;
+			}
+			else
+			{
+				*p1 = newpoint;
+			}
+		}
+	}
+	else
+	{
+		GLfloat ttop =		(p1->y - 1.0f)		/ (p1->y - p2->y);
+		GLfloat tdown =		(p1->y - (-1.0f))	/ (p1->y - p2->y);
+		GLfloat tleft =		(p1->x - (-1.0f))	/ (p1->x - p2->x);
+		GLfloat tright =	(p1->x - 1.0f)		/ (p1->x - p2->x);
+		if (ttop > 0.0f && ttop < 1.0f)
+		{
+			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
+			if (bculled1)
+			{
+				*p1 = newpoint;
+			}
+			else
+			{
+				*p2 = newpoint;
+			}
+		}
+		else if (tdown > 0.0f && tdown < 1.0f)
+		{
+			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
+			if (bculled1)
+			{
+				*p1 = newpoint;
+			}
+			else
+			{
+				*p2 = newpoint;
+			}
+		}
+
+		if (tleft > 0.0f && tleft < 1.0f)
+		{
+			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
+			if (bculled2)
+			{
+				*p2 = newpoint;
+			}
+			else
+			{
+				*p1 = newpoint;
+			}
+		}
+		else if (tright > 0.0f && tright < 1.0f)
+		{
+			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
+			if (bculled2)
+			{
+				*p2 = newpoint;
+			}
+			else
+			{
+				*p1 = newpoint;
+			}
+		}
+	}
+
+
+
+
+	gl_vector4* pl = nullptr;
+	gl_vector4* pr = nullptr;
+	/*
+	if (p1->x < p2->x) pl = p1;
+	
 	GLfloat t = 0.0f;
 	gl_vector4* px = nullptr;
 	if (v1cliped)
@@ -224,6 +368,7 @@ void gl_do_clipping(GLvoid* v1, GLvoid* v2, bool v1cliped, bool v2cliped, GLsize
 		pt.w = p1->w * t + (1 - t) * p2->w;
 		memcpy_s(px + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 	}
+	*/
 }
 
 void gl_point_assemble(gl_draw_command* cmd)
@@ -236,7 +381,7 @@ void gl_point_assemble(gl_draw_command* cmd)
 		position->x = position->x / position->w;
 		position->y = position->y / position->w;
 		position->z = position->z / position->w;
-		if (gl_is_point_cliped(position)) continue;
+		if (gl_is_point_culled(position)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		node->vertices = gl_malloc(cmd->pa.vertex_size);
 		memcpy_s(node->vertices, cmd->pa.vertex_size, vertex_data, cmd->pa.vertex_size);
@@ -270,13 +415,15 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 		position2->x = position2->x / position2->w;
 		position2->y = position2->y / position2->w;
 		position2->z = position2->z / position2->w;
-		bool bcliped1 = gl_is_point_cliped(position1);
-		bool bcliped2 = gl_is_point_cliped(position2);
-		if (bcliped1 && bcliped2)
+		bool baccepted = false;
+		bool bculled1 = false;
+		bool bculled2 = false;
+		bool bculled = gl_is_line_culled(position1, position2, baccepted, bculled1, bculled2);
+		if (bculled)
 		{
 			continue;//cliped
 		}
-		else 
+		else if(baccepted)
 		{
 			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 			GLsizei primitive_size = cmd->pa.vertex_size * 2;
@@ -294,8 +441,10 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 			}
 			tail = node;
 			++cmd->pa.primitive_count;
-
-			gl_do_clipping(vertex_data1, vertex_data2, bcliped1, bcliped2, cmd->pa.vertex_size);
+		}
+		else
+		{
+			gl_do_line_clipping(vertex_data1, vertex_data2, bculled1, bculled2, cmd->pa.vertex_size);
 		}
 	}
 }
@@ -310,7 +459,7 @@ void gl_line_strip_assemble(gl_draw_command* cmd)
 	position1->x = position1->x / position1->w;
 	position1->y = position1->y / position1->w;
 	position1->z = position1->z / position1->w;
-	bool bcliped1 = gl_is_point_cliped(position1);
+	bool bculled1 = gl_is_point_culled(position1);
 
 	gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 	node->vertices_count = 0;
@@ -319,16 +468,16 @@ void gl_line_strip_assemble(gl_draw_command* cmd)
 	{
 		const GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i + 1) * cmd->pa.vertex_size;
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
-		bool bcliped2 = gl_is_point_cliped(position2);
+		bool bculled2 = gl_is_point_culled(position2);
 
 		position2->x = position2->x / position2->w;
 		position2->y = position2->y / position2->w;
 		position2->z = position2->z / position2->w;
-		if (bcliped1 && bcliped2)//
+		if (bculled1 && bculled2)//
 		{
 			position1 = position2;//move to the next
 			vertex_data1 = vertex_data2;
-			bcliped1 = bcliped2;
+			bculled1 = bculled2;
 			if (node->vertices_count > 0)
 			{
 				GLsizei primitive_size = cmd->pa.vertex_size * node->vertices_count;
@@ -383,7 +532,7 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 		position3->x = position3->x / position3->w;
 		position3->y = position3->y / position3->w;
 		position3->z = position3->z / position3->w;
-		if (gl_is_point_cliped(position1) && gl_is_point_cliped(position2) && gl_is_point_cliped(position3)) continue;
+		if (gl_is_point_culled(position1) && gl_is_point_culled(position2) && gl_is_point_culled(position3)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		GLsizei primitive_size = cmd->pa.vertex_size * 3;
 		node->vertices = gl_malloc(primitive_size);
