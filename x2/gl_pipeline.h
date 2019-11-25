@@ -245,3 +245,9 @@ void gl_vertex_shader(gl_draw_command* cmd);
 
 void gl_primitive_assemble(gl_draw_command* cmd);
 
+void gl_rasterize(gl_draw_command* cmd);
+
+void gl_fragment_shader(gl_draw_command* cmd);
+
+void gl_output_merge(gl_draw_command* cmd);
+
