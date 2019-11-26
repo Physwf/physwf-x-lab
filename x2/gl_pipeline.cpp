@@ -2,7 +2,37 @@
 #include "gl_shader.h"
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
+gl_vector2 operator+(const gl_vector2& lhs, const gl_vector2& rhs)
+{
+	return gl_vector2(lhs.x + rhs.x, lhs.y + rhs.y);
+}
+gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs)
+{
+	return gl_vector2(lhs.x - rhs.x, lhs.y - rhs.y);
+}
+float operator*(const gl_vector2& lhs, const gl_vector2& rhs)
+{
+	return (lhs.x * rhs.x + lhs.y * rhs.y);
+}
+float cross(const gl_vector2& lhs, const gl_vector2& rhs)
+{
+	return (lhs.x* rhs.y - rhs.x*lhs.y);
+}
+
+gl_vector3 operator+(const gl_vector3& lhs, const gl_vector3& rhs)
+{
+	return gl_vector3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
+}
+gl_vector3 operator-(const gl_vector3& lhs, const gl_vector3& rhs)
+{
+	return gl_vector3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.y + rhs.y);
+}
+float operator*(const gl_vector3& lhs, const gl_vector3& rhs)
+{
+	return (lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z);
+}
 gl_pipeline glPpeline;
 
 bool gl_pipeline_init()
@@ -37,6 +67,12 @@ void gl_emit_draw_command()
 	cmd->pa.primitives = nullptr;
 	cmd->pa.tail = nullptr;
 	cmd->pa.primitive_count = 0;
+	cmd->pa.viewport_x = glContext.viewport_x;
+	cmd->pa.viewport_y = glContext.viewport_y;
+	cmd->pa.viewport_width = glContext.viewport_width;
+	cmd->pa.viewport_height = glContext.viewport_height;
+	cmd->pa.depth_far = glContext.depth_far;
+	cmd->pa.depth_near = glContext.depth_near;
 
 	//todo
 	//gl_draw_command* cmd = glPpeline.command_list;
@@ -142,16 +178,16 @@ bool gl_is_point_culled(const gl_vector4* p)
 bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepted,bool& bculled1,bool& bculled2)
 {
 	GLbyte code1 = 0;
-	if (p1->x < -p1->w)	code1 |= 1;
-	if (p1->x > p1->w)	code1 |= 2;
-	if (p1->y < -p1->w)	code1 |= 4;
-	if (p1->y > p1->w)	code1 |= 8;
+	if (p1->x < -1.0f)	code1 |= 1;
+	if (p1->x > 1.0f)	code1 |= 2;
+	if (p1->y < -1.0f)	code1 |= 4;
+	if (p1->y > 1.0f)	code1 |= 8;
 	bculled1 = (code1 != 0);
 	GLbyte code2 = 0;
-	if (p2->x < -p2->w)	code2 |= 1;
-	if (p2->x > p2->w)	code2 |= 2;
-	if (p2->y < -p2->w)	code2 |= 4;
-	if (p2->y > p2->w)	code2 |= 8;
+	if (p2->x < -1.0f)	code2 |= 1;
+	if (p2->x > 1.0f)	code2 |= 2;
+	if (p2->y < -1.0f)	code2 |= 4;
+	if (p2->y > 1.0f)	code2 |= 8;
 	bculled2 = (code2 != 0);
 	baccepted = (code1 | code2) == 0;
 	return (code1 & code2) != 0;
@@ -159,7 +195,25 @@ bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepte
 
 bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3, bool& baccepted, bool& bculled1, bool& bculled2, bool& bculled3)
 {
-	return false;
+	GLbyte code1 = 0;
+	if (p1->x < -1.0f)	code1 |= 1;
+	if (p1->x > 1.0f)	code1 |= 2;
+	if (p1->y < -1.0f)	code1 |= 4;
+	if (p1->y > 1.0f)	code1 |= 8;
+	bculled1 = (code1 != 0);
+	GLbyte code2 = 0;
+	if (p2->x < -1.0f)	code2 |= 1;
+	if (p2->x > 1.0f)	code2 |= 2;
+	if (p2->y < -1.0f)	code2 |= 4;
+	if (p2->y > 1.0f)	code2 |= 8;
+	GLbyte code3 = 0;
+	if (p3->x < -1.0f)	code3 |= 1;
+	if (p3->x > 1.0f)	code3 |= 2;
+	if (p3->y < -1.0f)	code3 |= 4;
+	if (p2->y > 1.0f)	code3 |= 8;
+	bculled3 = (code3 != 0);
+	baccepted = (code1 | code2 | code3) == 0;
+	return (code1 & code2 & code3) != 0;
 }
 
 bool gl_is_point_degenerated(gl_vector4* p)
@@ -174,20 +228,20 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 	GLfloat ts[4] = { 0.0f };
 	if (p1->x == p2->x)//垂直
 	{
-		ts[0] =  (p1->y - p1->w)		/ (p1->y - p2->y);
-		ts[1] = (p1->y - (-p1->w))	/ (p1->y - p2->y);
+		ts[0] =  (p1->y - 1.0f)			/ (p1->y - p2->y);
+		ts[1] =	(p1->y - (-1.0f))		/ (p1->y - p2->y);
 	}
 	else if (p1->y == p2->y)//水平
 	{
-		ts[2] = (p1->x - p1->w)		/ (p1->x - p2->x);
-		ts[3] =  (p1->x - (-p1->w))		/ (p1->x - p2->x);
+		ts[2] =	 (p1->x - 1.0f)			/ (p1->x - p2->x);
+		ts[3] =  (p1->x - (-1.0f))		/ (p1->x - p2->x);
 	}
 	else
 	{
-		ts[0] =		(p1->y - p1->w)			/ (p1->y - p2->y);
-		ts[1] =		(p1->y - (-p1->w))		/ (p1->y - p2->y);
-		ts[2] =		(p1->x - p1->w)			/ (p1->x - p2->x);
-		ts[3] =		(p1->x - (-p1->w))		/ (p1->x - p2->x);
+		ts[0] =		(p1->y - 1.0f)			/ (p1->y - p2->y);
+		ts[1] =		(p1->y - (-1.0f))		/ (p1->y - p2->y);
+		ts[2] =		(p1->x - 1.0f)			/ (p1->x - p2->x);
+		ts[3] =		(p1->x - (-1.0f))		/ (p1->x - p2->x);
 	}
 	gl_vector4 pts[5] =
 	{
@@ -261,6 +315,55 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 	}
 	return nullptr;
 }
+//clockwise inside means in right side
+bool is_in_right_side_of_boundary(const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end, const gl_vector2& point)
+{
+	return cross(cw_boundary_end - cw_boundary_start, point - cw_boundary_start) >= 0;//==0表示在边界上
+}
+gl_vector4 compute_intersection(const gl_vector4& prev_p, const gl_vector4& cur_p, const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end)
+{
+	return gl_vector4(0,0,0,0);
+}
+void do_SutherlandHodgmanClip(const std::vector<gl_vector4>& vertices_in, std::vector<gl_vector4>& vertices_out, gl_vector2 clockwise_pstart, gl_vector2 clockwise_pend)
+{
+	vertices_out.clear();
+	for (std::vector<gl_vector4>::size_type i = 0; i < vertices_in.size(); ++i)
+	{
+		gl_vector4 cur_p = vertices_in[0];
+		gl_vector4 pre_p = vertices_in[(i + vertices_in.size() - 1) % vertices_in.size()];
+		gl_vector4 intersectin_p = compute_intersection(cur_p, pre_p, clockwise_pstart, clockwise_pend);
+		if (is_in_right_side_of_boundary(clockwise_pend , clockwise_pstart, cur_p.to_vector2()))
+		{
+			if (!is_in_right_side_of_boundary(clockwise_pend, clockwise_pstart, pre_p.to_vector2()))
+			{
+				vertices_out.push_back(intersectin_p);
+			}
+			vertices_out.push_back(cur_p);
+		}
+		else if(is_in_right_side_of_boundary(clockwise_pend, clockwise_pstart, pre_p.to_vector2()))
+		{
+			vertices_out.push_back(intersectin_p);
+		}
+	}
+}
+
+
+gl_primitive_node* gl_do_triangle_clipping(GLvoid* v1, GLvoid* v2, GLvoid* v3, bool bculled1, bool bculled2, bool bculled3, GLsizei vertex_size)
+{
+	///https://en.wikipedia.org/wiki/Sutherland-Hodgman_algorithm
+	gl_vector4* p1 = (gl_vector4*)v1;
+	gl_vector4* p2 = (gl_vector4*)v2;
+	gl_vector4* p3 = (gl_vector4*)v3;
+
+	std::vector<gl_vector4> vertices_in = { *p1,*p2,*p3 };
+	std::vector<gl_vector4> vertices_out;
+	do_SutherlandHodgmanClip(vertices_in, vertices_out, gl_vector2(-1.0f, 1.0f), gl_vector2(-1.0f, -1.0f));
+	do_SutherlandHodgmanClip(vertices_out, vertices_in, gl_vector2(-1.0f, 1.0f), gl_vector2(-1.0f, -1.0f));
+	do_SutherlandHodgmanClip(vertices_in, vertices_out, gl_vector2(-1.0f, 1.0f), gl_vector2(-1.0f, -1.0f));
+	do_SutherlandHodgmanClip(vertices_out, vertices_in, gl_vector2(-1.0f, 1.0f), gl_vector2(-1.0f, -1.0f));
+
+	return nullptr;
+}
 
 void gl_point_assemble(gl_draw_command* cmd)
 {
@@ -269,9 +372,9 @@ void gl_point_assemble(gl_draw_command* cmd)
 	{
 		const GLbyte* vertex_data = (GLbyte*)cmd->vs.vertices_result + i * cmd->pa.vertex_size;
 		gl_vector4* position = (gl_vector4*)(vertex_data);
-		position->x = position->x;
-		position->y = position->y;
-		position->z = position->z;
+		position->x = position->x / position->w;
+		position->y = position->y / position->w;
+		position->z = position->z / position->w;
 		if (gl_is_point_culled(position)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		node->vertices = gl_malloc(cmd->pa.vertex_size);
@@ -299,12 +402,12 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 		GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i * 2 + 1) * cmd->pa.vertex_size;
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
-		position1->x = position1->x;
-		position1->y = position1->y;
-		position1->z = position1->z;
-		position2->x = position2->x;
-		position2->y = position2->y;
-		position2->z = position2->z;
+		position1->x = position1->x / position1->w;
+		position1->y = position1->y / position1->w;
+		position1->z = position1->z / position1->w;
+		position2->x = position2->x / position2->w;
+		position2->y = position2->y / position2->w;
+		position2->z = position2->z / position2->w;
 		bool baccepted = false;
 		bool bculled1 = false;
 		bool bculled2 = false;
@@ -335,7 +438,17 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 		}
 		else
 		{
-			gl_do_line_clipping(vertex_data1, vertex_data2, bculled1, bculled2, cmd->pa.vertex_size);
+			gl_primitive_node* node = gl_do_line_clipping(vertex_data1, vertex_data2, bculled1, bculled2, cmd->pa.vertex_size);
+			if (cmd->pa.tail == nullptr)
+			{
+				cmd->pa.primitives = node;
+			}
+			else
+			{
+				cmd->pa.tail->next = node;
+			}
+			cmd->pa.tail = node;
+			++cmd->pa.primitive_count;
 		}
 	}
 }
@@ -344,60 +457,59 @@ void gl_line_list_adj_assemble(gl_draw_command* cmd) { }
 
 void gl_line_strip_assemble(gl_draw_command* cmd)
 {
-	gl_primitive_node* tail = nullptr;
-	const GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result +  cmd->pa.vertex_size;
-	gl_vector4* position1 = (gl_vector4*)(vertex_data1);
-	position1->x = position1->x / position1->w;
-	position1->y = position1->y / position1->w;
-	position1->z = position1->z / position1->w;
-	bool bculled1 = gl_is_point_culled(position1);
-
-	gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
-	node->vertices_count = 0;
-	node->next = nullptr;
-	for (GLsizei i = 1; i < cmd->ia.vertices_count; ++i)//start form 2ed point
+	for (GLsizei i = 0; i < cmd->ia.vertices_count-1; ++i)
 	{
-		const GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i + 1) * cmd->pa.vertex_size;
+		GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + cmd->pa.vertex_size;
+		GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i + 1) * cmd->pa.vertex_size;
+		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
-		bool bculled2 = gl_is_point_culled(position2);
-
-		position2->x = position2->x;
-		position2->y = position2->y;
-		position2->z = position2->z;
-		if (bculled1 && bculled2)//
+		position1->x = position1->x / position1->w;
+		position1->y = position1->y / position1->w;
+		position1->z = position1->z / position1->w;
+		position2->x = position2->x / position2->w;
+		position2->y = position2->y / position2->w;
+		position2->z = position2->z / position2->w;
+		bool baccepted = false;
+		bool bculled1 = false;
+		bool bculled2 = false;
+		if (gl_is_line_culled(position1, position2, baccepted, bculled1, bculled2))
 		{
-			position1 = position2;//move to the next
-			vertex_data1 = vertex_data2;
-			bculled1 = bculled2;
-			if (node->vertices_count > 0)
-			{
-				GLsizei primitive_size = cmd->pa.vertex_size * node->vertices_count;
-				node->vertices = gl_malloc(primitive_size);
-				memcpy_s(node->vertices, primitive_size, (vertex_data1- node->vertices_count * cmd->pa.vertex_size), primitive_size);
-				++node->vertices_count;
-				if (tail == nullptr)
-				{
-					cmd->pa.primitives = node;
-				}
-				else
-				{
-					tail->next = node;
-				}
-				node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
-				++cmd->pa.primitive_count;
-			}
 			continue;
+		}
+		else if (baccepted)
+		{
+			//todo z culling
+			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
+			GLsizei primitive_size = cmd->pa.vertex_size * 2;
+			node->vertices = gl_malloc(primitive_size);
+			memcpy_s(node->vertices, primitive_size, vertex_data1, primitive_size);
+			node->next = nullptr;
+			node->vertices_count = 2;
+			if (cmd->pa.tail == nullptr)
+			{
+				cmd->pa.primitives = node;
+			}
+			else
+			{
+				cmd->pa.tail->next = node;
+			}
+			cmd->pa.tail = node;
+			++cmd->pa.primitive_count;
 		}
 		else
 		{
-
+			gl_primitive_node* node = gl_do_line_clipping(vertex_data1, vertex_data2, bculled1, bculled2, cmd->pa.vertex_size);
+			if (cmd->pa.tail == nullptr)
+			{
+				cmd->pa.primitives = node;
+			}
+			else
+			{
+				cmd->pa.tail->next = node;
+			}
+			cmd->pa.tail = node;
+			++cmd->pa.primitive_count;
 		}
-		++node->vertices_count;
-	}
-
-	if (node->vertices_count)
-	{
-		gl_free(node);
 	}
 }
 
@@ -414,31 +526,45 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
 		gl_vector4* position3 = (gl_vector4*)(vertex_data3);
-		position1->x = position1->x;
-		position1->y = position1->y;
-		position1->z = position1->z;
-		position2->x = position2->x;
-		position2->y = position2->y;
-		position2->z = position2->z;
-		position3->x = position3->x;
-		position3->y = position3->y;
-		position3->z = position3->z;
-		if (gl_is_point_culled(position1) && gl_is_point_culled(position2) && gl_is_point_culled(position3)) continue;
-		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
-		GLsizei primitive_size = cmd->pa.vertex_size * 3;
-		node->vertices = gl_malloc(primitive_size);
-		memcpy_s(node->vertices, primitive_size, vertex_data1, primitive_size);
-		node->next = nullptr;
-		if (tail == nullptr)
+		position1->x = position1->x / position1->w;
+		position1->y = position1->y / position1->w;
+		position1->z = position1->z / position1->w;
+		position2->x = position2->x / position2->w;
+		position2->y = position2->y / position2->w;
+		position2->z = position2->z / position2->w;
+		position3->x = position3->x / position3->w;
+		position3->y = position3->y / position3->w;
+		position3->z = position3->z / position3->w;
+		bool baccepted = false;
+		bool bculled1 = false;
+		bool bculled2 = false;
+		bool bculled3 = false;
+		if (gl_is_triangle_culled(position1, position2, position3, baccepted, bculled1, bculled2, bculled3))
 		{
-			cmd->pa.primitives = node;
+			continue;
+		}
+		else if (baccepted)
+		{
+			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
+			GLsizei primitive_size = cmd->pa.vertex_size * 3;
+			node->vertices = gl_malloc(primitive_size);
+			memcpy_s(node->vertices, primitive_size, vertex_data1, primitive_size);
+			node->next = nullptr;
+			if (cmd->pa.tail == nullptr)
+			{
+				cmd->pa.primitives = node;
+			}
+			else
+			{
+				tail->next = node;
+			}
+			cmd->pa.tail = node;
+			++cmd->pa.primitive_count;
 		}
 		else
 		{
-			tail->next = node;
+
 		}
-		tail = node;
-		++cmd->pa.primitive_count;
 	}
 }
 

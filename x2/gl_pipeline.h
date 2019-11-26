@@ -19,7 +19,14 @@ struct gl_vector2
 			float u, v;
 		};
 	};
+	gl_vector2():x(0.0f), y(0.0f) { }
+	gl_vector2(float _x, float _y):x(_x),y(_y) { }
 };
+
+gl_vector2 operator+(const gl_vector2& lhs, const gl_vector2& rhs);
+gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs);
+float operator*(const gl_vector2& lhs, const gl_vector2& rhs);
+float cross(const gl_vector2& lhs, const gl_vector2& rhs);
 
 struct gl_vector3
 {
@@ -34,7 +41,14 @@ struct gl_vector3
 			float u, v, t;
 		};
 	};
+
+	gl_vector3() :x(0.0f), y(0.0f),z(0.0f) { }
+	gl_vector3(float _x, float _y, float _z) :x(_x), y(_y), z(_z)  { }
 };
+
+gl_vector3 operator+(const gl_vector3& lhs, const gl_vector3& rhs);
+gl_vector3 operator-(const gl_vector3& lhs, const gl_vector3& rhs);
+float operator*(const gl_vector3& lhs, const gl_vector3& rhs);
 
 struct gl_vector4
 {
@@ -51,6 +65,15 @@ struct gl_vector4
 			float r, g, b, a;
 		};
 	};
+
+	gl_vector2 to_vector2() const
+	{
+		return gl_vector2(x, y);
+	}
+	gl_vector3 to_vector3() const
+	{
+		return gl_vector3(x, y, z);
+	}
 
 	gl_vector4(float _x,float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) { }
 
@@ -94,6 +117,14 @@ struct gl_vs_state
 
 struct gl_pa_state
 {
+	GLint					viewport_x;
+	GLint					viewport_y;
+	GLsizei					viewport_width;
+	GLsizei					viewport_height;
+
+	GLclampf				depth_near;
+	GLclampf				depth_far;
+
 	GLsizei					vertex_size;
 	GLsizei					primitive_count;
 	GLenum					primitive_type;
