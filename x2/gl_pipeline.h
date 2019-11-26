@@ -98,6 +98,7 @@ struct gl_pa_state
 	GLsizei					primitive_count;
 	GLenum					primitive_type;
 	gl_primitive_node*		primitives;
+	gl_primitive_node*		tail;
 };
 
 struct gl_rs_state

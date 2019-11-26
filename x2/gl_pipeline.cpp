@@ -1,5 +1,7 @@
 #include "gl_pipeline.h"
 #include "gl_shader.h"
+#include <algorithm>
+#include <iterator>
 
 gl_pipeline glPpeline;
 
@@ -33,6 +35,7 @@ void gl_emit_draw_command()
 	cmd->vs.vertices_result = nullptr;
 	cmd->pa.primitive_type = cmd->ia.primitive_type;
 	cmd->pa.primitives = nullptr;
+	cmd->pa.tail = nullptr;
 	cmd->pa.primitive_count = 0;
 
 	//todo
@@ -130,314 +133,133 @@ void gl_vertex_shader(gl_draw_command* cmd)
 
 bool gl_is_point_culled(const gl_vector4* p)
 {
-	if (p->x > 1.0f || p->x < -1.0f) return true;
-	if (p->y > 1.0f || p->y < -1.0f) return true;
-	if (p->z > 1.0f || p->z < 0.0f) return true;
+	if (p->x > p->w || p->x < -p->w) return true;
+	if (p->y > p->w || p->y < -p->w) return true;
+	if (p->z > p->w || p->z < 0.0f) return true;
 	return false;
 }
 
 bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepted,bool& bculled1,bool& bculled2)
 {
-// 	if (p1->x <= p2->x && p2->x < -1.0f) return true;
-// 	if (p2->x <= p1->x && p1->x < -1.0f) return true;
-// 	if (p1->x >= p2->x && p2->x > 1.0f) return true;
-// 	if (p2->x >= p1->x && p1->x > 1.0f) return true;
-// 	if (p1->y <= p2->y && p2->y < -1.0f) return true;
-// 	if (p2->y <= p1->y && p2->y < -1.0f) return true;
-// 	if (p1->y >= p2->y && p2->y > 1.0f) return true;
-// 	if (p2->y >= p1->y && p1->y > 1.0f) return true;
-// 	if (p1->z >= p2->z && p2->z > 1.0f) return true;
-// 	if (p2->z >= p1->z && p1->z > 1.0f) return true;
-// 	if (p1->z <= p2->z && p2->z < 0.0f) return true;
-// 	if (p2->z <= p1->z && p1->z < 0.0f) return true;
-
 	GLbyte code1 = 0;
-	if (p1->x < -1.0f)	code1 |= 1;
-	if (p1->x > 1.0f)	code1 |= 2;
-	if (p1->y < -1.0f)	code1 |= 4;
-	if (p1->y > 1.0f)	code1 |= 8;
+	if (p1->x < -p1->w)	code1 |= 1;
+	if (p1->x > p1->w)	code1 |= 2;
+	if (p1->y < -p1->w)	code1 |= 4;
+	if (p1->y > p1->w)	code1 |= 8;
 	bculled1 = (code1 != 0);
 	GLbyte code2 = 0;
-	if (p2->x < -1.0f)	code2 |= 1;
-	if (p2->x > 1.0f)	code2 |= 2;
-	if (p2->y < -1.0f)	code2 |= 4;
-	if (p2->y > 1.0f)	code2 |= 8;
+	if (p2->x < -p2->w)	code2 |= 1;
+	if (p2->x > p2->w)	code2 |= 2;
+	if (p2->y < -p2->w)	code2 |= 4;
+	if (p2->y > p2->w)	code2 |= 8;
 	bculled2 = (code2 != 0);
 	baccepted = (code1 | code2) == 0;
 	return (code1 & code2) != 0;
 }
 
-bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3)
+bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3, bool& baccepted, bool& bculled1, bool& bculled2, bool& bculled3)
 {
 	return false;
 }
 
-void gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bool bculled2, GLsizei vertex_size)
+bool gl_is_point_degenerated(gl_vector4* p)
+{
+	return (p->x == 0 && p->y == 0 && p->z == 0 && p->w == 0);
+}
+
+gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bool bculled2, GLsizei vertex_size)
 {
 	gl_vector4* p1 = (gl_vector4*)v1;
 	gl_vector4* p2 = (gl_vector4*)v2;
-	gl_vector4* ptop = p1;
-	gl_vector4* pdown = p2;
-	gl_vector4* pleft = p1;
-	gl_vector4* pright = p2;
-	if (p1->y < p2->y)
+	GLfloat ts[4] = { 0.0f };
+	if (p1->x == p2->x)//垂直
 	{
-		ptop = p2;
-		pdown = p1;
-	}
-	if (p1->x > p2->x)
-	{
-		pleft = p2;
-		pright = p1;
-	}
-	GLfloat ttop = 0.0f;
-	GLfloat tdown = 0.0f;
-	GLfloat tleft = 0.0f;
-	GLfloat tright = 0.0f;
-	if (ptop->x == pdown->x)//垂直
-	{
-		ttop =  (ptop->y - 1.0f)	/ (ptop->y - pdown->y);
-		tdown = (ptop->y - (-1.0f))	/ (ptop->y - pdown->y);
-// 		if (ttop > 0.0f && ttop < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
-// 			if (bculled1)
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 		}
-// 		if (tdown > 0.0f && tdown < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
-// 			if (bculled2)
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 		}
+		ts[0] =  (p1->y - p1->w)		/ (p1->y - p2->y);
+		ts[1] = (p1->y - (-p1->w))	/ (p1->y - p2->y);
 	}
 	else if (p1->y == p2->y)//水平
 	{
-		tleft =  (pright->x - (-1.0f))	/ (pright->x - pleft->x);
-		tright = (pright->x - 1.0f)		/ (pright->x - pleft->x);
-// 		if (tleft > 0.0f && tleft < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
-// 			if (bculled1)
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 		}
-// 		if (tright > 0.0f && tright < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
-// 			if (bculled2)
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 		}
+		ts[2] = (p1->x - p1->w)		/ (p1->x - p2->x);
+		ts[3] =  (p1->x - (-p1->w))		/ (p1->x - p2->x);
 	}
 	else
 	{
-		ttop =		(ptop->y - 1.0f)		/ (ptop->y - pdown->y);
-		tdown =		(ptop->y - (-1.0f))		/ (ptop->y - pdown->y);
-		tleft =		(pright->x - (-1.0f))	/ (pright->x - pleft->x);
-		tright =	(pright->x - 1.0f)		/ (pright->x - pleft->x);
-// 		if (ttop > 0.0f && ttop < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(p1->x, 1.0f, ttop*(p1->z - p2->z), ttop* (p1->w - p2->w));
-// 			if (bculled1)
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 		}
-// 		else if (tdown > 0.0f && tdown < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(p1->x, -1.0f, tdown*(p1->z - p2->z), tdown* (p1->w - p2->w));
-// 			if (bculled1)
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 		}
-// 
-// 		if (tleft > 0.0f && tleft < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(-1.0f, p1->y, tleft*(p1->z - p2->z), tleft* (p1->w - p2->w));
-// 			if (bculled2)
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 		}
-// 		else if (tright > 0.0f && tright < 1.0f)
-// 		{
-// 			gl_vector4 newpoint(1.0f, p1->y, tright*(p1->z - p2->z), tright* (p1->w - p2->w));
-// 			if (bculled2)
-// 			{
-// 				*p2 = newpoint;
-// 			}
-// 			else
-// 			{
-// 				*p1 = newpoint;
-// 			}
-// 		}
+		ts[0] =		(p1->y - p1->w)			/ (p1->y - p2->y);
+		ts[1] =		(p1->y - (-p1->w))		/ (p1->y - p2->y);
+		ts[2] =		(p1->x - p1->w)			/ (p1->x - p2->x);
+		ts[3] =		(p1->x - (-p1->w))		/ (p1->x - p2->x);
 	}
-	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
-	if (ttop > 0.0f && ttop < 1.0f)
+	gl_vector4 pts[5] =
 	{
-		gl_vector4* p1 = ptop;
-		gl_vector4* p2 = pdown;
-		GLfloat t = ttop;
-		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
-		{
-			pt.x = p1->x * t + (1 - t) * p2->x;
-			pt.y = p1->y * t + (1 - t) * p2->y;
-			pt.z = p1->z * t + (1 - t) * p2->z;
-			pt.w = p1->w * t + (1 - t) * p2->w;
-			memcpy_s(ptop + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
-		}
-	}
-	if (tdown > 0.0f && tdown < 1.0f)
+		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
+		*p2,
+	};
+	std::sort(std::begin(ts), std::end(ts));
+	for (auto i = 0; i < 4; ++i)
 	{
-		gl_vector4* p1 = ptop;
-		gl_vector4* p2 = pright;
-		GLfloat t = tdown;
-		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
-		{
-			pt.x = p1->x * t + (1 - t) * p2->x;
-			pt.y = p1->y * t + (1 - t) * p2->y;
-			pt.z = p1->z * t + (1 - t) * p2->z;
-			pt.w = p1->w * t + (1 - t) * p2->w;
-			memcpy_s(pdown + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
-		}
+		GLfloat t = ts[i];
+		if(t == 0.0f) continue;
+		pts[i].w = p1->w * t + (1 - t) * p2->w;
+		pts[i].x = p1->x * t + (1 - t) * p2->x;
+		pts[i].y = p1->y * t + (1 - t) * p2->y;
+		pts[i].z = p1->z * t + (1 - t) * p2->z;
 	}
-	if (tleft > 0.0f && tleft < 1.0f)
+	gl_vector4* p = p1;
+	for (auto i = 0; i < 5; ++i)
 	{
-		gl_vector4* p1 = pleft;
-		gl_vector4* p2 = pright;
-		GLfloat t = tleft;
-		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+		bool bacceped = false;
+		bool bculled1 = false;
+		bool bculled2 = false;
+		gl_vector4* pp = &pts[i];
+		if(gl_is_point_degenerated(pp)) continue;//skip
+		if (gl_is_line_culled(p, pp, bacceped, bculled1, bculled2))
 		{
-			pt.x = p1->x * t + (1 - t) * p2->x;
-			pt.y = p1->y * t + (1 - t) * p2->y;
-			pt.z = p1->z * t + (1 - t) * p2->z;
-			pt.w = p1->w * t + (1 - t) * p2->w;
-			memcpy_s(pleft + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+			p = pp;
+			continue;
+		}
+		else
+		{
+			//baccepted must be true
+			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
+			GLsizei primitive_size = vertex_size * 2;
+			node->vertices = gl_malloc(primitive_size);
+			node->next = nullptr;
+			node->vertices_count = 2;
+			if (p == p1)
+			{
+				//just copy
+				memcpy_s(node->vertices, vertex_size, p1, vertex_size);
+			}
+			else
+			{
+				
+				if (pp = p2)
+				{
+					//just copy
+					memcpy_s(node->vertices, vertex_size, p2, vertex_size);
+				}
+				else
+				{
+					//do lerp first
+					gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
+					GLfloat t = ts[i];
+					for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+					{
+						pt.w = p1->w * t + (1 - t) * p2->w;
+						pt.x = p1->x * t + (1 - t) * p2->x;
+						pt.y = p1->y * t + (1 - t) * p2->y;
+						pt.z = p1->z * t + (1 - t) * p2->z;
+						memcpy_s((GLbyte*)node->vertices + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+					}
+				}
+			}
+			return node;//only one node can be produced, so just return
 		}
 	}
-	if (tright > 0.0f && tright < 1.0f)
-	{
-		gl_vector4* p1 = pleft;
-		gl_vector4* p2 = pright;
-		GLfloat t = tright;
-		for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
-		{
-			pt.x = p1->x * t + (1 - t) * p2->x;
-			pt.y = p1->y * t + (1 - t) * p2->y;
-			pt.z = p1->z * t + (1 - t) * p2->z;
-			pt.w = p1->w * t + (1 - t) * p2->w;
-			memcpy_s(pright + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
-		}
-	}
-
-	/*
-	if (p1->x < p2->x) pl = p1;
-	
-	GLfloat t = 0.0f;
-	gl_vector4* px = nullptr;
-	if (v1cliped)
-	{
-		if (p1->x < -1.0f)
-		{
-			t = (p1->x - (-1.0f)) / (p1->x - p2->x);
-		}
-		else if (p1->x > 1.0f)
-		{
-			t = (p1->x - (1.0f)) / (p1->x - p2->x);
-		}
-		else if (p1->y < -1.0f)
-		{
-			t = (p1->y - (-1.0f)) / (p1->y - p2->y);
-		}
-		else if (p1->y > 1.0f)
-		{
-			t = (p1->y - (1.0f)) / (p1->y - p2->y);
-		}
-		else if (p1->z < -1.0f)
-		{
-			t = (p1->z - (-1.0f)) / (p1->z - p2->z);
-		}
-		else if (p1->z > 0.0f)
-		{
-			t = (p1->z - (0.0f)) / (p1->z - p2->z);
-		}
-		px = p1;
-	}
-	else if (v2cliped)
-	{
-		if (p2->x < -1.0f)
-		{
-			t = ((-1.0f) - p2->x) / (p1->x - p2->x);
-		}
-		else if (p2->x > 1.0f)
-		{
-			t = ((1.0f) - p2->x) / (p1->x - p2->x);
-		}
-		else if (p2->y < -1.0f)
-		{
-			t = ((-1.0f) - p1->y) / (p1->y - p2->y);
-		}
-		else if (p2->y > 1.0f)
-		{
-			t = ((1.0f) - p1->y) / (p1->y - p2->y);
-		}
-		else if (p2->z < -1.0f)
-		{
-			t = ((-1.0f) - p1->z) / (p1->z - p2->z);
-		}
-		else if (p2->z > 0.0f)
-		{
-			t = ((0.0f) - p1->z) / (p1->z - p2->z);
-		}
-		px = p1;
-	}
-	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
-	
-	for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
-	{
-		pt.x = p1->x * t + (1 - t) * p2->x;
-		pt.y = p1->y * t + (1 - t) * p2->y;
-		pt.z = p1->z * t + (1 - t) * p2->z;
-		pt.w = p1->w * t + (1 - t) * p2->w;
-		memcpy_s(px + i * sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
-	}
-	*/
+	return nullptr;
 }
 
 void gl_point_assemble(gl_draw_command* cmd)
@@ -447,9 +269,9 @@ void gl_point_assemble(gl_draw_command* cmd)
 	{
 		const GLbyte* vertex_data = (GLbyte*)cmd->vs.vertices_result + i * cmd->pa.vertex_size;
 		gl_vector4* position = (gl_vector4*)(vertex_data);
-		position->x = position->x / position->w;
-		position->y = position->y / position->w;
-		position->z = position->z / position->w;
+		position->x = position->x;
+		position->y = position->y;
+		position->z = position->z;
 		if (gl_is_point_culled(position)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		node->vertices = gl_malloc(cmd->pa.vertex_size);
@@ -471,19 +293,18 @@ void gl_point_assemble(gl_draw_command* cmd)
 
 void gl_line_list_assemble(gl_draw_command* cmd)
 {
-	gl_primitive_node* tail = nullptr;
 	for (GLsizei i = 0; i < cmd->ia.vertices_count; i+=2)
 	{
 		GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i * 2)  * cmd->pa.vertex_size;
 		GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i * 2 + 1) * cmd->pa.vertex_size;
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
-		position1->x = position1->x / position1->w;
-		position1->y = position1->y / position1->w;
-		position1->z = position1->z / position1->w;
-		position2->x = position2->x / position2->w;
-		position2->y = position2->y / position2->w;
-		position2->z = position2->z / position2->w;
+		position1->x = position1->x;
+		position1->y = position1->y;
+		position1->z = position1->z;
+		position2->x = position2->x;
+		position2->y = position2->y;
+		position2->z = position2->z;
 		bool baccepted = false;
 		bool bculled1 = false;
 		bool bculled2 = false;
@@ -494,21 +315,22 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 		}
 		else if(baccepted)
 		{
+			//todo z culling
 			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 			GLsizei primitive_size = cmd->pa.vertex_size * 2;
 			node->vertices = gl_malloc(primitive_size);
 			memcpy_s(node->vertices, primitive_size, vertex_data1, primitive_size);
 			node->next = nullptr;
 			node->vertices_count = 2;
-			if (tail == nullptr)
+			if (cmd->pa.tail == nullptr)
 			{
 				cmd->pa.primitives = node;
 			}
 			else
 			{
-				tail->next = node;
+				cmd->pa.tail->next = node;
 			}
-			tail = node;
+			cmd->pa.tail = node;
 			++cmd->pa.primitive_count;
 		}
 		else
@@ -539,9 +361,9 @@ void gl_line_strip_assemble(gl_draw_command* cmd)
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
 		bool bculled2 = gl_is_point_culled(position2);
 
-		position2->x = position2->x / position2->w;
-		position2->y = position2->y / position2->w;
-		position2->z = position2->z / position2->w;
+		position2->x = position2->x;
+		position2->y = position2->y;
+		position2->z = position2->z;
 		if (bculled1 && bculled2)//
 		{
 			position1 = position2;//move to the next
@@ -592,15 +414,15 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
 		gl_vector4* position3 = (gl_vector4*)(vertex_data3);
-		position1->x = position1->x / position1->w;
-		position1->y = position1->y / position1->w;
-		position1->z = position1->z / position1->w;
-		position2->x = position2->x / position2->w;
-		position2->y = position2->y / position2->w;
-		position2->z = position2->z / position2->w;
-		position3->x = position3->x / position3->w;
-		position3->y = position3->y / position3->w;
-		position3->z = position3->z / position3->w;
+		position1->x = position1->x;
+		position1->y = position1->y;
+		position1->z = position1->z;
+		position2->x = position2->x;
+		position2->y = position2->y;
+		position2->z = position2->z;
+		position3->x = position3->x;
+		position3->y = position3->y;
+		position3->z = position3->z;
 		if (gl_is_point_culled(position1) && gl_is_point_culled(position2) && gl_is_point_culled(position3)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		GLsizei primitive_size = cmd->pa.vertex_size * 3;
