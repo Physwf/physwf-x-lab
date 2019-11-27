@@ -887,55 +887,101 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 		p2->x /= p2->w;
 		p2->y /= p2->w;
 		p2->z /= p2->w;
-		GLfloat k = (p2->y - p1->y) / (p2->x - p1->x);
-		GLsizei x1 = (GLsizei)(p1->x * cmd->pa.viewport_width);
-		GLsizei y1 = (GLsizei)(p1->y * cmd->pa.viewport_height);
-		GLsizei x2 = (GLsizei)(p2->x * cmd->pa.viewport_width);
-		GLsizei y2 = (GLsizei)(p2->y * cmd->pa.viewport_height);
-		GLsizei step = x1 - x2 > 0 ? -1 : 1;
-		GLfloat d = 0.0f;
-		if (k >= -1 && k <= 1)//x-major
+		GLfloat x1 = (p1->x * cmd->pa.viewport_width);
+		GLfloat y1 = (p1->y * cmd->pa.viewport_height);
+		GLfloat x2 = (p2->x * cmd->pa.viewport_width);
+		GLfloat y2 = (p2->y * cmd->pa.viewport_height);
+		GLfloat k = (y2 - y1) / (x2 - x1);
+		GLsizei xstart, ystart, xend, yend;
+		if (x1 <= x2)
 		{
-			for (GLsizei x = x1, y = y1; x != x2; x+=step)
+			xstart	= (GLsizei)x1 - 1;
+			xend	= (GLsizei)x2 + 1;
+		}
+		else
+		{
+			xstart	= (GLsizei)x2 - 1;
+			xend	= (GLsizei)x1 - 1;
+		}
+		if (y1 <= y2)
+		{
+			ystart	= (GLsizei)y1 - 1;
+			yend	= (GLsizei)y2 + 1;
+		}
+		else
+		{
+			ystart	= (GLsizei)y2 - 1;
+			yend	= (GLsizei)y1 + 1;
+		}
+		GLsizei xstep = xend - xstart > 0 ? 1 : -1;
+		GLsizei ystep = yend - ystart > 0 ? 1 : -1;
+		for (GLsizei y = ystart; y != yend;y+=ystep)
+		{
+			for (GLsizei x = xstart; x != xend; x+=xstep)
 			{
-				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
-				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
-				//fragment->depth = gl_campf(position->z);
-				d += k;
-				if (step == 1)
+				bool bxmajor = k >= -1 && k <= 1;
+				if (!gl_is_diamond_exit(gl_vector2(x1,y1), gl_vector2(x2, y2), x, y, bxmajor))
 				{
-					if (d >= 1.0f) d -= 1.0f;
-					if (d > 0.5f) y+=step;
+					GLfloat t = bxmajor ? (x - x1) / (x2 - x1) : (y - y1) / (y2 - y1);
+					t = gl_campf(t);
+					gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+					cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+					fragment->depth = gl_campf(gl_lerp(p1->z, p2->z, t));
+					fragment->varing_attribute = gl_lerp(p1, p2,cmd->pa.vertex_size/sizeof(gl_vector4),t);
 				}
-				else
-				{
-					if (d <= -1.0f) d += 1.0f;
-					if (d < -0.5f) y += step;
-				}
-				//fragment->varing_attribute = node->vertices;
 			}
 		}
-		else//y-major
-		{
-			for (GLsizei y = y1, x = x1; y != y2; y += step)
-			{
-				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
-				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
-				//fragment->depth = gl_campf(position->z);
-				d += k;
-				if (step == 1)
-				{
-					if (d >= 1.0f) d -= 1.0f;
-					if (d > 0.5f) x += step;
-				}
-				else
-				{
-					if (d <= -1.0f) d += 1.0f;
-					if (d < -0.5f) x += step;
-				}
-				fragment->varing_attribute = node->vertices;
-			}
-		}
+
+// 		GLfloat k = (y2 - y1) / (x2 - x1);
+// 		GLfloat d = 0.0f;
+// 		if (k >= -1 && k <= 1)//x-major
+// 		{
+// 			GLsizei step = x1 - x2 > 0 ? -1 : 1;
+// 			GLsizei xstart = (GLsizei)x1;
+// 			GLsizei ystart = (GLsizei)y1;
+// 			GLsizei xend = (GLsizei)x2;
+// 			d = y1 - ystart;
+// 			if (glAbs<GLfloat>(x1 - xstart) + glAbs<GLfloat>(y - ystart) < 0.5f)
+// 			{
+// 				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+// 				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+// 				fragment->depth = gl_campf(p1->z);
+// 				fragment->varing_attribute = node->vertices;
+// 			}
+// 			for (GLsizei x = xstart+1; x != xend; x+=step)
+// 			{
+// 				GLfloat y = y1 + k * (x - x1);
+// 				if (glAbs<GLfloat>(y - ystart) < 0.5f)
+// 				{
+// 					GLfloat t = (x - x1) / (x2 - x1);
+// 					gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+// 					cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+// 					fragment->depth = gl_campf(gl_lerp(p1->z, p2->z, t));
+// 					fragment->varing_attribute = gl_lerp(p1, p2,cmd->pa.vertex_size/(sizeof(gl_vector4)));
+// 				}
+// 			}
+// 		}
+// 		else//y-major
+// 		{
+// 			for (GLsizei y = y1, x = x1; y != y2; y += step)
+// 			{
+// 				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+// 				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+// 				//fragment->depth = gl_campf(position->z);
+// 				d += k;
+// 				if (step == 1)
+// 				{
+// 					if (d >= 1.0f) d -= 1.0f;
+// 					if (d > 0.5f) x += step;
+// 				}
+// 				else
+// 				{
+// 					if (d <= -1.0f) d += 1.0f;
+// 					if (d < -0.5f) x += step;
+// 				}
+// 				fragment->varing_attribute = node->vertices;
+// 			}
+// 		}
 		node = node->next;
 	}
 }

@@ -76,7 +76,8 @@ struct gl_vector4
 		return gl_vector3(x, y, z);
 	}
 
-	gl_vector4(float _x,float _y, float _z, float _w):x(_x),y(_y),z(_z),w(_w) { }
+	gl_vector4() :x(0.0f), y(0.0f), z(0.0f), w(0.0f) { }
+	gl_vector4(float _x, float _y, float _z, float _w) :x(_x), y(_y), z(_z), w(_w) { }
 
 	template<typename T>
 	void set(T* data, GLsizei size)
@@ -94,6 +95,47 @@ struct gl_vector4
 inline GLfloat gl_campf(GLfloat v)
 {
 	return glClamp(v, 0.0f, 1.0f);
+}
+
+inline GLfloat gl_lerp(GLfloat v1, GLfloat v2, GLfloat t)
+{
+	return v1 + (v2 - v1)*t;
+}
+
+inline gl_vector4 gl_lerp(const gl_vector4& v1, const gl_vector4& v2, GLfloat t)
+{
+	gl_vector4 result;
+	result.x = gl_lerp(v1.x, v2.x, t);
+	result.y = gl_lerp(v1.y, v2.y, t);
+	result.w = gl_lerp(v1.z, v2.z, t);
+	result.z = gl_lerp(v1.w, v2.w, t);
+	return result;
+}
+
+inline gl_vector4* gl_lerp(const gl_vector4* attrb1, const gl_vector4* attrb2, GLsizei n, GLfloat t)
+{
+	gl_vector4* result = (gl_vector4*)gl_malloc(n * sizeof(gl_vector4));
+	for (GLsizei i = 0; i < n; ++i)
+	{
+		*(result + i) = gl_lerp(attrb1[i], attrb2[i], t);
+	}
+	return result;
+}
+
+inline bool gl_is_line_segment_intersect(const gl_vector2& line11, const gl_vector2& line12, const gl_vector2& line21, const gl_vector2& line22,bool bcheckonseg)
+{
+	return true;
+}
+
+inline bool gl_is_diamond_exit(const gl_vector2& p1, const gl_vector2& p2, GLsizei xw,GLsizei yw,bool bxmajor)
+{
+	gl_vector2 left(xw - 0.5f, (GLfloat)yw);
+	gl_vector2 right(xw + 0.5f, (GLfloat)yw);
+	gl_vector2 top((GLfloat)xw, yw + 0.5f);
+	gl_vector2 down((GLfloat)xw, yw - 0.5f);
+
+	return	gl_is_line_segment_intersect(left, top,	 p1, p2, !bxmajor)	||  gl_is_line_segment_intersect(right, top, p1, p2, !bxmajor)	||
+			gl_is_line_segment_intersect(left, down, p1, p2, bxmajor)	||  gl_is_line_segment_intersect(right, down, p1, p2, bxmajor);
 }
 
 struct gl_primitive_node
