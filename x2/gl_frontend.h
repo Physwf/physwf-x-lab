@@ -48,12 +48,6 @@ struct gl_vertex
 	gl_atrribute<GLfloat> attributes[MAX_VERTEX_ATTRIBUTE];
 };
 
-struct gl_fragment
-{
-	gl_atrribute<GLfloat> position;
-	gl_atrribute<GLfloat> color;
-};
-
 struct gl_frontend
 {
 	GLint			viewport_x;
@@ -63,6 +57,7 @@ struct gl_frontend
 
 	GLclampf		depth_near;
 	GLclampf		depth_far;
+	GLbitfield		clear_bitmask;
 
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;

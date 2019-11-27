@@ -3,6 +3,7 @@
 #include "gl_memory.h"
 #include "gl_frontend.h"
 #include "gl_shader.h"
+#include "gl_utilities.h"
 
 #include <memory>
 
@@ -90,6 +91,11 @@ struct gl_vector4
 	}
 };
 
+inline GLfloat gl_campf(GLfloat v)
+{
+	return glClamp(v, 0.0f, 1.0f);
+}
+
 struct gl_primitive_node
 {
 	GLvoid*		vertices;
@@ -132,19 +138,109 @@ struct gl_pa_state
 	gl_primitive_node*		tail;
 };
 
+struct gl_frame_buffer
+{
+	GLsizei buffer_width;
+	GLsizei buffer_height;
+	GLfloat* depth_buffer;
+	gl_vector4* color_buffer;
+
+	static gl_frame_buffer* create(GLsizei w, GLsizei h)
+	{
+		if (w <= 0 || h <= 0) return nullptr;
+		gl_frame_buffer* result = (gl_frame_buffer*)gl_malloc(sizeof(gl_frame_buffer));
+		result->buffer_width = w;
+		result->buffer_height = h;
+		GLsizei count = w * h;
+		result->depth_buffer = (GLfloat*)gl_malloc(count * sizeof(GLfloat));
+		result->color_buffer = (gl_vector4*)gl_malloc(count * sizeof(gl_vector4));
+		return result;
+	}
+
+	static void destory(gl_frame_buffer* buffer)
+	{
+		gl_free(buffer->depth_buffer);
+		gl_free(buffer->color_buffer);
+		gl_free(buffer);
+	}
+
+	void set_depth(GLsizei x, GLsizei y, GLfloat depth)
+	{
+		if (x < 0 || x > buffer_width) return;
+		if (y < 0 || y > buffer_height) return;
+		depth_buffer[y*buffer_width + x] = depth;
+	}
+
+	void set_cleardepth(GLfloat depth)
+	{
+		for (GLsizei y = 0; y < buffer_height; ++y)
+		{
+			for (GLsizei x = 0; x < buffer_width; ++x)
+			{
+				depth_buffer[y*buffer_width + x] = depth;
+			}
+		}
+	}
+
+	GLfloat get_depth(GLsizei x, GLsizei y)
+	{
+		if (x < 0) x = 0;
+		if (x > buffer_width) x = buffer_width;
+		if (y < 0) y = 0;
+		if (y > buffer_height) y = buffer_height;
+		return depth_buffer[y*buffer_width + x];
+	}
+
+	void set_clearcolor(const gl_vector4& color)
+	{
+		for (GLsizei y = 0; y < buffer_height; ++y)
+		{
+			for (GLsizei x = 0; x < buffer_width; ++x)
+			{
+				color_buffer[y*buffer_width + x] = color;
+			}
+		}
+	}
+
+	void set_color(GLsizei x, GLsizei y, const gl_vector4& color)
+	{
+		if (x < 0 || x > buffer_width) return;
+		if (y < 0 || y > buffer_height) return;
+		color_buffer[y*buffer_width + x] = color;
+	}
+
+	gl_vector4 get_color(GLsizei x, GLsizei y)
+	{
+		if (x < 0) x = 0;
+		if (x > buffer_width) x = buffer_width;
+		if (y < 0) y = 0;
+		if (y > buffer_height) y = buffer_height;
+		return color_buffer[y*buffer_width + x];
+	}
+
+};
+
+struct gl_fragment
+{
+	GLfloat depth;
+	GLvoid* varing_attribute;
+};
+
 struct gl_rs_state
 {
+	GLfloat point_size;
 
+	gl_fragment** fragment_buffer;
 };
 
 struct gl_ps_state
 {
-
+	GLvoid* fragment_result;
 };
 
 struct gl_om_state
 {
-
+	
 };
 
 struct gl_draw_command
@@ -161,7 +257,12 @@ struct gl_draw_command
 
 struct gl_pipeline
 {
+	gl_frame_buffer* frame_buffers[3];
+	GLuint back_buffer_index;
+	GLuint front_buffer_index;
+
 	gl_draw_command* command_list;
+	gl_draw_command* command_tail;
 };
 
 extern gl_pipeline glPpeline;
@@ -169,6 +270,8 @@ extern gl_pipeline glPpeline;
 bool gl_pipeline_init();
 
 void gl_emit_draw_command();
+void gl_do_draw();
+void gl_swap_frame_buffer(gl_draw_command* cmd);
 
 template<typename TIndex>
 void gl_fill_indices_copy(gl_draw_command* cmd, const TIndex* index_data, GLsizei count)
@@ -217,61 +320,7 @@ gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr
 
 bool gl_check_input_validity(gl_draw_command* cmd);
 
-template<typename TVertexIn>
-void gl_input_assemble(gl_draw_command* cmd)
-{
-	static const GLsizei vertex_size = sizeof(TVertexIn);
-
-	cmd->ia.primitive_type = glContext.draw_mode;
-
-	//assemble indices
-	switch (cmd->ia.indices_type)
-	{
-	case GL_BYTE:
-		gl_fill_indices_copy<GLbyte>(cmd, cmd->ia.indices_copy, cmd->ia.indices_count);
-		break;
-	case GL_SHORT:
-		gl_fill_indices_copy<GLshort>(cmd, cmd->ia.indices_copy, cmd->ia.indices_count);
-		break;
-	default:
-		return;
-	}
-	//assemble vertices
-	GLsizei vertex_count = get_vertex_count_from_indices();
-	cmd->ia.vertices_count = vertex_count;
-
-	if (cmd->ia.vertices == nullptr)
-	{
-		cmd->ia.vertices = gl_malloc(vertex_size*vertex_count);
-	}
-	else
-	{
-		cmd->ia.vertices = gl_realloc(cmd->ia.vertices, vertex_size*vertex_count);
-	}
-
-	gl_vector4* vertices = (gl_vector4*)cmd->ia.vertices;
-
-	for (int v = 0; v < vertex_count; ++v)
-	{
-		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
-		{
-			gl_vector4& attribute = vertices[v*vertex_size + i * sizeof(gl_vector4)];
-			if (glContext.vertex_attribute_pointers[i].bEnabled)
-			{
-				attribute = get_attribute_from_attribute_pointer(glContext.vertex_attribute_pointers[i], v);
-			}
-			else
-			{
-				attribute.x = glContext.vertex_attributes[i].x;
-				attribute.y = glContext.vertex_attributes[i].y;
-				attribute.z = glContext.vertex_attributes[i].z;
-				attribute.w = glContext.vertex_attributes[i].w;
-			}
-		}
-	}
-
-	if (!gl_check_input_validity(cmd)) return;
-}
+void gl_input_assemble(gl_draw_command* cmd);
 
 void gl_vertex_shader(gl_draw_command* cmd);
 

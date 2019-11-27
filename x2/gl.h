@@ -71,12 +71,17 @@ typedef void			GLvoid;
 #define GL_ACTIVE_UNIFORM_MAX_LENGTH		0x00201
 #define GL_ACTIVE_UNIFORMS					0x00202
 
+#define GL_COLOR_BUFFER_BIT					0x00001
+#define GL_DEPTH_BUFFER_BIT					0x00002
+#define GL_STENCIL_BUFFER_BIT				0x00004				
+
 #define NAIL_API
 
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
 NAIL_API void glDepthRangef(GLclampf n, GLclampf f);
 NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
 NAIL_API void glClearDepth(GLclampf d);
+NAIL_API void glClear(GLbitfield buf);
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x);
 NAIL_API void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y);
 NAIL_API void glVertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z);

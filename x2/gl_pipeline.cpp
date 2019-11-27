@@ -40,6 +40,14 @@ gl_pipeline glPpeline;
 bool gl_pipeline_init()
 {
 	glPpeline.command_list = nullptr;
+	glPpeline.command_tail = nullptr;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		glPpeline.frame_buffers[i] = nullptr;// gl_frame_buffer::create(512, 512);
+	}
+	glPpeline.front_buffer_index = -1;
+	glPpeline.back_buffer_index = 0;
 
 	gl_shader_init();
 
@@ -76,8 +84,78 @@ void gl_emit_draw_command()
 	cmd->pa.depth_far = glContext.depth_far;
 	cmd->pa.depth_near = glContext.depth_near;
 
-	//todo
-	//gl_draw_command* cmd = glPpeline.command_list;
+	cmd->rs.point_size = 1.0f;
+
+	cmd->next = nullptr;
+	
+	for (int i = 0; i < 3; ++i)
+	{
+		if (glPpeline.frame_buffers[i] == nullptr)
+		{
+			glPpeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPpeline.front_buffer_index = -1;
+			glPpeline.back_buffer_index = 0;
+		}
+		else if(glPpeline.frame_buffers[i]->buffer_width != glContext.viewport_width || glPpeline.frame_buffers[i]->buffer_height != glContext.viewport_height)
+		{
+			gl_frame_buffer::destory(glPpeline.frame_buffers[i]);
+			glPpeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPpeline.front_buffer_index = -1;
+			glPpeline.back_buffer_index = 0;
+		}
+	}
+	
+	GLsizei count = glContext.viewport_width * glContext.viewport_height;
+	cmd->rs.fragment_buffer = (gl_fragment**)gl_malloc(glContext.viewport_width * glContext.viewport_height * sizeof(gl_fragment*));
+	for (GLsizei i = 0; i < count; ++i)
+	{
+		cmd->rs.fragment_buffer[i] = nullptr;
+	}
+
+	if (glContext.clear_bitmask & GL_COLOR_BUFFER_BIT)
+	{
+		glPpeline.frame_buffers[glPpeline.back_buffer_index]->set_clearcolor(gl_vector4(glContext.clear_color.r, glContext.clear_color.g, glContext.clear_color.b, glContext.clear_color.a));
+	}
+	if (glContext.clear_bitmask & GL_DEPTH_BUFFER_BIT)
+	{
+		glPpeline.frame_buffers[glPpeline.back_buffer_index]->set_cleardepth(glContext.clear_depth);
+	}
+	if (glContext.clear_bitmask & GL_STENCIL_BUFFER_BIT)
+	{
+
+	}
+
+	//todo multi-thread
+	if (glPpeline.command_list == nullptr)
+	{
+		glPpeline.command_list = cmd;
+		glPpeline.command_tail = cmd;
+	}
+	else
+	{
+		glPpeline.command_tail->next = cmd;
+	}
+}
+
+void gl_do_draw()
+{
+	while (glPpeline.command_list)
+	{
+		gl_draw_command* cmd = glPpeline.command_list;
+		glPpeline.command_list = cmd->next;
+		gl_input_assemble(cmd);
+		gl_vertex_shader(cmd);
+		gl_primitive_assemble(cmd);
+		gl_rasterize(cmd);
+		gl_fragment_shader(cmd);
+		gl_output_merge(cmd);
+		gl_swap_frame_buffer(cmd);
+	}
+}
+
+void gl_swap_frame_buffer(gl_draw_command* cmd)
+{
+
 }
 
 GLsizei get_vertex_count_from_indices(gl_draw_command* cmd)
@@ -148,6 +226,61 @@ bool gl_check_input_validity(gl_draw_command* cmd)
 		break;
 	}
 	return true;
+}
+
+void gl_input_assemble(gl_draw_command* cmd)
+{
+	static const GLsizei vertex_size = 1;
+
+	cmd->ia.primitive_type = glContext.draw_mode;
+
+	//assemble indices
+	switch (cmd->ia.indices_type)
+	{
+	case GL_BYTE:
+		gl_fill_indices_copy<GLbyte>(cmd, (const GLbyte*)cmd->ia.indices_copy, cmd->ia.indices_count);
+		break;
+	case GL_SHORT:
+		gl_fill_indices_copy<GLshort>(cmd, (const GLshort*)cmd->ia.indices_copy, cmd->ia.indices_count);
+		break;
+	default:
+		return;
+	}
+	//assemble vertices
+	GLsizei vertex_count = get_vertex_count_from_indices(cmd);
+	cmd->ia.vertices_count = vertex_count;
+
+	if (cmd->ia.vertices == nullptr)
+	{
+		cmd->ia.vertices = gl_malloc(vertex_size*vertex_count);
+	}
+	else
+	{
+		cmd->ia.vertices = gl_realloc(cmd->ia.vertices, vertex_size*vertex_count);
+	}
+
+	gl_vector4* vertices = (gl_vector4*)cmd->ia.vertices;
+
+	for (int v = 0; v < vertex_count; ++v)
+	{
+		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
+		{
+			gl_vector4& attribute = vertices[v*vertex_size + i * sizeof(gl_vector4)];
+			if (glContext.vertex_attribute_pointers[i].bEnabled)
+			{
+				attribute = get_attribute_from_attribute_pointer(glContext.vertex_attribute_pointers[i], v);
+			}
+			else
+			{
+				attribute.x = glContext.vertex_attributes[i].x;
+				attribute.y = glContext.vertex_attributes[i].y;
+				attribute.z = glContext.vertex_attributes[i].z;
+				attribute.w = glContext.vertex_attributes[i].w;
+			}
+		}
+	}
+
+	if (!gl_check_input_validity(cmd)) return;
 }
 
 void gl_vertex_shader(gl_draw_command* cmd)
@@ -718,14 +851,93 @@ void gl_primitive_assemble(gl_draw_command* cmd)
 	}
 }
 
+
 void gl_point_rasterize(gl_draw_command* cmd)
 {
-
+	gl_primitive_node* node = cmd->pa.primitives;
+	while (node)
+	{
+		gl_vector4* position = (gl_vector4*)node->vertices;
+		position->x /= position->w;
+		position->y /= position->w;
+		position->z /= position->w;
+		GLsizei x = (GLsizei)(position->x * cmd->pa.viewport_width);
+		GLsizei y = (GLsizei)(position->y * cmd->pa.viewport_height);
+		if (x >= 0 && x < cmd->pa.viewport_width && y >= 0 && y < cmd->pa.viewport_height)
+		{
+			gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+			cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+			fragment->depth = gl_campf(position->z);
+			fragment->varing_attribute = node->vertices;
+		}
+		node = node->next;
+	}
 }
 
 void gl_line_list_rasterize(gl_draw_command* cmd)
 {
-
+	gl_primitive_node* node = cmd->pa.primitives;
+	while (node)
+	{
+		gl_vector4* p1 = (gl_vector4*)node->vertices;
+		gl_vector4* p2 = (gl_vector4*)((GLbyte*)node->vertices + cmd->pa.vertex_size);
+		p1->x /= p1->w;
+		p1->y /= p1->w;
+		p1->z /= p1->w;
+		p2->x /= p2->w;
+		p2->y /= p2->w;
+		p2->z /= p2->w;
+		GLfloat k = (p2->y - p1->y) / (p2->x - p1->x);
+		GLsizei x1 = (GLsizei)(p1->x * cmd->pa.viewport_width);
+		GLsizei y1 = (GLsizei)(p1->y * cmd->pa.viewport_height);
+		GLsizei x2 = (GLsizei)(p2->x * cmd->pa.viewport_width);
+		GLsizei y2 = (GLsizei)(p2->y * cmd->pa.viewport_height);
+		GLsizei step = x1 - x2 > 0 ? -1 : 1;
+		GLfloat d = 0.0f;
+		if (k >= -1 && k <= 1)//x-major
+		{
+			for (GLsizei x = x1, y = y1; x != x2; x+=step)
+			{
+				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+				//fragment->depth = gl_campf(position->z);
+				d += k;
+				if (step == 1)
+				{
+					if (d >= 1.0f) d -= 1.0f;
+					if (d > 0.5f) y+=step;
+				}
+				else
+				{
+					if (d <= -1.0f) d += 1.0f;
+					if (d < -0.5f) y += step;
+				}
+				//fragment->varing_attribute = node->vertices;
+			}
+		}
+		else//y-major
+		{
+			for (GLsizei y = y1, x = x1; y != y2; y += step)
+			{
+				gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
+				cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
+				//fragment->depth = gl_campf(position->z);
+				d += k;
+				if (step == 1)
+				{
+					if (d >= 1.0f) d -= 1.0f;
+					if (d > 0.5f) x += step;
+				}
+				else
+				{
+					if (d <= -1.0f) d += 1.0f;
+					if (d < -0.5f) x += step;
+				}
+				fragment->varing_attribute = node->vertices;
+			}
+		}
+		node = node->next;
+	}
 }
 
 void gl_line_list_adj_rasterize(gl_draw_command* cmd)
@@ -801,7 +1013,12 @@ void gl_fragment_shader(gl_draw_command* cmd)
 {
 
 }
-
+void gl_set_frame_buffer(GLsizei x, GLsizei y, const gl_vector4& color, GLfloat depth)
+{
+	gl_frame_buffer* buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];
+	buffer->set_color(x, y, color);
+	buffer->set_depth(x, y, depth);
+}
 void gl_output_merge(gl_draw_command* cmd)
 {
 

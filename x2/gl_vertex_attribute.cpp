@@ -40,6 +40,11 @@ NAIL_API void glClearDepth(GLclampf d)
 	glContext.clear_depth = glClamp(d, 0.0f, 0.1f);
 }
 
+NAIL_API void glClear(GLbitfield buf)
+{
+	glContext.clear_bitmask = buf;
+}
+
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x)
 {
 	glClearError();
