@@ -4,3 +4,10 @@ file(GLOB_RECURSE DIR_SRC
 )
 add_library(libx2 SHARED ${DIR_SRC})
 set_target_properties(libx2 PROPERTIES FOLDER "Libraries")
+
+include(GenerateExportHeader)
+generate_export_header(libx2 
+						BASE_NAME NAIL
+						EXPORT_MACRO_NAME NAIL_API
+						EXPORT_FILE_NAME ./NAIL.h
+						)
