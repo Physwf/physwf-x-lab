@@ -609,9 +609,6 @@ void gl_point_assemble(gl_draw_command* cmd)
 	{
 		const GLbyte* vertex_data = (GLbyte*)cmd->vs.vertices_result + i * cmd->pa.vertex_size;
 		gl_vector4* position = (gl_vector4*)(vertex_data);
-		position->x = position->x / position->w;
-		position->y = position->y / position->w;
-		position->z = position->z / position->w;
 		if (gl_is_point_culled(position)) continue;
 		gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 		node->vertices = gl_malloc(cmd->pa.vertex_size);
