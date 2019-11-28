@@ -36,8 +36,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	RegisterClassEx(&wc);
 
-	Region = { 0,0,500,500 };
-	AdjustWindowRect(&Region, WS_OVERLAPPEDWINDOW, FALSE);
+	FrameBuffer = new unsigned char[500 * 500 * 4]();
+
+
+	RECT R = { 0,0,500,500 };
+	Region = R;
+	AdjustWindowRect(&R, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hWind = CreateWindowEx
 	(
@@ -55,9 +59,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		NULL
 	);
 
+
 	ShowWindow(g_hWind, nCmdShow);
 
-	glutInit(0,0,500,500,FrameBuffer);
+	glutInit(0, 0, 500, 500, FrameBuffer);
 	glInit();
 	glSetup();
 
@@ -90,10 +95,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		BITMAPINFO bmi;
 		ZeroMemory(&bmi, sizeof(BITMAPINFO));
 		bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmi.bmiHeader.biWidth = Region.right;
-		bmi.bmiHeader.biHeight = Region.bottom;
+		bmi.bmiHeader.biWidth = Region.right - Region.left;
+		bmi.bmiHeader.biHeight = Region.bottom - Region.top;
 		bmi.bmiHeader.biPlanes = 1;
-		bmi.bmiHeader.biBitCount = 24;
+		bmi.bmiHeader.biBitCount = 32;
 		bmi.bmiHeader.biCompression = BI_RGB;
 		bmi.bmiHeader.biSizeImage = 0;
 		hBitmap = CreateDIBSection(GetDC(g_hWind), &bmi, DIB_RGB_COLORS, (VOID**)&FrameBuffer, NULL, 0);

@@ -113,6 +113,7 @@ void gl_emit_draw_command()
 	
 	GLsizei count = glContext.viewport_width * glContext.viewport_height;
 	cmd->rs.fragment_buffer = (gl_fragment*)gl_malloc(glContext.viewport_width * glContext.viewport_height * sizeof(gl_fragment));
+	assert(cmd->rs.fragment_buffer != nullptr);
 	cmd->rs.buffer_width = glContext.viewport_width;
 	cmd->rs.buffer_height = glContext.viewport_height;
 	cmd->rs.clear_fragment_buffer();
@@ -1116,10 +1117,20 @@ NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer)
 		for (GLsizei x = 0; x < fb->buffer_width; ++x)
 		{
 			gl_vector4 color = fb->get_color(x, y);
-			GLsizei rgb_index = (y*fb->buffer_height + x) * 3;
+			GLsizei rgb_index = (y*fb->buffer_width + x) * 4;
 			rgbbuffer[rgb_index + 0] = (unsigned char)(gl_campf(color.r) * 255);
 			rgbbuffer[rgb_index + 1] = (unsigned char)(gl_campf(color.g) * 255);
 			rgbbuffer[rgb_index + 2] = (unsigned char)(gl_campf(color.b) * 255);
 		}
 	}
+
+// 	for (LONG y = 0; y < Height; ++y)
+// 	{
+// 		for (LONG x = 0; x < Width; ++x)
+// 		{
+// 			pFrameBuffer[4 * y * Width + x * 4 + 0] = 255;
+// 			pFrameBuffer[4 * y * Width + x * 4 + 1] = 0;
+// 			pFrameBuffer[4 * y * Width + x * 4 + 2] = 0;
+// 		}
+// 	}
 }

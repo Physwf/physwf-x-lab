@@ -21,8 +21,9 @@ void glutInit(int x, int y, int w, int h,unsigned char* fb)
 void glutPresent()
 {
 	gl_copy_front_buffer(pFrameBuffer);
+
 	RECT rect = { X,Y,Width,Height };
-	InvalidateRect(g_hWind, &rect, true);
+	InvalidateRect(g_hWind, &rect, false);
 	UpdateWindow(g_hWind);
 }
 
