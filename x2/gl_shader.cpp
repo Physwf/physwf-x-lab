@@ -1,15 +1,14 @@
 #include "gl_frontend.h"
 #include "gl_shader.h"
 #include "gl_memory.h"
+#include "gl_pipeline.h"
 
 #include <string>
 
-gl_named_object_node named_object_list;
-
 bool gl_shader_init()
 {
-	named_object_list.object->name = 0;
-	named_object_list.next = nullptr;
+	glPpeline.named_object_list = nullptr;
+	glPpeline.named_object_list;
 	return true;
 }
 
@@ -44,15 +43,23 @@ GLuint gl_create_named_object(GLenum type)
 		return 0;
 	}
 
-	gl_named_object_node* node = &named_object_list;
-	while (!node->next)
+	gl_named_object_node* node = glPpeline.named_object_list;
+	while (node && node->next)
 	{
 		node = node->next;
 	}
 	gl_named_object_node* new_node = (gl_named_object_node*)gl_malloc(sizeof(gl_named_object_node));
-	node->next = new_node;
-
-	object->name = node->object->name + 1;
+	if (node == nullptr)
+	{
+		node = new_node;
+		object->name = 1;
+		glPpeline.named_object_list = node;
+	}
+	else
+	{
+		node->next = new_node;
+		object->name = node->object->name + 1;
+	}
 	object->type = type;
 	new_node->object = object;
 	new_node->next = nullptr;
@@ -61,11 +68,11 @@ GLuint gl_create_named_object(GLenum type)
 
 gl_named_object_node* gl_find_named_object(GLuint name)
 {
-	gl_named_object_node* node = &named_object_list;
-	while (node->next)
+	gl_named_object_node* node = glPpeline.named_object_list;
+	while (node)
 	{
-		node = node->next;
 		if (node->object->name == name) return node;
+		node = node->next;
 	}
 	return nullptr;
 }
@@ -94,8 +101,8 @@ gl_program_object* gl_find_program_object_check(GLuint name)
 
 void gl_destroy_named_object(GLuint name)
 {
-	gl_named_object_node* node = &named_object_list;
-	while (node->next)
+	gl_named_object_node* node = glPpeline.named_object_list;
+	while (node && node->next)
 	{
 		gl_named_object_node* prenode = node;
 		node = node->next;

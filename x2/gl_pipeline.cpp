@@ -68,10 +68,13 @@ void gl_emit_draw_command()
 	else
 	{
 		cmd->ia.indices = nullptr;
+		cmd->ia.indices_copy = nullptr;
 		cmd->ia.indices_count = glContext.count;
 	}
 	cmd->ia.indices = nullptr;
 	cmd->ia.primitive_type = glContext.draw_mode;
+	cmd->ia.vertices = nullptr;
+	cmd->ia.indices_type = glContext.indices_type;
 	cmd->vs.program = glContext.program;
 	cmd->vs.vertices_result = nullptr;
 	gl_program_object* program_object = gl_find_program_object(glContext.program);
@@ -166,9 +169,9 @@ void gl_swap_frame_buffer(gl_draw_command* cmd)
 GLsizei get_vertex_count_from_indices(gl_draw_command* cmd)
 {
 	GLsizei num_vertex = 0;
-	if (glContext.indices_pointer)
+	if (cmd->ia.indices)
 	{
-		GLshort* indices = (GLshort*)glContext.indices_pointer;
+		GLshort* indices = (GLshort*)cmd->ia.indices;
 		for (GLsizei i = 0; i < glContext.count; ++i)
 		{
 			GLshort current_index = cmd->ia.indices[i] + 1;
@@ -186,21 +189,21 @@ gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr
 	switch (attr_pointer.type)
 	{
 	case GL_BYTE:
-		return to_vector4_from_attribute<GLbyte>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLbyte>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_UNSIGNED_BYTE:
-		return to_vector4_from_attribute<GLubyte>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLubyte>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_SHORT:
-		return to_vector4_from_attribute<GLshort>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLshort>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_UNSIGNED_SHORT:
-		return to_vector4_from_attribute<GLushort>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLushort>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_INT:
-		return to_vector4_from_attribute<GLint>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLint>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_UNSIGNED_INT:
-		return to_vector4_from_attribute<GLuint>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLuint>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_FLOAT:
-		return to_vector4_from_attribute<GLfloat>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLfloat>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	case GL_DOUBLE:
-		return to_vector4_from_attribute<GLdouble>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.stride);
+		return to_vector4_from_attribute<GLdouble>(attr_pointer.pointer, index, attr_pointer.stride, attr_pointer.size);
 	default:
 		return gl_vector4(0.0f, 0.0f, 0.0f, 1.0f);
 	}
@@ -268,17 +271,19 @@ void gl_input_assemble(gl_draw_command* cmd)
 	// If an array corresponding to a generic attribute required by a vertex shader is not enabled, 
 	// then the corresponding element is taken from the current generic attribute state	// OpenGLR ES Common Profile Specification Version 2.0.25 (Full Specification) (November 2, 2010)
 	// 顶点属性取决于vertex shader
+	GLsizei attrib_count = vertex_size / sizeof(gl_vector4);
 	for (int v = 0; v < vertex_count; ++v)
 	{
-		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
+		for (int i = 0; i < attrib_count; ++i)
 		{
-			gl_vector4& attribute = vertices[v*vertex_size + i * sizeof(gl_vector4)];
 			if (glContext.vertex_attribute_pointers[i].bEnabled)
 			{
+				gl_vector4& attribute = vertices[v*attrib_count + i];
 				attribute = get_attribute_from_attribute_pointer(glContext.vertex_attribute_pointers[i], v);
 			}
 			else
 			{
+				gl_vector4& attribute = vertices[v*attrib_count + i];
 				attribute.x = glContext.vertex_attributes[i].x;
 				attribute.y = glContext.vertex_attributes[i].y;
 				attribute.z = glContext.vertex_attributes[i].z;

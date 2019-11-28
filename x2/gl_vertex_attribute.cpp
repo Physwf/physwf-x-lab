@@ -104,6 +104,7 @@ NAIL_API void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboo
 	glContext.vertex_attribute_pointers[index].pointer = ptr;
 	glContext.vertex_attribute_pointers[index].stride = stride;
 	glContext.vertex_attribute_pointers[index].type = type;
+	glContext.vertex_attribute_pointers[index].size = size;
 }
 
 NAIL_API void glEnableVertexAttribArray(GLuint index)

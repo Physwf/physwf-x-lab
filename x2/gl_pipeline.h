@@ -315,6 +315,8 @@ struct gl_draw_command
 
 struct gl_pipeline
 {
+	gl_named_object_node* named_object_list;
+
 	gl_frame_buffer* frame_buffers[3];
 	GLuint back_buffer_index;
 	GLuint front_buffer_index;
