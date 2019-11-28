@@ -124,7 +124,21 @@ inline gl_vector4* gl_lerp(const gl_vector4* attrb1, const gl_vector4* attrb2, G
 
 inline bool gl_is_line_segment_intersect(const gl_vector2& line11, const gl_vector2& line12, const gl_vector2& line21, const gl_vector2& line22,bool bcheckonseg)
 {
-	return true;
+	gl_vector2 v1 = line11 - line12;
+	gl_vector2 v2 = line21 - line22;
+	if (cross(v1, v2) == 0.0f) return bcheckonseg;//¹²Ïß
+	gl_vector2 v3 = line21 - line11;
+	gl_vector2 v4 = line22 - line11;
+	gl_vector2 vm = line12 - line11;
+	if (cross(v3, vm) * cross(v4, vm) <= 0)
+	{
+		if (cross(v1, v3) == 0.0f) return bcheckonseg;
+		if (cross(v1, v4) == 0.0f) return bcheckonseg;
+		if (cross(v2, line11 - line22) == 0.0f) return bcheckonseg;
+		if (cross(v2, line12 - line22) == 0.0f) return bcheckonseg;
+		return true;
+	}
+	return false;
 }
 
 inline bool gl_is_diamond_exit(const gl_vector2& p1, const gl_vector2& p2, GLsizei xw,GLsizei yw,bool bxmajor)
@@ -160,7 +174,9 @@ struct gl_ia_state
 //vertex shahder 
 struct gl_vs_state
 {
-	GLvoid*	 vertices_result;
+	GLsizei		vertex_size;
+	GLuint		program;
+	GLvoid*		vertices_result;
 };
 
 struct gl_pa_state
@@ -374,3 +390,4 @@ void gl_fragment_shader(gl_draw_command* cmd);
 
 void gl_output_merge(gl_draw_command* cmd);
 
+NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer);

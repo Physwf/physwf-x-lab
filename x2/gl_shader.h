@@ -27,6 +27,21 @@ struct gl_shader
 	GLsizei input_size;
 	GLsizei output_size;
 
+	struct vector2
+	{
+		float x, y;
+	};
+
+	struct vector3
+	{
+		float x, y, z;
+	};
+
+	struct vector4
+	{
+		float x, y, z, w;
+	};
+
 	virtual GLvoid* process(GLvoid*) = 0;
 };
 

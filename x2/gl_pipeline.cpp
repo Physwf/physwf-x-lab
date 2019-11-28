@@ -72,7 +72,10 @@ void gl_emit_draw_command()
 	}
 	cmd->ia.indices = nullptr;
 	cmd->ia.primitive_type = glContext.draw_mode;
+	cmd->vs.program = glContext.program;
 	cmd->vs.vertices_result = nullptr;
+	gl_program_object* program_object = gl_find_program_object(glContext.program);
+	cmd->vs.vertex_size = program_object->vertex_shader_object->shader->input_size;
 	cmd->pa.primitive_type = cmd->ia.primitive_type;
 	cmd->pa.primitives = nullptr;
 	cmd->pa.tail = nullptr;
@@ -155,7 +158,9 @@ void gl_do_draw()
 
 void gl_swap_frame_buffer(gl_draw_command* cmd)
 {
-
+	glPpeline.front_buffer_index = glPpeline.back_buffer_index;
+	glPpeline.back_buffer_index++;
+	glPpeline.back_buffer_index %= 3;
 }
 
 GLsizei get_vertex_count_from_indices(gl_draw_command* cmd)
@@ -230,7 +235,7 @@ bool gl_check_input_validity(gl_draw_command* cmd)
 
 void gl_input_assemble(gl_draw_command* cmd)
 {
-	static const GLsizei vertex_size = 1;
+	GLsizei vertex_size = cmd->vs.vertex_size;
 
 	cmd->ia.primitive_type = glContext.draw_mode;
 
@@ -260,7 +265,9 @@ void gl_input_assemble(gl_draw_command* cmd)
 	}
 
 	gl_vector4* vertices = (gl_vector4*)cmd->ia.vertices;
-
+	// If an array corresponding to a generic attribute required by a vertex shader is not enabled, 
+	// then the corresponding element is taken from the current generic attribute state	// OpenGLR ES Common Profile Specification Version 2.0.25 (Full Specification) (November 2, 2010)
+	// 顶点属性取决于vertex shader
 	for (int v = 0; v < vertex_count; ++v)
 	{
 		for (int i = 0; i < MAX_VERTEX_ATTRIBUTE; ++i)
@@ -286,7 +293,7 @@ void gl_input_assemble(gl_draw_command* cmd)
 void gl_vertex_shader(gl_draw_command* cmd)
 {
 	if (glContext.program == 0) return;
-	gl_program_object* program_object = gl_find_program_object(glContext.program);
+	gl_program_object* program_object = gl_find_program_object(cmd->vs.program);
 	if (program_object == nullptr) return;
 	gl_shader_object* vs_object = program_object->vertex_shader_object;
 	if (vs_object == nullptr) return;
@@ -1068,4 +1075,20 @@ void gl_set_frame_buffer(GLsizei x, GLsizei y, const gl_vector4& color, GLfloat 
 void gl_output_merge(gl_draw_command* cmd)
 {
 
+}
+
+NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer)
+{
+	gl_frame_buffer* fb = glPpeline.frame_buffers[glPpeline.front_buffer_index];
+	for (GLsizei y = 0; y < fb->buffer_height; ++y)
+	{
+		for (GLsizei x = 0; x < fb->buffer_width; ++x)
+		{
+			gl_vector4 color = fb->get_color(x, y);
+			GLsizei rgb_index = (y*fb->buffer_height + x) * 3;
+			rgbbuffer[rgb_index + 0] = (unsigned char)(gl_campf(color.r) * 255);
+			rgbbuffer[rgb_index + 1] = (unsigned char)(gl_campf(color.g) * 255);
+			rgbbuffer[rgb_index + 2] = (unsigned char)(gl_campf(color.b) * 255);
+		}
+	}
 }

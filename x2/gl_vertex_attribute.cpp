@@ -4,46 +4,6 @@
 #include "gl_memory.h"
 #include <memory>
 
-NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h)
-{
-	glClearError();
-	if (w <= 0 || h <= 0)
-	{
-		glSetError(GL_INVALID_VALUE, "viewport width and height must be greater than 0!");
-		return;
-	}
-	glContext.viewport_width = w;
-	glContext.viewport_height = h;
-	glContext.viewport_x = x;
-	glContext.viewport_y = y;
-}
-
-NAIL_API void glDepthRangef(GLclampf n, GLclampf f)
-{
-	glContext.depth_near = glClamp(n, 0.0f, 1.0f);
-	glContext.depth_far = glClamp(f, 0.0f, 1.0f);
-}
-
-NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
-{
-	glClearError();
-
-	glContext.clear_color.r = glClamp(r, 0.0f, 0.1f);
-	glContext.clear_color.g = glClamp(g, 0.0f, 0.1f);
-	glContext.clear_color.b = glClamp(b, 0.0f, 0.1f);
-	glContext.clear_color.a = glClamp(a, 0.0f, 0.1f);
-}
-
-NAIL_API void glClearDepth(GLclampf d)
-{
-	glClearError();
-	glContext.clear_depth = glClamp(d, 0.0f, 0.1f);
-}
-
-NAIL_API void glClear(GLbitfield buf)
-{
-	glContext.clear_bitmask = buf;
-}
 
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x)
 {
