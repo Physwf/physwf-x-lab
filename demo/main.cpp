@@ -4,7 +4,7 @@
 extern void socket_client();
 extern void socket_server();
 
-int main(int argc, char* argv[])
+int __main(int argc, char* argv[])
 {
 	std::thread server_thread(socket_server);
 	server_thread.detach();
