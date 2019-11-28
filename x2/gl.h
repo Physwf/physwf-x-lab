@@ -111,6 +111,7 @@ NAIL_API void glDrawArrays(GLenum mode, GLint first, GLsizei count);
 NAIL_API void glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
 
 NAIL_API GLuint glCreateShader(GLenum type);
+NAIL_API void glCompileShader(GLuint shader);
 //NAIL_API void glShaderSource(uint shader, sizei count, const char **string, const int *length);
 NAIL_API void glShaderSource(GLuint shader,GLvoid* source);
 NAIL_API void glDeleteShader(GLuint shader);

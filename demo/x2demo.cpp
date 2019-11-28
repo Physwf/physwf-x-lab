@@ -1,6 +1,7 @@
 #include "gl.h"
 #include <stdlib.h>
 #include "gl_shader.h"
+#include "glut.h"
 
 struct VertexShader : public gl_shader
 {
@@ -17,16 +18,23 @@ struct VertexShader : public gl_shader
 		vector4 color;
 	};
 
+	matrix4 proj;
+
 	VertexShader()
 	{
 		input_size = sizeof(VS_Input);
 		output_size = sizeof(VS_Output);
 	}
 
+	GLvoid compile()
+	{
+		uniforms = gl_uniform_node::create((GLfloat*)&proj,"proj",sizeof(matrix4), GL_FLOAT_MAT4);
+	}
+
 	VS_Output process(VS_Input Input)
 	{
 		VS_Output Out;
-		Out.position	= Input.position;
+		Out.position	= multiply(proj, Input.position) ;
 		Out.color		= Input.color;
 		return Out;
 	}
@@ -57,11 +65,16 @@ struct FragmentShader : public gl_shader
 		output_size = sizeof(PS_Output);
 	}
 
+	GLvoid compile()
+	{
+
+	}
+
 	PS_Output process(PS_Input Input)
 	{
 		PS_Output Out;
 		Out.color = Input.color;
-		return Output;
+		return Out;
 	}
 
 	PS_Output Output;
@@ -102,6 +115,7 @@ void glSetup()
 	glVertexAttrib3f(1, 1.0f, 0.0f, 0.0f);
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs, &VS);
+	glCompileShader(vs);
 	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fs, &FS);
 	GLuint program = glCreateProgram();
@@ -109,6 +123,10 @@ void glSetup()
 	glAttachShader(program, fs);
 	glLinkProgram(program);
 	glUseProgram(program);
+
+	GLfloat proj[16] = { 0 };
+	glutMatrixOrthoLH(proj, 500, 500, 0, 500);
+	glUnitformMatrix4fv(0, 1, false, proj);
 }
 
 void glRender()

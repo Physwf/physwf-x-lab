@@ -145,6 +145,29 @@ NAIL_API GLuint glCreateShader(GLenum type)
 	return 0;
 }
 
+NAIL_API void glCompileShader(GLuint shader)
+{
+	gl_named_object_node* node = gl_find_named_object(shader);
+	if (node == nullptr)
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
+		return;
+	}
+	gl_named_object* object = node->object;
+	if (object == nullptr)
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
+		return;
+	}
+	if (object->type != GL_VERTEX_SHADER && object->type != GL_FRAGMENT_SHADER)
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
+		return;
+	}
+	gl_shader_object* shader_object = (gl_shader_object*)object;
+	shader_object->shader->compile();
+}
+
 NAIL_API void glShaderSource(GLuint shader, GLvoid* source)
 {
 	gl_named_object_node* node = gl_find_named_object(shader);
@@ -518,8 +541,8 @@ NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpos
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
-	value[4] = (GLfloat)v[2];
-	value[5] = (GLfloat)v[3];
+	value[2] = (GLfloat)v[2];
+	value[3] = (GLfloat)v[3];
 }
 
 NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
@@ -529,9 +552,13 @@ NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpos
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
 	value[2] = (GLfloat)v[2];
-	value[4] = (GLfloat)v[3];
-	value[5] = (GLfloat)v[4];
-	value[6] = (GLfloat)v[5];
+	value[3] = (GLfloat)v[3];
+	value[4] = (GLfloat)v[4];
+	value[5] = (GLfloat)v[5];
+	value[6] = (GLfloat)v[6];
+	value[7] = (GLfloat)v[7];
+	value[8] = (GLfloat)v[8];
+	value[9] = (GLfloat)v[9];
 }
 
 NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
@@ -546,4 +573,25 @@ NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpos
 	value[5] = (GLfloat)v[5];
 	value[6] = (GLfloat)v[6];
 	value[7] = (GLfloat)v[7];
+	value[8] = (GLfloat)v[8];
+	value[9] = (GLfloat)v[9];
+	value[10] = (GLfloat)v[10];
+	value[11] = (GLfloat)v[11];
+	value[12] = (GLfloat)v[12];
+	value[13] = (GLfloat)v[13];
+	value[14] = (GLfloat)v[14];
+	value[15] = (GLfloat)v[15];
+}
+
+gl_uniform_node* gl_uniform_node::create(GLfloat* value,const GLchar* name, GLsizei size, GLenum type)
+{
+	gl_uniform_node* node = (gl_uniform_node*)gl_malloc(sizeof(gl_uniform_node));
+	node->uniform = (gl_uniform*)gl_malloc(sizeof(gl_uniform));
+	node->uniform->size = size;
+	node->uniform->type = type;
+	node->uniform->value = value;
+	node->next = nullptr;
+	GLsizei buffer_size = sizeof(node->uniform->name);
+	strcpy_s(node->uniform->name, buffer_size, name);
+	return node;
 }

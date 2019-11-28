@@ -112,11 +112,10 @@ void gl_emit_draw_command()
 	}
 	
 	GLsizei count = glContext.viewport_width * glContext.viewport_height;
-	cmd->rs.fragment_buffer = (gl_fragment**)gl_malloc(glContext.viewport_width * glContext.viewport_height * sizeof(gl_fragment*));
-	for (GLsizei i = 0; i < count; ++i)
-	{
-		cmd->rs.fragment_buffer[i] = nullptr;
-	}
+	cmd->rs.fragment_buffer = (gl_fragment*)gl_malloc(glContext.viewport_width * glContext.viewport_height * sizeof(gl_fragment));
+	cmd->rs.buffer_width = glContext.viewport_width;
+	cmd->rs.buffer_height = glContext.viewport_height;
+	cmd->rs.clear_fragment_buffer();
 
 	if (glContext.clear_bitmask & GL_COLOR_BUFFER_BIT)
 	{
@@ -297,7 +296,7 @@ void gl_input_assemble(gl_draw_command* cmd)
 
 void gl_vertex_shader(gl_draw_command* cmd)
 {
-	if (glContext.program == 0) return;
+	if (cmd->vs.program == 0) return;
 	gl_program_object* program_object = gl_find_program_object(cmd->vs.program);
 	if (program_object == nullptr) return;
 	gl_shader_object* vs_object = program_object->vertex_shader_object;
@@ -309,7 +308,7 @@ void gl_vertex_shader(gl_draw_command* cmd)
 	for (GLsizei i = 0; i < cmd->ia.vertices_count; ++i)
 	{
 		GLvoid* vs_out = vs->process((GLbyte*)cmd->ia.vertices + i * vs->input_size);
-		memcpy_s((GLbyte*)cmd->vs.vertices_result + i * vs->input_size, vs->output_size, vs_out, vs->output_size);
+		memcpy_s((GLbyte*)cmd->vs.vertices_result + i * vs->output_size, vs->output_size, vs_out, vs->output_size);
 	}
 	cmd->pa.vertex_size = vs->output_size;
 }
@@ -874,10 +873,14 @@ void gl_point_rasterize(gl_draw_command* cmd)
 		GLsizei y = (GLsizei)(position->y * cmd->pa.viewport_height);
 		if (x >= 0 && x < cmd->pa.viewport_width && y >= 0 && y < cmd->pa.viewport_height)
 		{
-			gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
-			cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
-			fragment->depth = gl_campf(position->z);
-			fragment->varing_attribute = node->vertices;
+			gl_fragment& fragment = cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x];
+			GLfloat depth = gl_campf(position->z);
+			if (fragment.depth > position->z)
+			{
+				assert(depth >= 0.0f && depth <= 1.0f);
+				fragment.depth = depth;
+				fragment.varing_attribute = node->vertices;
+			}
 		}
 		node = node->next;
 	}
@@ -931,12 +934,15 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 				bool bxmajor = k >= -1 && k <= 1;
 				if (!gl_is_diamond_exit(gl_vector2(x1,y1), gl_vector2(x2, y2), x, y, bxmajor))
 				{
+					gl_fragment& fragment = cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x];
 					GLfloat t = bxmajor ? (x - x1) / (x2 - x1) : (y - y1) / (y2 - y1);
 					t = gl_campf(t);
-					gl_fragment* fragment = (gl_fragment*)gl_malloc(sizeof(gl_fragment));
-					cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x] = fragment;
-					fragment->depth = gl_campf(gl_lerp(p1->z, p2->z, t));
-					fragment->varing_attribute = gl_lerp(p1, p2,cmd->pa.vertex_size/sizeof(gl_vector4),t);
+					GLfloat depth = gl_campf(gl_lerp(p1->z, p2->z, t));
+					if (fragment.depth > depth)
+					{
+						fragment.depth = depth;
+						fragment.varing_attribute = gl_lerp(p1, p2, cmd->pa.vertex_size / sizeof(gl_vector4), t);
+					}
 				}
 			}
 		}
@@ -1032,6 +1038,7 @@ void gl_triangle_strip_adj_rasterize(gl_draw_command* cmd)
 
 void gl_rasterize(gl_draw_command* cmd)
 {
+	cmd->rs.clear_fragment_buffer();
 	switch (cmd->ia.primitive_type)
 	{
 	case GL_POINT_LIST:
@@ -1066,8 +1073,30 @@ void gl_rasterize(gl_draw_command* cmd)
 
 void gl_fragment_shader(gl_draw_command* cmd)
 {
+	if (cmd->vs.program == 0) return;
+	gl_program_object* program_object = gl_find_program_object(cmd->vs.program);
+	if (program_object == nullptr) return;
+	gl_shader_object* fs_object = program_object->fragment_shader_object;
+	if (fs_object == nullptr) return;
+	gl_shader* fs = fs_object->shader;
+	if (fs == nullptr) return;
 
+	for (GLsizei y = 0; y < cmd->rs.buffer_height; ++y)
+	{
+		for (GLsizei x = 0; x < cmd->rs.buffer_width; ++x)
+		{
+			gl_fragment& fragment = cmd->rs.get_fragment(x, y);
+			gl_frame_buffer* frame_buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];
+			if (fragment.depth < 1.0f && fragment.depth > 0.0f)
+			{
+				GLvoid* fs_out = fs->process((GLbyte*)fragment.varing_attribute);
+				gl_vector4& color = ((gl_vector4*)fs_out)[0];
+				frame_buffer->set_color(x, y, color);
+			}
+		}
+	}
 }
+
 void gl_set_frame_buffer(GLsizei x, GLsizei y, const gl_vector4& color, GLfloat depth)
 {
 	gl_frame_buffer* buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];

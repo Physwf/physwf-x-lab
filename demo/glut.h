@@ -3,3 +3,4 @@
 
 void glutInit(int x, int y, int w, int h, unsigned char* fb);
 void glutPresent();
+float* glutMatrixOrthoLH(float* pOut, float w, float h, float zn, float zf);

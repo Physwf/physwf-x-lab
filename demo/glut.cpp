@@ -26,3 +26,19 @@ void glutPresent()
 	UpdateWindow(g_hWind);
 }
 
+float* glutMatrixOrthoLH(float* pOut, float w, float h, float zn, float zf)
+{
+	float result[]
+	{
+		2 / w,	0.0f,	0.0f,		0.0f,
+		0.0f,	2 / h,	0.0f,		0.0f,
+		2 / w,	0.0f,	1/(zf-zn),	-zn/(zf-zn),
+		2 / w,	0.0f,	0.0f,		1.0f,
+	};
+	for (int i = 0; i < 16; ++i)
+	{
+		pOut[i] = result[i];
+	}
+	return pOut;
+}
+

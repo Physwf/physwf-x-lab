@@ -1,5 +1,5 @@
 #pragma once
-
+#include "NAIL.h"
 
 #define GL_PROGRAM				0x1003
 
@@ -18,6 +18,8 @@ struct gl_uniform_node
 {
 	gl_uniform* uniform;
 	gl_uniform_node* next;
+
+	static NAIL_API gl_uniform_node* create(GLfloat* value, const GLchar* name, GLsizei size, GLenum type);
 };
 
 struct gl_shader
@@ -42,6 +44,27 @@ struct gl_shader
 		float x, y, z, w;
 	};
 
+	struct matrix4
+	{
+		float a00, a01, a02, a03;
+		float a10, a11, a12, a13;
+		float a20, a21, a22, a23;
+		float a30, a31, a32, a33;
+	};
+
+	vector4 multiply(matrix4 m, vector4 v)
+	{
+		return 
+		{
+			m.a00*v.x + m.a01*v.y + m.a02*v.z + m.a03*v.w,
+			m.a10*v.x + m.a11*v.y + m.a12*v.z + m.a13*v.w,
+			m.a20*v.x + m.a21*v.y + m.a22*v.z + m.a23*v.w,
+			m.a30*v.x + m.a31*v.y + m.a32*v.z + m.a33*v.w
+		};
+	}
+
+
+	virtual GLvoid compile() = 0;
 	virtual GLvoid* process(GLvoid*) = 0;
 };
 

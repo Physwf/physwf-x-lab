@@ -284,16 +284,41 @@ struct gl_fragment
 	GLvoid* varing_attribute;
 };
 
+
+
 struct gl_rs_state
 {
 	GLfloat point_size;
 
-	gl_fragment** fragment_buffer;
+	GLsizei buffer_width;
+	GLsizei buffer_height;
+	gl_fragment* fragment_buffer;
+
+	void clear_fragment_buffer()
+	{
+		for (GLsizei y = 0; y < buffer_height; ++y)
+		{
+			for (GLsizei x = 0; x < buffer_width; ++x)
+			{
+				GLsizei index = y * buffer_height + x;
+				fragment_buffer[index].depth = 1.0f;
+				fragment_buffer[index].varing_attribute = nullptr;
+			}
+		}
+	}
+
+	gl_fragment& get_fragment(GLsizei x, GLsizei y)
+	{
+		if (x < 0) x = 0;
+		if (y < 0) y = 0;
+		if (x >= buffer_width) x = buffer_width - 1;
+		if (y > buffer_height) y = buffer_height - 1;
+		return fragment_buffer[y*buffer_height+x];
+	}
 };
 
 struct gl_ps_state
 {
-	GLvoid* fragment_result;
 };
 
 struct gl_om_state
@@ -370,9 +395,9 @@ GLsizei get_vertex_count_from_indices(gl_draw_command* cmd);
 template <typename T>
 gl_vector4 to_vector4_from_attribute(const GLvoid* pointer, GLsizei index, GLsizei stride, GLsizei size)
 {
-	T* start = (T*)pointer;
+	T* start = (T*)pointer+index* size;
 	gl_vector4 result(0.0f, 0.0f, 0.0f, 1.0f);
-	result.set((T*)pointer, size);
+	result.set(start, size);
 	return result;
 }
 
