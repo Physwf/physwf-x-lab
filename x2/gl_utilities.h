@@ -21,8 +21,21 @@ T glMin(T v1, T v2)
 	return v1 <= v2 ? v1 : v2;
 };
 
+template <typename T, typename ... Args>
+T glMin(T v1, T v2, Args... args)
+{
+	return glMin(glMin(v1, v2), args...);
+};
+
 template <typename T>
 T glMax(T v1, T v2)
 {
 	return v1 <= v2 ? v2 : v1;
 };
+
+template <typename T, typename ... Args>
+T glMax(T v1, T v2, Args... args)
+{
+	return glMax(glMax(v1, v2), args...);
+};
+
