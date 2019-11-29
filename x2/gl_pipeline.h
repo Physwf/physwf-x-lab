@@ -22,12 +22,18 @@ struct gl_vector2
 	};
 	gl_vector2():x(0.0f), y(0.0f) { }
 	gl_vector2(float _x, float _y):x(_x),y(_y) { }
+
+	gl_vector2 operator-()
+	{
+		return gl_vector2(-x, -y);
+	};
 };
 
 gl_vector2 operator+(const gl_vector2& lhs, const gl_vector2& rhs);
 gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs);
 float operator*(const gl_vector2& lhs, const gl_vector2& rhs);
 float cross(const gl_vector2& lhs, const gl_vector2& rhs);
+
 
 struct gl_vector3
 {
@@ -122,34 +128,65 @@ inline gl_vector4* gl_lerp(const gl_vector4* attrb1, const gl_vector4* attrb2, G
 	return result;
 }
 
-inline bool gl_is_line_segment_intersect(const gl_vector2& line11, const gl_vector2& line12, const gl_vector2& line21, const gl_vector2& line22,bool bcheckonseg)
+inline bool gl_is_line_segment_intersect(const gl_vector2& a, const gl_vector2& b, const gl_vector2& c, const gl_vector2& d)
 {
-	gl_vector2 v1 = line11 - line12;
-	gl_vector2 v2 = line21 - line22;
-	if (cross(v1, v2) == 0.0f) return bcheckonseg;//共线
-	gl_vector2 v3 = line21 - line11;
-	gl_vector2 v4 = line22 - line11;
-	gl_vector2 vm = line12 - line11;
-	if (cross(v3, vm) * cross(v4, vm) <= 0)
+	gl_vector2 ac = a - c;
+	gl_vector2 ad = a - d;
+	gl_vector2 bc = b - c;
+	gl_vector2 bd = b - d;
+	gl_vector2 ca = -ac;
+	gl_vector2 da = -ad;
+	gl_vector2 cb = -bc;
+	gl_vector2 db = -bd;
+	return cross(ac, ad) * cross(bc, bd) <= 0.0f && cross(ca, cb) * cross(da, db) <= 0.0f;
+}
+
+inline bool gl_is_point_in_line_segment(const gl_vector2& p1, const gl_vector2& p2, const gl_vector2& p)
+{
+	if (p.x > glMin(p1.x, p2.x) && p.x < glMax(p1.x, p1.x) && p.y > glMin(p1.y, p2.y) && p.y < glMax(p1.y, p1.y))
 	{
-		if (cross(v1, v3) == 0.0f) return bcheckonseg;
-		if (cross(v1, v4) == 0.0f) return bcheckonseg;
-		if (cross(v2, line11 - line22) == 0.0f) return bcheckonseg;
-		if (cross(v2, line12 - line22) == 0.0f) return bcheckonseg;
-		return true;
+		return cross(p1 - p, p2 - p) == 0;
 	}
 	return false;
 }
-
-inline bool gl_is_diamond_exit(const gl_vector2& p1, const gl_vector2& p2, GLsizei xw,GLsizei yw,bool bxmajor)
+//diamond exit algorithm
+inline bool gl_is_in_diamond(const gl_vector2& p1, const gl_vector2& p2, GLsizei xw,GLsizei yw,bool bxmajor)
 {
 	gl_vector2 left(xw - 0.5f, (GLfloat)yw);
 	gl_vector2 right(xw + 0.5f, (GLfloat)yw);
 	gl_vector2 top((GLfloat)xw, yw + 0.5f);
 	gl_vector2 down((GLfloat)xw, yw - 0.5f);
-
-	return	gl_is_line_segment_intersect(left, top,	 p1, p2, !bxmajor)	||  gl_is_line_segment_intersect(right, top, p1, p2, !bxmajor)	||
-			gl_is_line_segment_intersect(left, down, p1, p2, bxmajor)	||  gl_is_line_segment_intersect(right, down, p1, p2, bxmajor);
+	if (bxmajor)
+	{
+		if (gl_is_line_segment_intersect(left, down, p1, p2) || gl_is_line_segment_intersect(right, down, p1, p2))//同下半段相交
+		{
+			return true;
+		}
+		if (gl_is_line_segment_intersect(left, top, p1, p2))//同左上相交
+		{
+			if (!gl_is_point_in_line_segment(left, top, p1) && !gl_is_point_in_line_segment(left, top, p2)) return true;//且不在线段上
+		}
+		if (gl_is_line_segment_intersect(right, top, p1, p2))//同右上相交
+		{
+			if (!gl_is_point_in_line_segment(right, top, p1) && !gl_is_point_in_line_segment(right, top, p2)) return true;//且不在线段上
+		}
+	}
+	else
+	{
+		if (gl_is_line_segment_intersect(left, top, p1, p2) || gl_is_line_segment_intersect(right, top, p1, p2))//同上半段相交
+		{
+			return true;
+		}
+		if (gl_is_line_segment_intersect(left, down, p1, p2))//同左下相交
+		{
+			if (!gl_is_point_in_line_segment(left, down, p1) && !gl_is_point_in_line_segment(left, down, p2)) return true;//且不在线段上
+		}
+		if (gl_is_line_segment_intersect(right, down, p1, p2))//同右下相交
+		{
+			if (!gl_is_point_in_line_segment(right, down, p1) && !gl_is_point_in_line_segment(right, down, p2)) return true;//且不在线段上
+		}
+	}
+	return false;
 }
 
 struct gl_primitive_node
@@ -313,7 +350,7 @@ struct gl_rs_state
 		if (y < 0) y = 0;
 		if (x >= buffer_width) x = buffer_width - 1;
 		if (y > buffer_height) y = buffer_height - 1;
-		return fragment_buffer[y*buffer_height+x];
+		return fragment_buffer[y*buffer_width+x];
 	}
 };
 

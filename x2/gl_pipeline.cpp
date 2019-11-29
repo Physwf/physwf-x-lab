@@ -14,6 +14,7 @@ gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs)
 {
 	return gl_vector2(lhs.x - rhs.x, lhs.y - rhs.y);
 }
+
 float operator*(const gl_vector2& lhs, const gl_vector2& rhs)
 {
 	return (lhs.x * rhs.x + lhs.y * rhs.y);
@@ -325,16 +326,16 @@ bool gl_is_point_culled(const gl_vector4* p)
 bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepted,bool& bculled1,bool& bculled2)
 {
 	GLbyte code1 = 0;
-	if (p1->x < -1.0f)	code1 |= 1;
-	if (p1->x > 1.0f)	code1 |= 2;
-	if (p1->y < -1.0f)	code1 |= 4;
-	if (p1->y > 1.0f)	code1 |= 8;
+	if (p1->x < -p1->w)	code1 |= 1;
+	if (p1->x > p1->w)	code1 |= 2;
+	if (p1->y < -p1->w)	code1 |= 4;
+	if (p1->y > p1->w)	code1 |= 8;
 	bculled1 = (code1 != 0);
 	GLbyte code2 = 0;
-	if (p2->x < -1.0f)	code2 |= 1;
-	if (p2->x > 1.0f)	code2 |= 2;
-	if (p2->y < -1.0f)	code2 |= 4;
-	if (p2->y > 1.0f)	code2 |= 8;
+	if (p2->x < -p1->w)	code2 |= 1;
+	if (p2->x > p1->w)	code2 |= 2;
+	if (p2->y < -p1->w)	code2 |= 4;
+	if (p2->y > p1->w)	code2 |= 8;
 	bculled2 = (code2 != 0);
 	baccepted = (code1 | code2) == 0;
 	return (code1 & code2) != 0;
@@ -343,21 +344,21 @@ bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepte
 bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3, bool& baccepted, bool& bculled1, bool& bculled2, bool& bculled3)
 {
 	GLbyte code1 = 0;
-	if (p1->x < -1.0f)	code1 |= 1;
-	if (p1->x > 1.0f)	code1 |= 2;
-	if (p1->y < -1.0f)	code1 |= 4;
-	if (p1->y > 1.0f)	code1 |= 8;
+	if (p1->x < -p1->w)	code1 |= 1;
+	if (p1->x > p1->w)	code1 |= 2;
+	if (p1->y < -p1->w)	code1 |= 4;
+	if (p1->y > p1->w)	code1 |= 8;
 	bculled1 = (code1 != 0);
 	GLbyte code2 = 0;
-	if (p2->x < -1.0f)	code2 |= 1;
-	if (p2->x > 1.0f)	code2 |= 2;
-	if (p2->y < -1.0f)	code2 |= 4;
-	if (p2->y > 1.0f)	code2 |= 8;
+	if (p2->x < -p2->w)	code2 |= 1;
+	if (p2->x > p2->w)	code2 |= 2;
+	if (p2->y < -p2->w)	code2 |= 4;
+	if (p2->y > p2->w)	code2 |= 8;
 	GLbyte code3 = 0;
-	if (p3->x < -1.0f)	code3 |= 1;
-	if (p3->x > 1.0f)	code3 |= 2;
-	if (p3->y < -1.0f)	code3 |= 4;
-	if (p2->y > 1.0f)	code3 |= 8;
+	if (p3->x < -p2->w)	code3 |= 1;
+	if (p3->x > p2->w)	code3 |= 2;
+	if (p3->y < -p2->w)	code3 |= 4;
+	if (p2->y > p2->w)	code3 |= 8;
 	bculled3 = (code3 != 0);
 	baccepted = (code1 | code2 | code3) == 0;
 	return (code1 & code2 & code3) != 0;
@@ -372,37 +373,41 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 {
 	gl_vector4* p1 = (gl_vector4*)v1;
 	gl_vector4* p2 = (gl_vector4*)v2;
+	if (p2->w == 0.0f)
+	{
+		p2->w = 1.0f;
+	}
 	GLfloat ts[4] = { 0.0f };
 	if (p1->x == p2->x)//´¹Ö±
 	{
-		ts[0] =  (p1->y - 1.0f)			/ (p1->y - p2->y);
-		ts[1] =	(p1->y - (-1.0f))		/ (p1->y - p2->y);
+		ts[0] =  (p1->y - p1->w)		/ (p1->y - p2->y);
+		ts[1] =	(p1->y - (-p1->w))		/ (p1->y - p2->y);
 	}
 	else if (p1->y == p2->y)//Ë®Æ½
 	{
-		ts[2] =	 (p1->x - 1.0f)			/ (p1->x - p2->x);
-		ts[3] =  (p1->x - (-1.0f))		/ (p1->x - p2->x);
+		ts[2] =	 (p1->x - p1->w)		/ (p1->x - p2->x);
+		ts[3] =  (p1->x - (-p1->w))		/ (p1->x - p2->x);
 	}
 	else
 	{
-		ts[0] =		(p1->y - 1.0f)			/ (p1->y - p2->y);
-		ts[1] =		(p1->y - (-1.0f))		/ (p1->y - p2->y);
-		ts[2] =		(p1->x - 1.0f)			/ (p1->x - p2->x);
-		ts[3] =		(p1->x - (-1.0f))		/ (p1->x - p2->x);
+		ts[0] =		(p1->y - p1->w)			/ (p1->y - p2->y);
+		ts[1] =		(p1->y - (-p1->w))		/ (p1->y - p2->y);
+		ts[2] =		(p1->x - p1->w)			/ (p1->x - p2->x);
+		ts[3] =		(p1->x - (-p1->w))		/ (p1->x - p2->x);
 	}
 	gl_vector4 pts[5] =
 	{
-		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
-		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
-		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
-		gl_vector4(0.0f, 0.0f, 0.0f, 0.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 1.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 1.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 1.0f) ,
+		gl_vector4(0.0f, 0.0f, 0.0f, 1.0f) ,
 		*p2,
 	};
 	std::sort(std::begin(ts), std::end(ts));
 	for (auto i = 0; i < 4; ++i)
 	{
 		GLfloat t = ts[i];
-		if(t == 0.0f) continue;
+		if(t <= 0.0f) continue;
 		pts[i].w = p1->w * t + (1 - t) * p2->w;
 		pts[i].x = p1->x * t + (1 - t) * p2->x;
 		pts[i].y = p1->y * t + (1 - t) * p2->y;
@@ -455,6 +460,7 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 						pt.x = p1i->x * t + (1 - t) * p2i->x;
 						pt.y = p1i->y * t + (1 - t) * p2i->y;
 						pt.z = p1i->z * t + (1 - t) * p2i->z;
+						assert(pt.w != 0.0f);
 						memcpy_s((gl_vector4*)node->vertices + i , sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 					}
 				}
@@ -632,16 +638,14 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 {
 	for (GLsizei i = 0; i < cmd->ia.vertices_count; i+=2)
 	{
-		GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i * 2)  * cmd->pa.vertex_size;
-		GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i * 2 + 1) * cmd->pa.vertex_size;
+		GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i + 0) * cmd->pa.vertex_size;
+		GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i + 1) * cmd->pa.vertex_size;
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
-		position1->x = position1->x / position1->w;
-		position1->y = position1->y / position1->w;
-		position1->z = position1->z / position1->w;
-		position2->x = position2->x / position2->w;
-		position2->y = position2->y / position2->w;
-		position2->z = position2->z / position2->w;
+		if (position2->w == 0.0f)
+		{
+			position2->w = 1.0f;
+		}
 		bool baccepted = false;
 		bool bculled1 = false;
 		bool bculled2 = false;
@@ -900,6 +904,7 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 		p2->x /= p2->w;
 		p2->y /= p2->w;
 		p2->z /= p2->w;
+		assert(p2->w != 0.0f && p1->w != 0.0f);
 		GLfloat x1 = (p1->x * cmd->pa.viewport_width);
 		GLfloat y1 = (p1->y * cmd->pa.viewport_height);
 		GLfloat x2 = (p2->x * cmd->pa.viewport_width);
@@ -926,16 +931,20 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 			ystart	= (GLsizei)y2 - 1;
 			yend	= (GLsizei)y1 + 1;
 		}
+		xstart = glClamp(xstart, 0, cmd->pa.viewport_width);
+		xend = glClamp(xend, 0, cmd->pa.viewport_width);
+		ystart = glClamp(ystart, 0, cmd->pa.viewport_height);
+		yend = glClamp(yend, 0, cmd->pa.viewport_height);
 		GLsizei xstep = xend - xstart > 0 ? 1 : -1;
 		GLsizei ystep = yend - ystart > 0 ? 1 : -1;
+		bool bxmajor = k >= -1.0f && k <= 1.0f;
 		for (GLsizei y = ystart; y != yend;y+=ystep)
 		{
 			for (GLsizei x = xstart; x != xend; x+=xstep)
 			{
-				bool bxmajor = k >= -1 && k <= 1;
-				if (!gl_is_diamond_exit(gl_vector2(x1,y1), gl_vector2(x2, y2), x, y, bxmajor))
+				if (gl_is_in_diamond(gl_vector2(x1,y1), gl_vector2(x2, y2), x, y, bxmajor))
 				{
-					gl_fragment& fragment = cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x];
+					gl_fragment& fragment = cmd->rs.get_fragment(x, y);
 					GLfloat t = bxmajor ? (x - x1) / (x2 - x1) : (y - y1) / (y2 - y1);
 					t = gl_campf(t);
 					GLfloat depth = gl_campf(gl_lerp(p1->z, p2->z, t));
