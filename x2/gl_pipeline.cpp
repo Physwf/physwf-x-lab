@@ -322,7 +322,7 @@ bool gl_is_point_culled(const gl_vector4* p)
 	if (p->z > p->w || p->z < 0.0f) return true;
 	return false;
 }
-
+//https://en.wikipedia.org/wiki/Cohen-Sutherland_algorithm
 bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepted,bool& bculled1,bool& bculled2)
 {
 	GLbyte code1 = 0;
@@ -332,10 +332,10 @@ bool gl_is_line_culled(const gl_vector4* p1, const gl_vector4* p2,bool& baccepte
 	if (p1->y > p1->w)	code1 |= 8;
 	bculled1 = (code1 != 0);
 	GLbyte code2 = 0;
-	if (p2->x < -p1->w)	code2 |= 1;
-	if (p2->x > p1->w)	code2 |= 2;
-	if (p2->y < -p1->w)	code2 |= 4;
-	if (p2->y > p1->w)	code2 |= 8;
+	if (p2->x < -p2->w)	code2 |= 1;
+	if (p2->x > p2->w)	code2 |= 2;
+	if (p2->y < -p2->w)	code2 |= 4;
+	if (p2->y > p2->w)	code2 |= 8;
 	bculled2 = (code2 != 0);
 	baccepted = (code1 | code2) == 0;
 	return (code1 & code2) != 0;
@@ -355,10 +355,10 @@ bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_
 	if (p2->y < -p2->w)	code2 |= 4;
 	if (p2->y > p2->w)	code2 |= 8;
 	GLbyte code3 = 0;
-	if (p3->x < -p2->w)	code3 |= 1;
-	if (p3->x > p2->w)	code3 |= 2;
-	if (p3->y < -p2->w)	code3 |= 4;
-	if (p2->y > p2->w)	code3 |= 8;
+	if (p3->x < -p3->w)	code3 |= 1;
+	if (p3->x > p3->w)	code3 |= 2;
+	if (p3->y < -p3->w)	code3 |= 4;
+	if (p2->y > p3->w)	code3 |= 8;
 	bculled3 = (code3 != 0);
 	baccepted = (code1 | code2 | code3) == 0;
 	return (code1 & code2 & code3) != 0;
@@ -697,6 +697,7 @@ void gl_line_list_assemble(gl_draw_command* cmd)
 		bool bculled = gl_is_line_culled(position1, position2, baccepted, bculled1, bculled2);
 		if (bculled)
 		{
+			printf("bculled");
 			continue;//cliped
 		}
 		else if(baccepted)

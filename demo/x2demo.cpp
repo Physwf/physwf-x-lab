@@ -97,7 +97,7 @@ void glInit()
 }
 
 GLfloat points[3*100];
-GLfloat lines[3*20*2];
+GLfloat lines[3*40];
 
 void glSetup()
 {
@@ -116,8 +116,9 @@ void glSetup()
 		//lines[i * 3 + 0] = 100;
 		//lines[i * 3 + 1] = i*10.0f + 0;
 		lines[i * 3 + 2] = 100.0f;
-		lines[i * 3 + 0] = (GLfloat)(rand() % 500);
-		lines[i * 3 + 1] = (GLfloat)(rand() % 500);
+		lines[i * 3 + 0] = (GLfloat)(rand() % 500) + 1.0f;
+		lines[i * 3 + 1] = (GLfloat)(rand() % 500) + 1.0f;
+
 
 	}
 // 	lines[0] = 0.0f;
@@ -148,7 +149,7 @@ void glSetup()
 	glUseProgram(program);
 
 	GLfloat proj[16] = { 0 };
-	glutMatrixOrthoLH(proj, 500, 0, 500, 0, 0, 500);
+	glutMatrixOrthoLH(proj, 500, 0,  0, 500, 0, 500);
 	glUnitformMatrix4fv(0, 1, false, proj);
 }
 
