@@ -113,8 +113,8 @@ inline gl_vector4 gl_lerp(const gl_vector4& v1, const gl_vector4& v2, GLfloat t)
 	gl_vector4 result;
 	result.x = gl_lerp(v1.x, v2.x, t);
 	result.y = gl_lerp(v1.y, v2.y, t);
-	result.w = gl_lerp(v1.z, v2.z, t);
-	result.z = gl_lerp(v1.w, v2.w, t);
+	result.z = gl_lerp(v1.z, v2.z, t);
+	result.w = gl_lerp(v1.w, v2.w, t);
 	return result;
 }
 
@@ -307,9 +307,9 @@ struct gl_frame_buffer
 	gl_vector4 get_color(GLsizei x, GLsizei y)
 	{
 		if (x < 0) x = 0;
-		if (x > buffer_width) x = buffer_width;
+		if (x >= buffer_width) x = buffer_width-1;
 		if (y < 0) y = 0;
-		if (y > buffer_height) y = buffer_height;
+		if (y >= buffer_height) y = buffer_height-1;
 		return color_buffer[y*buffer_width + x];
 	}
 
@@ -349,7 +349,7 @@ struct gl_rs_state
 		if (x < 0) x = 0;
 		if (y < 0) y = 0;
 		if (x >= buffer_width) x = buffer_width - 1;
-		if (y > buffer_height) y = buffer_height - 1;
+		if (y >= buffer_height) y = buffer_height - 1;
 		return fragment_buffer[y*buffer_width+x];
 	}
 };

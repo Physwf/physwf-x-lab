@@ -373,10 +373,7 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 {
 	gl_vector4* p1 = (gl_vector4*)v1;
 	gl_vector4* p2 = (gl_vector4*)v2;
-	if (p2->w == 0.0f)
-	{
-		p2->w = 1.0f;
-	}
+	assert(p1->w != 0 && p2->w != 0);
 	GLfloat ts[4] = { 0.0f };
 	if (p1->x == p2->x)//´¹Ö±
 	{
@@ -404,7 +401,17 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 		*p2,
 	};
 	std::sort(std::begin(ts), std::end(ts));
-	for (auto i = 0; i < 4; ++i)
+	int count = 0;
+	for (int i = 0; i < 4; ++i)
+	{
+		if(ts[i]<=0) continue;
+		if (i > 0 && ts[i-1] == ts[i])
+		{
+			continue;
+		}
+		ts[count++] = ts[i];
+	}
+	for (auto i = 0; i < count; ++i)
 	{
 		GLfloat t = ts[i];
 		if(t <= 0.0f) continue;
@@ -414,16 +421,19 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 		pts[i].z = p1->z * t + (1 - t) * p2->z;
 	}
 	gl_vector4* p = p1;
+	GLfloat t = 0.0f;
 	for (auto i = 0; i < 5; ++i)
 	{
 		bool bacceped = false;
 		bool bculled1 = false;
 		bool bculled2 = false;
 		gl_vector4* pp = &pts[i];
+		GLfloat tt = ts[i];
 		if(gl_is_point_degenerated(pp)) continue;//skip
 		if (gl_is_line_culled(p, pp, bacceped, bculled1, bculled2))
 		{
 			p = pp;
+			t = tt;
 			continue;
 		}
 		else
@@ -436,32 +446,67 @@ gl_primitive_node* gl_do_line_clipping(GLvoid* v1, GLvoid* v2, bool bculled1, bo
 			node->vertices_count = 2;
 			if (p == p1)
 			{
-				//just copy
-				memcpy_s(node->vertices, vertex_size, p1, vertex_size);
+				memcpy_s(node->vertices, vertex_size, p1, vertex_size);//just copy
+				gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
+				for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))//do lerp
+				{
+					gl_vector4* p1i = p1 + i / sizeof(gl_vector4);
+					gl_vector4* p2i = p2 + i / sizeof(gl_vector4);
+					pt.w = p1i->w * tt + (1 - tt) * p2i->w;
+					pt.x = p1i->x * tt + (1 - tt) * p2i->x;
+					pt.y = p1i->y * tt + (1 - tt) * p2i->y;
+					pt.z = p1i->z * tt + (1 - tt) * p2i->z;
+					if (pt.w == 0.0f)
+					{
+						pt.w = 1.0f;
+					}
+					assert(pt.w != 0.0f);
+					memcpy_s((gl_vector4*)((GLbyte*)node->vertices + vertex_size) + i / sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+				}
 			}
 			else
 			{
-				
 				if (pp = p2)
 				{
-					//just copy
-					memcpy_s(node->vertices, vertex_size, p2, vertex_size);
-				}
-				else
-				{
-					//do lerp first
 					gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
-					GLfloat t = ts[i];
-					for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+					for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))//do lerp
 					{
-						gl_vector4* p1i = (p1 + i);
-						gl_vector4* p2i = (p2 + i);
+						gl_vector4* p1i = p1 + i / sizeof(gl_vector4);
+						gl_vector4* p2i = p2 + i / sizeof(gl_vector4);
 						pt.w = p1i->w * t + (1 - t) * p2i->w;
 						pt.x = p1i->x * t + (1 - t) * p2i->x;
 						pt.y = p1i->y * t + (1 - t) * p2i->y;
 						pt.z = p1i->z * t + (1 - t) * p2i->z;
 						assert(pt.w != 0.0f);
-						memcpy_s((gl_vector4*)node->vertices + i , sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+						memcpy_s((gl_vector4*)node->vertices + i / sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+					}
+					memcpy_s((GLbyte*)node->vertices + vertex_size, vertex_size, p2, vertex_size);//just copy
+				}
+				else
+				{
+					//do lerp
+					gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
+					for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+					{
+						gl_vector4* p1i = p1 + i / sizeof(gl_vector4);
+						gl_vector4* p2i = p2 + i / sizeof(gl_vector4);
+						pt.w = p1i->w * t + (1 - t) * p2i->w;
+						pt.x = p1i->x * t + (1 - t) * p2i->x;
+						pt.y = p1i->y * t + (1 - t) * p2i->y;
+						pt.z = p1i->z * t + (1 - t) * p2i->z;
+						assert(pt.w != 0.0f);
+						memcpy_s((gl_vector4*)node->vertices + i / sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
+					}
+					for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+					{
+						gl_vector4* p1i = p1 + i / sizeof(gl_vector4);
+						gl_vector4* p2i = p2 + i / sizeof(gl_vector4);
+						pt.w = p1i->w * tt + (1 - tt) * p2i->w;
+						pt.x = p1i->x * tt + (1 - tt) * p2i->x;
+						pt.y = p1i->y * tt + (1 - tt) * p2i->y;
+						pt.z = p1i->z * tt + (1 - tt) * p2i->z;
+						assert(pt.w != 0.0f);
+						memcpy_s((gl_vector4*)((GLbyte*)node->vertices + vertex_size) + i / sizeof(gl_vector4), sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 					}
 				}
 			}
@@ -1097,7 +1142,7 @@ void gl_fragment_shader(gl_draw_command* cmd)
 		{
 			gl_fragment& fragment = cmd->rs.get_fragment(x, y);
 			gl_frame_buffer* frame_buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];
-			if (fragment.depth < 1.0f && fragment.depth > 0.0f)
+			if (fragment.depth < 1.0f && fragment.depth >= 0.0f)
 			{
 				GLvoid* fs_out = fs->process((GLbyte*)fragment.varing_attribute);
 				gl_vector4& color = ((gl_vector4*)fs_out)[0];
@@ -1127,9 +1172,9 @@ NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer)
 		{
 			gl_vector4 color = fb->get_color(x, y);
 			GLsizei rgb_index = (y*fb->buffer_width + x) * 4;
-			rgbbuffer[rgb_index + 0] = (unsigned char)(gl_campf(color.r) * 255);
+			rgbbuffer[rgb_index + 0] = (unsigned char)(gl_campf(color.b) * 255);
 			rgbbuffer[rgb_index + 1] = (unsigned char)(gl_campf(color.g) * 255);
-			rgbbuffer[rgb_index + 2] = (unsigned char)(gl_campf(color.b) * 255);
+			rgbbuffer[rgb_index + 2] = (unsigned char)(gl_campf(color.r) * 255);
 		}
 	}
 
