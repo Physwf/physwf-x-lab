@@ -97,20 +97,43 @@ void glInit()
 }
 
 GLfloat points[3*100];
-GLfloat lines[3*100*2];
+GLfloat lines[3*20*2];
 
 void glSetup()
 {
-	for (auto& Value : points)
+	int i = 0;
+	float delta = 5.0f;
+	for (int i=0;i<100;++i)
 	{
-		Value = (GLfloat)rand() / 500;
+		//Value = (GLfloat)(rand() % 500);
+		//Value = (GLfloat)(rand() % 500);
+		points[i * 3 + 0] = (i % 10) * 10.0f;
+		points[i * 3 + 1] = (i / 10) * 10.0f;
+		points[i * 3 + 2] = 200.0f;
 	}
-	for (auto& Value : lines)
+	for (int i=0;i<40;++i)
 	{
-		Value = (GLfloat)rand() / 500;
-	}
+		//lines[i * 3 + 0] = 100;
+		//lines[i * 3 + 1] = i*10.0f + 0;
+		lines[i * 3 + 2] = 100.0f;
+		lines[i * 3 + 0] = (GLfloat)(rand() % 500);
+		lines[i * 3 + 1] = (GLfloat)(rand() % 500);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, points);
+	}
+// 	lines[0] = 0.0f;
+// 	lines[1] = 0.0f;
+// 	lines[2] = 0.0f;
+// 	lines[3] = 500.0f;
+// 	lines[4] = 500.0f;
+// 	lines[5] = 100.0f;
+
+// 	lines[0] = 41.0f;
+// 	lines[1] = 167.0f;
+// 	lines[2] = 100.0f;
+// 	lines[3] = 334;
+// 	lines[4] = 0.0f;
+// 	lines[5] = 100.0f;
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, lines);
 	glEnableVertexAttribArray(0);
 	glVertexAttrib3f(1, 1.0f, 0.0f, 0.0f);
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
@@ -125,7 +148,7 @@ void glSetup()
 	glUseProgram(program);
 
 	GLfloat proj[16] = { 0 };
-	glutMatrixOrthoLH(proj, 500, 500, 0, 500);
+	glutMatrixOrthoLH(proj, 500, 0, 500, 0, 0, 500);
 	glUnitformMatrix4fv(0, 1, false, proj);
 }
 
@@ -133,7 +156,7 @@ void glRender()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glDrawArrays(GL_POINT_LIST, 0, 100);
+	glDrawArrays(GL_LINE_LIST, 0, 40);
 
 	glFlush();
 }
