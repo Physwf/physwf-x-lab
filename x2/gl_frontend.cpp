@@ -27,18 +27,24 @@ void glContextInit()
 
 	glContext.program = 0;
 
-	//glContext.buffer = (gl_fragment*)gl_malloc(glContext.buffer_width * glContext.buffer_height * sizeof(gl_fragment));
+	glContext.front_face = GL_CCW;
+	glContext.cull_face = GL_BACK;
 
-// 	for (gl_atrribute<GLfloat>& attrib : glContext.vertex_attributes)
-// 	{
-// 		attrib.values[0] = attrib.values[1] = attrib.values[2] = attrib.values[3] = .0f;
-// 	}
 
-// 	for (gl_atrribute_pointer& attrib_ptr : glContext.vertex_attribute_pointers)
-// 	{
-// 		attrib_ptr.pointer = nullptr;
-// 		attrib_ptr.stride = 0;
-// 	}
+	for (gl_atrribute<GLfloat>& attrib : glContext.vertex_attributes)
+	{
+		attrib.values[0] = attrib.values[1] = attrib.values[2] = 0.0f;
+		attrib.values[3] = 1.0f;
+	}
+
+	for (gl_atrribute_pointer& attrib_ptr : glContext.vertex_attribute_pointers)
+	{
+		attrib_ptr.bEnabled = false;
+		attrib_ptr.pointer = nullptr;
+		attrib_ptr.size = 0;
+		attrib_ptr.type = 0;
+		attrib_ptr.stride = 0;
+	}
 }
 
 void glContextDestroy()
@@ -98,6 +104,16 @@ NAIL_API void glClearDepth(GLclampf d)
 NAIL_API void glClear(GLbitfield buf)
 {
 	glContext.clear_bitmask = buf;
+}
+
+NAIL_API void glFrontFace(GLenum dir)
+{
+	glContext.front_face = dir;
+}
+
+NAIL_API void glCullFace(GLenum mode)
+{
+	glContext.cull_face = mode;
 }
 
 NAIL_API void glFlush()

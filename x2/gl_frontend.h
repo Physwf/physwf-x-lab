@@ -59,6 +59,9 @@ struct gl_frontend
 	GLclampf		depth_far;
 	GLbitfield		clear_bitmask;
 
+	GLenum			front_face;
+	GLenum			cull_face;
+
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;
 

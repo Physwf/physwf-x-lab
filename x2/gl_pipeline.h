@@ -5,7 +5,6 @@
 #include "gl_shader.h"
 #include "gl_utilities.h"
 
-#include <memory>
 
 struct gl_vector2
 {
@@ -32,6 +31,7 @@ struct gl_vector2
 gl_vector2 operator+(const gl_vector2& lhs, const gl_vector2& rhs);
 gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs);
 float operator*(const gl_vector2& lhs, const gl_vector2& rhs);
+gl_vector2 operator/(const gl_vector2& lhs, float divider);
 float cross(const gl_vector2& lhs, const gl_vector2& rhs);
 
 
@@ -149,45 +149,6 @@ inline bool gl_is_point_in_line_segment(const gl_vector2& p1, const gl_vector2& 
 	}
 	return false;
 }
-//diamond exit algorithm
-inline bool gl_is_in_diamond(const gl_vector2& p1, const gl_vector2& p2, GLsizei xw,GLsizei yw,bool bxmajor)
-{
-	gl_vector2 left(xw - 0.5f, (GLfloat)yw);
-	gl_vector2 right(xw + 0.5f, (GLfloat)yw);
-	gl_vector2 top((GLfloat)xw, yw + 0.5f);
-	gl_vector2 down((GLfloat)xw, yw - 0.5f);
-	if (bxmajor)
-	{
-		if (gl_is_line_segment_intersect(left, down, p1, p2) || gl_is_line_segment_intersect(right, down, p1, p2))//同下半段相交
-		{
-			return true;
-		}
-		if (gl_is_line_segment_intersect(left, top, p1, p2))//同左上相交
-		{
-			if (!gl_is_point_in_line_segment(left, top, p1) && !gl_is_point_in_line_segment(left, top, p2)) return true;//且不在线段上
-		}
-		if (gl_is_line_segment_intersect(right, top, p1, p2))//同右上相交
-		{
-			if (!gl_is_point_in_line_segment(right, top, p1) && !gl_is_point_in_line_segment(right, top, p2)) return true;//且不在线段上
-		}
-	}
-	else
-	{
-		if (gl_is_line_segment_intersect(left, top, p1, p2) || gl_is_line_segment_intersect(right, top, p1, p2))//同上半段相交
-		{
-			return true;
-		}
-		if (gl_is_line_segment_intersect(left, down, p1, p2))//同左下相交
-		{
-			if (!gl_is_point_in_line_segment(left, down, p1) && !gl_is_point_in_line_segment(left, down, p2)) return true;//且不在线段上
-		}
-		if (gl_is_line_segment_intersect(right, down, p1, p2))//同右下相交
-		{
-			if (!gl_is_point_in_line_segment(right, down, p1) && !gl_is_point_in_line_segment(right, down, p2)) return true;//且不在线段上
-		}
-	}
-	return false;
-}
 
 struct gl_primitive_node
 {
@@ -226,6 +187,8 @@ struct gl_pa_state
 	GLclampf				depth_near;
 	GLclampf				depth_far;
 
+	GLenum					front_face;
+	GLenum					cull_face;
 	GLsizei					vertex_size;
 	GLsizei					primitive_count;
 	GLenum					primitive_type;
@@ -321,8 +284,6 @@ struct gl_fragment
 	GLvoid* varing_attribute;
 };
 
-
-
 struct gl_rs_state
 {
 	GLfloat point_size;
@@ -390,57 +351,11 @@ struct gl_pipeline
 extern gl_pipeline glPpeline;
 
 bool gl_pipeline_init();
-
 void gl_emit_draw_command();
 void gl_do_draw();
 void gl_swap_frame_buffer(gl_draw_command* cmd);
 
-template<typename TIndex>
-void gl_fill_indices_copy(gl_draw_command* cmd, const TIndex* index_data, GLsizei count)
-{
-	GLsizei indices_size = count * sizeof(GLshort);
-	cmd->ia.indices_count = count;
-
-	if (cmd->ia.indices == nullptr)
-	{
-		cmd->ia.indices = (GLshort*)gl_malloc(indices_size);
-	}
-	else
-	{
-		cmd->ia.indices = (GLshort*)gl_realloc(cmd->ia.indices, indices_size);
-	}
-
-	if (index_data == nullptr)
-	{
-		for (GLsizei i = 0; i < count; ++i)
-		{
-			cmd->ia.indices[i] = i;
-		}
-	}
-	else
-	{
-		for (GLsizei i = 0; i < count; ++i)
-		{
-			cmd->ia.indices[i] = index_data[i];
-		}
-	}
-}
-
-
-GLsizei get_vertex_count_from_indices(gl_draw_command* cmd);
-
-template <typename T>
-gl_vector4 to_vector4_from_attribute(const GLvoid* pointer, GLsizei index, GLsizei stride, GLsizei size)
-{
-	T* start = (T*)pointer+index* size;
-	gl_vector4 result(0.0f, 0.0f, 0.0f, 1.0f);
-	result.set(start, size);
-	return result;
-}
-
-gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr_pointer,GLsizei index);
-
-bool gl_check_input_validity(gl_draw_command* cmd);
+NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer);
 
 void gl_input_assemble(gl_draw_command* cmd);
 
@@ -454,4 +369,3 @@ void gl_fragment_shader(gl_draw_command* cmd);
 
 void gl_output_merge(gl_draw_command* cmd);
 
-NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer);

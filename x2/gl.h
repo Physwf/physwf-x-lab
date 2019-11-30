@@ -73,7 +73,15 @@ typedef void			GLvoid;
 
 #define GL_COLOR_BUFFER_BIT					0x00001
 #define GL_DEPTH_BUFFER_BIT					0x00002
-#define GL_STENCIL_BUFFER_BIT				0x00004				
+#define GL_STENCIL_BUFFER_BIT				0x00004			
+
+
+#define GL_FRONT							0x20001
+#define GL_BACK								0x20002
+#define GL_FRONT_AND_BACK					0x20003
+
+#define GL_CCW								0x20011
+#define GL_CW								0x20012
 
 #include "NAIL.h"
 
@@ -82,6 +90,8 @@ NAIL_API void glDepthRangef(GLclampf n, GLclampf f);
 NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a);
 NAIL_API void glClearDepth(GLclampf d);
 NAIL_API void glClear(GLbitfield buf);
+NAIL_API void glFrontFace(GLenum dir);
+NAIL_API void glCullFace(GLenum mode);
 NAIL_API void glFlush();
 NAIL_API void glVertexAttrib1f(GLuint index, GLfloat x);
 NAIL_API void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y);
