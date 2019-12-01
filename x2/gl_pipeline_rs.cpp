@@ -12,8 +12,8 @@ void gl_point_rasterize(gl_draw_command* cmd)
 		position->x /= position->w;
 		position->y /= position->w;
 		position->z /= position->w;
-		GLsizei x = (GLsizei)(position->x * cmd->pa.viewport_width);
-		GLsizei y = (GLsizei)(position->y * cmd->pa.viewport_height);
+		GLsizei x = (GLsizei)((position->x+1.0f)/2.0f * cmd->pa.viewport_width);
+		GLsizei y = (GLsizei)((position->y+1.0f)/2.0f * cmd->pa.viewport_height);
 		if (x >= 0 && x < cmd->pa.viewport_width && y >= 0 && y < cmd->pa.viewport_height)
 		{
 			gl_fragment& fragment = cmd->rs.fragment_buffer[y*cmd->pa.viewport_width + x];
@@ -82,42 +82,24 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 		p2->y /= p2->w;
 		p2->z /= p2->w;
 		assert(p2->w != 0.0f && p1->w != 0.0f);
-		GLfloat x1 = (p1->x * cmd->pa.viewport_width);
-		GLfloat y1 = (p1->y * cmd->pa.viewport_height);
-		GLfloat x2 = (p2->x * cmd->pa.viewport_width);
-		GLfloat y2 = (p2->y * cmd->pa.viewport_height);
-		GLfloat k = (y2 - y1) / (x2 - x1);
+		GLfloat x1 = ((p1->x + 1.0f) * cmd->pa.viewport_width) / 2.0f;
+		GLfloat y1 = ((p1->y + 1.0f) * cmd->pa.viewport_height) / 2.0f;
+		GLfloat x2 = ((p2->x + 1.0f) * cmd->pa.viewport_width) / 2.0f;
+		GLfloat y2 = ((p2->y + 1.0f) * cmd->pa.viewport_height) / 2.0f;
+		GLfloat k = (p2->y - p1->y) / (p2->x - p1->x);
 		GLsizei xstart, ystart, xend, yend;
-		if (x1 <= x2)
-		{
-			xstart = (GLsizei)x1 - 1;
-			xend = (GLsizei)x2 + 1;
-		}
-		else
-		{
-			xstart = (GLsizei)x2 - 1;
-			xend = (GLsizei)x1 - 1;
-		}
-		if (y1 <= y2)
-		{
-			ystart = (GLsizei)y1 - 1;
-			yend = (GLsizei)y2 + 1;
-		}
-		else
-		{
-			ystart = (GLsizei)y2 - 1;
-			yend = (GLsizei)y1 + 1;
-		}
+		xstart = (GLsizei)glMin(x1, x2)-1;
+		ystart = (GLsizei)glMin(y1, y2)-1;
+		xend = (GLsizei)glMax(x1, x2)+1;
+		yend = (GLsizei)glMax(y1, y2)+1;
 		xstart = glClamp(xstart, 0, cmd->pa.viewport_width);
+		ystart = glClamp(xstart, 0, cmd->pa.viewport_height);
 		xend = glClamp(xend, 0, cmd->pa.viewport_width);
-		ystart = glClamp(ystart, 0, cmd->pa.viewport_height);
 		yend = glClamp(yend, 0, cmd->pa.viewport_height);
-		GLsizei xstep = xend - xstart > 0 ? 1 : -1;
-		GLsizei ystep = yend - ystart > 0 ? 1 : -1;
 		bool bxmajor = k >= -1.0f && k <= 1.0f;
-		for (GLsizei y = ystart; y != yend; y += ystep)
+		for (GLsizei y = ystart; y != yend; ++y)
 		{
-			for (GLsizei x = xstart; x != xend; x += xstep)
+			for (GLsizei x = xstart; x != xend; ++x)
 			{
 				if (gl_is_in_diamond(gl_vector2(x1, y1), gl_vector2(x2, y2), x, y, bxmajor))
 				{
@@ -167,13 +149,13 @@ GLfloat gl_barycentric_interpolation(GLfloat v1, GLfloat v2, GLfloat v3, GLfloat
 	return v1 + m2 * (v2 - v1) + m3 * (v3 - v1);
 }
 
-gl_vector4 gl_barycentric_interpolation(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3, GLfloat m2, GLfloat m3)
+gl_vector4 gl_barycentric_interpolation(const gl_vector4& p1, const gl_vector4& p2, const gl_vector4& p3, GLfloat m2, GLfloat m3)
 {
 	gl_vector4 result;
-	result.x = gl_barycentric_interpolation(p1->x, p2->x, p3->x, m2, m3);
-	result.y = gl_barycentric_interpolation(p1->y, p2->y, p3->y, m2, m3);
-	result.z = gl_barycentric_interpolation(p1->z, p2->z, p3->z, m2, m3);
-	result.w = gl_barycentric_interpolation(p1->w, p2->w, p3->w, m2, m3);
+	result.x = gl_barycentric_interpolation(p1.x, p2.x, p3.x, m2, m3);
+	result.y = gl_barycentric_interpolation(p1.y, p2.y, p3.y, m2, m3);
+	result.z = gl_barycentric_interpolation(p1.z, p2.z, p3.z, m2, m3);
+	result.w = gl_barycentric_interpolation(p1.w, p2.w, p3.w, m2, m3);
 	return result;
 }
 
@@ -182,7 +164,7 @@ gl_vector4* gl_barycentric_interpolation(const gl_vector4* p1, const gl_vector4*
 	gl_vector4* result = (gl_vector4*)gl_malloc(n * sizeof(gl_vector4));
 	for (GLsizei i = 0; i < n; ++i)
 	{
-		*(result + i) = gl_barycentric_interpolation(p1,p2,p3,m2,m3);
+		*(result + i) = gl_barycentric_interpolation(p1[i],p2[i],p3[i],m2,m3);
 	}
 	return result;
 }
@@ -202,44 +184,51 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 	p3->y /= p3->w;
 	p3->z /= p3->w;
 	assert(p2->w != 0.0f && p1->w != 0.0f && p3->w != 0.0f);
-	GLfloat x1 = (p1->x * viewport_width);
-	GLfloat y1 = (p1->y * viewport_height);
-	GLfloat x2 = (p2->x * viewport_width);
-	GLfloat y2 = (p2->y * viewport_height);
-	GLfloat x3 = (p3->x * viewport_width);
-	GLfloat y3 = (p3->y * viewport_height);
+	GLfloat x1 = (p1->x + 1.0f) * viewport_width / 2.0f;
+	GLfloat y1 = (p1->y + 1.0f) * viewport_height / 2.0f;
+	GLfloat x2 = (p2->x + 1.0f) * viewport_width / 2.0f;
+	GLfloat y2 = (p2->y + 1.0f) * viewport_height / 2.0f;
+	GLfloat x3 = (p3->x + 1.0f) * viewport_width / 2.0f;
+	GLfloat y3 = (p3->y + 1.0f) * viewport_height / 2.0f;
 	GLsizei xstart, ystart, xend, yend;
-	xstart = (GLsizei)glMin(x1, x2, x3) - 1;
-	ystart = (GLsizei)glMin(y1, y2, y3) - 1;
-	xend = (GLsizei)glMax(x1, x2, x3) + 1;
-	yend = (GLsizei)glMax(x1, x2, x3) + 1;
+	xstart = (GLsizei)glMin(x1, x2, x3)-1;
+	ystart = (GLsizei)glMin(y1, y2, y3)-1;
+	xend = (GLsizei)glMax(x1, x2, x3)+1;
+	yend = (GLsizei)glMax(y1, y2, y3)+1;
 	xstart = glClamp(xstart, 0, viewport_width);
-	xend = glClamp(xend, 0, viewport_width);
 	ystart = glClamp(ystart, 0, viewport_height);
+	xend = glClamp(xend, 0, viewport_width);
 	yend = glClamp(yend, 0, viewport_height);
-	GLfloat double_area = get_triangle_orientation(p1->to_vector2(),p2->to_vector2(),p3->to_vector2());
+	gl_vector2 v1 = p1->to_vector2();
+	gl_vector2 v2 = p2->to_vector2();
+	gl_vector2 v3 = p3->to_vector2();
+
+	GLfloat double_area = get_triangle_orientation(v1,v2,v3);
+
+	GLfloat bias1 = is_top_left_edge(p1, p2) ? 0.0f : 0.0f;
+	GLfloat bias2 = is_top_left_edge(p2, p3) ? 0.0f : 0.0f;
+	GLfloat bias3 = is_top_left_edge(p3, p1) ? 0.0f : 0.0f;
+
 	for (GLsizei y = ystart; y != yend; ++y)
 	{
 		for (GLsizei x = xstart; x != xend; ++x)
 		{
-			GLfloat bias1 = is_top_left_edge(p1, p2) ? 0.0f : -1.0f;
-			GLfloat bias2 = is_top_left_edge(p2, p3) ? 0.0f : -1.0f;
-			GLfloat bias3 = is_top_left_edge(p3, p1) ? 0.0f : -1.0f;
-
-			GLfloat w1 = get_triangle_orientation(p1->to_vector2(), p2->to_vector2(), gl_vector2((GLfloat)x, (GLfloat)y));
-			GLfloat w2 = get_triangle_orientation(p2->to_vector2(), p3->to_vector2(), gl_vector2((GLfloat)x, (GLfloat)y));
-			GLfloat w3 = get_triangle_orientation(p3->to_vector2(), p1->to_vector2(), gl_vector2((GLfloat)x, (GLfloat)y));
-
-			if ((w1 + bias1) >= 0.0f && (w2 + bias2) >= 0.0f && (w3 + bias3) >= 0.0f)
+			
+			gl_vector2 p((x * 2.0f / viewport_width) - 1.0f, (y* 2.0f / viewport_height) - 1.0f);
+			GLfloat w1 = get_triangle_orientation(v1, v2, p);
+			GLfloat w2 = get_triangle_orientation(v2, v3, p);
+			GLfloat w3 = get_triangle_orientation(v3, v1, p);
+			//if(y<yend-1) continue;
+			if ((w1 + bias1) <= 0.0f && (w2 + bias2) <= 0.0f && (w3 + bias3) <= 0.0f)
 			{
 				GLfloat m2 = w2 / double_area;
 				GLfloat m3 = w3 / double_area;
-				GLfloat depth = gl_barycentric_interpolation(p1->z, p2->z, p3->z, w2 / double_area, w3 / double_area);
+				GLfloat depth = gl_barycentric_interpolation(p1->z, p2->z, p3->z, m2, m3);
 				gl_fragment& fragment = rs.get_fragment(x, y);
 				if (fragment.depth > depth)
 				{
 					fragment.depth = depth;
-					fragment.varing_attribute = gl_barycentric_interpolation(p1, p2,p3, vertex_size / sizeof(gl_vector4), m2, m3);
+					fragment.varing_attribute = gl_barycentric_interpolation(p1, p2, p3, vertex_size / sizeof(gl_vector4), m2, m3);
 				}
 			}
 		}
@@ -252,6 +241,7 @@ void gl_triangle_list_rasterize(gl_draw_command* cmd)
 	while (node)
 	{
 		gl_do_triangle_aabb_rasterize(node,cmd->pa.vertex_size, cmd->pa.viewport_width,cmd->pa.viewport_height,cmd->rs);
+		node = node->next;
 	}
 }
 

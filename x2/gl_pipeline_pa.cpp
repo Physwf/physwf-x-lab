@@ -47,6 +47,7 @@ bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_
 	if (p2->x > p2->w)	code2 |= 2;
 	if (p2->y < -p2->w)	code2 |= 4;
 	if (p2->y > p2->w)	code2 |= 8;
+	bculled1 = (code2 != 0);
 	GLbyte code3 = 0;
 	if (p3->x < -p3->w)	code3 |= 1;
 	if (p3->x > p3->w)	code3 |= 2;
@@ -534,11 +535,11 @@ void gl_line_strip_adj_assemble(gl_draw_command* cmd) { }
 void gl_triangle_list_assemble(gl_draw_command* cmd)
 {
 	gl_primitive_node* tail = nullptr;
-	for (GLsizei i = 0; i < cmd->ia.vertices_count; i += 3)
+	for (GLsizei i = 0; i < cmd->ia.vertices_count; i+=3)
 	{
-		const GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i * 3) * cmd->pa.vertex_size;
-		const GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i * 3 + 1) * cmd->pa.vertex_size;
-		const GLbyte* vertex_data3 = (GLbyte*)cmd->vs.vertices_result + (i * 3 + 2) * cmd->pa.vertex_size;
+		const GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i + 0) * cmd->pa.vertex_size;
+		const GLbyte* vertex_data2 = (GLbyte*)cmd->vs.vertices_result + (i + 1) * cmd->pa.vertex_size;
+		const GLbyte* vertex_data3 = (GLbyte*)cmd->vs.vertices_result + (i + 2) * cmd->pa.vertex_size;
 		gl_vector4* position1 = (gl_vector4*)(vertex_data1);
 		gl_vector4* position2 = (gl_vector4*)(vertex_data2);
 		gl_vector4* position3 = (gl_vector4*)(vertex_data3);
@@ -567,7 +568,7 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 			}
 			else
 			{
-				tail->next = node;
+				cmd->pa.tail->next = node;
 			}
 			cmd->pa.tail = node;
 			++cmd->pa.primitive_count;
@@ -583,7 +584,7 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 				}
 				else
 				{
-					tail->next = node;
+					cmd->pa.tail->next = node;
 				}
 				cmd->pa.tail = node;
 				cmd->pa.primitive_count += primitive_count;

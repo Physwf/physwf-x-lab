@@ -23,7 +23,7 @@ GLsizei get_vertex_count_from_indices(gl_draw_command* cmd)
 template <typename T>
 gl_vector4 to_vector4_from_attribute(const GLvoid* pointer, GLsizei index, GLsizei stride, GLsizei size)
 {
-	T* start = (T*)pointer + index * size;
+	T* start = (T*)pointer + index * (size + stride / sizeof(T));
 	gl_vector4 result(0.0f, 0.0f, 0.0f, 1.0f);
 	result.set(start, size);
 	return result;
