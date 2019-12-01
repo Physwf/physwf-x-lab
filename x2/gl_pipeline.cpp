@@ -101,6 +101,9 @@ void gl_emit_draw_command()
 	cmd->pa.front_face = glContext.front_face;
 	cmd->pa.cull_face = glContext.cull_face;
 	//rs
+	GLenum front_face = glContext.front_face;
+	GLenum back_face = glContext.front_face == GL_CCW ? GL_CW : GL_CCW;
+	cmd->rs.cull_mode = glContext.cull_face == GL_FRONT ? front_face : back_face;//ÌÞ³ý¹æÔò
 	cmd->rs.point_size = 1.0f;
 	GLsizei count = glContext.viewport_width * glContext.viewport_height;
 	cmd->rs.fragment_buffer = (gl_fragment*)gl_malloc(glContext.viewport_width * glContext.viewport_height * sizeof(gl_fragment));

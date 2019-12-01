@@ -61,14 +61,29 @@ bool gl_is_triangle_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_
 bool gl_is_face_culled(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3,GLenum cull_face, GLenum front_face)
 {
 	if (cull_face == GL_FRONT_AND_BACK) return true;
-	bool is_ccw = cross(p2->to_vector2() - p1->to_vector2(), p3->to_vector2() - p1->to_vector2()) > 0.0f;
+	
+	bool is_ccw = get_triangle_orientation(p1->to_vector2(), p2->to_vector2(), p3->to_vector2()) > 0.0f;
 	switch (front_face)
 	{
 	case GL_CCW:
-		return is_ccw && (cull_face == GL_FRONT);
+		if (cull_face == GL_FRONT)
+		{
+			return is_ccw;
+		}
+		else
+		{
+			return !is_ccw;
+		}
 		break;
 	case GL_CW:
-		return !is_ccw && (cull_face == GL_BACK);
+		if (cull_face == GL_FRONT)
+		{
+			return !is_ccw;
+		}
+		else
+		{
+			return is_ccw;
+		}
 		break;
 	}
 	return false;

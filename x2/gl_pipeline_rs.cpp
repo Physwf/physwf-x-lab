@@ -139,11 +139,6 @@ bool is_top_left_edge(const gl_vector4* start, const gl_vector4* end)
 	return (end->x < start->x) || (end->y > start->y);
 }
 
-GLfloat get_triangle_orientation(const gl_vector2& p1, const gl_vector2& p2, const gl_vector2& p3)
-{
-	return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x);
-}
-
 GLfloat gl_barycentric_interpolation(GLfloat v1, GLfloat v2, GLfloat v3, GLfloat m2, GLfloat m3)
 {
 	return v1 + m2 * (v2 - v1) + m3 * (v3 - v1);
@@ -219,7 +214,8 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 			GLfloat w2 = get_triangle_orientation(v2, v3, p);
 			GLfloat w3 = get_triangle_orientation(v3, v1, p);
 			//if(y<yend-1) continue;
-			if ((w1 + bias1) <= 0.0f && (w2 + bias2) <= 0.0f && (w3 + bias3) <= 0.0f)
+			bool is_in_triangle = (rs.cull_mode == GL_CW) ? ((w1 + bias1) >= 0.0f && (w2 + bias2) >= 0.0f && (w3 + bias3) >= 0.0f) : ((w1 + bias1) <= 0.0f && (w2 + bias2) <= 0.0f && (w3 + bias3) <= 0.0f);
+			if (is_in_triangle)
 			{
 				GLfloat m2 = w2 / double_area;
 				GLfloat m3 = w3 / double_area;

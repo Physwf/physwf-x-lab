@@ -150,6 +150,11 @@ inline bool gl_is_point_in_line_segment(const gl_vector2& p1, const gl_vector2& 
 	return false;
 }
 
+inline GLfloat get_triangle_orientation(const gl_vector2& p1, const gl_vector2& p2, const gl_vector2& p3)
+{
+	return (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x);
+}
+
 struct gl_primitive_node
 {
 	GLvoid*		vertices;
@@ -291,6 +296,7 @@ struct gl_rs_state
 	GLsizei buffer_width;
 	GLsizei buffer_height;
 	gl_fragment* fragment_buffer;
+	GLenum cull_mode;//GL_CCW,GL_CW
 
 	void clear_fragment_buffer()
 	{

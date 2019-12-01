@@ -101,9 +101,9 @@ GLfloat points[6*100];
 GLfloat lines[3*40];
 GLfloat triangles[3 * 6 * 100] = 
 {
-	1.0f,0.0f,0.0f, 1.0f,0.0f,0.0f,
-	1.0f,200.0f,0.0f, 0.0f,1.0f,0.0f,
+	0.0f,0.0f,0.0f, 1.0f,0.0f,0.0f,
 	300.0f,200.0f,0.0f, 0.0f,0.0f,1.0f,
+	0.0f,200.0f,0.0f, 0.0f,1.0f,0.0f,
 };
 
 void glSetup()
@@ -142,16 +142,17 @@ void glSetup()
 
 	for (int i = 0; i < 300; ++i)
 	{
-		triangles[i * 6 + 0] = (GLfloat)(rand() % 400) + 1.0f;
-		triangles[i * 6 + 1] = (GLfloat)(rand() % 400) + 1.0f;
-		triangles[i * 6 + 2] = 100.0f;
-
-		triangles[i * 6 + 3] = (GLfloat)(rand() % 500) / 500.0f;
-		triangles[i * 6 + 4] = (GLfloat)(rand() % 500) / 500.0f;
-		triangles[i * 6 + 5] = (GLfloat)(rand() % 500) / 500.0f;
+// 		triangles[i * 6 + 0] = (GLfloat)(rand() % 400) + 1.0f;
+// 		triangles[i * 6 + 1] = (GLfloat)(rand() % 400) + 1.0f;
+// 		triangles[i * 6 + 2] = 100.0f;
+// 
+// 		triangles[i * 6 + 3] = (GLfloat)(rand() % 500) / 500.0f;
+// 		triangles[i * 6 + 4] = (GLfloat)(rand() % 500) / 500.0f;
+// 		triangles[i * 6 + 5] = (GLfloat)(rand() % 500) / 500.0f;
 	}
 
-
+	glFrontFace(GL_CW);
+	glCullFace(GL_FRONT);
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 3, triangles);
 	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(GLfloat) * 3, triangles + 3);
 	glEnableVertexAttribArray(0);
@@ -177,7 +178,7 @@ void glRender()
 {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-	glDrawArrays(GL_TRIANGLE_LIST, 0, 300);
+	glDrawArrays(GL_TRIANGLE_LIST, 0, 3);
 
 	glFlush();
 }
