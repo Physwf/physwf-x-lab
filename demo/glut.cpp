@@ -1,6 +1,8 @@
 #include "glut.h"
 #include "gl_pipeline.h"
 
+#include <cstdio>
+
 unsigned char* pFrameBuffer;
 extern HWND g_hWind;
 
@@ -42,8 +44,8 @@ float* glutMatrixOrthoLH(float* pOut, float t, float b, float l, float r, float 
 {
 	float result[]
 	{
-		1/(r-l),	0.0f,		0.0f,			-l,
-		0.0f,		1/(t-b),	0.0f,			-b,
+		2.0f/(r-l),	0.0f,		0.0f,			-(r+l)/(r-l),
+		0.0f,		2.0f /(t-b),0.0f,			-(t+b)/(t-b),
 		0.0f,		0.0f,		1/(zf-zn),		-zn/(zf-zn),
 		0.0f,		0.0f,		0.0f,			1.0f,
 	};
@@ -52,5 +54,17 @@ float* glutMatrixOrthoLH(float* pOut, float t, float b, float l, float r, float 
 		pOut[i] = result[i];
 	}
 	return pOut;
+}
+
+
+void XLOG(const char* format, ...)
+{
+	char buffer[1024] = { 0 };
+	va_list v_list;
+	va_start(v_list, format);
+	vsprintf_s(buffer, format, v_list);
+	va_end(v_list);
+	extern void OutputDebug(const char* Format);
+	OutputDebug(buffer);
 }
 
