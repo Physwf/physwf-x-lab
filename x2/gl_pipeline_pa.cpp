@@ -245,35 +245,33 @@ bool is_in_right_side_of_boundary(const gl_vector2& cw_boundary_start, const gl_
 {
 	return cross(cw_boundary_end - cw_boundary_start, point - cw_boundary_start) >= 0;//==0表示在边界上
 }
-const gl_vector4* compute_intersection(const gl_vector4* pre_p, const gl_vector4* cur_p, const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end, GLsizei vertex_size)
+const gl_vector4* compute_intersection(const gl_vector4* cur_p,const gl_vector4* pre_p, const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end, GLsizei vertex_size)
 {
 	GLfloat t = 0.0f;
 	if (cw_boundary_start.x == cw_boundary_end.x)
 	{
 		if (cw_boundary_start.x == -1.0f)
 		{
-			t = (pre_p->x - (-1.0f)) / (pre_p->x - cur_p->x);
+			t = (cur_p->x - (-1.0f)) / (cur_p->x - pre_p->x);
 		}
 		else if (cw_boundary_start.x == 1.0f)
 		{
-			t = (pre_p->x - 1.0f) / (pre_p->x - cur_p->x);
+			t = (cur_p->x - 1.0f) / (cur_p->x - pre_p->x);
 		}
 	}
 	else if (cw_boundary_start.y == cw_boundary_end.y)
 	{
 		if (cw_boundary_start.y == -1.0f)
 		{
-			t = (pre_p->y - (-1.0f)) / (pre_p->y - cur_p->y);
+			t = (cur_p->y - (-1.0f)) / (cur_p->y - pre_p->y);
 		}
 		else if (cw_boundary_start.y == 1.0f)
 		{
-			t = (pre_p->y - 1.0f) / (pre_p->y - cur_p->y);
+			t = (cur_p->y - 1.0f) / (cur_p->y - pre_p->y);
 		}
 	}
 
-	if (t == 0.0f) return pre_p;
-	if (t == 1.0f) return cur_p;
-	if (t < 0.0f || t > 1.0f) return nullptr;
+	if (t <= 0.0f || t => 1.0f) return nullptr;
 
 	gl_vector4* result = (gl_vector4*)gl_malloc(vertex_size);
 	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
@@ -281,10 +279,10 @@ const gl_vector4* compute_intersection(const gl_vector4* pre_p, const gl_vector4
 	{
 		const gl_vector4* pre_pi = (pre_p + i);
 		const gl_vector4* cur_pi = (cur_p + i);
-		pt.w = pre_pi->w * (1 - t) + t * cur_pi->w;
-		pt.x = pre_pi->x * (1 - t) + t * cur_pi->x;
-		pt.y = pre_pi->y * (1 - t) + t * cur_pi->y;
-		pt.z = pre_pi->z * (1 - t) + t * cur_pi->z;
+		pt.w = cur_pi->w * (1 - t) + t * pre_pi->w;
+		pt.x = cur_pi->x * (1 - t) + t * pre_pi->x;
+		pt.y = cur_pi->y * (1 - t) + t * pre_pi->y;
+		pt.z = cur_pi->z * (1 - t) + t * pre_pi->z;
 		memcpy_s(result + i, sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 	}
 	return result;
