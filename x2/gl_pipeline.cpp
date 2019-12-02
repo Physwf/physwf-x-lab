@@ -67,7 +67,7 @@ void gl_emit_draw_command()
 	//ia
 	if (glContext.indices_pointer)
 	{
-		GLsizei indices_size = glContext.count*glContext.indices_type == GL_BYTE ? 1 : 2;
+		GLsizei indices_size = glContext.count*(glContext.indices_type == GL_BYTE ? 1 : 2);
 		cmd->ia.indices_copy = gl_malloc(indices_size);
 		memcpy_s(cmd->ia.indices_copy, indices_size, glContext.indices_pointer, indices_size);
 		cmd->ia.indices_count = glContext.count;

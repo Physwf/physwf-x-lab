@@ -234,8 +234,10 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 void gl_triangle_list_rasterize(gl_draw_command* cmd)
 {
 	gl_primitive_node* node = cmd->pa.primitives;
+	int i = 0;
 	while (node)
 	{
+		++i;
 		gl_do_triangle_aabb_rasterize(node,cmd->pa.vertex_size, cmd->pa.viewport_width,cmd->pa.viewport_height,cmd->rs);
 		node = node->next;
 	}

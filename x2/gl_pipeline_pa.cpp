@@ -245,7 +245,7 @@ bool is_in_right_side_of_boundary(const gl_vector2& cw_boundary_start, const gl_
 {
 	return cross(cw_boundary_end - cw_boundary_start, point - cw_boundary_start) >= 0;//==0表示在边界上
 }
-gl_vector4* compute_intersection(const gl_vector4* pre_p, const gl_vector4* cur_p, const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end, GLsizei vertex_size)
+const gl_vector4* compute_intersection(const gl_vector4* pre_p, const gl_vector4* cur_p, const gl_vector2& cw_boundary_start, const gl_vector2& cw_boundary_end, GLsizei vertex_size)
 {
 	GLfloat t = 0.0f;
 	if (cw_boundary_start.x == cw_boundary_end.x)
@@ -271,16 +271,20 @@ gl_vector4* compute_intersection(const gl_vector4* pre_p, const gl_vector4* cur_
 		}
 	}
 
+	if (t == 0.0f) return pre_p;
+	if (t == 1.0f) return cur_p;
+	if (t < 0.0f || t > 1.0f) return nullptr;
+
 	gl_vector4* result = (gl_vector4*)gl_malloc(vertex_size);
 	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
-	for (GLsizei i = 0; i < vertex_size; i += sizeof(gl_vector4))
+	for (GLsizei i = 0; i < vertex_size / (GLsizei)sizeof(gl_vector4); ++i )
 	{
 		const gl_vector4* pre_pi = (pre_p + i);
 		const gl_vector4* cur_pi = (cur_p + i);
-		pt.w = pre_pi->w * t + (1 - t) * cur_pi->w;
-		pt.x = pre_pi->x * t + (1 - t) * cur_pi->x;
-		pt.y = pre_pi->y * t + (1 - t) * cur_pi->y;
-		pt.z = pre_pi->z * t + (1 - t) * cur_pi->z;
+		pt.w = pre_pi->w * (1 - t) + t * cur_pi->w;
+		pt.x = pre_pi->x * (1 - t) + t * cur_pi->x;
+		pt.y = pre_pi->y * (1 - t) + t * cur_pi->y;
+		pt.z = pre_pi->z * (1 - t) + t * cur_pi->z;
 		memcpy_s(result + i, sizeof(gl_vector4), &pt, sizeof(gl_vector4));
 	}
 	return result;
@@ -319,14 +323,14 @@ void do_sutherland_hodgman_clipping(const std::vector<const gl_vector4*>& vertic
 	}
 	for (std::vector<gl_vector4*>::size_type i = 0; i < vertices_in.size(); ++i)
 	{
-		const gl_vector4* cur_p = vertices_in[0];
+		const gl_vector4* cur_p = vertices_in[i];
 		const gl_vector4* pre_p = vertices_in[(i + vertices_in.size() - 1) % vertices_in.size()];
-		gl_vector4* intersectin_p = compute_intersection(cur_p, pre_p, clockwise_pstart, clockwise_pend, vertex_size);
+		const gl_vector4* intersectin_p = compute_intersection(cur_p, pre_p, clockwise_pstart, clockwise_pend, vertex_size);
 		if (is_in_right_side_of_boundary(clockwise_pend, clockwise_pstart, cur_p->to_vector2() / cur_p->w))
 		{
 			if (!is_in_right_side_of_boundary(clockwise_pend, clockwise_pstart, pre_p->to_vector2() / cur_p->w))
 			{
-				vertices_out.push_back(intersectin_p);
+				if(intersectin_p != nullptr) vertices_out.push_back(intersectin_p);
 			}
 			vertices_out.push_back(cur_p);
 		}
@@ -335,36 +339,10 @@ void do_sutherland_hodgman_clipping(const std::vector<const gl_vector4*>& vertic
 			vertices_out.push_back(intersectin_p);
 		}
 	}
-	//clockwise sort
-	std::sort(vertices_out.begin(), vertices_out.end(), [](const gl_vector4* p1, const gl_vector4* p2) {
-		if (p1->x < p2->x)
-		{
-			return -1;
-		}
-		else if (p1->x > p2->x)
-		{
-			return 1;
-		}
-		else
-		{
-			if (p1->y < p2->y)
-			{
-				return -1;
-			}
-			else if (p1->y > p2->y)
-			{
-				return 1;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-	});
 }
 
 
-gl_primitive_node* gl_do_triangle_clipping(const GLvoid* v1, const GLvoid* v2, const GLvoid* v3, GLsizei vertex_size, GLsizei& primitives_count, gl_primitive_node** tail)
+gl_primitive_node* gl_do_triangle_clipping(const GLvoid* v1, const GLvoid* v2, const GLvoid* v3, GLsizei vertex_size, gl_pa_state& pa)
 {
 	const gl_vector4* p1 = (gl_vector4*)v1;
 	const gl_vector4* p2 = (gl_vector4*)v2;
@@ -383,23 +361,33 @@ gl_primitive_node* gl_do_triangle_clipping(const GLvoid* v1, const GLvoid* v2, c
 	//内存回收
 	for (const gl_vector4* v : all_vertices)
 	{
-		if (v == p1 || v == p2 || v == p3) continue;
-		gl_free((GLvoid*)v);
+		//if (std::find(vertices_in.begin(),vertices_in.end(),v) == vertices_in.end()) continue;
+		//gl_free((GLvoid*)v);
 	}
 	if (vertices_in.size() > 0)
 	{
 		assert(vertices_in.size() >= 3);
-		gl_primitive_node* node = nullptr;
 		for (std::vector<const gl_vector4*>::size_type i = 0; i < vertices_in.size() - 2; i++)
 		{
-			node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
+			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
+			node->next = nullptr;
 			node->vertices = gl_malloc(vertex_size * 3);
 			node->vertices_count = 3;
 			const GLvoid* vertices[3] = { vertices_in[0], vertices_in[i + 1], vertices_in[i + 2] };
-			for (auto i = 0; i < 3; ++i)
+			for (auto j = 0; j < 3; ++j)
 			{
-				memcpy_s((GLbyte*)node->vertices + i * vertex_size, vertex_size, vertices[i], vertex_size);
+				memcpy_s((GLbyte*)node->vertices + j * vertex_size, vertex_size, vertices[j], vertex_size);
 			}
+			if (pa.tail == nullptr)
+			{
+				pa.primitives = node;
+			}
+			else
+			{
+				pa.tail->next = node;
+			}
+			pa.tail = node;
+			++pa.primitive_count;
 		}
 	}
 	return nullptr;
@@ -549,7 +537,6 @@ void gl_line_strip_adj_assemble(gl_draw_command* cmd) { }
 
 void gl_triangle_list_assemble(gl_draw_command* cmd)
 {
-	gl_primitive_node* tail = nullptr;
 	for (GLsizei i = 0; i < cmd->ia.vertices_count; i+=3)
 	{
 		const GLbyte* vertex_data1 = (GLbyte*)cmd->vs.vertices_result + (i + 0) * cmd->pa.vertex_size;
@@ -575,6 +562,7 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 			gl_primitive_node* node = (gl_primitive_node*)gl_malloc(sizeof(gl_primitive_node));
 			GLsizei primitive_size = cmd->pa.vertex_size * 3;
 			node->vertices = gl_malloc(primitive_size);
+			node->vertices_count = 3;
 			memcpy_s(node->vertices, primitive_size, vertex_data1, primitive_size);
 			node->next = nullptr;
 			if (cmd->pa.tail == nullptr)
@@ -590,20 +578,7 @@ void gl_triangle_list_assemble(gl_draw_command* cmd)
 		}
 		else
 		{
-			GLsizei primitive_count = 0;
-			if (gl_primitive_node* node = gl_do_triangle_clipping(vertex_data1, vertex_data2, vertex_data3, cmd->pa.vertex_size, primitive_count, &cmd->pa.tail))
-			{
-				if (cmd->pa.tail == nullptr)
-				{
-					cmd->pa.primitives = node;
-				}
-				else
-				{
-					cmd->pa.tail->next = node;
-				}
-				cmd->pa.tail = node;
-				cmd->pa.primitive_count += primitive_count;
-			}
+			gl_do_triangle_clipping(vertex_data1, vertex_data2, vertex_data3, cmd->pa.vertex_size, cmd->pa);
 		}
 	}
 }
