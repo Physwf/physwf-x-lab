@@ -182,24 +182,34 @@ void Mesh::AssembleSubMesh(SubMesh* pSubMesh, const Face& F)
 {
 	if (pSubMesh)
 	{
-		Vertex V;
-		V.Position = Positions[F.v1.PositonIndex-1];
-		//V.Normal = Positions[F.v1.NormalIndex];
-		V.Tex = TexCoords[F.v1.TexCoordIndex - 1];
-		pSubMesh->Vertices.push_back(V);
+		Vertex V1;
+		V1.Position = Positions[F.v1.PositonIndex-1];
+		V1.Tex = TexCoords[F.v1.TexCoordIndex - 1];
+
+		Vertex V2;
+		V2.Position = Positions[F.v2.PositonIndex - 1];
+		V2.Tex = TexCoords[F.v2.TexCoordIndex - 1];
+
+		Vertex V3;
+		V3.Position = Positions[F.v3.PositonIndex - 1];
+		V3.Tex = TexCoords[F.v3.TexCoordIndex - 1];
+
+		Vector3 Normal = multiply(sub(V3.Position, V1.Position), sub(V2.Position,V1.Position));
+
+		Normal = normalize(Normal);
+		V1.Normal = Normal;
+		V2.Normal = Normal;
+		V3.Normal = Normal;
+
+		pSubMesh->Vertices.push_back(V1);
+		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+		pSubMesh->Vertices.push_back(V2);
+		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+		pSubMesh->Vertices.push_back(V3);
 		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
 
-		V.Position = Positions[F.v2.PositonIndex - 1];
-		//V.Normal = Positions[F.v2.NormalIndex];
-		V.Tex = TexCoords[F.v2.TexCoordIndex - 1];
-		pSubMesh->Vertices.push_back(V);
-		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
 
-		V.Position = Positions[F.v3.PositonIndex - 1];
-		//V.Normal = Positions[F.v3.NormalIndex];
-		V.Tex = TexCoords[F.v3.TexCoordIndex - 1];
-		pSubMesh->Vertices.push_back(V);
-		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+
 	}
 }
 

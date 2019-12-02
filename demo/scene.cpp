@@ -20,6 +20,7 @@ struct LowPolyCatVertexShader : public gl_shader
 	};
 
 	matrix4 proj;
+	matrix4 model;
 
 	LowPolyCatVertexShader()
 	{
@@ -30,13 +31,17 @@ struct LowPolyCatVertexShader : public gl_shader
 	GLvoid compile()
 	{
 		uniforms = gl_uniform_node::create((GLfloat*)&proj, "proj", sizeof(matrix4), GL_FLOAT_MAT4);
+		uniforms->next = gl_uniform_node::create((GLfloat*)&model, "model", sizeof(matrix4), GL_FLOAT_MAT4);
 	}
 
 	VS_Output process(VS_Input Input)
 	{
 		VS_Output Out;
+		Out.position = multiply(model, Input.position);
 		Out.position = multiply(proj, Input.position);
-		Out.color = vector4(0.6f, 0.6f, 0.6f, 1.0f);
+		Input.normal = multiply(model, Input.position);
+		float fDot = dot(Input.normal.to_vector3(), vector3(0,0,-1.0f));
+		Out.color = vector4(clamp(fDot) *0.6f, clamp(fDot) *0.6f, clamp(fDot) *0.6f, 1.0f);
 		return Out;
 	}
 
@@ -134,6 +139,11 @@ void Scene::Draw()
 			GLfloat proj[16] = { 0 };
 			glutMatrixOrthoLH(proj, -549, 450, -199, 800, -100, 500);
 			glUnitformMatrix4fv(0, 1, false, proj);
+			GLfloat model[16] = { 0 };
+			static float rad = 0.0f;
+			rad += 1.0f;
+			glutMatrixRotationY(model, rad);
+			glUnitformMatrix4fv(1, 1, false, model);
 
 			glDrawElements(GL_TRIANGLE_LIST, Sub.Indices.size(),GL_SHORT,Sub.Indices.data());
 		}

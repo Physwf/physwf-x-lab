@@ -2,6 +2,7 @@
 #include "gl_pipeline.h"
 
 #include <cstdio>
+#include <cmath>
 
 unsigned char* pFrameBuffer;
 extern HWND g_hWind;
@@ -56,6 +57,54 @@ float* glutMatrixOrthoLH(float* pOut, float l, float r, float b, float t, float 
 	return pOut;
 }
 
+
+float* glutMatrixRotationX(float* pOut, float rad)
+{
+	float result[]
+	{
+		1.0f,			1.0f,				0.0f,				1.0f,
+		0.0f,			std::cos(rad),		-std::sin(rad),		1.0f,
+		0.0f,			std::sin(rad),		std::cos(rad),		1.0f,
+		0.0f,			0.0f,				0.0f,				1.0f,
+	};
+	for (int i = 0; i < 16; ++i)
+	{
+		pOut[i] = result[i];
+	}
+	return pOut;
+}
+
+float* glutMatrixRotationY(float* pOut, float rad)
+{
+	float result[]
+	{
+		std::cos(rad),	0.0f,		std::sin(rad),				1.0f,
+		0.0f,			1.0f,		0.0f,						1.0f,
+		-std::sin(rad),	0.0f,		std::cos(rad),				1.0f,
+		0.0f,			0.0f,		0.0f,						1.0f,
+	};
+	for (int i = 0; i < 16; ++i)
+	{
+		pOut[i] = result[i];
+	}
+	return pOut;
+}
+
+float* glutMatrixRotationZ(float* pOut, float rad)
+{
+	float result[]
+	{
+		std::cos(rad),	-std::sin(rad),		1.0f,				1.0f,
+		0.0f,			std::cos(rad),		0.0f,				1.0f,
+		std::sin(rad),	0.0f,				1.0f,				1.0f,
+		0.0f,			0.0f,				0.0f,				1.0f,
+	};
+	for (int i = 0; i < 16; ++i)
+	{
+		pOut[i] = result[i];
+	}
+	return pOut;
+}
 
 void XLOG(const char* format, ...)
 {

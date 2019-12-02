@@ -1,5 +1,6 @@
 #pragma once
 #include "NAIL.h"
+#include <cmath>
 
 #define GL_PROGRAM				0x1003
 
@@ -31,19 +32,58 @@ struct gl_shader
 
 	struct vector2
 	{
-		float x, y;
+		union
+		{
+			struct 
+			{
+				float x, y;
+			};
+			struct
+			{
+				float u, v;
+			};
+		};
+
+		vector2() :x(0.0f), y(0.0f) {}
+		vector2(float _x, float _y) :x(_x), y(_y) {}
 	};
 
 	struct vector3
 	{
-		float x, y, z;
+		union
+		{
+			struct
+			{
+				float x, y, z;
+			};
+			struct
+			{
+				float u, v, w;
+			};
+		};
+
+
+		vector3() :x(0.0f), y(0.0f), z(0.0f) {}
+		vector3(float _x, float _y, float _z) :x(_x), y(_y), z(_z) {}
 	};
 
 	struct vector4
 	{
-		float x, y, z, w;
+		union
+		{
+			struct
+			{
+				float x, y, z, w;
+			};
+			struct
+			{
+				float u, v, w, t;
+			};
+		};
 
-		vector4():x(0.0f), y(0.0f), z(0.0f), w(0.0f){}
+		vector3 to_vector3() { return vector3(x,y,z); }
+
+		vector4():x(0.0f), y(0.0f), z(0.0f), w(1.0f){}
 		vector4(float _x,float _y, float _z, float _w):x(_x), y(_y), z(_z), w(_w){}
 	};
 
@@ -55,7 +95,7 @@ struct gl_shader
 		float a30, a31, a32, a33;
 	};
 
-	vector4 multiply(matrix4 m, vector4 v)
+	vector4 multiply(const matrix4& m, const vector4& v)
 	{
 		return 
 		{
@@ -66,6 +106,40 @@ struct gl_shader
 		};
 	}
 
+	float clamp(float v) 
+	{ 
+		if (v < 0.0f) return 0.0f; 
+		if (v > 1.0f) return 1.0f;
+		return v;
+	}
+	vector4 add(const vector4& v1, const vector4& v2) { return vector4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w); }
+	vector3 add(const vector3& v1, const vector3& v2) { return vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
+	vector2 add(const vector2& v1, const vector2& v2) { return vector2(v1.x + v2.x, v1.y + v2.y); }
+	vector4 sub(const vector4& v1, const vector4& v2) { return vector4(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z, v1.w - v2.w);}
+	vector3 sub(const vector3& v1, const vector3& v2) { return vector3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
+	vector2 sub(const vector2& v1, const vector2& v2) { return vector2(v1.x - v2.x, v1.y - v2.y); }
+	float dot(const vector4& v1, const vector4& v2) { return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z + v1.w * v2.w); }
+	float dot(const vector3& v1, const vector3& v2) { return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z); }
+	float dot(const vector2& v1, const vector2& v2) { return (v1.x * v2.x + v1.y * v2.y); }
+	//vector4 multiply(const vector4& v1, const vector4& v2) {  }
+	vector3 multiply(const vector3& v1, const vector3& v2) { return vector3(v1.y*v2.z-v2.y*v1.z, v1.z*v2.x-v2.z*v1.x, v1.x*v2.y-v2.x*v1.y); }
+	float multiply(const vector2& v1, const vector2& v2) { return v1.x*v2.y - v2.x*v1.y; }
+
+	vector4 normalize(const vector4& v)
+	{
+		float sqrt = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w);
+		return vector4(v.x / sqrt, v.y / sqrt, v.z / sqrt, v.w / sqrt);
+	}
+	vector3 normalize(const vector3& v)
+	{
+		float sqrt = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+		return vector3(v.x / sqrt, v.y / sqrt, v.z / sqrt);
+	}
+	vector2 normalize(const vector2& v)
+	{
+		float sqrt = std::sqrt(v.x*v.x + v.y*v.y);
+		return vector2(v.x / sqrt, v.y / sqrt);
+	}
 
 	virtual GLvoid compile() = 0;
 	virtual GLvoid* process(GLvoid*) = 0;

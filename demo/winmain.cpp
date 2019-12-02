@@ -66,15 +66,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ShowWindow(g_hWind, nCmdShow);
 
 	glutInit(0, 0, W, H, FrameBuffer);
-	glInit();
-	glSetup();
-	//S.Init();
+	//glInit();
+	//glSetup();
+	S.Init();
 
 	MSG msg;
 	while (true)
 	{
-		glRender();
-		//S.Draw();
+		//glRender();
+		S.Draw();
 		glutPresent();
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
