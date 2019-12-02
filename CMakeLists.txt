@@ -15,7 +15,7 @@ add_subdirectory(dx11demo)
 add_subdirectory(path_tracing)
 include_directories(x3/Include)
 set(DIR_PROJECT "./demo")
-add_executable(x-lab ${DIR_PROJECT}/winmain.cpp ${DIR_PROJECT}/x2demo.cpp ${DIR_PROJECT}/glut.h ${DIR_PROJECT}/glut.cpp)
+add_executable(x-lab ${DIR_PROJECT}/winmain.cpp ${DIR_PROJECT}/x2demo.cpp ${DIR_PROJECT}/glut.h ${DIR_PROJECT}/glut.cpp ${DIR_PROJECT}/mesh.h ${DIR_PROJECT}/mesh.cpp ${DIR_PROJECT}/scene.h ${DIR_PROJECT}/scene.cpp)
 target_link_libraries(x-lab libx2)
 add_dependencies(x-lab libx2)
 

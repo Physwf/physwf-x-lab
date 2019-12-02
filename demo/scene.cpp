@@ -1,0 +1,143 @@
+#include "scene.h"
+#include "mesh.h"
+#include "gl_shader.h"
+#include "glut.h"
+
+struct LowPolyCatVertexShader : public gl_shader
+{
+
+	struct VS_Input
+	{
+		vector4 position;
+		vector4 normal;
+		vector4 TextCoord;
+	};
+
+	struct VS_Output
+	{
+		vector4 position;
+		vector4 color;
+	};
+
+	matrix4 proj;
+
+	LowPolyCatVertexShader()
+	{
+		input_size = sizeof(VS_Input);
+		output_size = sizeof(VS_Output);
+	}
+
+	GLvoid compile()
+	{
+		uniforms = gl_uniform_node::create((GLfloat*)&proj, "proj", sizeof(matrix4), GL_FLOAT_MAT4);
+	}
+
+	VS_Output process(VS_Input Input)
+	{
+		VS_Output Out;
+		Out.position = multiply(proj, Input.position);
+		Out.color = vector4(0.6f, 0.6f, 0.6f, 1.0f);
+		return Out;
+	}
+
+	VS_Output Output;
+	virtual GLvoid* process(GLvoid* Vertex)
+	{
+		Output = process(*(VS_Input*)Vertex);
+		return &Output;
+	}
+};
+struct LowPolyCatFragmentShader : public gl_shader
+{
+	struct PS_Input
+	{
+		vector4 position;
+		vector4 color;
+	};
+
+	struct PS_Output
+	{
+		vector4 color;
+	};
+
+	LowPolyCatFragmentShader()
+	{
+		input_size = sizeof(PS_Input);
+		output_size = sizeof(PS_Output);
+	}
+
+	GLvoid compile()
+	{
+
+	}
+
+	PS_Output process(PS_Input Input)
+	{
+		PS_Output Out;
+		Out.color = Input.color;
+		//X_LOG("%f,%f,%f\n",Input.color.x, Input.color.y,Input.color.x);
+		return Out;
+	}
+
+	PS_Output Output;
+	virtual GLvoid* process(GLvoid* Vertex)
+	{
+		Output = process(*(PS_Input*)Vertex);
+		return &Output;
+	}
+};
+
+LowPolyCatVertexShader LowPolyCatVS;
+LowPolyCatFragmentShader LowPolyCatFS;
+
+void Scene::Init()
+{
+	LowPolyCat = new Mesh();
+	LowPolyCat->LoadFromObj("./lowpolycat/cat.obj");
+
+
+	glViewport(0, 0, 500, 500);
+	glDepthRangef(0.f, 1.0f);
+	glClearDepth(0.0f);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+
+	//glVertexAttrib3f(1, 1.0f, 0.0f, 0.0f);
+	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vs, &LowPolyCatVS);
+	glCompileShader(vs);
+	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fs, &LowPolyCatFS);
+	LowPolyCatProgram = glCreateProgram();
+	glAttachShader(LowPolyCatProgram, vs);
+	glAttachShader(LowPolyCatProgram, fs);
+	glLinkProgram(LowPolyCatProgram);
+}
+
+void Scene::Draw()
+{
+	if (LowPolyCat)
+	{
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+		for (auto&& Pair : LowPolyCat->GetSubMeshes())
+		{
+			const Mesh::SubMesh& Sub = Pair.second;
+			Sub.Vertices;
+			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), Sub.Vertices.data());
+			glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + sizeof(Mesh::Vector3));
+			glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + 2*sizeof(Mesh::Vector3));
+			glEnableVertexAttribArray(0);
+			glEnableVertexAttribArray(1);
+			glEnableVertexAttribArray(2);
+			glUseProgram(LowPolyCatProgram);
+			GLfloat proj[16] = { 0 };
+			glutMatrixOrthoLH(proj, -549, 450, -199, 800, -100, 500);
+			glUnitformMatrix4fv(0, 1, false, proj);
+
+			glDrawElements(GL_TRIANGLE_LIST, Sub.Indices.size(),GL_SHORT,Sub.Indices.data());
+		}
+		glFlush();
+	}
+}
+

@@ -1,5 +1,6 @@
 #include <windows.h>
 #include "glut.h"
+#include "scene.h"
 
 void OutputDebug(const char* Format)
 {
@@ -18,6 +19,8 @@ unsigned char* FrameBuffer;
 void glInit();
 void glSetup();
 void glRender();
+
+Scene S;
 
 LONG W = 500;
 LONG H = 500;
@@ -65,11 +68,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	glutInit(0, 0, W, H, FrameBuffer);
 	glInit();
 	glSetup();
+	//S.Init();
 
 	MSG msg;
 	while (true)
 	{
 		glRender();
+		//S.Draw();
 		glutPresent();
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{

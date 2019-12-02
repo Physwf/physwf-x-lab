@@ -40,7 +40,7 @@ void glutPresent()
 	UpdateWindow(g_hWind);
 }
 
-float* glutMatrixOrthoLH(float* pOut, float t, float b, float l, float r, float zn, float zf)
+float* glutMatrixOrthoLH(float* pOut, float l, float r, float b, float t, float zn, float zf)
 {
 	float result[]
 	{

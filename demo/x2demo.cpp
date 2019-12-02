@@ -101,9 +101,9 @@ GLfloat points[6*100];
 GLfloat lines[3*40];
 GLfloat triangles[3 * 6 * 100] = 
 {
-	0.0f,0.0f,0.0f, 1.0f,0.0f,0.0f,
-	300.0f,200.0f,0.0f, 0.0f,0.0f,1.0f,
-	0.0f,200.0f,0.0f, 0.0f,1.0f,0.0f,
+	0.0f,0.0f,0.0f,			1.0f,	0.0f,	0.0f,
+	600.0f,200.0f,0.0f,		0.0f,	0.0f,	1.0f,
+	0.0f,200.0f,0.0f,		0.0f,	1.0f,	0.0f,
 };
 
 void glSetup()
@@ -153,8 +153,8 @@ void glSetup()
 
 	glFrontFace(GL_CW);
 	glCullFace(GL_FRONT);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 3, triangles);
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(GLfloat) * 3, triangles + 3);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 6, triangles);
+	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(GLfloat) * 6, triangles + 3);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	//glVertexAttrib3f(1, 1.0f, 0.0f, 0.0f);
@@ -170,7 +170,7 @@ void glSetup()
 	glUseProgram(program);
 
 	GLfloat proj[16] = { 0 };
-	glutMatrixOrthoLH(proj, 500, 0,  0, 500, 0, 500);
+	glutMatrixOrthoLH(proj,  0, 500, 0, 500, 0, 500);
 	glUnitformMatrix4fv(0, 1, false, proj);
 }
 
