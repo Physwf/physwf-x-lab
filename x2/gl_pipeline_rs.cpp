@@ -210,9 +210,9 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 		{
 			
 			gl_vector2 p((x * 2.0f / viewport_width) - 1.0f, (y* 2.0f / viewport_height) - 1.0f);
-			GLfloat w1 = get_triangle_orientation(v1, v2, p);
-			GLfloat w2 = get_triangle_orientation(v2, v3, p);
-			GLfloat w3 = get_triangle_orientation(v3, v1, p);
+			GLfloat w3 = get_triangle_orientation(v1, v2, p);
+			GLfloat w1 = get_triangle_orientation(v2, v3, p);
+			GLfloat w2 = get_triangle_orientation(v3, v1, p);
 			//if(y<yend-1) continue;
 			bool is_in_triangle = (rs.cull_mode == GL_CW) ? ((w1 + bias1) >= 0.0f && (w2 + bias2) >= 0.0f && (w3 + bias3) >= 0.0f) : ((w1 + bias1) <= 0.0f && (w2 + bias2) <= 0.0f && (w3 + bias3) <= 0.0f);
 			if (is_in_triangle)
