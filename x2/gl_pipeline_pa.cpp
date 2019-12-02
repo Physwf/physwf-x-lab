@@ -271,7 +271,7 @@ const gl_vector4* compute_intersection(const gl_vector4* cur_p,const gl_vector4*
 		}
 	}
 
-	if (t <= 0.0f || t => 1.0f) return nullptr;
+	if (t <= 0.0f || t >= 1.0f) return nullptr;
 
 	gl_vector4* result = (gl_vector4*)gl_malloc(vertex_size);
 	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
