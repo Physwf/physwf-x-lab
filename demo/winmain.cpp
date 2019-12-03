@@ -85,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
-		Sleep(100);
+		Sleep(10);
 	}
 
 	return msg.wParam;

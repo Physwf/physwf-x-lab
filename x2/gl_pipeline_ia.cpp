@@ -87,14 +87,7 @@ void gl_fill_indices_copy(gl_draw_command* cmd, const TIndex* index_data, GLsize
 	GLsizei indices_size = count * sizeof(GLshort);
 	cmd->ia.indices_count = count;
 
-	if (cmd->ia.indices == nullptr)
-	{
-		cmd->ia.indices = (GLshort*)gl_malloc(indices_size);
-	}
-	else
-	{
-		cmd->ia.indices = (GLshort*)gl_realloc(cmd->ia.indices, indices_size);
-	}
+	cmd->ia.indices = (GLshort*)gl_malloc(indices_size);
 
 	if (index_data == nullptr)
 	{
@@ -133,17 +126,9 @@ void gl_input_assemble(gl_draw_command* cmd)
 	//assemble vertices
 	GLsizei vertex_count = get_vertex_count_from_indices(cmd);
 	cmd->ia.vertices_count = vertex_count;
-
-	if (cmd->ia.vertices == nullptr)
-	{
-		cmd->ia.vertices = gl_malloc(vertex_size*vertex_count);
-	}
-	else
-	{
-		cmd->ia.vertices = gl_realloc(cmd->ia.vertices, vertex_size*vertex_count);
-	}
-
+	cmd->ia.vertices = gl_malloc(vertex_size*vertex_count);
 	gl_vector4* vertices = (gl_vector4*)cmd->ia.vertices;
+
 	// If an array corresponding to a generic attribute required by a vertex shader is not enabled, 
 	// then the corresponding element is taken from the current generic attribute state	// OpenGLR ES Common Profile Specification Version 2.0.25 (Full Specification) (November 2, 2010)
 	// 顶点属性取决于vertex shader

@@ -357,11 +357,7 @@ gl_primitive_node* gl_do_triangle_clipping(const GLvoid* v1, const GLvoid* v2, c
 	all_vertices.insert(vertices_in.begin(), vertices_in.end());
 	do_sutherland_hodgman_clipping(vertices_out, vertices_in, gl_frustum_edge::left, vertex_size);
 	//ÄÚ´æ»ØÊÕ
-	for (const gl_vector4* v : all_vertices)
-	{
-		//if (std::find(vertices_in.begin(),vertices_in.end(),v) == vertices_in.end()) continue;
-		//gl_free((GLvoid*)v);
-	}
+	
 	if (vertices_in.size() > 0)
 	{
 		assert(vertices_in.size() >= 3);
@@ -387,6 +383,12 @@ gl_primitive_node* gl_do_triangle_clipping(const GLvoid* v1, const GLvoid* v2, c
 			pa.tail = node;
 			++pa.primitive_count;
 		}
+	}
+
+	for (const gl_vector4* v : all_vertices)
+	{
+		if (v == p1 || v == p2 || v == p3) continue;
+		gl_free((GLvoid*)v);
 	}
 	return nullptr;
 }

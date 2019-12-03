@@ -20,9 +20,11 @@ void gl_point_rasterize(gl_draw_command* cmd)
 			GLfloat depth = gl_campf(position->z);
 			if (fragment.depth > position->z)
 			{
+				fragment.destroy();
 				assert(depth >= 0.0f && depth <= 1.0f);
 				fragment.depth = depth;
-				fragment.varing_attribute = node->vertices;
+				fragment.varing_attribute = gl_malloc(cmd->pa.vertex_size);
+				memcpy_s(fragment.varing_attribute, cmd->pa.vertex_size, node->vertices, cmd->pa.vertex_size);
 			}
 		}
 		node = node->next;
@@ -109,6 +111,7 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 					GLfloat depth = gl_campf(gl_lerp(p1->z, p2->z, t));
 					if (fragment.depth > depth)
 					{
+						fragment.destroy();
 						fragment.depth = depth;
 						fragment.varing_attribute = gl_lerp(p1, p2, cmd->pa.vertex_size / sizeof(gl_vector4), t);
 					}
@@ -156,7 +159,7 @@ gl_vector4 gl_barycentric_interpolation(const gl_vector4& p1, const gl_vector4& 
 
 gl_vector4* gl_barycentric_interpolation(const gl_vector4* p1, const gl_vector4* p2, const gl_vector4* p3, GLsizei n, GLfloat m2, GLfloat m3)
 {
-	gl_vector4* result = (gl_vector4*)gl_malloc(n * sizeof(gl_vector4));
+	gl_vector4* result = (gl_vector4*)gl_malloc(n * sizeof(gl_vector4),"gl_barycentric_interpolation");
 	for (GLsizei i = 0; i < n; ++i)
 	{
 		*(result + i) = gl_barycentric_interpolation(p1[i],p2[i],p3[i],m2,m3);
@@ -200,19 +203,21 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 
 	GLfloat double_area = get_triangle_orientation(v1,v2,v3);
 
-	GLfloat bias1 = is_top_left_edge(p1, p2) ? 0.0f : 0.0f;
-	GLfloat bias2 = is_top_left_edge(p2, p3) ? 0.0f : 0.0f;
-	GLfloat bias3 = is_top_left_edge(p3, p1) ? 0.0f : 0.0f;
-
+// 	GLfloat bias1 = is_top_left_edge(p2, p3) ? 0.0f : (rs.cull_mode == GL_CW ? 1.0f : -1.0f);
+// 	GLfloat bias2 = is_top_left_edge(p3, p1) ? 0.0f : (rs.cull_mode == GL_CW ? 1.0f : -1.0f);
+// 	GLfloat bias3 = is_top_left_edge(p1, p2) ? 0.0f : (rs.cull_mode == GL_CW ? 1.0f : -1.0f);
+	GLfloat bias1 =  0.0f;
+	GLfloat bias2 =  0.0f;
+	GLfloat bias3 =  0.0f;
 	for (GLsizei y = ystart; y != yend; ++y)
 	{
 		for (GLsizei x = xstart; x != xend; ++x)
 		{
 			
 			gl_vector2 p((x * 2.0f / viewport_width) - 1.0f, (y* 2.0f / viewport_height) - 1.0f);
-			GLfloat w3 = get_triangle_orientation(v1, v2, p);
 			GLfloat w1 = get_triangle_orientation(v2, v3, p);
 			GLfloat w2 = get_triangle_orientation(v3, v1, p);
+			GLfloat w3 = get_triangle_orientation(v1, v2, p);
 			//if(y<yend-1) continue;
 			bool is_in_triangle = (rs.cull_mode == GL_CW) ? ((w1 + bias1) >= 0.0f && (w2 + bias2) >= 0.0f && (w3 + bias3) >= 0.0f) : ((w1 + bias1) <= 0.0f && (w2 + bias2) <= 0.0f && (w3 + bias3) <= 0.0f);
 			if (is_in_triangle)
@@ -223,6 +228,7 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 				gl_fragment& fragment = rs.get_fragment(x, y);
 				if (fragment.depth > depth)
 				{
+					fragment.destroy();
 					fragment.depth = depth;
 					fragment.varing_attribute = gl_barycentric_interpolation(p1, p2, p3, vertex_size / sizeof(gl_vector4), m2, m3);
 				}

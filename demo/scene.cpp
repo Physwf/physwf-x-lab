@@ -38,10 +38,11 @@ struct LowPolyCatVertexShader : public gl_shader
 	{
 		VS_Output Out;
 		Out.position = multiply(model, Input.position);
-		Out.position = multiply(proj, Input.position);
-		Input.normal = multiply(model, Input.position);
-		float fDot = dot(Input.normal.to_vector3(), vector3(0,0,-1.0f));
-		Out.color = vector4(clamp(fDot) *0.6f, clamp(fDot) *0.6f, clamp(fDot) *0.6f, 1.0f);
+		Out.position = multiply(proj, Out.position);
+		vector4 normal = multiply(model, Input.normal);
+		float fDot = dot(normal.to_vector3(), vector3(1.0f, 0, 0.0f));
+		fDot = clamp(fDot);
+		Out.color = vector4(fDot * 0.6f, fDot * 0.6f, fDot * 0.6f, 1.0f);
 		return Out;
 	}
 
@@ -141,7 +142,7 @@ void Scene::Draw()
 			glUnitformMatrix4fv(0, 1, false, proj);
 			GLfloat model[16] = { 0 };
 			static float rad = 0.0f;
-			rad += 1.0f;
+			rad += 0.01f;
 			glutMatrixRotationY(model, rad);
 			glUnitformMatrix4fv(1, 1, false, model);
 

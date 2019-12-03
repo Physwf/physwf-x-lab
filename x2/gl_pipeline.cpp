@@ -47,6 +47,9 @@ bool gl_pipeline_init()
 	glPpeline.command_list = nullptr;
 	glPpeline.command_tail = nullptr;
 
+	glPpeline.ring_buffer.buffer_head = nullptr;
+	glPpeline.ring_buffer.buffer_tail = nullptr;
+
 	for (int i = 0; i < 3; ++i)
 	{
 		glPpeline.frame_buffers[i] = nullptr;// gl_frame_buffer::create(512, 512);
@@ -61,9 +64,7 @@ bool gl_pipeline_init()
 
 void gl_emit_draw_command()
 {
-	gl_draw_command* cmd = (gl_draw_command*)gl_malloc(sizeof(gl_draw_command));
-	cmd->next = nullptr;
-
+	gl_draw_command* cmd = glPpeline.ring_buffer.allocate();
 	//ia
 	if (glContext.indices_pointer)
 	{
@@ -143,23 +144,13 @@ void gl_emit_draw_command()
 	}
 
 	//todo multi-thread
-	if (glPpeline.command_list == nullptr)
-	{
-		glPpeline.command_list = cmd;
-		glPpeline.command_tail = cmd;
-	}
-	else
-	{
-		glPpeline.command_tail->next = cmd;
-	}
+	glPpeline.enqueue(cmd);
 }
 
 void gl_do_draw()
 {
-	while (glPpeline.command_list)
+	while (gl_draw_command* cmd = glPpeline.dequeue())
 	{
-		gl_draw_command* cmd = glPpeline.command_list;
-		glPpeline.command_list = cmd->next;
 		gl_input_assemble(cmd);
 		gl_vertex_shader(cmd);
 		gl_primitive_assemble(cmd);
@@ -167,6 +158,8 @@ void gl_do_draw()
 		gl_fragment_shader(cmd);
 		gl_output_merge(cmd);
 		gl_swap_frame_buffer(cmd);
+		//ªÿ ’
+		glPpeline.ring_buffer.deallocate(cmd);
 	}
 }
 

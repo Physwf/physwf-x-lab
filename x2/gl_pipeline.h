@@ -5,6 +5,7 @@
 #include "gl_shader.h"
 #include "gl_utilities.h"
 
+#include <map>
 
 struct gl_vector2
 {
@@ -287,6 +288,14 @@ struct gl_fragment
 {
 	GLfloat depth;
 	GLvoid* varing_attribute;
+
+	void destroy()
+	{
+		if (varing_attribute)
+		{
+			gl_free(varing_attribute);
+		}
+	}
 };
 
 struct gl_rs_state
@@ -319,6 +328,18 @@ struct gl_rs_state
 		if (y >= buffer_height) y = buffer_height - 1;
 		return fragment_buffer[y*buffer_width+x];
 	}
+
+	void destroy_frame_buffer()
+	{
+		for (GLsizei y = 0; y < buffer_height; ++y)
+		{
+			for (GLsizei x = 0; x < buffer_width; ++x)
+			{
+				GLsizei index = y * buffer_height + x;
+				fragment_buffer[index].destroy();
+			}
+		}
+	}
 };
 
 struct gl_ps_state
@@ -342,6 +363,64 @@ struct gl_draw_command
 	gl_draw_command* next;
 };
 
+struct gl_command_ring_buffer
+{
+	gl_draw_command* allocate()
+	{
+		if (buffer_head != nullptr)
+		{
+			gl_draw_command* cmd = buffer_head;
+			buffer_head = buffer_head->next;
+			return cmd;
+		}
+		else
+		{
+			gl_draw_command* cmd = (gl_draw_command*)gl_malloc(sizeof(gl_draw_command));
+			cmd->next = nullptr;
+			return cmd;
+		}
+		return nullptr;
+	}
+	void deallocate(gl_draw_command* cmd)
+	{
+		gl_free(cmd->ia.indices_copy);
+		gl_free(cmd->ia.indices);
+		gl_free(cmd->ia.vertices);
+		cmd->ia.indices_copy = nullptr;
+		cmd->ia.indices = nullptr;
+		cmd->ia.vertices = nullptr;
+
+		gl_free(cmd->vs.vertices_result);
+		cmd->vs.vertices_result = nullptr;
+
+		gl_primitive_node* node = cmd->pa.primitives;
+		while (node)
+		{
+			gl_primitive_node* next = node->next;
+			gl_free(node->vertices);
+			gl_free(node);
+			node = next;
+		}
+		cmd->pa.primitives = nullptr;
+
+		cmd->rs.destroy_frame_buffer();
+		gl_free(cmd->rs.fragment_buffer);
+		cmd->rs.fragment_buffer = nullptr;
+
+		if (buffer_head == nullptr)
+		{
+			buffer_head = cmd;
+		}
+		else
+		{
+			buffer_tail->next = cmd;
+		}
+		buffer_tail = cmd;
+	}
+	gl_draw_command* buffer_head;
+	gl_draw_command* buffer_tail;
+};
+
 struct gl_pipeline
 {
 	gl_named_object_node* named_object_list;
@@ -350,8 +429,35 @@ struct gl_pipeline
 	GLuint back_buffer_index;
 	GLuint front_buffer_index;
 
+	gl_command_ring_buffer ring_buffer;
 	gl_draw_command* command_list;
 	gl_draw_command* command_tail;
+
+	void enqueue(gl_draw_command* cmd)
+	{
+		if (command_list == nullptr)
+		{
+			command_list = cmd;
+			command_tail = cmd;
+		}
+		else
+		{
+			command_tail->next = cmd;
+		}
+	}
+	gl_draw_command* dequeue()
+	{
+		if (command_list != nullptr)
+		{
+			gl_draw_command* cmd = command_list;
+			command_list = command_tail->next;
+			return cmd;
+		}
+		return nullptr;
+	}
+
+	std::map<void*, GLuint> data;
+	std::map<void*, const char*> datanames;
 };
 
 extern gl_pipeline glPpeline;
