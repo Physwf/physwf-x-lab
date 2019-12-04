@@ -59,7 +59,7 @@ bool Mesh::ParseLine(const class std::string& line)
 	if (string_startwith(line, "#"))
 	{
 	}
-	else if (string_startwith(line,"g"))
+	else if (string_startwith(line,"g "))
 	{
 		std::string GroupName;
 		if(!ParseName(line, GroupName)) return false;
@@ -70,19 +70,19 @@ bool Mesh::ParseLine(const class std::string& line)
 	{
 
 	}
-	else if (string_startwith(line, "vt"))
-	{
-		Vector2 TexCoord;
-		if (!ParseTextCoord2D(line, TexCoord)) return false;
-		TexCoords.push_back(TexCoord);
-	}
-	else if (string_startwith(line, "v"))
+	else if (string_startwith(line, "v "))
 	{
 		Vector3 Position;
 		if (!ParsePosition(line, Position)) return false;
 		Positions.push_back(Position);
 	}
-	else if (string_startwith(line, "f"))
+	else if (string_startwith(line, "vt "))
+	{
+		Vector2 TexCoord;
+		if (!ParseTextCoord2D(line, TexCoord)) return false;
+		TexCoords.push_back(TexCoord);
+	}
+	else if (string_startwith(line, "f "))
 	{
 		Face F;
 		if (!ParseFace(line, F)) return false;

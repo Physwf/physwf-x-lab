@@ -61,6 +61,8 @@ void glContextInit()
 		attrib_ptr.type = 0;
 		attrib_ptr.stride = 0;
 	}
+
+	glContext.unpack_mode = UNPACK_ALIGNMENT_4;
 }
 
 void glContextDestroy()

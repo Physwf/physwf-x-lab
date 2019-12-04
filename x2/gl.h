@@ -99,6 +99,42 @@ typedef void			GLvoid;
 #define GL_CCW								0x20011
 #define GL_CW								0x20012
 
+#define GL_UNPACK_ALIGNMENT					0x30000
+//type
+#define GL_UNSIGNED_BYTE					0x40000
+#define GL_UNSIGNED_SHORT_5_6_5				0x40001
+#define GL_UNSIGNED_SHORT_4_4_4_4			0x40002
+#define GL_UNSIGNED_SHORT_5_5_5_1			0x40003
+//formats
+#define GL_ALPHA							0x50000
+#define GL_RGB								0x50001
+#define GL_RGBA								0x50002
+#define GL_LUMINANCE						0x50003
+#define GL_LUMINANCE_ALPHA					0x50004
+//textures
+#define GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS	0x60001
+#define GL_MAX_TEXTURE_IMAGE_UNITS			0x60002
+#define GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS	0x60003
+
+//targets
+#define GL_TEXTURE_2D						0x60100
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_X		0x60101
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_X		0x60102
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_Y		0x60103
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_Y		0x60104
+#define GL_TEXTURE_CUBE_MAP_POSITIVE_Z		0x60105
+#define GL_TEXTURE_CUBE_MAP_NEGATIVE_Z		0x60106
+#define GL_TEXTURE_CUBE_MAP					0x60107
+
+#define GL_TEXTURE0							0x70000
+#define GL_TEXTURE1							0x70001
+#define GL_TEXTURE2							0x70002
+#define GL_TEXTURE3							0x70003
+#define GL_TEXTURE4							0x70004
+#define GL_TEXTURE5							0x70005
+#define GL_TEXTURE6							0x70006
+#define GL_TEXTURE7							0x70007
+
 #include "NAIL.h"
 
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
@@ -174,5 +210,12 @@ NAIL_API void glUniform4iv(GLint location, GLsizei count, const GLint *value);
 NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* value);
 NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* value);
 NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* value);
+
+NAIL_API void glPixelStorei(GLenum pname, GLint param);
+NAIL_API void glActiveTexture(GLenum texture);
+NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+NAIL_API void glBindTexture(GLenum target, GLuint texture);
+NAIL_API void glDeleteTextures(GLsizei n, const GLuint *textures);
+NAIL_API void glGenTextures(GLsizei n, GLuint *textures);
 
 

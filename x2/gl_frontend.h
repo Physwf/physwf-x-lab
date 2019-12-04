@@ -27,6 +27,13 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #define MAX_ERROR_DESC_LEGHT 1024
 
+#define UNPACK_ALIGNMENT_1 1
+#define UNPACK_ALIGNMENT_2 2
+#define UNPACK_ALIGNMENT_4 4
+#define UNPACK_ALIGNMENT_8 8
+
+#define MAX_COMBINED_TEXTURE_IMAGE_UNITS 8
+
 template <typename T>
 union gl_atrribute
 {
@@ -93,6 +100,8 @@ struct gl_frontend
 	GLenum	draw_mode;
 
 	GLuint program;
+
+	GLint  unpack_mode;
 
 	GLenum error;
 	GLchar error_desc[MAX_ERROR_DESC_LEGHT];

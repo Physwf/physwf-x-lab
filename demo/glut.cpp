@@ -62,9 +62,9 @@ float* glutMatrixRotationX(float* pOut, float rad)
 {
 	float result[]
 	{
-		1.0f,			1.0f,				0.0f,				1.0f,
-		0.0f,			std::cos(rad),		-std::sin(rad),		1.0f,
-		0.0f,			std::sin(rad),		std::cos(rad),		1.0f,
+		1.0f,			1.0f,				0.0f,				0.0f,
+		0.0f,			std::cos(rad),		-std::sin(rad),		0.0f,
+		0.0f,			std::sin(rad),		std::cos(rad),		0.0f,
 		0.0f,			0.0f,				0.0f,				1.0f,
 	};
 	for (int i = 0; i < 16; ++i)
@@ -78,9 +78,9 @@ float* glutMatrixRotationY(float* pOut, float rad)
 {
 	float result[]
 	{
-		std::cos(rad),	0.0f,		std::sin(rad),				1.0f,
-		0.0f,			1.0f,		0.0f,						1.0f,
-		-std::sin(rad),	0.0f,		std::cos(rad),				1.0f,
+		std::cos(rad),	0.0f,		std::sin(rad),				0.0f,
+		0.0f,			1.0f,		0.0f,						0.0f,
+		-std::sin(rad),	0.0f,		std::cos(rad),				0.0f,
 		0.0f,			0.0f,		0.0f,						1.0f,
 	};
 	for (int i = 0; i < 16; ++i)
@@ -94,9 +94,9 @@ float* glutMatrixRotationZ(float* pOut, float rad)
 {
 	float result[]
 	{
-		std::cos(rad),	-std::sin(rad),		1.0f,				1.0f,
-		0.0f,			std::cos(rad),		0.0f,				1.0f,
-		std::sin(rad),	0.0f,				1.0f,				1.0f,
+		std::cos(rad),	-std::sin(rad),		1.0f,				0.0f,
+		0.0f,			std::cos(rad),		0.0f,				0.0f,
+		std::sin(rad),	0.0f,				1.0f,				0.0f,
 		0.0f,			0.0f,				0.0f,				1.0f,
 	};
 	for (int i = 0; i < 16; ++i)
