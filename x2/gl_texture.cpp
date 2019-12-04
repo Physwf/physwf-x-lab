@@ -27,7 +27,7 @@ NAIL_API void glPixelStorei(GLenum pname, GLint param)
 		switch (param)
 		{
 		case UNPACK_ALIGNMENT_1:
-		case UNPACK_ALIGNMENT_2
+		case UNPACK_ALIGNMENT_2:
 		case UNPACK_ALIGNMENT_4:
 		case UNPACK_ALIGNMENT_8:
 			glContext.unpack_mode = param;
@@ -45,7 +45,7 @@ NAIL_API void glPixelStorei(GLenum pname, GLint param)
 }
 NAIL_API void glActiveTexture(GLenum texture)
 {
-	if (texture - GL_TEXTURE0) > (MAX_COMBINED_TEXTURE_IMAGE_UNITS - 1) return;
+	if ((texture - GL_TEXTURE0) > (MAX_COMBINED_TEXTURE_IMAGE_UNITS - 1)) return;
 
 }
 

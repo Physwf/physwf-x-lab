@@ -43,6 +43,9 @@ typedef void			GLvoid;
 #define GL_UNSIGNED_INT						0x0105
 #define GL_FLOAT							0x0106
 #define GL_DOUBLE							0x0107
+#define GL_UNSIGNED_SHORT_5_6_5				0x0108
+#define GL_UNSIGNED_SHORT_4_4_4_4			0x0109
+#define GL_UNSIGNED_SHORT_5_5_5_1			0x0110
 
 //uniforms DataType
 #define GL_FLOAT_VEC2						0x0108
@@ -100,11 +103,7 @@ typedef void			GLvoid;
 #define GL_CW								0x20012
 
 #define GL_UNPACK_ALIGNMENT					0x30000
-//type
-#define GL_UNSIGNED_BYTE					0x40000
-#define GL_UNSIGNED_SHORT_5_6_5				0x40001
-#define GL_UNSIGNED_SHORT_4_4_4_4			0x40002
-#define GL_UNSIGNED_SHORT_5_5_5_1			0x40003
+
 //formats
 #define GL_ALPHA							0x50000
 #define GL_RGB								0x50001

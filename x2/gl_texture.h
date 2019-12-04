@@ -18,7 +18,40 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #include "gl.h"
 
-struct gl_texture
+struct gl_texture_object
 {
-	GLenum target;
+	GLenum type;
+	GLuint name;
+	GLvoid* texture;
+};
+
+struct gl_texture2d_mipmap
+{
+	GLsizei width;
+	GLsizei height;
+	GLvoid* data;
+};
+
+struct gl_texture2d
+{
+	GLenum format;
+	GLsizei mipmap_count;
+	gl_texture2d_mipmap* mipmaps;
+};
+
+struct gl_texture_cube
+{
+	GLenum format;
+	GLsizei mipmap_count;
+	gl_texture2d_mipmap* mipmaps_x_positive;
+	gl_texture2d_mipmap* mipmaps_x_nagetive;
+	gl_texture2d_mipmap* mipmaps_y_positive;
+	gl_texture2d_mipmap* mipmaps_y_nagetive;
+	gl_texture2d_mipmap* mipmaps_z_positive;
+	gl_texture2d_mipmap* mipmaps_z_nagetive;
+};
+
+struct gl_texture_unit
+{
+	gl_texture_object* object;
 };
