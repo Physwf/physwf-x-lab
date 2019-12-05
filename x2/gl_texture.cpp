@@ -17,6 +17,73 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "gl.h"
 #include "gl_texture.h"
 #include "gl_frontend.h"
+#include "gl_memory.h"
+
+#include <memory>
+
+gl_texture_object* gl_find_texture_object(GLuint name)
+{
+	gl_named_object_node* node = gl_find_named_object(name);
+	if (node == nullptr) return nullptr;
+	gl_named_object* object = node->object;
+	if (object == nullptr) return nullptr;
+	if (object->type != __TEXTURE_OBJECT__)
+	{
+		return nullptr;
+	}
+	return (gl_texture_object*)object;
+}
+
+gl_texture2d* gl_create_texture2d()
+{
+	gl_texture2d* result = (gl_texture2d*)gl_malloc(sizeof(gl_texture2d));
+	result->format = GL_TEXTURE_2D;
+	result->mipmap_count = 0;
+	result->mipmaps = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	return result;
+}
+
+void gl_destory_texture2d(gl_texture2d* texture)
+{
+	for (GLint i = 0; i < MAX_MIPMAP_LEVEL; ++i)
+	{
+		if (texture->mipmaps[i] != nullptr)
+		{
+			gl_free(texture->mipmaps[i]);
+		}
+	}
+}
+
+gl_texture_cube* gl_create_texture_cube()
+{
+	gl_texture_cube* result = (gl_texture_cube*)gl_malloc(sizeof(gl_texture_cube));
+	result->format = GL_TEXTURE_CUBE_MAP;
+	result->mipmap_count = 0;
+	result->mipmaps_x_positive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps_x_nagetive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps_y_positive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps_y_nagetive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps_z_positive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps_z_nagetive = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_x_positive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_x_nagetive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_y_positive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_y_nagetive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_z_positive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	memset(result->mipmaps_z_nagetive, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	return result;
+}
+
+GLvoid* gl_create_texture(GLenum type)
+{
+	switch (type)
+	{
+	case GL_TEXTURE_2D:			return gl_create_texture2d();
+	case GL_TEXTURE_CUBE_MAP:	return gl_create_texture_cube();
+	}
+	return nullptr;
+}
 
 NAIL_API void glPixelStorei(GLenum pname, GLint param)
 {
@@ -45,26 +112,166 @@ NAIL_API void glPixelStorei(GLenum pname, GLint param)
 }
 NAIL_API void glActiveTexture(GLenum texture)
 {
-	if ((texture - GL_TEXTURE0) > (MAX_COMBINED_TEXTURE_IMAGE_UNITS - 1)) return;
+	GLenum index = texture - GL_TEXTURE0;
+	if (index > (MAX_COMBINED_TEXTURE_IMAGE_UNITS - 1))
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid texture param!");
+		return;
+	}
+	glContext.selected_texture_unit = &glContext.texture_params[index];
+}
 
+void gl_allocate_texture2d_mipmap(gl_texture2d_mipmap** pmipmap, GLint internalformat, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels)
+{
+	gl_texture2d_mipmap* mipmap = *pmipmap;
+	if (mipmap != nullptr)
+	{
+		gl_free(mipmap->data);
+	}
+	else
+	{
+		mipmap = (gl_texture2d_mipmap*)gl_malloc(sizeof(gl_texture2d_mipmap));
+	}
+	mipmap->width = width;
+	mipmap->height = height;
 }
 
 NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 {
+	CONDITION_VALIDATE(level < 0 || level > MAX_MIPMAP_LEVEL, GL_INVALID_VALUE, "Invalid level params!");
+	GLsizei max_width_for_level = 1 << (MAX_MIPMAP_LEVEL - level);
+	CONDITION_VALIDATE(width < 0 || height < 0 || width > max_width_for_level || height > max_width_for_level, GL_INVALID_VALUE, "Invalid width height param, must be zero!");
+	CONDITION_VALIDATE(border != 0, GL_INVALID_VALUE, "Invalid border param, must be zero!");
+
+	switch (type)
+	{
+	case GL_UNSIGNED_BYTE:
+		break;
+	case GL_UNSIGNED_SHORT_5_6_5:
+		CONDITION_VALIDATE(format != GL_RGB, GL_INVALID_VALUE, "format and type dosen't match!");
+		break;
+	case GL_UNSIGNED_SHORT_4_4_4_4:
+		CONDITION_VALIDATE(format != GL_RGBA, GL_INVALID_VALUE, "format and type dosen't match!");
+		break;
+	case GL_UNSIGNED_SHORT_5_5_5_1:
+		CONDITION_VALIDATE(format != GL_RGBA, GL_INVALID_VALUE, "format and type dosen't match!");
+		break;
+	default:
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid type param!");
+		return;
+		break;
+	}
+	}
+
+	switch (target)
+	{
+	case GL_TEXTURE_2D:
+	{
+		gl_texture2d* texture = glContext.texture2d_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps[level], internalformat, width, height, format, type, pixels);
+		break;
+	}
+	case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_x_positive[level], internalformat, width, height, format, type, pixels);
+	}
+		break;
+	case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_x_nagetive[level], internalformat, width, height, format, type, pixels);
+	}
+	break;
+	case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_y_positive[level], internalformat, width, height, format, type, pixels);
+	}
+	break;
+	case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_y_nagetive[level], internalformat, width, height, format, type, pixels);
+	}
+	break;
+	case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_z_positive[level], internalformat, width, height, format, type, pixels);
+	}
+	break;
+	case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+	{
+		gl_texture_cube* texture = glContext.texture_cube_target;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		gl_allocate_texture2d_mipmap(&texture->mipmaps_z_nagetive[level], internalformat, width, height, format, type, pixels);
+	}
+	break;
+	default:
+	{
+		glSetError(GL_INVALID_ENUM, "Invalid target param!");
+		break;
+	}
+	}
 
 }
 
 NAIL_API void glBindTexture(GLenum target, GLuint texture)
 {
-
+	CONDITION_VALIDATE(target != GL_TEXTURE_2D || target != GL_TEXTURE_CUBE_MAP, GL_INVALID_ENUM, "Invalid target!");
+	gl_texture_object* object = gl_find_texture_object(texture);
+	CONDITION_VALIDATE(object == nullptr, GL_INVALID_VALUE, "Invalid texture parameter!");
+	CONDITION_VALIDATE(object->type != 0 && object->type != target, GL_INVALID_OPERATION, "Type not match!");
+	//todo target validity check
+	if (object->type == 0)
+	{
+		object->type = target;
+		object->texture = gl_create_texture(object->type);
+	}
+	glContext.selected_texture_unit->binded_object = object;
+	switch (target)
+	{
+	case GL_TEXTURE_2D:
+	{
+		glContext.texture2d_target = (gl_texture2d*)object->texture;
+		break;
+	}
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		glContext.texture_cube_target = (gl_texture_cube*)object->texture;
+		break;
+	}
+	}
 }
 
 NAIL_API void glDeleteTextures(GLsizei n, const GLuint *textures)
 {
-
+	CONDITION_VALIDATE(textures == nullptr, GL_INVALID_VALUE, "Invalid textures parameter!");
+	for (GLsizei i = 0; i < n; ++i)
+	{
+		gl_texture_object* object = gl_find_texture_object(textures[i]);
+		if (object != nullptr)
+		{
+			//check binding
+			//release_texture
+			gl_destroy_named_object(textures[i]);
+		}
+	}
 }
 
 NAIL_API void glGenTextures(GLsizei n, GLuint *textures)
 {
-
+	CONDITION_VALIDATE(textures == nullptr, GL_INVALID_VALUE, "Invalid textures parameter!");
+	for (GLsizei i = 0; i < n; ++i)
+	{
+		textures[i] = gl_create_named_object(__TEXTURE_OBJECT__);
+	}
 }

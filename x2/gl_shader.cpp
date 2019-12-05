@@ -21,78 +21,6 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #include <string>
 
-bool gl_shader_init()
-{
-	glPpeline.named_object_list = nullptr;
-	glPpeline.named_object_list;
-	return true;
-}
-
-GLuint gl_create_named_object(GLenum type)
-{
-	GLsizei object_size = 0; 
-	gl_named_object* object = nullptr;
-	switch (type)
-	{
-	case GL_VERTEX_SHADER:
-	case GL_FRAGMENT_SHADER:
-	{
-		gl_shader_object* shader_object = (gl_shader_object*)gl_malloc(sizeof(gl_shader_object));
-		shader_object->shader = nullptr;
-		object = shader_object;
-	}
-		break;
-	case GL_PROGRAM:
-	{
-		gl_program_object* program_object = (gl_program_object*)gl_malloc(sizeof(gl_program_object));
-		for (gl_uniform*& uniform : program_object->uniforms)
-		{
-			uniform = nullptr;
-		}
-		program_object->vertex_shader_object = nullptr;
-		program_object->fragment_shader_object = nullptr;
-		object = program_object;
-	}
-		break;
-	default:
-		glSetError(GL_INVALID_ENUM, "Invalid shader type!");
-		return 0;
-	}
-
-	gl_named_object_node* node = glPpeline.named_object_list;
-	while (node && node->next)
-	{
-		node = node->next;
-	}
-	gl_named_object_node* new_node = (gl_named_object_node*)gl_malloc(sizeof(gl_named_object_node));
-	if (node == nullptr)
-	{
-		node = new_node;
-		object->name = 1;
-		glPpeline.named_object_list = node;
-	}
-	else
-	{
-		node->next = new_node;
-		object->name = node->object->name + 1;
-	}
-	object->type = type;
-	new_node->object = object;
-	new_node->next = nullptr;
-	return object->name;
-}
-
-gl_named_object_node* gl_find_named_object(GLuint name)
-{
-	gl_named_object_node* node = glPpeline.named_object_list;
-	while (node)
-	{
-		if (node->object->name == name) return node;
-		node = node->next;
-	}
-	return nullptr;
-}
-
 gl_program_object* gl_find_program_object_check(GLuint name)
 {
 	gl_named_object_node* node = gl_find_named_object(name);
@@ -107,7 +35,7 @@ gl_program_object* gl_find_program_object_check(GLuint name)
 		glSetError(GL_INVALID_VALUE, "Invalid program name!");
 		return nullptr;
 	}
-	if (object->type != GL_PROGRAM)
+	if (object->type != __PROGRAM_OBJECT__)
 	{
 		glSetError(GL_INVALID_VALUE, "Invalid program name!");
 		return nullptr;
@@ -140,7 +68,7 @@ gl_program_object* gl_find_program_object(GLuint name)
 	if (node == nullptr) return nullptr;
 	gl_named_object* object = node->object;
 	if (object == nullptr) return nullptr;
-	if (object->type != GL_PROGRAM)
+	if (object->type != __PROGRAM_OBJECT__)
 	{
 		return nullptr;
 	}
@@ -152,9 +80,9 @@ NAIL_API GLuint glCreateShader(GLenum type)
 	switch (type)
 	{
 	case GL_VERTEX_SHADER:
+		return gl_create_named_object(__VERTEX_SHADER_OBJECT__);
 	case GL_FRAGMENT_SHADER:
-		return gl_create_named_object(type);
-		break;
+		return gl_create_named_object(__FRAGMENT_SHADER_OBJECT__);
 	default:
 		glSetError(GL_INVALID_ENUM, "invalid shader type");
 	}
@@ -214,7 +142,7 @@ NAIL_API void glDeleteShader(GLuint shader)
 
 NAIL_API GLuint glCreateProgram()
 {
-	return gl_create_named_object(GL_PROGRAM);
+	return gl_create_named_object(__PROGRAM_OBJECT__);
 }
 
 NAIL_API void glAttachShader(GLuint program, GLuint shader)

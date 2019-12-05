@@ -73,7 +73,7 @@ bool gl_pipeline_init()
 	glPpeline.front_buffer_index = -1;
 	glPpeline.back_buffer_index = 0;
 
-	gl_shader_init();
+	glPpeline.named_object_list = nullptr;
 
 	return true;
 }

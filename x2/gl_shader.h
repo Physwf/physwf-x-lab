@@ -18,7 +18,9 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "NAIL.h"
 #include <cmath>
 
-#define GL_PROGRAM				0x1003
+#include "gl_objects.h"
+
+
 
 #define ACTIVE_UNIFORM_MAX_LENGTH	64
 #define MAX_UNIFORMS				128
@@ -161,12 +163,6 @@ struct gl_shader
 	virtual GLvoid* process(GLvoid*) = 0;
 };
 
-struct gl_named_object
-{
-	GLuint name;
-	GLenum type;
-};
-
 struct gl_shader_object : public gl_named_object
 {
 	gl_shader* shader;
@@ -180,12 +176,4 @@ struct gl_program_object : public gl_named_object
 	gl_shader_object* fragment_shader_object;
 };
 
-struct gl_named_object_node
-{
-	gl_named_object*		object;
-	gl_named_object_node*	next;
-};
-
-
-bool gl_shader_init();
 gl_program_object* gl_find_program_object(GLuint name);

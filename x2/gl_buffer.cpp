@@ -19,89 +19,83 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #include <memory>
 
-gl_buffer_node head;
 
-void gl_buffer_init()
+gl_buffer_object* gl_find_buffer_object(GLuint name)
 {
-	head.id = 0;
-	head.data = nullptr;
-	head.size = 0;
-	head.next = nullptr;
-}
-
-void gl_buffer_uninit()
-{
-	gl_buffer_node* node = head.next;
-	head.next = nullptr;
-	while (node)
+	gl_named_object_node* node = gl_find_named_object(name);
+	if (node == nullptr) return nullptr;
+	gl_named_object* object = node->object;
+	if (object == nullptr) return nullptr;
+	if (object->type != __BUFFER_OBJECT__)
 	{
-		if (node->data)
-		{
-			gl_free(node->data);
-			node->data = nullptr;
-		}
-		node->id = 0;
-		node->size = 0;
-		node = node->next;
-		gl_free(node);
+		return nullptr;
 	}
-}
-
-GLuint gl_create_buffer()
-{
-	gl_buffer_node* node = &head;
-	GLuint id = 1;
-	while (node != nullptr)
-	{
-		id = node->id + 1;
-		if (!node->next) break;
-		node = node->next;
-	}
-	gl_buffer_node* new_node = (gl_buffer_node*)gl_malloc(sizeof(gl_buffer_node));
-	new_node->id = id;
-	new_node->size = 0;
-	new_node->data = nullptr;
-	new_node->next = nullptr;
-	node->next = new_node;
-	return id;
+	return (gl_buffer_object*)object;
 }
 
 void gl_allocate_buffer(GLuint buffer, GLsizei size, GLvoid* data)
 {
-	gl_buffer_node* node = head.next;
-	while (node)
+	gl_buffer_object* object = gl_find_buffer_object(buffer);
+	if (object)
 	{
-		if (node->id == buffer)
-		{
-			node->data = gl_malloc(size);
-			memcpy_s(node->data, size, data, size);
-			return;
-		}
-		node = node->next;
+		object->data = gl_malloc(size);
+		object->size = size;
+		memcpy_s(object->data, size, data, size);
+		return;
 	}
 	glSetError(GL_INVALID_OPERATION, "illegal buffer!");
 }
 
 void gl_realse_buffer(GLuint buffer)
 {
-	gl_buffer_node* node = head.next;
-	gl_buffer_node* pre_node = &head;
-	while (node)
+	gl_buffer_object* object = gl_find_buffer_object(buffer);
+	if (object)
 	{
-		if (node->id == buffer)
+		if (object->size != 0)
 		{
-			if (node->data)
-			{
-				gl_free(node->data);
-				node->data = nullptr;
-				pre_node->next = node->next;
-				gl_free(node);
-			}
+			gl_free(object->data);
+			object->data = nullptr;
+			object->size = 0;
 			return;
 		}
-		pre_node = node;
-		node = node->next;
 	}
 	glSetError(GL_INVALID_OPERATION, "illegal buffer!");
 }
 
+
+NAIL_API void glGenBuffer(GLsizei n, GLuint* buffers)
+{
+	GLsizei i = 0;
+	while (i < n)
+	{
+		buffers[i++] = gl_create_named_object(__BUFFER_OBJECT__);
+	}
+}
+
+NAIL_API void glBindBuffer(GLenum target, GLuint buffer)
+{
+
+}
+
+NAIL_API void glBufferData(GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage)
+{
+
+}
+
+NAIL_API void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data)
+{
+
+}
+
+NAIL_API void glGenVertexArrays(GLsizei n, GLuint* buffers)
+{
+
+}
+NAIL_API void glDeleteVertexArrays(GLsizei n, GLuint* buffers)
+{
+
+}
+NAIL_API void glBindVertexArray(GLuint buffer)
+{
+
+}

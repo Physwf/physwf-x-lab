@@ -19,6 +19,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "gl_memory.h"
 #include "gl_frontend.h"
 #include "gl_shader.h"
+#include "gl_texture.h"
 #include "gl_utilities.h"
 
 #include <map>
@@ -439,13 +440,19 @@ struct gl_command_ring_buffer
 
 struct gl_pipeline
 {
+	//objects
 	gl_named_object_node* named_object_list;
-
+	//texture unit
+	gl_texture_unit texture_units[MAX_COMBINED_TEXTURE_IMAGE_UNITS];
+	//frame buffer
 	gl_frame_buffer* frame_buffers[3];
 	GLuint back_buffer_index;
 	GLuint front_buffer_index;
 
+	//cmd buffer
 	gl_command_ring_buffer ring_buffer;
+
+	//cmd queue
 	gl_draw_command* command_list;
 	gl_draw_command* command_tail;
 

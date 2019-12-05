@@ -17,6 +17,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "gl.h"
+#include "gl_texture.h"
 
 #define MAX_VERTEX_ATTRIBUTE 8
 
@@ -33,6 +34,12 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #define UNPACK_ALIGNMENT_8 8
 
 #define MAX_COMBINED_TEXTURE_IMAGE_UNITS 8
+#define MAX_TEXTURE_SIZE 2048
+#define MAX_MIPMAP_LEVEL 11
+
+static_assert((1<< MAX_MIPMAP_LEVEL) == MAX_TEXTURE_SIZE);
+
+#define CONDITION_VALIDATE(Condition,ErrorType,ErrorDesc) if(Condition) { glSetError(ErrorType,ErrorDesc); return; }
 
 template <typename T>
 union gl_atrribute
@@ -84,6 +91,11 @@ struct gl_frontend
 
 	GLenum			front_face;
 	GLenum			cull_face;
+
+	gl_texture_unit_params	texture_params[MAX_COMBINED_TEXTURE_IMAGE_UNITS];
+	gl_texture_unit_params* selected_texture_unit;//当前选中的纹理单元
+	gl_texture2d* texture2d_target;
+	gl_texture_cube* texture_cube_target;
 
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;

@@ -18,19 +18,14 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #include "gl_memory.h"
 #include "gl_utilities.h"
+#include "gl_objects.h"
 
-struct gl_buffer_node
+struct gl_buffer_object : public gl_named_object
 {
-	GLuint id;
 	GLvoid* data;
 	GLsizei size;
-
-	gl_buffer_node* next;
 };
 
-void gl_buffer_init();
-void gl_buffer_uninit();
-
-GLuint gl_create_buffer();
+gl_buffer_object* gl_find_buffer_object(GLuint name);
 void gl_allocate_buffer(GLuint buffer, GLsizei size,GLvoid* data);
 void gl_realse_buffer(GLuint buffer);
