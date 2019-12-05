@@ -18,6 +18,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include "gl_texture.h"
 #include "gl_frontend.h"
 #include "gl_memory.h"
+#include "gl_pipeline.h"
 
 #include <memory>
 
@@ -75,6 +76,17 @@ gl_texture_cube* gl_create_texture_cube()
 	return result;
 }
 
+void gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result)
+{
+	gl_texture_unit& texture_unit = glPipeline.texture_units[index];
+	gl_texture2d* texure2d = (gl_texture2d*)texture_unit.params.binded_object->texture;
+}
+
+void gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result)
+{
+
+}
+
 GLvoid* gl_create_texture(GLenum type)
 {
 	switch (type)
@@ -123,6 +135,7 @@ NAIL_API void glActiveTexture(GLenum texture)
 
 void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum format, const GLbyte *pixels)
 {
+	//todo alignment
 	switch (format)
 	{
 	case GL_ALPHA:

@@ -19,7 +19,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include <cmath>
 
 #include "gl_objects.h"
-
+#include "gl_shader.h"
 
 
 #define ACTIVE_UNIFORM_MAX_LENGTH	64
@@ -28,7 +28,8 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 struct gl_uniform
 {
 	GLchar		name[ACTIVE_UNIFORM_MAX_LENGTH];
-	GLfloat*	value;
+	GLfloat*	fvalue;
+	GLuint		ivalue;
 	GLsizei		size;
 	GLenum		type;
 };
@@ -39,7 +40,10 @@ struct gl_uniform_node
 	gl_uniform_node* next;
 
 	static NAIL_API gl_uniform_node* create(GLfloat* value, const GLchar* name, GLsizei size, GLenum type);
+	static NAIL_API gl_uniform_node* create(GLuint* value, const GLchar* name, GLsizei size, GLenum type);
 };
+
+
 
 struct gl_shader
 {
@@ -113,6 +117,9 @@ struct gl_shader
 		float a30, a31, a32, a33;
 	};
 
+	typedef unsigned int sampler2D;
+	typedef unsigned int samplerCube;
+
 	vector4 multiply(const matrix4& m, const vector4& v)
 	{
 		return 
@@ -157,6 +164,20 @@ struct gl_shader
 	{
 		float sqrt = std::sqrt(v.x*v.x + v.y*v.y);
 		return vector2(v.x / sqrt, v.y / sqrt);
+	}
+
+	vector4 texture(sampler2D sampler, vector2 texCoord)
+	{
+		vector4 result;
+		gl_sample_texture2d(sampler, texCoord.u, texCoord.v, (GLfloat*)&result);
+		return result;
+	}
+
+	vector4 texture(samplerCube sampler, vector3 texCoord)
+	{
+		vector4 result;
+		gl_sample_texture_cube(sampler, texCoord.u, texCoord.v, texCoord.w, (GLfloat*)&result);
+		return result;
 	}
 
 	virtual GLvoid compile() = 0;

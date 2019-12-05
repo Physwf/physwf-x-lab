@@ -483,7 +483,7 @@ struct gl_pipeline
 	std::map<void*, const char*> datanames;
 };
 
-extern gl_pipeline glPpeline;
+extern gl_pipeline glPipeline;
 
 bool gl_pipeline_init();
 void gl_emit_draw_command();

@@ -54,15 +54,20 @@ struct gl_texture_object : public gl_named_object
 
 struct gl_texture_unit_params
 {
+	GLint wrap_mode_s;
+	GLint wrap_mode_t;
+	GLint min_filter;
+	GLint mag_filter;
 	gl_texture_object* binded_object;
 };
 
 struct gl_texture_unit
 {
 	gl_texture_unit_params params;
-	//gl_texture_object* object;
 };
 
 gl_texture_object*		gl_find_texture_object(GLuint name);
 gl_texture2d*			gl_create_texture2d();
 gl_texture_cube*		gl_create_texture_cube();
+void					gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result);
+void					gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result);

@@ -32,7 +32,7 @@ void gl_fragment_shader(gl_draw_command* cmd)
 		for (GLsizei x = 0; x < cmd->rs.buffer_width; ++x)
 		{
 			gl_fragment& fragment = cmd->rs.get_fragment(x, y);
-			gl_frame_buffer* frame_buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];
+			gl_frame_buffer* frame_buffer = glPipeline.frame_buffers[glPipeline.back_buffer_index];
 			if (fragment.depth < 1.0f && fragment.depth >= 0.0f)
 			{
 				GLvoid* fs_out = fs->process((GLbyte*)fragment.varing_attribute);

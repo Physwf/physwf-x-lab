@@ -68,7 +68,7 @@ GLuint gl_create_named_object(GLenum type)
 		return 0;
 	}
 
-	gl_named_object_node* node = glPpeline.named_object_list;
+	gl_named_object_node* node = glPipeline.named_object_list;
 	while (node && node->next)
 	{
 		node = node->next;
@@ -78,7 +78,7 @@ GLuint gl_create_named_object(GLenum type)
 	{
 		node = new_node;
 		object->name = 1;
-		glPpeline.named_object_list = node;
+		glPipeline.named_object_list = node;
 	}
 	else
 	{
@@ -93,7 +93,7 @@ GLuint gl_create_named_object(GLenum type)
 
 gl_named_object_node* gl_find_named_object(GLuint name)
 {
-	gl_named_object_node* node = glPpeline.named_object_list;
+	gl_named_object_node* node = glPipeline.named_object_list;
 	while (node)
 	{
 		if (node->object->name == name) return node;

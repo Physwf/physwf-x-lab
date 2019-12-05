@@ -45,7 +45,7 @@ gl_program_object* gl_find_program_object_check(GLuint name)
 
 void gl_destroy_named_object(GLuint name)
 {
-	gl_named_object_node* node = glPpeline.named_object_list;
+	gl_named_object_node* node = glPipeline.named_object_list;
 	while (node && node->next)
 	{
 		gl_named_object_node* prenode = node;
@@ -341,7 +341,7 @@ GLfloat* gl_get_uniform_check(GLint location)
 		glSetError(GL_INVALID_VALUE, "Invalid index!");
 		return nullptr;
 	}
-	return (GLfloat*)program_object->uniforms[location]->value;
+	return (GLfloat*)program_object->uniforms[location]->fvalue;
 }
 
 NAIL_API void glUniform1i(GLint location, GLint v0)
@@ -533,7 +533,20 @@ gl_uniform_node* gl_uniform_node::create(GLfloat* value,const GLchar* name, GLsi
 	node->uniform = (gl_uniform*)gl_malloc(sizeof(gl_uniform));
 	node->uniform->size = size;
 	node->uniform->type = type;
-	node->uniform->value = value;
+	node->uniform->fvalue = value;
+	node->next = nullptr;
+	GLsizei buffer_size = sizeof(node->uniform->name);
+	strcpy_s(node->uniform->name, buffer_size, name);
+	return node;
+}
+
+gl_uniform_node* gl_uniform_node::create(GLuint* value, const GLchar* name, GLsizei size, GLenum type)
+{
+	gl_uniform_node* node = (gl_uniform_node*)gl_malloc(sizeof(gl_uniform_node));
+	node->uniform = (gl_uniform*)gl_malloc(sizeof(gl_uniform));
+	node->uniform->size = size;
+	node->uniform->type = type;
+	node->uniform->ivalue = *value;
 	node->next = nullptr;
 	GLsizei buffer_size = sizeof(node->uniform->name);
 	strcpy_s(node->uniform->name, buffer_size, name);

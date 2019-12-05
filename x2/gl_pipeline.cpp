@@ -56,31 +56,31 @@ float operator*(const gl_vector3& lhs, const gl_vector3& rhs)
 	return (lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z);
 }
 
-gl_pipeline glPpeline;
+gl_pipeline glPipeline;
 
 bool gl_pipeline_init()
 {
-	glPpeline.command_list = nullptr;
-	glPpeline.command_tail = nullptr;
+	glPipeline.command_list = nullptr;
+	glPipeline.command_tail = nullptr;
 
-	glPpeline.ring_buffer.buffer_head = nullptr;
-	glPpeline.ring_buffer.buffer_tail = nullptr;
+	glPipeline.ring_buffer.buffer_head = nullptr;
+	glPipeline.ring_buffer.buffer_tail = nullptr;
 
 	for (int i = 0; i < 3; ++i)
 	{
-		glPpeline.frame_buffers[i] = nullptr;// gl_frame_buffer::create(512, 512);
+		glPipeline.frame_buffers[i] = nullptr;// gl_frame_buffer::create(512, 512);
 	}
-	glPpeline.front_buffer_index = -1;
-	glPpeline.back_buffer_index = 0;
+	glPipeline.front_buffer_index = -1;
+	glPipeline.back_buffer_index = 0;
 
-	glPpeline.named_object_list = nullptr;
+	glPipeline.named_object_list = nullptr;
 
 	return true;
 }
 
 void gl_emit_draw_command()
 {
-	gl_draw_command* cmd = glPpeline.ring_buffer.allocate();
+	gl_draw_command* cmd = glPipeline.ring_buffer.allocate();
 	//ia
 	if (glContext.indices_pointer)
 	{
@@ -131,28 +131,28 @@ void gl_emit_draw_command()
 
 	for (int i = 0; i < 3; ++i)
 	{
-		if (glPpeline.frame_buffers[i] == nullptr)
+		if (glPipeline.frame_buffers[i] == nullptr)
 		{
-			glPpeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
-			glPpeline.front_buffer_index = -1;
-			glPpeline.back_buffer_index = 0;
+			glPipeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPipeline.front_buffer_index = -1;
+			glPipeline.back_buffer_index = 0;
 		}
-		else if (glPpeline.frame_buffers[i]->buffer_width != glContext.viewport_width || glPpeline.frame_buffers[i]->buffer_height != glContext.viewport_height)
+		else if (glPipeline.frame_buffers[i]->buffer_width != glContext.viewport_width || glPipeline.frame_buffers[i]->buffer_height != glContext.viewport_height)
 		{
-			gl_frame_buffer::destory(glPpeline.frame_buffers[i]);
-			glPpeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
-			glPpeline.front_buffer_index = -1;
-			glPpeline.back_buffer_index = 0;
+			gl_frame_buffer::destory(glPipeline.frame_buffers[i]);
+			glPipeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPipeline.front_buffer_index = -1;
+			glPipeline.back_buffer_index = 0;
 		}
 	}
 
 	if (glContext.clear_bitmask & GL_COLOR_BUFFER_BIT)
 	{
-		glPpeline.frame_buffers[glPpeline.back_buffer_index]->set_clearcolor(gl_vector4(glContext.clear_color.r, glContext.clear_color.g, glContext.clear_color.b, glContext.clear_color.a));
+		glPipeline.frame_buffers[glPipeline.back_buffer_index]->set_clearcolor(gl_vector4(glContext.clear_color.r, glContext.clear_color.g, glContext.clear_color.b, glContext.clear_color.a));
 	}
 	if (glContext.clear_bitmask & GL_DEPTH_BUFFER_BIT)
 	{
-		glPpeline.frame_buffers[glPpeline.back_buffer_index]->set_cleardepth(glContext.clear_depth);
+		glPipeline.frame_buffers[glPipeline.back_buffer_index]->set_cleardepth(glContext.clear_depth);
 	}
 	if (glContext.clear_bitmask & GL_STENCIL_BUFFER_BIT)
 	{
@@ -160,12 +160,12 @@ void gl_emit_draw_command()
 	}
 
 	//todo multi-thread
-	glPpeline.enqueue(cmd);
+	glPipeline.enqueue(cmd);
 }
 
 void gl_do_draw()
 {
-	while (gl_draw_command* cmd = glPpeline.dequeue())
+	while (gl_draw_command* cmd = glPipeline.dequeue())
 	{
 		gl_input_assemble(cmd);
 		gl_vertex_shader(cmd);
@@ -175,27 +175,27 @@ void gl_do_draw()
 		gl_output_merge(cmd);
 		gl_swap_frame_buffer(cmd);
 		//»ØÊÕ
-		glPpeline.ring_buffer.deallocate(cmd);
+		glPipeline.ring_buffer.deallocate(cmd);
 	}
 }
 
 void gl_swap_frame_buffer(gl_draw_command* cmd)
 {
-	glPpeline.front_buffer_index = glPpeline.back_buffer_index;
-	glPpeline.back_buffer_index++;
-	glPpeline.back_buffer_index %= 3;
+	glPipeline.front_buffer_index = glPipeline.back_buffer_index;
+	glPipeline.back_buffer_index++;
+	glPipeline.back_buffer_index %= 3;
 }
 
 void gl_set_frame_buffer(GLsizei x, GLsizei y, const gl_vector4& color, GLfloat depth)
 {
-	gl_frame_buffer* buffer = glPpeline.frame_buffers[glPpeline.back_buffer_index];
+	gl_frame_buffer* buffer = glPipeline.frame_buffers[glPipeline.back_buffer_index];
 	buffer->set_color(x, y, color);
 	buffer->set_depth(x, y, depth);
 }
 
 NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer)
 {
-	gl_frame_buffer* fb = glPpeline.frame_buffers[glPpeline.front_buffer_index];
+	gl_frame_buffer* fb = glPipeline.frame_buffers[glPipeline.front_buffer_index];
 	for (GLsizei y = 0; y < fb->buffer_height; ++y)
 	{
 		for (GLsizei x = 0; x < fb->buffer_width; ++x)
