@@ -81,8 +81,8 @@ void gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result)
 	gl_texture_unit& texture_unit = glPipeline.texture_units[index];
 	gl_texture2d* texure2d = (gl_texture2d*)texture_unit.params.texture2d_target.binded_object->texture;
 	gl_texture2d_mipmap* mipmap0 = texure2d->mipmaps[0];
-	mipmap0->width;
-	mipmap0->height;
+	GLsizei w0 = mipmap0->width;
+	GLsizei h0 = mipmap0->height;
 }
 
 void gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result)
@@ -449,13 +449,55 @@ void gl_generate_mipmap(const gl_texture2d_mipmap* pre_mipmap, gl_texture2d_mipm
 	GLint pre_w = pre_mipmap->width;
 	GLint pre_h = pre_mipmap->height;
 
-	pre_w >>= 1;
-	pre_h >>= 1;
+	GLint cur_w = pre_w >> 1;
+	GLint cur_h = pre_h >> 1;
 
-	if (pre_w <= 0) pre_w = 1;
-	if (pre_h <= 0) pre_h = 1;
+	if (cur_w <= 0) cur_w = 1;
+	if (cur_h <= 0) cur_h = 1;
 
+	cur_mipmap->data = (GLfloat*)gl_malloc((cur_w*cur_h * 4) * sizeof(GLfloat));
 
+	const GLfloat* pre_data = pre_mipmap->data;
+	GLfloat* cur_data = cur_mipmap->data;
+	for (GLint y = 0; y < cur_h; ++y)
+	{
+		for (GLint x = 0; x < cur_w; ++x)
+		{
+			GLint pre_x = x << 1;
+			GLint pre_y = y << 1;
+
+			GLint offset1 = ((pre_y + 0)*pre_w + pre_x + 0) * 4;
+			GLint offset2 = ((pre_y + 0)*pre_w + pre_x + 1) * 4;
+			GLint offset3 = ((pre_y + 1)*pre_w + pre_x + 0) * 4;
+			GLint offset4 = ((pre_y + 1)*pre_w + pre_x + 1) * 4;
+
+			GLfloat pre_r1 = pre_data[offset1 + 0];
+			GLfloat pre_g1 = pre_data[offset1 + 1];
+			GLfloat pre_b1 = pre_data[offset1 + 2];
+			GLfloat pre_a1 = pre_data[offset1 + 3];
+
+			GLfloat pre_r2 = pre_data[offset2 + 0];
+			GLfloat pre_g2 = pre_data[offset2 + 1];
+			GLfloat pre_b2 = pre_data[offset2 + 2];
+			GLfloat pre_a2 = pre_data[offset2 + 3];
+
+			GLfloat pre_r3 = pre_data[offset3 + 0];
+			GLfloat pre_g3 = pre_data[offset3 + 1];
+			GLfloat pre_b3 = pre_data[offset3 + 2];
+			GLfloat pre_a3 = pre_data[offset3 + 3];
+
+			GLfloat pre_r4 = pre_data[offset4 + 0];
+			GLfloat pre_g4 = pre_data[offset4 + 1];
+			GLfloat pre_b4 = pre_data[offset4 + 2];
+			GLfloat pre_a4 = pre_data[offset4 + 3];
+
+			cur_data[(y*cur_w + x) * 4 + 0] = (pre_r1 + pre_r2 + pre_r3 + pre_r4) / 4.0f;
+			cur_data[(y*cur_w + x) * 4 + 1] = (pre_g1 + pre_g2 + pre_g3 + pre_g4) / 4.0f;
+			cur_data[(y*cur_w + x) * 4 + 2] = (pre_b1 + pre_b2 + pre_b3 + pre_b4) / 4.0f;
+			cur_data[(y*cur_w + x) * 4 + 3] = (pre_a1 + pre_a2 + pre_a3 + pre_a4) / 4.0f;
+
+		}
+	}
 }
 
 void gl_generate_texture2d_mipmap(gl_texture2d* texture)
