@@ -64,8 +64,6 @@ void glContextInit()
 
 	glContext.unpack_mode = UNPACK_ALIGNMENT_4;
 	glContext.selected_texture_unit = &glContext.texture_params[0];
-	glContext.texture2d_target = nullptr;
-	glContext.texture_cube_target = nullptr;
 }
 
 void glContextDestroy()

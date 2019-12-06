@@ -79,7 +79,10 @@ gl_texture_cube* gl_create_texture_cube()
 void gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result)
 {
 	gl_texture_unit& texture_unit = glPipeline.texture_units[index];
-	gl_texture2d* texure2d = (gl_texture2d*)texture_unit.params.binded_object->texture;
+	gl_texture2d* texure2d = (gl_texture2d*)texture_unit.params.texture2d_target.binded_object->texture;
+	gl_texture2d_mipmap* mipmap0 = texure2d->mipmaps[0];
+	mipmap0->width;
+	mipmap0->height;
 }
 
 void gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result)
@@ -328,7 +331,7 @@ void gl_allocate_texture2d_mipmap(gl_texture2d_mipmap** pmipmap, GLint internalf
 	}
 	mipmap->width = width;
 	mipmap->height = height;
-	mipmap->data = gl_malloc((width * height * 4) * sizeof(GLfloat));
+	mipmap->data = (GLfloat*)gl_malloc((width * height * 4) * sizeof(GLfloat));
 	switch (type)
 	{
 	case GL_BYTE:
@@ -352,7 +355,7 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	switch (type)
 	{
 	case GL_UNSIGNED_BYTE:
-		break;
+break;
 	case GL_UNSIGNED_SHORT_5_6_5:
 		CONDITION_VALIDATE(format != GL_RGB, GL_INVALID_VALUE, "format and type dosen't match!");
 		break;
@@ -374,49 +377,49 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	{
 	case GL_TEXTURE_2D:
 	{
-		gl_texture2d* texture = glContext.texture2d_target;
+		gl_texture2d* texture = (gl_texture2d*)glContext.selected_texture_unit->texture2d_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps[level], internalformat, width, height, format, type, pixels);
 		break;
 	}
 	case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_x_positive[level], internalformat, width, height, format, type, pixels);
 	}
-		break;
+	break;
 	case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_x_nagetive[level], internalformat, width, height, format, type, pixels);
 	}
 	break;
 	case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_y_positive[level], internalformat, width, height, format, type, pixels);
 	}
 	break;
 	case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_y_nagetive[level], internalformat, width, height, format, type, pixels);
 	}
 	break;
 	case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_z_positive[level], internalformat, width, height, format, type, pixels);
 	}
 	break;
 	case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
 	{
-		gl_texture_cube* texture = glContext.texture_cube_target;
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
 		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
 		gl_allocate_texture2d_mipmap(&texture->mipmaps_z_nagetive[level], internalformat, width, height, format, type, pixels);
 	}
@@ -428,6 +431,83 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	}
 	}
 
+}
+
+bool is_power_of_2(GLint value)
+{
+	return (value & (value - 1)) == 0;
+}
+
+void gl_generate_mipmap(const gl_texture2d_mipmap* pre_mipmap, gl_texture2d_mipmap** pcur_mipmap, GLint level)
+{
+	gl_texture2d_mipmap* cur_mipmap = *pcur_mipmap;
+	if (cur_mipmap->data != nullptr)
+	{
+		gl_free(cur_mipmap->data);
+	}
+
+	GLint pre_w = pre_mipmap->width;
+	GLint pre_h = pre_mipmap->height;
+
+	pre_w >>= 1;
+	pre_h >>= 1;
+
+	if (pre_w <= 0) pre_w = 1;
+	if (pre_h <= 0) pre_h = 1;
+
+
+}
+
+void gl_generate_texture2d_mipmap(gl_texture2d* texture)
+{
+	GLint w0 = texture->mipmaps[0]->width;
+	GLint h0 = texture->mipmaps[0]->height;
+
+	GLint max_size = glMax(w0, h0);
+	GLint level = 0;
+	while ((max_size >>= 1) != 0)
+	{
+		++level;
+	}
+
+	for (GLint l = level; l > 0; l--)
+	{
+		gl_generate_mipmap(texture->mipmaps[l-1], &texture->mipmaps[l], l);
+	}
+}
+
+NAIL_API void glGenerateMipmap(GLenum target)
+{
+	switch (target)
+	{
+	case GL_TEXTURE_2D:
+	{
+		gl_texture2d* texture = (gl_texture2d*)glContext.selected_texture_unit->texture2d_target.binded_object->texture;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		CONDITION_VALIDATE(texture->mipmaps[0] == nullptr, GL_INVALID_VALUE, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(!is_power_of_2(texture->mipmaps[0]->width), GL_INVALID_VALUE, "The width is not power of 2!");
+		CONDITION_VALIDATE(!is_power_of_2(texture->mipmaps[0]->height), GL_INVALID_VALUE, "The height is not power of 2!");
+		gl_generate_texture2d_mipmap(texture);
+		break;
+	}
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		gl_texture_cube* texture = (gl_texture_cube*)glContext.selected_texture_unit->texture_cube_target.binded_object->texture;
+		CONDITION_VALIDATE(texture == nullptr, GL_INVALID_OPERATION, "The selected texture is not binded!");
+		CONDITION_VALIDATE(texture->mipmaps_x_positive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(texture->mipmaps_x_nagetive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(texture->mipmaps_y_positive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(texture->mipmaps_y_nagetive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(texture->mipmaps_z_positive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		CONDITION_VALIDATE(texture->mipmaps_z_nagetive[0] == nullptr, GL_INVALID_OPERATION, "The selected texture has no level 0 data!");
+		break;
+	}
+	default:
+	{
+		glSetError(GL_INVALID_ENUM, "Invalid target param!");
+		break;
+	}
+	}
 }
 
 NAIL_API void glBindTexture(GLenum target, GLuint texture)
@@ -442,17 +522,17 @@ NAIL_API void glBindTexture(GLenum target, GLuint texture)
 		object->type = target;
 		object->texture = gl_create_texture(object->type);
 	}
-	glContext.selected_texture_unit->binded_object = object;
+	
 	switch (target)
 	{
 	case GL_TEXTURE_2D:
 	{
-		glContext.texture2d_target = (gl_texture2d*)object->texture;
+		glContext.selected_texture_unit->texture2d_target.binded_object = object;
 		break;
 	}
 	case GL_TEXTURE_CUBE_MAP:
 	{
-		glContext.texture_cube_target = (gl_texture_cube*)object->texture;
+		glContext.selected_texture_unit->texture_cube_target.binded_object = object;
 		break;
 	}
 	}
@@ -480,4 +560,59 @@ NAIL_API void glGenTextures(GLsizei n, GLuint *textures)
 	{
 		textures[i] = gl_create_named_object(__TEXTURE_OBJECT__);
 	}
+}
+
+void gl_set_texture_parameter(gl_texture_target& target, GLenum pname, GLint param)
+{
+	switch (pname)
+	{
+	case GL_TEXTURE_WRAP_S:
+	{
+		target.wrap_mode_s = param;
+		break;
+	}
+	case GL_TEXTURE_WRAP_T:
+	{
+		target.wrap_mode_t = param;
+		break;
+	}
+	case GL_TEXTURE_MIN_FILTER:
+	{
+		target.min_filter = param;
+		break;
+	}
+	case GL_TEXTURE_MAG_FILTER:
+	{
+		target.mag_filter = param;
+		break;
+	}
+	default:
+		CONDITION_VALIDATE(true, GL_INVALID_ENUM, "Invalid pname");
+		break;
+	}
+}
+
+NAIL_API void glTexParameteri(GLenum target, GLenum pname, GLint param)
+{
+	switch (target)
+	{
+	case GL_TEXTURE_2D:
+	{
+		gl_texture_target& target = glContext.selected_texture_unit->texture2d_target;
+		gl_set_texture_parameter(target, pname, param);
+		break;
+	}
+	case GL_TEXTURE_CUBE_MAP:
+	{
+		break;
+	}
+	default:
+		CONDITION_VALIDATE(true, GL_INVALID_ENUM, "Invalid target");
+		break;
+	}
+}
+
+NAIL_API void glTexParameterf(GLenum target, GLenum pname, GLfloat param)
+{
+
 }

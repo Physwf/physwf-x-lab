@@ -134,6 +134,22 @@ typedef void			GLvoid;
 #define GL_TEXTURE6							0x70006
 #define GL_TEXTURE7							0x70007
 
+#define GL_TEXTURE_WRAP_S					0x80001
+#define GL_TEXTURE_WRAP_T					0x80002
+#define GL_TEXTURE_MIN_FILTER				0x80003
+#define GL_TEXTURE_MAG_FILTER				0x80004
+//wrap mode
+#define GL_CLAMP_TO_EDGE					0x80101
+#define GL_REPEAT							0x80102
+#define GL_MIRRORED_REPEAT					0x80103
+//min/mag
+#define GL_NEAREST							0x80201
+#define GL_LINEAR							0x80202
+#define GL_NEAREST_MIPMAP_NEAREST			0x80203
+#define GL_NEAREST_MIPMAP_LINEAR			0x80204
+#define GL_LINEAR_MIPMAP_NEAREST			0x80205
+#define GL_LINEAR_MIPMAP_LINEAR				0x80206
+
 #include "NAIL.h"
 
 NAIL_API void glViewport(GLint x, GLint y, GLsizei w, GLsizei h);
@@ -216,5 +232,8 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 NAIL_API void glBindTexture(GLenum target, GLuint texture);
 NAIL_API void glDeleteTextures(GLsizei n, const GLuint *textures);
 NAIL_API void glGenTextures(GLsizei n, GLuint *textures);
+NAIL_API void glGenerateMipmap(GLenum target);
+NAIL_API void glTexParameteri(GLenum target, GLenum pname, GLint param);
+NAIL_API void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
 
 

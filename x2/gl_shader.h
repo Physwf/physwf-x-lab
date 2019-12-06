@@ -29,7 +29,7 @@ struct gl_uniform
 {
 	GLchar		name[ACTIVE_UNIFORM_MAX_LENGTH];
 	GLfloat*	fvalue;
-	GLuint		ivalue;
+	GLuint*		ivalue;
 	GLsizei		size;
 	GLenum		type;
 };

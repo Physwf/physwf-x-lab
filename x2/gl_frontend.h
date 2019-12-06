@@ -94,8 +94,6 @@ struct gl_frontend
 
 	gl_texture_unit_params	texture_params[MAX_COMBINED_TEXTURE_IMAGE_UNITS];
 	gl_texture_unit_params* selected_texture_unit;//当前选中的纹理单元
-	gl_texture2d* texture2d_target;
-	gl_texture_cube* texture_cube_target;
 
 	gl_atrribute<GLfloat>	clear_color;
 	GLclampf				clear_depth;

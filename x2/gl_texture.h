@@ -24,7 +24,7 @@ struct gl_texture2d_mipmap
 {
 	GLsizei width;
 	GLsizei height;
-	GLvoid* data;
+	GLfloat* data;
 };
 
 struct gl_texture2d
@@ -52,13 +52,19 @@ struct gl_texture_object : public gl_named_object
 	GLvoid* texture;
 };
 
-struct gl_texture_unit_params
+struct gl_texture_target
 {
 	GLint wrap_mode_s;
 	GLint wrap_mode_t;
 	GLint min_filter;
 	GLint mag_filter;
 	gl_texture_object* binded_object;
+};
+
+struct gl_texture_unit_params
+{
+	gl_texture_target texture2d_target;
+	gl_texture_target texture_cube_target;
 };
 
 struct gl_texture_unit

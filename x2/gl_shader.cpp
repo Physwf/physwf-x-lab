@@ -327,7 +327,7 @@ NAIL_API void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufsize, 
 	if (name != nullptr) strcpy_s(name, bufsize, uniform->name); 
 }
 
-GLfloat* gl_get_uniform_check(GLint location)
+GLfloat* gl_get_uniform_f_check(GLint location)
 {
 	if (glContext.program == 0)
 	{
@@ -344,50 +344,67 @@ GLfloat* gl_get_uniform_check(GLint location)
 	return (GLfloat*)program_object->uniforms[location]->fvalue;
 }
 
+GLint* gl_get_uniform_i_check(GLint location)
+{
+	if (glContext.program == 0)
+	{
+		glSetError(GL_INVALID_OPERATION, "No program is used!");
+		return nullptr;
+	}
+	gl_program_object* program_object = gl_find_program_object_check(glContext.program);
+	if (program_object == nullptr) return nullptr;
+	if (location >= (GLint)program_object->active_uniforms)
+	{
+		glSetError(GL_INVALID_VALUE, "Invalid index!");
+		return nullptr;
+	}
+	return (GLint*)program_object->uniforms[location]->ivalue;
+}
+
 NAIL_API void glUniform1i(GLint location, GLint v0)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLint* value = gl_get_uniform_i_check(location);
 	if (value == nullptr) return;
-	value[0] = (GLfloat)v0;
+	value[0] = (GLint)v0;
 }
 
 NAIL_API void glUniform2i(GLint location, GLint v0, GLint v1)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLint* value = gl_get_uniform_i_check(location);
 	if (value == nullptr) return;
-	value[0] = (GLfloat)v0;
-	value[1] = (GLfloat)v1;
+	value[0] = (GLint)v0;
+	value[1] = (GLint)v1;
 }
 
 NAIL_API void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLint* value = gl_get_uniform_i_check(location);
 	if (value == nullptr) return;
-	value[0] = (GLfloat)v0;
-	value[1] = (GLfloat)v1;
-	value[2] = (GLfloat)v2;
+	value[0] = (GLint)v0;
+	value[1] = (GLint)v1;
+	value[2] = (GLint)v2;
 }
 
 NAIL_API void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLint* value = gl_get_uniform_i_check(location);
 	if (value == nullptr) return;
-	value[0] = (GLfloat)v0;
-	value[1] = (GLfloat)v1;
-	value[2] = (GLfloat)v2;
-	value[3] = (GLfloat)v3;
+	value[0] = (GLint)v0;
+	value[1] = (GLint)v1;
+	value[2] = (GLint)v2;
+	value[3] = (GLint)v3;
 }
 
 NAIL_API void glUniform1f(GLint location, GLfloat v0)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v0;
 }
 
 NAIL_API void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v0;
 	value[1] = v1;
@@ -395,7 +412,7 @@ NAIL_API void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 
 NAIL_API void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v0;
 	value[1] = v1;
@@ -404,7 +421,7 @@ NAIL_API void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 
 NAIL_API void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v0;
 	value[1] = v1;
@@ -414,14 +431,14 @@ NAIL_API void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GL
 
 NAIL_API void glUniform1fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v[0];
 }
 
 NAIL_API void glUniform2fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v[0];
 	value[1] = v[1];
@@ -429,7 +446,7 @@ NAIL_API void glUniform2fv(GLint location, GLsizei count, const GLfloat *v)
 
 NAIL_API void glUniform3fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v[0];
 	value[1] = v[1];
@@ -438,7 +455,7 @@ NAIL_API void glUniform3fv(GLint location, GLsizei count, const GLfloat *v)
 
 NAIL_API void glUniform4fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = v[0];
 	value[1] = v[1];
@@ -448,13 +465,13 @@ NAIL_API void glUniform4fv(GLint location, GLsizei count, const GLfloat *v)
 
 NAIL_API void glUniform1iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 }
 NAIL_API void glUniform2iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -462,7 +479,7 @@ NAIL_API void glUniform2iv(GLint location, GLsizei count, const GLint *v)
 
 NAIL_API void glUniform3iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -471,7 +488,7 @@ NAIL_API void glUniform3iv(GLint location, GLsizei count, const GLint *v)
 
 NAIL_API void glUniform4iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -481,7 +498,7 @@ NAIL_API void glUniform4iv(GLint location, GLsizei count, const GLint *v)
 
 NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -491,7 +508,7 @@ NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpos
 
 NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -507,7 +524,7 @@ NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpos
 
 NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_check(location);
+	GLfloat* value = gl_get_uniform_f_check(location);
 	if (value == nullptr) return;
 	value[0] = (GLfloat)v[0];
 	value[1] = (GLfloat)v[1];
@@ -546,7 +563,7 @@ gl_uniform_node* gl_uniform_node::create(GLuint* value, const GLchar* name, GLsi
 	node->uniform = (gl_uniform*)gl_malloc(sizeof(gl_uniform));
 	node->uniform->size = size;
 	node->uniform->type = type;
-	node->uniform->ivalue = *value;
+	node->uniform->ivalue = value;
 	node->next = nullptr;
 	GLsizei buffer_size = sizeof(node->uniform->name);
 	strcpy_s(node->uniform->name, buffer_size, name);
