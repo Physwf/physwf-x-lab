@@ -116,6 +116,10 @@ struct gl_vector4
 	}
 };
 
+gl_vector4 operator*(float value, const gl_vector4& rhs);
+gl_vector4 operator+(const gl_vector4& lhs, const gl_vector4& rhs);
+gl_vector4 operator-(const gl_vector4& lhs, const gl_vector4& rhs);
+
 inline GLfloat gl_campf(GLfloat v)
 {
 	return glClamp(v, 0.0f, 1.0f);

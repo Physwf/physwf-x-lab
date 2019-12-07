@@ -15,10 +15,11 @@ add_subdirectory(dx11demo)
 add_subdirectory(path_tracing)
 include_directories(x3/Include)
 set(DIR_PROJECT "./demo")
-add_executable(x-lab ${DIR_PROJECT}/winmain.cpp ${DIR_PROJECT}/x2demo.cpp ${DIR_PROJECT}/glut.h ${DIR_PROJECT}/glut.cpp ${DIR_PROJECT}/mesh.h ${DIR_PROJECT}/mesh.cpp ${DIR_PROJECT}/scene.h ${DIR_PROJECT}/scene.cpp)
+add_executable(x-lab ${DIR_PROJECT}/winmain.cpp ${DIR_PROJECT}/x2demo.cpp ${DIR_PROJECT}/glut.h ${DIR_PROJECT}/glut.cpp ${DIR_PROJECT}/mesh.h ${DIR_PROJECT}/mesh.cpp ${DIR_PROJECT}/Cat.h ${DIR_PROJECT}/Cat.cpp ${DIR_PROJECT}/Lamborghini.h ${DIR_PROJECT}/Lamborghini.cpp)
 target_link_libraries(x-lab libx2)
 add_dependencies(x-lab libx2)
-
+CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
+add_compile_options("/std:c++17")
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 

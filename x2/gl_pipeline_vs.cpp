@@ -32,7 +32,7 @@ void gl_vertex_shader(gl_draw_command* cmd)
 	cmd->vs.vertices_result = gl_malloc(cmd->ia.vertices_count * vs->output_size);
 	for (GLsizei i = 0; i < cmd->ia.vertices_count; ++i)
 	{
-		GLvoid* vs_out = vs->process((GLbyte*)cmd->ia.vertices + i * vs->input_size);
+		GLvoid* vs_out = vs->vs_process((GLbyte*)cmd->ia.vertices + i * vs->input_size);
 		memcpy_s((GLbyte*)cmd->vs.vertices_result + i * vs->output_size, vs->output_size, vs_out, vs->output_size);
 	}
 	cmd->pa.vertex_size = vs->output_size;

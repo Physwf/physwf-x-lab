@@ -54,4 +54,3 @@ T glMax(T v1, T v2, Args... args)
 {
 	return glMax(glMax(v1, v2), args...);
 };
-

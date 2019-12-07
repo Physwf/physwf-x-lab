@@ -19,8 +19,8 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #include <cmath>
 
 #include "gl_objects.h"
-#include "gl_shader.h"
-
+#include "gl_texture.h"
+#include "gl_utilities.h"
 
 #define ACTIVE_UNIFORM_MAX_LENGTH	64
 #define MAX_UNIFORMS				128
@@ -51,7 +51,10 @@ struct gl_shader
 
 	GLsizei input_size;
 	GLsizei output_size;
-
+	GLsizei screen_width;
+	GLsizei screen_height;
+	GLsizei screen_x;
+	GLsizei screen_y;
 	struct vector2
 	{
 		union
@@ -62,7 +65,7 @@ struct gl_shader
 			};
 			struct
 			{
-				float u, v;
+				float s, t;
 			};
 		};
 
@@ -80,7 +83,7 @@ struct gl_shader
 			};
 			struct
 			{
-				float u, v, w;
+				float s, t, r;
 			};
 		};
 
@@ -166,22 +169,50 @@ struct gl_shader
 		return vector2(v.x / sqrt, v.y / sqrt);
 	}
 
-	vector4 texture(sampler2D sampler, vector2 texCoord)
+	vector4 texture(sampler2D sampler, const vector2* texCoord)
 	{
 		vector4 result;
-		gl_sample_texture2d(sampler, texCoord.u, texCoord.v, (GLfloat*)&result);
+		const vector2* texCoord_left	= (screen_x % screen_width) != 0 ? (const vector2*)((GLbyte*)texCoord - input_size) : nullptr;
+		const vector2* texCoord_right	= (screen_x % screen_width) != (screen_width - 1) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
+		const vector2* texCoord_up		= (screen_y > 0) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
+		const vector2* texCoord_down	= (screen_y < screen_height - 1) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
+		GLfloat p = 0.0f;
+		if (texCoord_left)
+		{
+			GLfloat u_left = (texCoord->s - texCoord_left->s) * screen_width;
+			p = glMax(p, glAbs(u_left));
+		}
+		if (texCoord_right)
+		{
+			GLfloat u_right = (texCoord_right->s - texCoord->s) * screen_width;
+			p = glMax(p, glAbs(u_right));
+		}
+		if (texCoord_up)
+		{
+			GLfloat v_up = (texCoord_up->t - texCoord->t) * screen_height;
+			p = glMax(p, glAbs(v_up));
+		}
+		if (texCoord_down)
+		{
+			GLfloat v_down = (texCoord->t - texCoord_down->t)* screen_height;
+			p = glMax(p, glAbs(v_down));
+		}
+		GLfloat l = std::log2(p);
+		gl_sample_texture2d(sampler, l, texCoord->s, texCoord->t, (GLfloat*)&result);
 		return result;
 	}
 
-	vector4 texture(samplerCube sampler, vector3 texCoord)
+	vector4 texture(samplerCube sampler, const vector3* texCoord)
 	{
 		vector4 result;
-		gl_sample_texture_cube(sampler, texCoord.u, texCoord.v, texCoord.w, (GLfloat*)&result);
+		//gl_sample_texture_cube(sampler, texCoord.u, texCoord.v, texCoord.w, (GLfloat*)&result);
 		return result;
 	}
 
 	virtual GLvoid compile() = 0;
-	virtual GLvoid* process(GLvoid*) = 0;
+	void update_screen_size(GLsizei w, GLsizei h) { screen_width = w; screen_height = h; }
+	virtual GLvoid* vs_process(GLvoid*) { return nullptr; };
+	virtual GLvoid* fs_process(GLvoid*, GLsizei screenx, GLsizei screeny) { screen_x = screenx; screen_y = screeny; return nullptr; };
 };
 
 struct gl_shader_object : public gl_named_object

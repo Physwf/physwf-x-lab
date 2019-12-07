@@ -27,6 +27,7 @@ void gl_fragment_shader(gl_draw_command* cmd)
 	gl_shader* fs = fs_object->shader;
 	if (fs == nullptr) return;
 
+	fs->update_screen_size(cmd->rs.buffer_width, cmd->rs.buffer_height);
 	for (GLsizei y = 0; y < cmd->rs.buffer_height; ++y)
 	{
 		for (GLsizei x = 0; x < cmd->rs.buffer_width; ++x)
@@ -35,7 +36,7 @@ void gl_fragment_shader(gl_draw_command* cmd)
 			gl_frame_buffer* frame_buffer = glPipeline.frame_buffers[glPipeline.back_buffer_index];
 			if (fragment.depth < 1.0f && fragment.depth >= 0.0f)
 			{
-				GLvoid* fs_out = fs->process((GLbyte*)fragment.varing_attribute);
+				GLvoid* fs_out = fs->fs_process((GLbyte*)fragment.varing_attribute,x,y);
 				gl_vector4& color = ((gl_vector4*)fs_out)[0];
 				frame_buffer->set_color(x, y, color);
 			}

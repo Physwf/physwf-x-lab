@@ -1,4 +1,4 @@
-#include "scene.h"
+#include "Cat.h"
 #include "mesh.h"
 #include "gl_shader.h"
 #include "glut.h"
@@ -47,7 +47,7 @@ struct LowPolyCatVertexShader : public gl_shader
 	}
 
 	VS_Output Output;
-	virtual GLvoid* process(GLvoid* Vertex)
+	virtual GLvoid* vs_process(GLvoid* Vertex)
 	{
 		Output = process(*(VS_Input*)Vertex);
 		return &Output;
@@ -86,7 +86,7 @@ struct LowPolyCatFragmentShader : public gl_shader
 	}
 
 	PS_Output Output;
-	virtual GLvoid* process(GLvoid* Vertex)
+	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx,GLsizei screeny)
 	{
 		Output = process(*(PS_Input*)Vertex);
 		return &Output;
@@ -96,7 +96,7 @@ struct LowPolyCatFragmentShader : public gl_shader
 LowPolyCatVertexShader LowPolyCatVS;
 LowPolyCatFragmentShader LowPolyCatFS;
 
-void Scene::Init()
+void Cat::Init()
 {
 	LowPolyCat = new Mesh();
 	LowPolyCat->LoadFromObj("./lowpolycat/cat.obj");
@@ -121,7 +121,7 @@ void Scene::Init()
 	glLinkProgram(LowPolyCatProgram);
 }
 
-void Scene::Draw()
+void Cat::Draw()
 {
 	if (LowPolyCat)
 	{

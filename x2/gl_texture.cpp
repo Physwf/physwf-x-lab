@@ -76,13 +76,91 @@ gl_texture_cube* gl_create_texture_cube()
 	return result;
 }
 
-void gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result)
+GLfloat gl_get_wrap_value(GLfloat origin, GLenum wrap_mode,GLfloat min)
 {
-	gl_texture_unit& texture_unit = glPipeline.texture_units[index];
-	gl_texture2d* texure2d = (gl_texture2d*)texture_unit.params.texture2d_target.binded_object->texture;
-	gl_texture2d_mipmap* mipmap0 = texure2d->mipmaps[0];
-	GLsizei w0 = mipmap0->width;
-	GLsizei h0 = mipmap0->height;
+	switch (wrap_mode)
+	{
+	case GL_CLAMP_TO_EDGE:
+		origin = glClamp(origin, min, 1.0f - min);
+		break;
+	case GL_REPEAT:
+		origin -= std::floorf(origin);
+		break;
+	case GL_MIRRORED_REPEAT:
+	{
+		GLint floor_s = (GLint)std::floorf(origin);
+		if (floor_s % 2 == 0)
+		{
+			origin = origin - floor_s;
+		}
+		else
+		{
+			origin = 1.0f - (origin - floor_s);
+		}
+	}
+	break;
+	}
+	return origin;
+}
+
+void gl_sample_texture2d(GLuint index, GLfloat l, GLfloat s, GLfloat t, GLfloat* result)
+{
+	gl_texture_target& texture2d_target = glPipeline.texture_units[index].params.texture2d_target;
+	gl_texture2d* texure2d = (gl_texture2d*)texture2d_target.binded_object->texture;
+	
+	GLfloat c = 0.0f;
+	if (texture2d_target.mag_filter == GL_LINEAR && (texture2d_target.min_filter == GL_NEAREST_MIPMAP_LINEAR || texture2d_target.min_filter == GL_NEAREST_MIPMAP_NEAREST))
+	{
+		c = 0.5;
+	}
+	GLint level = 0;
+	bool is_mag = l <= c;//mag
+	if (!is_mag)//min
+	{
+		GLint q = texure2d->mipmap_count;
+		if (l > 0.5f &&  l < (q + 0.5))
+		{
+			level = (GLint)std::ceil(l + 0.5) - 1;
+		}
+		else if (l > (q + 0.5f))
+		{
+			level = q;
+		}
+	}
+
+	gl_texture2d_mipmap* mipmap = texure2d->mipmaps[level];
+	GLsizei w = mipmap->width;
+	GLsizei h = mipmap->height;
+	GLfloat minx = 1.0f / (2.0f * w);
+	GLfloat miny = 1.0f / (2.0f * h);
+	s = gl_get_wrap_value(s, texture2d_target.wrap_mode_s, minx);
+	t = gl_get_wrap_value(t, texture2d_target.wrap_mode_t, miny);
+
+	GLfloat u = s * w;
+	GLfloat v = t * h;
+
+	if ((is_mag && texture2d_target.mag_filter == GL_NEAREST) || (!is_mag && texture2d_target.min_filter == GL_NEAREST))
+	{
+		GLsizei i = s == 1.0f ? (w - 1) : (GLsizei)std::floor(u);
+		GLsizei j = t == 1.0f ? (h - 1) : (GLsizei)std::floor(v);
+		*(gl_vector4*)result = *(gl_vector4*)mipmap->get_data(i, j);
+	}
+	else
+	{
+		GLfloat floor_u = std::floor(u - 0.5f);
+		GLfloat floor_v = std::floor(v - 0.5f);
+		GLsizei i0 = (GLsizei)floor_u;
+		GLsizei j0 = (GLsizei)floor_v;
+		GLsizei i1 = i0 + 1;
+		GLsizei j1 = j0 + 1;
+		gl_vector4 v00 = *(gl_vector4*)mipmap->get_data(i0, j0);
+		gl_vector4 v01 = *(gl_vector4*)mipmap->get_data(i0, j1);
+		gl_vector4 v10 = *(gl_vector4*)mipmap->get_data(i1, j0);
+		gl_vector4 v11 = *(gl_vector4*)mipmap->get_data(i1, j1);
+		GLfloat a = u - floor_u;
+		GLfloat b = v - floor_v;
+		*(gl_vector4*)result = (1.0f - a)*(1.0f - b)*v00 + a * (1.0f - b)*v10 + (1.0f - a)*b*v01 + a * b*v11;
+	}
 }
 
 void gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result)
@@ -349,7 +427,8 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 {
 	CONDITION_VALIDATE(level < 0 || level > MAX_MIPMAP_LEVEL, GL_INVALID_VALUE, "Invalid level params!");
 	GLsizei max_width_for_level = 1 << (MAX_MIPMAP_LEVEL - level);
-	CONDITION_VALIDATE(width < 0 || height < 0 || width > max_width_for_level || height > max_width_for_level, GL_INVALID_VALUE, "Invalid width height param, must be zero!");
+	CONDITION_VALIDATE(width < 0 || height < 0, GL_INVALID_VALUE, "Invalid width height param,must not less than 0!");
+	CONDITION_VALIDATE(width > max_width_for_level || height > max_width_for_level, GL_INVALID_VALUE, "Invalid width height param,greater than maximum!");
 	CONDITION_VALIDATE(border != 0, GL_INVALID_VALUE, "Invalid border param, must be zero!");
 
 	switch (type)
@@ -372,6 +451,8 @@ break;
 		break;
 	}
 	}
+
+	//GLint mipmap_count = 
 
 	switch (target)
 	{
@@ -436,6 +517,16 @@ break;
 bool is_power_of_2(GLint value)
 {
 	return (value & (value - 1)) == 0;
+}
+
+GLint log2(GLint value)
+{
+	GLint n = 0;
+	while ((value >>= 1) != 0)
+	{
+		++n;
+	}
+	return n;
 }
 
 void gl_generate_mipmap(const gl_texture2d_mipmap* pre_mipmap, gl_texture2d_mipmap** pcur_mipmap, GLint level)
@@ -506,12 +597,8 @@ void gl_generate_texture2d_mipmap(gl_texture2d* texture)
 	GLint h0 = texture->mipmaps[0]->height;
 
 	GLint max_size = glMax(w0, h0);
-	GLint level = 0;
-	while ((max_size >>= 1) != 0)
-	{
-		++level;
-	}
-
+	GLint level = log2(max_size);
+	texture->mipmap_count = level;
 	for (GLint l = level; l > 0; l--)
 	{
 		gl_generate_mipmap(texture->mipmaps[l-1], &texture->mipmaps[l], l);

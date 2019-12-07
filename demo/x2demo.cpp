@@ -40,7 +40,7 @@ struct VertexShader : public gl_shader
 	}
 
 	VS_Output Output;
-	virtual GLvoid* process(GLvoid* Vertex)
+	virtual GLvoid* vs_process(GLvoid* Vertex)
 	{
 		Output = process(*(VS_Input*)Vertex);
 		return &Output;
@@ -79,7 +79,7 @@ struct FragmentShader : public gl_shader
 	}
 
 	PS_Output Output;
-	virtual GLvoid* process(GLvoid* Vertex)
+	virtual GLvoid* fs_process(GLvoid* Vertex)
 	{
 		Output = process(*(PS_Input*)Vertex);
 		return &Output;

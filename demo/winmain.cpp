@@ -1,6 +1,6 @@
 #include <windows.h>
 #include "glut.h"
-#include "scene.h"
+#include "Cat.h"
 
 void OutputDebug(const char* Format)
 {
@@ -20,7 +20,7 @@ void glInit();
 void glSetup();
 void glRender();
 
-Scene S;
+Cat S;
 
 LONG W = 500;
 LONG H = 500;

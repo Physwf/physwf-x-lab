@@ -18,13 +18,20 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 
 #include "gl.h"
 #include "gl_objects.h"
-
+#include "gl_utilities.h"
 
 struct gl_texture2d_mipmap
 {
 	GLsizei width;
 	GLsizei height;
 	GLfloat* data;
+
+	GLfloat* get_data(GLsizei x, GLsizei y)
+	{
+		x = glClamp(x, 0, width);
+		y = glClamp(y, 0, height);
+		return &data[(y*width + x) * 4];
+	}
 };
 
 struct gl_texture2d
@@ -75,5 +82,5 @@ struct gl_texture_unit
 gl_texture_object*		gl_find_texture_object(GLuint name);
 gl_texture2d*			gl_create_texture2d();
 gl_texture_cube*		gl_create_texture_cube();
-void					gl_sample_texture2d(GLuint index, GLfloat s, GLfloat t, GLfloat* result);
+void					gl_sample_texture2d(GLuint index, GLfloat l, GLfloat s, GLfloat t, GLfloat* result);
 void					gl_sample_texture_cube(GLuint index, GLfloat s, GLfloat t, GLfloat u, GLfloat* result);

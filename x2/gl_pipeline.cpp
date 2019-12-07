@@ -23,6 +23,7 @@ gl_vector2 operator+(const gl_vector2& lhs, const gl_vector2& rhs)
 {
 	return gl_vector2(lhs.x + rhs.x, lhs.y + rhs.y);
 }
+
 gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs)
 {
 	return gl_vector2(lhs.x - rhs.x, lhs.y - rhs.y);
@@ -31,6 +32,21 @@ gl_vector2 operator-(const gl_vector2& lhs, const gl_vector2& rhs)
 float operator*(const gl_vector2& lhs, const gl_vector2& rhs)
 {
 	return (lhs.x * rhs.x + lhs.y * rhs.y);
+}
+
+gl_vector4 operator*(float value, const gl_vector4& rhs)
+{
+	return gl_vector4(rhs.x * value, rhs.y * value, rhs.z * value, rhs.w * value);
+}
+
+gl_vector4 operator+(const gl_vector4& lhs, const gl_vector4& rhs)
+{
+	return gl_vector4(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w);
+}
+
+gl_vector4 operator-(const gl_vector4& lhs, const gl_vector4& rhs)
+{
+	return gl_vector4(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w);
 }
 
 gl_vector2 operator/(const gl_vector2& lhs, float divider)
