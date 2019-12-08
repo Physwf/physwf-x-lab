@@ -103,7 +103,7 @@ NAIL_API void glCompileShader(GLuint shader)
 		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
 		return;
 	}
-	if (object->type != GL_VERTEX_SHADER && object->type != GL_FRAGMENT_SHADER)
+	if (object->type != __VERTEX_SHADER_OBJECT__ && object->type != __FRAGMENT_SHADER_OBJECT__)
 	{
 		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
 		return;
@@ -126,7 +126,7 @@ NAIL_API void glShaderSource(GLuint shader, GLvoid* source)
 		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
 		return;
 	}
-	if (object->type != GL_VERTEX_SHADER && object->type != GL_FRAGMENT_SHADER)
+	if (object->type != __VERTEX_SHADER_OBJECT__ && object->type != __FRAGMENT_SHADER_OBJECT__)
 	{
 		glSetError(GL_INVALID_VALUE, "Invalid shader name!");
 		return;
@@ -163,7 +163,7 @@ NAIL_API void glAttachShader(GLuint program, GLuint shader)
 		return;
 	}
 
-	if (shader_object->type == GL_VERTEX_SHADER)
+	if (shader_object->type == __VERTEX_SHADER_OBJECT__)
 	{
 		if (program_object->vertex_shader_object != nullptr)
 		{
@@ -175,7 +175,7 @@ NAIL_API void glAttachShader(GLuint program, GLuint shader)
 			program_object->vertex_shader_object = shader_object;
 		}
 	}
-	else if (shader_object->type == GL_FRAGMENT_SHADER)
+	else if (shader_object->type == __FRAGMENT_SHADER_OBJECT__)
 	{
 		if (program_object->fragment_shader_object != nullptr)
 		{
@@ -207,7 +207,7 @@ NAIL_API void glDetachShader(GLuint program, GLuint shader)
 		return;
 	}
 
-	if (shader_object->type == GL_VERTEX_SHADER)
+	if (shader_object->type == __VERTEX_SHADER_OBJECT__)
 	{
 		if (program_object->vertex_shader_object != shader_object)
 		{
@@ -219,7 +219,7 @@ NAIL_API void glDetachShader(GLuint program, GLuint shader)
 			program_object->vertex_shader_object = nullptr;
 		}
 	}
-	else if (shader_object->type == GL_FRAGMENT_SHADER)
+	else if (shader_object->type == __FRAGMENT_SHADER_OBJECT__)
 	{
 		if (program_object->fragment_shader_object != shader_object)
 		{

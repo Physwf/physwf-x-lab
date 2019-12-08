@@ -64,6 +64,8 @@ void glContextInit()
 
 	glContext.unpack_mode = UNPACK_ALIGNMENT_4;
 	glContext.selected_texture_unit = &glContext.texture_params[0];
+
+	gl_pipeline_init();
 }
 
 void glContextDestroy()
@@ -123,6 +125,7 @@ NAIL_API void glClearDepth(GLclampf d)
 NAIL_API void glClear(GLbitfield buf)
 {
 	glContext.clear_bitmask = buf;
+	gl_do_clear();
 }
 
 NAIL_API void glFrontFace(GLenum dir)

@@ -187,6 +187,9 @@ struct gl_primitive_node
 //input assemble
 struct gl_ia_state
 {
+	gl_atrribute<GLfloat>			vertex_attributes[MAX_VERTEX_ATTRIBUTE];
+	gl_atrribute_pointer			vertex_attribute_pointers[MAX_VERTEX_ATTRIBUTE];
+
 	GLvoid*	 indices_copy;
 	GLenum   indices_type;
 
@@ -372,6 +375,12 @@ struct gl_om_state
 	
 };
 
+struct gl_clear_command
+{
+	gl_vector4 clear_color;
+	GLfloat clear_depth;
+};
+
 struct gl_draw_command
 {
 	gl_ia_state ia;
@@ -465,19 +474,19 @@ struct gl_pipeline
 		if (command_list == nullptr)
 		{
 			command_list = cmd;
-			command_tail = cmd;
 		}
 		else
 		{
 			command_tail->next = cmd;
 		}
+		command_tail = cmd;
 	}
 	gl_draw_command* dequeue()
 	{
 		if (command_list != nullptr)
 		{
 			gl_draw_command* cmd = command_list;
-			command_list = command_tail->next;
+			command_list = command_list->next;
 			return cmd;
 		}
 		return nullptr;
@@ -491,8 +500,9 @@ extern gl_pipeline glPipeline;
 
 bool gl_pipeline_init();
 void gl_emit_draw_command();
+void gl_do_clear();
 void gl_do_draw();
-void gl_swap_frame_buffer(gl_draw_command* cmd);
+void gl_swap_frame_buffer();
 
 NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer);
 

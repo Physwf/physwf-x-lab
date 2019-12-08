@@ -24,7 +24,7 @@ GLsizei get_vertex_count_from_indices(gl_draw_command* cmd)
 	if (cmd->ia.indices)
 	{
 		GLshort* indices = (GLshort*)cmd->ia.indices;
-		for (GLsizei i = 0; i < glContext.count; ++i)
+		for (GLsizei i = 0; i < cmd->ia.indices_count; ++i)
 		{
 			GLshort current_index = cmd->ia.indices[i] + 1;
 			if (num_vertex < current_index)
@@ -73,7 +73,7 @@ gl_vector4 get_attribute_from_attribute_pointer(const gl_atrribute_pointer& attr
 bool gl_check_input_validity(gl_draw_command* cmd)
 {
 	//check validity(todo)
-	switch (glContext.draw_mode)
+	switch (cmd->ia.primitive_type)
 	{
 	case GL_POINT_LIST:
 		break;
@@ -125,8 +125,6 @@ void gl_input_assemble(gl_draw_command* cmd)
 {
 	GLsizei vertex_size = cmd->vs.vertex_size;
 
-	cmd->ia.primitive_type = glContext.draw_mode;
-
 	//assemble indices
 	switch (cmd->ia.indices_type)
 	{
@@ -153,18 +151,18 @@ void gl_input_assemble(gl_draw_command* cmd)
 	{
 		for (int i = 0; i < attrib_count; ++i)
 		{
-			if (glContext.vertex_attribute_pointers[i].bEnabled)
+			if (cmd->ia.vertex_attribute_pointers[i].bEnabled)
 			{
 				gl_vector4& attribute = vertices[v*attrib_count + i];
-				attribute = get_attribute_from_attribute_pointer(glContext.vertex_attribute_pointers[i], v);
+				attribute = get_attribute_from_attribute_pointer(cmd->ia.vertex_attribute_pointers[i], v);
 			}
 			else
 			{
 				gl_vector4& attribute = vertices[v*attrib_count + i];
-				attribute.x = glContext.vertex_attributes[i].x;
-				attribute.y = glContext.vertex_attributes[i].y;
-				attribute.z = glContext.vertex_attributes[i].z;
-				attribute.w = glContext.vertex_attributes[i].w;
+				attribute.x = cmd->ia.vertex_attributes[i].x;
+				attribute.y = cmd->ia.vertex_attributes[i].y;
+				attribute.z = cmd->ia.vertex_attributes[i].z;
+				attribute.w = cmd->ia.vertex_attributes[i].w;
 			}
 		}
 	}

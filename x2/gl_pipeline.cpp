@@ -91,6 +91,18 @@ bool gl_pipeline_init()
 
 	glPipeline.named_object_list = nullptr;
 
+
+	for (int i = 0; i < 3; ++i)
+	{
+		if (glPipeline.frame_buffers[i] == nullptr)
+		{
+			glPipeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPipeline.frame_buffers[i]->buffer_width = glContext.viewport_width;
+			glPipeline.frame_buffers[i]->buffer_height = glContext.viewport_height;
+			glPipeline.front_buffer_index = -1;
+			glPipeline.back_buffer_index = 0;
+		}
+	}
 	return true;
 }
 
@@ -115,6 +127,8 @@ void gl_emit_draw_command()
 	cmd->ia.primitive_type = glContext.draw_mode;
 	cmd->ia.vertices = nullptr;
 	cmd->ia.indices_type = glContext.indices_type;
+	memcpy_s(cmd->ia.vertex_attributes, sizeof(cmd->ia.vertex_attributes), glContext.vertex_attributes, sizeof(glContext.vertex_attributes));
+	memcpy_s(cmd->ia.vertex_attribute_pointers, sizeof(cmd->ia.vertex_attribute_pointers), glContext.vertex_attribute_pointers, sizeof(glContext.vertex_attribute_pointers));
 	//vs
 	cmd->vs.program = glContext.program;
 	cmd->vs.vertices_result = nullptr;
@@ -147,21 +161,23 @@ void gl_emit_draw_command()
 
 	for (int i = 0; i < 3; ++i)
 	{
-		if (glPipeline.frame_buffers[i] == nullptr)
-		{
-			glPipeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
-			glPipeline.front_buffer_index = -1;
-			glPipeline.back_buffer_index = 0;
-		}
-		else if (glPipeline.frame_buffers[i]->buffer_width != glContext.viewport_width || glPipeline.frame_buffers[i]->buffer_height != glContext.viewport_height)
+		if (glPipeline.frame_buffers[i]->buffer_width != glContext.viewport_width || glPipeline.frame_buffers[i]->buffer_height != glContext.viewport_height)
 		{
 			gl_frame_buffer::destory(glPipeline.frame_buffers[i]);
 			glPipeline.frame_buffers[i] = gl_frame_buffer::create(glContext.viewport_width, glContext.viewport_height);
+			glPipeline.frame_buffers[i]->buffer_width = glContext.viewport_width;
+			glPipeline.frame_buffers[i]->buffer_height = glContext.viewport_height;
 			glPipeline.front_buffer_index = -1;
 			glPipeline.back_buffer_index = 0;
 		}
 	}
 
+	//todo multi-thread
+	glPipeline.enqueue(cmd);
+}
+
+void gl_do_clear()
+{
 	if (glContext.clear_bitmask & GL_COLOR_BUFFER_BIT)
 	{
 		glPipeline.frame_buffers[glPipeline.back_buffer_index]->set_clearcolor(gl_vector4(glContext.clear_color.r, glContext.clear_color.g, glContext.clear_color.b, glContext.clear_color.a));
@@ -174,9 +190,6 @@ void gl_emit_draw_command()
 	{
 
 	}
-
-	//todo multi-thread
-	glPipeline.enqueue(cmd);
 }
 
 void gl_do_draw()
@@ -189,13 +202,13 @@ void gl_do_draw()
 		gl_rasterize(cmd);
 		gl_fragment_shader(cmd);
 		gl_output_merge(cmd);
-		gl_swap_frame_buffer(cmd);
 		//ªÿ ’
 		glPipeline.ring_buffer.deallocate(cmd);
 	}
+	gl_swap_frame_buffer();
 }
 
-void gl_swap_frame_buffer(gl_draw_command* cmd)
+void gl_swap_frame_buffer()
 {
 	glPipeline.front_buffer_index = glPipeline.back_buffer_index;
 	glPipeline.back_buffer_index++;
