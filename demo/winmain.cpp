@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "glut.h"
 #include "Cat.h"
+#include "Lamborghini.h"
 
 void OutputDebug(const char* Format)
 {
@@ -21,6 +22,7 @@ void glSetup();
 void glRender();
 
 Cat S;
+Lamborghini Lambor;
 
 LONG W = 500;
 LONG H = 500;
@@ -68,13 +70,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	glutInit(0, 0, W, H, FrameBuffer);
 	//glInit();
 	//glSetup();
-	S.Init();
+	//S.Init();
 
+	Lambor.Init();
 	MSG msg;
 	while (true)
 	{
 		//glRender();
-		S.Draw();
+		//S.Draw();
+		Lambor.Draw();
 		glutPresent();
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{

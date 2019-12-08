@@ -48,6 +48,9 @@ public:
 		VertexIndex v1;
 		VertexIndex v2;
 		VertexIndex v3;
+		VertexIndex v4;
+
+		int VerticesCount;
 	};
 
 	struct SubMesh
@@ -61,6 +64,7 @@ public:
 	bool ParseLine(const class std::string& line);
 	bool ParseName(const std::string& line, std::string& Name);
 	bool ParsePosition(const std::string& line, Vector3& Position);
+	bool ParseNormal(const std::string& line, Vector3& Normal);
 	bool ParseTextCoord2D(const std::string& line, Vector2& TexCoord);
 	bool ParseFace(const std::string& line, Face& F);
 	bool ParseVertexIndex(const std::string& line, VertexIndex& Index);
@@ -72,6 +76,7 @@ public:
 	}
 private:
 	std::vector<Vector3> Positions;
+	std::vector<Vector3> Normals;
 	std::vector<Vector2> TexCoords;
 
 	std::map<std::string, SubMesh> SubMeshes;

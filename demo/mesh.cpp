@@ -63,8 +63,11 @@ bool Mesh::ParseLine(const class std::string& line)
 	{
 		std::string GroupName;
 		if(!ParseName(line, GroupName)) return false;
-		SubMeshes[GroupName] = SubMesh();
-		CurrentSubMesh = &SubMeshes[GroupName];
+		if (GroupName != "default")
+		{
+			SubMeshes[GroupName] = SubMesh();
+			CurrentSubMesh = &SubMeshes[GroupName];
+		}
 	}
 	else if (string_startwith(line, "usemtl"))
 	{
@@ -75,6 +78,12 @@ bool Mesh::ParseLine(const class std::string& line)
 		Vector3 Position;
 		if (!ParsePosition(line, Position)) return false;
 		Positions.push_back(Position);
+	}
+	else if (string_startwith(line, "vn "))
+	{
+		Vector3 Normal;
+		if (!ParseNormal(line, Normal)) return false;
+		Normals.push_back(Normal);
 	}
 	else if (string_startwith(line, "vt "))
 	{
@@ -121,6 +130,23 @@ bool Mesh::ParsePosition(const std::string& line, Vector3& Position)
 	return false;
 }
 
+
+bool Mesh::ParseNormal(const std::string& line, Vector3& Normal)
+{
+	std::vector<std::string> result;
+	if (string_split(line, " ", result))
+	{
+		if (result.size() > 3)
+		{
+			Normal.x = (float)std::atof(result[1].c_str());
+			Normal.y = (float)std::atof(result[2].c_str());
+			Normal.z = (float)std::atof(result[3].c_str());
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Mesh::ParseTextCoord2D(const std::string& line,Vector2& TexCoord)
 {
 	std::vector<std::string> result;
@@ -146,10 +172,19 @@ bool Mesh::ParseFace(const std::string& line, Face& F)
 			VertexIndex Index;
 			if (!ParseVertexIndex(result[1], Index)) return false;
 			F.v1 = Index;
+			++F.VerticesCount;
 			if (!ParseVertexIndex(result[2], Index)) return false;
 			F.v2 = Index;
+			++F.VerticesCount;
 			if (!ParseVertexIndex(result[3], Index)) return false;
 			F.v3 = Index;
+			++F.VerticesCount;
+			if (result.size() > 4)
+			{
+				if (!ParseVertexIndex(result[4], Index)) return false;
+				F.v4 = Index;
+				++F.VerticesCount;
+			}
 			return true;
 		}
 	}
@@ -161,17 +196,17 @@ bool Mesh::ParseVertexIndex(const std::string& line, VertexIndex& Index)
 	std::vector<std::string> result;
 	if (string_split(line, "/", result))
 	{
-		if (result.size() >= 2)
+		if (result.size() >= 3)
 		{
 			Index.PositonIndex = std::atoi(result[0].c_str());
 			Index.TexCoordIndex = std::atoi(result[1].c_str());
+			Index.NormalIndex = std::atoi(result[2].c_str());
 			return true;
 		}
-		else if (result.size() >= 3)
+		else if (result.size() >= 2)
 		{
 			Index.PositonIndex = std::atoi(result[0].c_str());
-			Index.NormalIndex = std::atoi(result[1].c_str());
-			Index.TexCoordIndex = std::atoi(result[2].c_str());
+			Index.TexCoordIndex = std::atoi(result[1].c_str());
 			return true;
 		}
 	}
@@ -182,24 +217,48 @@ void Mesh::AssembleSubMesh(SubMesh* pSubMesh, const Face& F)
 {
 	if (pSubMesh)
 	{
-		Vertex V1;
+		Vertex V1, V2, V3, V4;
 		V1.Position = Positions[F.v1.PositonIndex-1];
-		V1.Tex = TexCoords[F.v1.TexCoordIndex - 1];
-
-		Vertex V2;
 		V2.Position = Positions[F.v2.PositonIndex - 1];
-		V2.Tex = TexCoords[F.v2.TexCoordIndex - 1];
-
-		Vertex V3;
 		V3.Position = Positions[F.v3.PositonIndex - 1];
-		V3.Tex = TexCoords[F.v3.TexCoordIndex - 1];
+		if (F.VerticesCount == 4)
+		{
+			V4.Position = Positions[F.v4.PositonIndex - 1];
+		}
 
-		Vector3 Normal = multiply(sub(V3.Position, V1.Position), sub(V2.Position,V1.Position));
+		if (TexCoords.size() > 0)
+		{
+			V1.Tex = TexCoords[F.v1.TexCoordIndex - 1];
+			V2.Tex = TexCoords[F.v2.TexCoordIndex - 1];
+			V3.Tex = TexCoords[F.v3.TexCoordIndex - 1];
+			if (F.VerticesCount == 4)
+			{
+				V4.Tex = TexCoords[F.v4.TexCoordIndex - 1];
+			}
+		}
+		if (Normals.size() > 0)
+		{
+			V1.Normal = Normals[F.v1.NormalIndex - 1];
+			V2.Normal = Normals[F.v2.NormalIndex - 1];
+			V3.Normal = Normals[F.v3.NormalIndex - 1];
+			if (F.VerticesCount == 4)
+			{
+				V4.Normal = Normals[F.v4.NormalIndex - 1];
+			}
+		}
+		else
+		{
+			Vector3 Normal = multiply(sub(V3.Position, V1.Position), sub(V2.Position, V1.Position));
 
-		Normal = normalize(Normal);
-		V1.Normal = Normal;
-		V2.Normal = Normal;
-		V3.Normal = Normal;
+			Normal = normalize(Normal);
+			V1.Normal = Normal;
+			V2.Normal = Normal;
+			V3.Normal = Normal;
+			if (F.VerticesCount == 4)
+			{
+				V4.Normal = Normal;
+			}
+		}
 
 		pSubMesh->Vertices.push_back(V1);
 		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
@@ -208,8 +267,15 @@ void Mesh::AssembleSubMesh(SubMesh* pSubMesh, const Face& F)
 		pSubMesh->Vertices.push_back(V3);
 		pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
 
-
-
+		if (F.VerticesCount == 4)
+		{
+			pSubMesh->Vertices.push_back(V1);
+			pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+			pSubMesh->Vertices.push_back(V3);
+			pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+			pSubMesh->Vertices.push_back(V4);
+			pSubMesh->Indices.push_back((unsigned short)pSubMesh->Vertices.size() - 1);
+		}
 	}
 }
 
