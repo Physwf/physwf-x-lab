@@ -287,7 +287,7 @@ const gl_vector4* compute_intersection(const gl_vector4* cur_p,const gl_vector4*
 		}
 	}
 
-	if (t <= 0.0f || t >= 1.0f) return nullptr;
+	//if (t <= 0.0f || t >= 1.0f) return nullptr;
 
 	gl_vector4* result = (gl_vector4*)gl_malloc(vertex_size);
 	gl_vector4 pt(0.0f, 0.0f, 0.0f, 0.0f);
@@ -350,7 +350,7 @@ void do_sutherland_hodgman_clipping(const std::vector<const gl_vector4*>& vertic
 		}
 		else if (is_in_right_side_of_boundary(clockwise_pend, clockwise_pstart, pre_p->to_vector2() / cur_p->w))
 		{
-			vertices_out.push_back(intersectin_p);
+			if (intersectin_p != nullptr) vertices_out.push_back(intersectin_p);
 		}
 	}
 }
