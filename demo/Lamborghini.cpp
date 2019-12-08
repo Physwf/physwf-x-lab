@@ -137,7 +137,7 @@ void Lamborghini::Draw()
 			glEnableVertexAttribArray(2);
 			glUseProgram(Program);
 			GLfloat proj[16] = { 0 };
-			glutMatrixOrthoLH(proj, -549, 450, -199, 800, -300, 1500);
+			glutMatrixOrthoLH(proj, -250, 249, -250, 249, -300, 1500);
 			glUnitformMatrix4fv(0, 1, false, proj);
 			GLfloat model[16] = { 0 };
 			static float rad = 0.0f;

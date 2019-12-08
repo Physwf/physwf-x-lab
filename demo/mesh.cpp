@@ -170,6 +170,7 @@ bool Mesh::ParseFace(const std::string& line, Face& F)
 		if (result.size() > 3)
 		{
 			VertexIndex Index;
+			F.VerticesCount = 0;
 			if (!ParseVertexIndex(result[1], Index)) return false;
 			F.v1 = Index;
 			++F.VerticesCount;
