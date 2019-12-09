@@ -39,6 +39,7 @@ public:
 
 	struct SubMesh
 	{
+		std::string MaterialName;
 		std::vector<Vertex> Vertices;
 		std::vector<unsigned short> Indices;
 	};

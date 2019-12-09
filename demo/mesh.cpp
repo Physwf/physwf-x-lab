@@ -114,7 +114,9 @@ bool Mesh::ParseLine(const class std::string& line)
 	}
 	else if (string_startwith(line, "usemtl"))
 	{
-
+		std::string MaterialName;
+		if (!ParseName(line, MaterialName)) return false;
+		CurrentSubMesh->MaterialName = MaterialName;
 	}
 	else if (string_startwith(line, "v "))
 	{
