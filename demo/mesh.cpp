@@ -5,8 +5,25 @@
 #include <iostream>
 #include <cmath>
 
+std::string get_filename(const std::string& fullfilename, std::string& DirName)
+{
+	std::string::size_type pos1 = fullfilename.rfind('/');
+	if (pos1 != std::string::npos)
+	{
+		DirName = fullfilename.substr(0, pos1);
+		return fullfilename.substr(pos1);
+	}
+	else
+	{
+		DirName = ".";
+		return fullfilename;
+	}
+}
+
 bool Mesh::LoadFromObj(const char* filename)
 {
+	get_filename(filename,ResourceDir);
+
 	std::string line;
 	std::ifstream fs(filename);
 	if (fs)
@@ -14,6 +31,26 @@ bool Mesh::LoadFromObj(const char* filename)
 		while (std::getline(fs, line))
 		{
 			if(line.length() == 0) continue;
+			if (!ParseLine(line)) return false;
+		}
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+bool Mesh::ParseMaterial(const char* filename)
+{
+	std::string line;
+	std::ifstream fs(ResourceDir + "/" + filename);
+	if (fs)
+	{
+		while (std::getline(fs, line))
+		{
+			if (line.length() == 0) continue;
 			if (!ParseLine(line)) return false;
 		}
 		return true;
@@ -59,6 +96,12 @@ bool Mesh::ParseLine(const class std::string& line)
 	if (string_startwith(line, "#"))
 	{
 	}
+	else if (string_startwith(line, "mtllib "))
+	{
+		std::string filename;
+		if (!ParseName(line, filename)) return false;
+		if (!ParseMaterial(filename.c_str())) return false;
+	}
 	else if (string_startwith(line,"g "))
 	{
 		std::string GroupName;
@@ -75,13 +118,13 @@ bool Mesh::ParseLine(const class std::string& line)
 	}
 	else if (string_startwith(line, "v "))
 	{
-		Vector3 Position;
+		Vector Position;
 		if (!ParsePosition(line, Position)) return false;
 		Positions.push_back(Position);
 	}
 	else if (string_startwith(line, "vn "))
 	{
-		Vector3 Normal;
+		Vector Normal;
 		if (!ParseNormal(line, Normal)) return false;
 		Normals.push_back(Normal);
 	}
@@ -97,24 +140,76 @@ bool Mesh::ParseLine(const class std::string& line)
 		if (!ParseFace(line, F)) return false;
 		AssembleSubMesh(CurrentSubMesh, F);
 	}
+	else if (string_startwith(line, "newmtl "))
+	{
+		std::string MaterialName;
+		if (!ParseName(line, MaterialName)) return false;
+		Materials[MaterialName] = Material();
+		CurrentMaterial = &Materials[MaterialName];
+	}
+	else if (string_startwith(line, "Kd "))
+	{
+		LinearColor Color;
+		if (!ParseColor(line, Color)) return false;
+		CurrentMaterial->Kd = Color;
+	}
+	else if (string_startwith(line, "Ka "))
+	{
+		LinearColor Color;
+		if (!ParseColor(line, Color)) return false;
+		CurrentMaterial->Ka = Color;
+	}
+	else if (string_startwith(line, "Tf "))
+	{
+		LinearColor Color;
+		if (!ParseColor(line, Color)) return false;
+		CurrentMaterial->Tf = Color;
+	}
+	else if (string_startwith(line, "Ni "))
+	{
+		float Value;
+		if (!ParseScalar(line, Value)) return false;
+		CurrentMaterial->Ni = Value;
+	}
+	else if (string_startwith(line, "Ks "))
+	{
+		LinearColor Color;
+		if (!ParseColor(line, Color)) return false;
+		CurrentMaterial->Ks = Color;
+	}
+	else if (string_startwith(line, "Ns "))
+	{
+		float Value;
+		if (!ParseScalar(line, Value)) return false;
+		CurrentMaterial->Ns = Value;
+	}
+	else if (string_startwith(line, "map_Kd "))
+	{
+		std::string FileName;
+		if (!ParseName(line, FileName)) return false;
+		CurrentMaterial->map_Kd = ResourceDir + "/" + FileName;
+	}
+	else if (string_startwith(line, "map_Ks "))
+	{
+		std::string FileName;
+		if (!ParseName(line, FileName)) return false;
+		CurrentMaterial->map_Ks = ResourceDir + "/" + FileName;
+	}
 	return true;
 }
 
 bool Mesh::ParseName(const std::string& line,std::string& Name)
 {
-	std::vector<std::string> result;
-	if (string_split(line, " ", result))
+	std::string::size_type pos1 = line.find(' ');
+	if (pos1 != std::string::npos)
 	{
-		if (result.size() > 1)
-		{
-			Name = result[1];
-			return true;
-		}
+		Name = line.substr(pos1+1);
+		return Name.size() > 0;
 	}
 	return false;
 }
 
-bool Mesh::ParsePosition(const std::string& line, Vector3& Position)
+bool Mesh::ParsePosition(const std::string& line, Vector& Position)
 {
 	std::vector<std::string> result;
 	if (string_split(line, " ", result))
@@ -131,7 +226,7 @@ bool Mesh::ParsePosition(const std::string& line, Vector3& Position)
 }
 
 
-bool Mesh::ParseNormal(const std::string& line, Vector3& Normal)
+bool Mesh::ParseNormal(const std::string& line, Vector& Normal)
 {
 	std::vector<std::string> result;
 	if (string_split(line, " ", result))
@@ -156,6 +251,37 @@ bool Mesh::ParseTextCoord2D(const std::string& line,Vector2& TexCoord)
 		{
 			TexCoord.x = (float)std::atof(result[1].c_str());
 			TexCoord.y = (float)std::atof(result[2].c_str());
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Mesh::ParseColor(const std::string& line, LinearColor& Color)
+{
+	std::vector<std::string> result;
+	if (string_split(line, " ", result))
+	{
+		if (result.size() > 3)
+		{
+			Color.r = (float)std::atof(result[1].c_str());
+			Color.g = (float)std::atof(result[2].c_str());
+			Color.b = (float)std::atof(result[3].c_str());
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool Mesh::ParseScalar(const std::string& line, float& Value)
+{
+	std::vector<std::string> result;
+	if (string_split(line, " ", result))
+	{
+		if (result.size() > 1)
+		{
+			Value = (float)std::atof(result[1].c_str());
 			return true;
 		}
 	}
@@ -249,7 +375,7 @@ void Mesh::AssembleSubMesh(SubMesh* pSubMesh, const Face& F)
 		}
 		else
 		{
-			Vector3 Normal = multiply(sub(V3.Position, V1.Position), sub(V2.Position, V1.Position));
+			Vector Normal = multiply(sub(V3.Position, V1.Position), sub(V2.Position, V1.Position));
 
 			Normal = normalize(Normal);
 			V1.Normal = Normal;
