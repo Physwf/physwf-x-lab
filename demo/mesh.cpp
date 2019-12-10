@@ -190,12 +190,20 @@ bool Mesh::ParseLine(const class std::string& line)
 		std::string FileName;
 		if (!ParseName(line, FileName)) return false;
 		CurrentMaterial->map_Kd = ResourceDir + "/" + FileName;
+		Texture2D* tex = new Texture2D();
+		tex->LoadFromJpg(CurrentMaterial->map_Kd.c_str());
+		tex->UpdateRHI();
+		Textures[CurrentMaterial->map_Kd] = tex;
 	}
 	else if (string_startwith(line, "map_Ks "))
 	{
 		std::string FileName;
 		if (!ParseName(line, FileName)) return false;
 		CurrentMaterial->map_Ks = ResourceDir + "/" + FileName;
+		Texture2D* tex = new Texture2D();
+		tex->LoadFromJpg(CurrentMaterial->map_Ks.c_str());
+		tex->UpdateRHI();
+		Textures[CurrentMaterial->map_Ks] = tex;
 	}
 	return true;
 }

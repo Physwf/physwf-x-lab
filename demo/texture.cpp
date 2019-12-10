@@ -24,7 +24,8 @@ void Texture2D::UpdateRHI()
 		glDeleteTextures(1, &name);
 	}
 	glGenTextures(1, &name);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_BYTE, RawData.data());
+	glBindTexture(GL_TEXTURE_2D, name);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData.data());
 	glGenerateMipmap(GL_TEXTURE_2D);
 }
 

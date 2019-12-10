@@ -64,9 +64,13 @@ public:
 	{
 		return SubMeshes;
 	}
-	const Material& GetMaterial(const std::string name)
+	const Material& GetMaterial(const std::string& name)
 	{
 		return Materials[name];
+	}
+	const Texture2D* GetTexture2D(const std::string& name)
+	{
+		return Textures[name];
 	}
 private:
 	std::vector<Vector> Positions;
@@ -75,6 +79,7 @@ private:
 
 	std::map<std::string, SubMesh> SubMeshes;
 	std::map<std::string, Material> Materials;
+	std::map<std::string, Texture2D*> Textures;
 	SubMesh* CurrentSubMesh;
 	Material* CurrentMaterial;
 	std::string ResourceDir;

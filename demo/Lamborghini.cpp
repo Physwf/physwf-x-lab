@@ -312,26 +312,64 @@ void Lamborghini::Draw()
 			{
 				Program = BodyProgram;
 				glUseProgram(Program);
+
+				GLint loc = glGetUniformLocation(Program, "material.Ka");
+				glUniform4fv(loc, 1, &Mtl.Ka.r);
+				loc = glGetUniformLocation(Program, "material.Kd");
+				glUniform4fv(loc, 1, &Mtl.Kd.r);
+				loc = glGetUniformLocation(Program, "material.Tf");
+				glUniform4fv(loc, 1, &Mtl.Tf.r);
+				loc = glGetUniformLocation(Program, "material.Ni");
+				glUniform1f(loc,Mtl.Ni);
+				loc = glGetUniformLocation(Program, "material.Ns");
+				glUniform1f(loc,Mtl.Ns);
+
+				const Texture2D* diffuseTexture = M->GetTexture2D(Mtl.map_Kd);
+				const Texture2D* specularTexture = M->GetTexture2D(Mtl.map_Ks);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, diffuseTexture->GetHandle());
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, specularTexture->GetHandle());
+				loc = glGetUniformLocation(Program, "diffuseSampler2D");
+				glUniform1f(loc, 0);
+				loc = glGetUniformLocation(Program, "specularSampler2D");
+				glUniform1f(loc, 1);
 			}
 			else if(Sub.MaterialName == "Lamborghini_Aventador:ColliderSG")
 			{
 				Program = ColliderProgram;
 				glUseProgram(Program);
+				GLint loc = glGetUniformLocation(Program, "material.Ka");
+				glUniform4fv(loc, 1, &Mtl.Ka.r);
+				loc = glGetUniformLocation(Program, "material.Kd");
+				glUniform4fv(loc, 1, &Mtl.Kd.r);
+				loc = glGetUniformLocation(Program, "material.Tf");
+				glUniform4fv(loc, 1, &Mtl.Tf.r);
+				loc = glGetUniformLocation(Program, "material.Ni");
+				glUniform1f(loc, Mtl.Ni);
 			}
 			else if (Sub.MaterialName == "Lamborghini_Aventador:GlassSG")
 			{
 				Program = GlassProgram;
 				glUseProgram(Program);
+				GLint loc = glGetUniformLocation(Program, "material.Ka");
+				glUniform4fv(loc, 1, &Mtl.Ka.r);
+				loc = glGetUniformLocation(Program, "material.Kd");
+				glUniform4fv(loc, 1, &Mtl.Kd.r);
+				loc = glGetUniformLocation(Program, "material.Tf");
+				glUniform4fv(loc, 1, &Mtl.Tf.r);
+				loc = glGetUniformLocation(Program, "material.Ni");
+				glUniform1f(loc, Mtl.Ni);
+				loc = glGetUniformLocation(Program, "material.Ns");
+				glUniform1f(loc, Mtl.Ns);
 			}
 
-			GLfloat proj[16] = { 0 };
-			glutMatrixOrthoLH(proj, -250, 249, -200, 299, -300, 1500);
-			glUnitformMatrix4fv(0, 1, false, proj);
+			{
+				GLfloat proj[16] = { 0 };
+				glutMatrixOrthoLH(proj, -250, 249, -200, 299, -300, 1500);
+				glUnitformMatrix4fv(0, 1, false, proj);
+			}
 
-			GLint loc = glGetUniformLocation(Program, "material.ambient");
-			glUniform4fv(loc, 1, &Mtl.Ka.r);
-			loc = glGetUniformLocation(Program, "material.diffuse");
-			glUniform4fv(loc, 1, &Mtl.Kd.r);
 
 			{
 				AmbientLight AL;

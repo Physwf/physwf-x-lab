@@ -12,6 +12,8 @@ public:
 	bool LoadFromJpg(const char* fileName);
 
 	void UpdateRHI();
+
+	GLuint GetHandle() const { return name; }
 private:
 	std::vector<unsigned char> RawData;
 	int width;
