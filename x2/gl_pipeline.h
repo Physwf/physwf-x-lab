@@ -375,6 +375,7 @@ struct gl_om_state
 	
 };
 
+
 struct gl_clear_command
 {
 	gl_vector4 clear_color;
@@ -391,6 +392,8 @@ struct gl_draw_command
 	gl_om_state om;
 
 	gl_draw_command* next;
+
+	gl_uniform_command* uniform_commands;
 };
 
 struct gl_command_ring_buffer
@@ -436,6 +439,13 @@ struct gl_command_ring_buffer
 		cmd->rs.destroy_frame_buffer();
 		gl_free(cmd->rs.fragment_buffer);
 		cmd->rs.fragment_buffer = nullptr;
+
+		while (cmd->uniform_commands)
+		{
+			gl_uniform_command* uniform_cmds = cmd->uniform_commands;
+			cmd->uniform_commands = uniform_cmds->next;
+			gl_free(uniform_cmds);
+		}
 
 		if (buffer_head == nullptr)
 		{
@@ -502,7 +512,7 @@ bool gl_pipeline_init();
 void gl_emit_draw_command();
 void gl_do_clear();
 void gl_do_draw();
-void gl_swap_frame_buffer();
+NAIL_API void gl_swap_frame_buffer();
 
 NAIL_API void gl_copy_front_buffer(unsigned char* rgbbuffer);
 

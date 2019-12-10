@@ -43,7 +43,32 @@ struct gl_uniform_node
 	static NAIL_API gl_uniform_node* create(GLuint* value, const GLchar* name, GLsizei size, GLenum type);
 };
 
+struct gl_uniform_command
+{
+	GLbyte data[16 * 4];
+	GLenum type;
+	GLint location;
 
+	gl_uniform_command* next;
+
+	void set(GLint index, GLint v)
+	{
+		((GLint*)data)[index] = v;
+	}
+	GLint get_int(GLint index)
+	{
+		return ((GLint*)data)[index];
+	}
+	void set(GLint index, GLfloat v)
+	{
+		((GLfloat*)data)[index] = v;
+	}
+	GLfloat get_float(GLint index)
+	{
+		return ((GLfloat*)data)[index];
+	}
+	void execute();
+};
 
 struct gl_shader
 {
@@ -150,9 +175,13 @@ struct gl_shader
 	float dot(const vector3& v1, const vector3& v2) { return (v1.x * v2.x + v1.y * v2.y + v1.z * v2.z); }
 	float dot(const vector2& v1, const vector2& v2) { return (v1.x * v2.x + v1.y * v2.y); }
 	//vector4 multiply(const vector4& v1, const vector4& v2) {  }
-	vector3 multiply(const vector3& v1, const vector3& v2) { return vector3(v1.y*v2.z-v2.y*v1.z, v1.z*v2.x-v2.z*v1.x, v1.x*v2.y-v2.x*v1.y); }
-	float multiply(const vector2& v1, const vector2& v2) { return v1.x*v2.y - v2.x*v1.y; }
-
+	vector4 multiply(const vector4& v1, const vector4& v2) { return vector4(v1.x * v2.x, v1.y*v2.y, v1.z*v2.z, v1.w*v2.w); }
+	vector3 multiply(const vector3& v1, const vector3& v2) { return vector3(v1.x * v2.x, v1.y*v2.y, v1.z*v2.z); }
+	vector2 multiply(const vector2& v1, const vector2& v2) { return vector2(v1.x * v2.x, v1.y*v2.y); }
+	vector4 multiply(float scalar, const vector4& v) { return vector4(scalar * v.x, scalar*v.y, scalar*v.z, scalar*v.w); }
+	vector3 multiply(float scalar, const vector3& v) { return vector3(scalar * v.x, scalar*v.y, scalar*v.z); }
+	vector3 cross(const vector3& v1, const vector3& v2) { return vector3(v1.y*v2.z - v2.y*v1.z, v1.z*v2.x - v2.z*v1.x, v1.x*v2.y - v2.x*v1.y); }
+	float cross(const vector2& v1, const vector2& v2) { return v1.x*v2.y - v2.x*v1.y; }
 	vector4 normalize(const vector4& v)
 	{
 		float sqrt = std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z + v.w*v.w);

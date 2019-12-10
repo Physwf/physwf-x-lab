@@ -361,187 +361,398 @@ GLint* gl_get_uniform_i_check(GLint location)
 	return (GLint*)program_object->uniforms[location]->ivalue;
 }
 
+void enqueue_uniform_command(gl_uniform_command* cmd)
+{
+	if (glContext.uniform_commands == nullptr)
+	{
+		glContext.uniform_commands = cmd;
+	}
+	else
+	{
+		glContext.uniform_commands_tail->next = cmd;
+	}
+	glContext.uniform_commands_tail = cmd;
+}
+
+
+void gl_uniform_command::execute()
+{
+	switch (type)
+	{
+	case GL_INT:
+	{
+		GLint* value = gl_get_uniform_i_check(location);
+		if (value == nullptr) return;
+		value[0] = get_int(0);
+		break;
+	}
+	case GL_INT_VEC2:
+	{
+		GLint* value = gl_get_uniform_i_check(location);
+		if (value == nullptr) return;
+		value[0] = get_int(0);
+		value[1] = get_int(1);
+		break;
+	}
+	case GL_INT_VEC3:
+	{
+		GLint* value = gl_get_uniform_i_check(location);
+		if (value == nullptr) return;
+		value[0] = get_int(0);
+		value[1] = get_int(1);
+		value[2] = get_int(2);
+		break;
+	}
+	case GL_INT_VEC4:
+	{
+		GLint* value = gl_get_uniform_i_check(location);
+		if (value == nullptr) return;
+		value[0] = get_int(0);
+		value[1] = get_int(1);
+		value[2] = get_int(2);
+		value[3] = get_int(3);
+		break;
+	}
+	case GL_FLOAT:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		break;
+	}
+	case GL_FLOAT_VEC2:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		break;
+	}
+	case GL_FLOAT_VEC3:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		value[2] = get_float(2);
+		break;
+	}
+	case GL_FLOAT_VEC4:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		value[2] = get_float(2);
+		value[3] = get_float(3);
+		break;
+	}
+	case GL_FLOAT_MAT2:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		value[2] = get_float(2);
+		value[3] = get_float(3);
+		break;
+	}
+	case GL_FLOAT_MAT3:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		value[2] = get_float(2);
+		value[3] = get_float(3);
+		value[4] = get_float(4);
+		value[5] = get_float(5);
+		value[6] = get_float(6);
+		value[7] = get_float(7);
+		value[8] = get_float(8);
+		break;
+	}
+	case GL_FLOAT_MAT4:
+	{
+		GLfloat* value = gl_get_uniform_f_check(location);
+		if (value == nullptr) return;
+		value[0] = get_float(0);
+		value[1] = get_float(1);
+		value[2] = get_float(2);
+		value[3] = get_float(3);
+		value[4] = get_float(4);
+		value[5] = get_float(5);
+		value[6] = get_float(6);
+		value[7] = get_float(7);
+		value[8] = get_float(8);
+		value[9] = get_float(9);
+		value[10] = get_float(10);
+		value[11] = get_float(11);
+		value[12] = get_float(12);
+		value[13] = get_float(13);
+		value[14] = get_float(14);
+		value[15] = get_float(15);
+		break;
+	}
+	}
+}
+
 NAIL_API void glUniform1i(GLint location, GLint v0)
 {
-	GLint* value = gl_get_uniform_i_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLint)v0;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform2i(GLint location, GLint v0, GLint v1)
 {
-	GLint* value = gl_get_uniform_i_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLint)v0;
-	value[1] = (GLint)v1;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC2;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
 {
-	GLint* value = gl_get_uniform_i_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLint)v0;
-	value[1] = (GLint)v1;
-	value[2] = (GLint)v2;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC3;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+	cmd->set(2, v2);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
 {
-	GLint* value = gl_get_uniform_i_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLint)v0;
-	value[1] = (GLint)v1;
-	value[2] = (GLint)v2;
-	value[3] = (GLint)v3;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC4;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+	cmd->set(2, v2);
+	cmd->set(3, v3);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform1f(GLint location, GLfloat v0)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v0;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v0;
-	value[1] = v1;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC2;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v0;
-	value[1] = v1;
-	value[2] = v2;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC3;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+	cmd->set(2, v2);
+	
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v0;
-	value[1] = v1;
-	value[2] = v2;
-	value[3] = v3;
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC4;
+	cmd->next = nullptr;
+	cmd->set(0, v0);
+	cmd->set(1, v1);
+	cmd->set(2, v2);
+	cmd->set(3, v3);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform1fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v[0];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform2fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v[0];
-	value[1] = v[1];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC2;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform3fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v[0];
-	value[1] = v[1];
-	value[2] = v[2];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC3;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform4fv(GLint location, GLsizei count, const GLfloat *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = v[0];
-	value[1] = v[1];
-	value[2] = v[2];
-	value[3] = v[3];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_VEC4;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+	cmd->set(3, v[3]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform1iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+
+	enqueue_uniform_command(cmd);
 }
 NAIL_API void glUniform2iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC2;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform3iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
-	value[2] = (GLfloat)v[2];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC3;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUniform4iv(GLint location, GLsizei count, const GLint *v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
-	value[2] = (GLfloat)v[2];
-	value[3] = (GLfloat)v[3];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_INT_VEC4;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+	cmd->set(3, v[3]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
-	value[2] = (GLfloat)v[2];
-	value[3] = (GLfloat)v[3];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_MAT2;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+	cmd->set(3, v[3]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
-	value[2] = (GLfloat)v[2];
-	value[3] = (GLfloat)v[3];
-	value[4] = (GLfloat)v[4];
-	value[5] = (GLfloat)v[5];
-	value[6] = (GLfloat)v[6];
-	value[7] = (GLfloat)v[7];
-	value[8] = (GLfloat)v[8];
-	value[9] = (GLfloat)v[9];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_MAT3;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+	cmd->set(3, v[3]);
+	cmd->set(4, v[4]);
+	cmd->set(5, v[5]);
+	cmd->set(6, v[6]);
+	cmd->set(7, v[7]);
+	cmd->set(8, v[8]);
+
+	enqueue_uniform_command(cmd);
 }
 
 NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpose, const GLfloat* v)
 {
-	GLfloat* value = gl_get_uniform_f_check(location);
-	if (value == nullptr) return;
-	value[0] = (GLfloat)v[0];
-	value[1] = (GLfloat)v[1];
-	value[2] = (GLfloat)v[2];
-	value[3] = (GLfloat)v[3];
-	value[4] = (GLfloat)v[4];
-	value[5] = (GLfloat)v[5];
-	value[6] = (GLfloat)v[6];
-	value[7] = (GLfloat)v[7];
-	value[8] = (GLfloat)v[8];
-	value[9] = (GLfloat)v[9];
-	value[10] = (GLfloat)v[10];
-	value[11] = (GLfloat)v[11];
-	value[12] = (GLfloat)v[12];
-	value[13] = (GLfloat)v[13];
-	value[14] = (GLfloat)v[14];
-	value[15] = (GLfloat)v[15];
+	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
+	cmd->location = location;
+	cmd->type = GL_FLOAT_MAT4;
+	cmd->next = nullptr;
+	cmd->set(0, v[0]);
+	cmd->set(1, v[1]);
+	cmd->set(2, v[2]);
+	cmd->set(3, v[3]);
+	cmd->set(4, v[4]);
+	cmd->set(5, v[5]);
+	cmd->set(6, v[6]);
+	cmd->set(7, v[7]);
+	cmd->set(8, v[8]);
+	cmd->set(9, v[9]);
+	cmd->set(10, v[10]);
+	cmd->set(11, v[11]);
+	cmd->set(12, v[12]);
+	cmd->set(13, v[13]);
+	cmd->set(14, v[14]);
+	cmd->set(15, v[15]);
+
+	enqueue_uniform_command(cmd);
 }
 
 gl_uniform_node* gl_uniform_node::create(GLfloat* value,const GLchar* name, GLsizei size, GLenum type)

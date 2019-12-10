@@ -42,6 +42,7 @@ void glContextInit()
 	glContext.indices_pointer = nullptr;
 
 	glContext.program = 0;
+	glContext.uniform_commands = nullptr;
 
 	glContext.front_face = GL_CCW;
 	glContext.cull_face = GL_BACK;

@@ -78,6 +78,7 @@ struct gl_vertex
 	gl_atrribute<GLfloat> attributes[MAX_VERTEX_ATTRIBUTE];
 };
 
+
 struct gl_frontend
 {
 	GLint			viewport_x;
@@ -110,6 +111,9 @@ struct gl_frontend
 	GLenum	draw_mode;
 
 	GLuint program;
+
+	struct gl_uniform_command* uniform_commands;
+	struct gl_uniform_command* uniform_commands_tail;
 
 	GLint  unpack_mode;
 

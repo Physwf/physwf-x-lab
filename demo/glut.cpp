@@ -23,6 +23,7 @@ void glutInit(int x, int y, int w, int h,unsigned char* fb)
 
 void glutPresent()
 {
+	gl_swap_frame_buffer();
 	gl_copy_front_buffer(pFrameBuffer);
 // 	for (LONG y = 0; y < Height; ++y)
 // 	{

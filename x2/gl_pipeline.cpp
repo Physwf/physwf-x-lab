@@ -15,6 +15,7 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 */
 
 #include "gl_pipeline.h"
+#include "gl_shader.h"
 
 #include <cassert>
 #include <memory>
@@ -172,6 +173,8 @@ void gl_emit_draw_command()
 		}
 	}
 
+	cmd->uniform_commands = glContext.uniform_commands;
+	glContext.uniform_commands = nullptr;
 	//todo multi-thread
 	glPipeline.enqueue(cmd);
 }
@@ -192,10 +195,21 @@ void gl_do_clear()
 	}
 }
 
+void gl_do_uniform_command(gl_draw_command* cmd)
+{
+	gl_uniform_command* ucmd = cmd->uniform_commands;
+	while (ucmd)
+	{
+		ucmd->execute();
+		ucmd = ucmd->next;
+	}
+}
+
 void gl_do_draw()
 {
 	while (gl_draw_command* cmd = glPipeline.dequeue())
 	{
+		gl_do_uniform_command(cmd);
 		gl_input_assemble(cmd);
 		gl_vertex_shader(cmd);
 		gl_primitive_assemble(cmd);
@@ -205,7 +219,6 @@ void gl_do_draw()
 		//ªÿ ’
 		glPipeline.ring_buffer.deallocate(cmd);
 	}
-	gl_swap_frame_buffer();
 }
 
 void gl_swap_frame_buffer()

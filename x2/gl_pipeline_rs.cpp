@@ -125,7 +125,7 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 					GLfloat t = bxmajor ? (x - x1) / (x2 - x1) : (y - y1) / (y2 - y1);
 					t = gl_campf(t);
 					GLfloat depth = gl_campf(gl_lerp(p1->z, p2->z, t));
-					if (fragment.depth > depth)
+					if (depth > 0.0f && fragment.depth > depth)
 					{
 						fragment.destroy();
 						fragment.depth = depth;

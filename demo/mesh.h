@@ -64,6 +64,10 @@ public:
 	{
 		return SubMeshes;
 	}
+	const Material& GetMaterial(const std::string name)
+	{
+		return Materials[name];
+	}
 private:
 	std::vector<Vector> Positions;
 	std::vector<Vector> Normals;
