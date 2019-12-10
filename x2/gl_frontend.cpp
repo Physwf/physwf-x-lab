@@ -120,7 +120,7 @@ NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 NAIL_API void glClearDepth(GLclampf d)
 {
 	glClearError();
-	glContext.clear_depth = glClamp(d, 0.0f, 0.1f);
+	glContext.clear_depth = glClamp(d, 0.0f, 1.0f);
 }
 
 NAIL_API void glClear(GLbitfield buf)

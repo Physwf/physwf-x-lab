@@ -124,7 +124,7 @@ void gl_line_list_rasterize(gl_draw_command* cmd)
 					gl_fragment& fragment = cmd->rs.get_fragment(x, y);
 					GLfloat t = bxmajor ? (x - x1) / (x2 - x1) : (y - y1) / (y2 - y1);
 					t = gl_campf(t);
-					GLfloat depth = gl_campf(gl_lerp(p1->z, p2->z, t));
+					GLfloat depth = gl_lerp(p1->z, p2->z, t);
 					if (depth > 0.0f && fragment.depth > depth)
 					{
 						fragment.destroy();
@@ -240,9 +240,9 @@ void gl_do_triangle_aabb_rasterize(gl_primitive_node* node,GLsizei vertex_size,G
 			{
 				GLfloat m2 = w2 / double_area;
 				GLfloat m3 = w3 / double_area;
-				GLfloat depth = gl_barycentric_interpolation(p1->z, p2->z, p3->z, m2, m3);
+				GLfloat depth = 1.0f - gl_barycentric_interpolation(p1->z, p2->z, p3->z, m2, m3);
 				gl_fragment& fragment = rs.get_fragment(x, y);
-				if (fragment.depth > depth)
+				if (depth > 0.0f && fragment.depth > depth)
 				{
 					fragment.destroy();
 					fragment.depth = depth;
