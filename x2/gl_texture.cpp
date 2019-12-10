@@ -40,8 +40,8 @@ gl_texture2d* gl_create_texture2d()
 	gl_texture2d* result = (gl_texture2d*)gl_malloc(sizeof(gl_texture2d));
 	result->format = GL_TEXTURE_2D;
 	result->mipmap_count = 0;
-	result->mipmaps = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
-	memset(result->mipmaps, 0, sizeof(gl_texture2d_mipmap*)*MAX_MIPMAP_LEVEL);
+	result->mipmaps = (gl_texture2d_mipmap**)gl_malloc(sizeof(gl_texture2d_mipmap*)*(MAX_MIPMAP_LEVEL+1));
+	memset(result->mipmaps, 0, sizeof(gl_texture2d_mipmap*)*(MAX_MIPMAP_LEVEL + 1));
 	return result;
 }
 
@@ -228,10 +228,10 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 				GLsizei index = y * width + x;
 				GLbyte alpha = pixels[index];
 				GLfloat nomalized_alpha = alpha / 255.0f;
-				data[index + 0] = 0.0f;
-				data[index + 1] = 0.0f;
-				data[index + 2] = 0.0f;
-				data[index + 3] = nomalized_alpha;
+				data[index * 4 + 0] = 0.0f;
+				data[index * 4 + 1] = 0.0f;
+				data[index * 4 + 2] = 0.0f;
+				data[index * 4 + 3] = nomalized_alpha;
 			}
 		}
 		break;
@@ -245,10 +245,10 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 				GLsizei index = y * width + x;
 				GLbyte luminance = pixels[index];
 				GLfloat nomalized_luminance = luminance / 255.0f;
-				data[index + 0] = nomalized_luminance;
-				data[index + 1] = nomalized_luminance;
-				data[index + 2] = nomalized_luminance;
-				data[index + 3] = 1.0f;
+				data[index * 4 + 0] = nomalized_luminance;
+				data[index * 4 + 1] = nomalized_luminance;
+				data[index * 4 + 2] = nomalized_luminance;
+				data[index * 4 + 3] = 1.0f;
 			}
 		}
 		break;
@@ -259,15 +259,15 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
-				GLbyte luminance =	pixels[index + 0];
-				GLbyte alpha =		pixels[index + 1];
+				GLsizei index = (y * width + x);
+				GLbyte luminance =	pixels[index * 2 + 0];
+				GLbyte alpha =		pixels[index * 2 + 1];
 				GLfloat nomalized_luminance		= luminance / 255.0f;
 				GLfloat nomalized_alpha			= alpha		/ 255.0f;
-				data[index + 0] = nomalized_luminance;
-				data[index + 1] = nomalized_luminance;
-				data[index + 2] = nomalized_luminance;
-				data[index + 3] = alpha;
+				data[index * 4 + 0] = nomalized_luminance;
+				data[index * 4 + 1] = nomalized_luminance;
+				data[index * 4 + 2] = nomalized_luminance;
+				data[index * 4 + 3] = alpha;
 			}
 		}
 		break;
@@ -278,17 +278,17 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
-				GLbyte r = pixels[index + 0];
-				GLbyte g = pixels[index + 1];
-				GLbyte b = pixels[index + 2];
+				GLsizei index = (y * width + x);
+				GLbyte r = pixels[index * 3 + 0];
+				GLbyte g = pixels[index * 3 + 1];
+				GLbyte b = pixels[index * 3 + 2];
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
-				data[index + 0] = nomalized_r;
-				data[index + 1] = nomalized_g;
-				data[index + 2] = nomalized_b;
-				data[index + 3] = 1.0f;
+				data[index * 4 + 0] = nomalized_r;
+				data[index * 4 + 1] = nomalized_g;
+				data[index * 4 + 2] = nomalized_b;
+				data[index * 4 + 3] = 1.0f;
 			}
 		}
 		break;
@@ -299,7 +299,7 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
+				GLsizei index = (y * width + x)*4;
 				GLbyte r = pixels[index + 0];
 				GLbyte g = pixels[index + 1];
 				GLbyte b = pixels[index + 2];
@@ -337,10 +337,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
-				data[index + 0] = nomalized_r;
-				data[index + 1] = nomalized_g;
-				data[index + 2] = nomalized_b;
-				data[index + 3] = 1.0f;
+				data[index * 4 + 0] = nomalized_r;
+				data[index * 4 + 1] = nomalized_g;
+				data[index * 4 + 2] = nomalized_b;
+				data[index * 4 + 3] = 1.0f;
 			}
 		}
 	}
@@ -361,10 +361,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
 				GLfloat nomalized_a = a / 255.0f;
-				data[index + 0] = nomalized_r;
-				data[index + 1] = nomalized_g;
-				data[index + 2] = nomalized_b;
-				data[index + 3] = nomalized_a;
+				data[index * 4 + 0] = nomalized_r;
+				data[index * 4 + 1] = nomalized_g;
+				data[index * 4 + 2] = nomalized_b;
+				data[index * 4 + 3] = nomalized_a;
 			}
 		}
 	}
@@ -385,10 +385,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
 				GLfloat nomalized_a = a / 255.0f;
-				data[index + 0] = nomalized_r;
-				data[index + 1] = nomalized_g;
-				data[index + 2] = nomalized_b;
-				data[index + 3] = nomalized_a;
+				data[index * 4 + 0] = nomalized_r;
+				data[index * 4 + 1] = nomalized_g;
+				data[index * 4 + 2] = nomalized_b;
+				data[index * 4 + 3] = nomalized_a;
 			}
 		}
 	}
@@ -406,13 +406,14 @@ void gl_allocate_texture2d_mipmap(gl_texture2d_mipmap** pmipmap, GLint internalf
 	else
 	{
 		mipmap = (gl_texture2d_mipmap*)gl_malloc(sizeof(gl_texture2d_mipmap));
+		*pmipmap = mipmap;
 	}
 	mipmap->width = width;
 	mipmap->height = height;
 	mipmap->data = (GLfloat*)gl_malloc((width * height * 4) * sizeof(GLfloat));
 	switch (type)
 	{
-	case GL_BYTE:
+	case GL_UNSIGNED_BYTE:
 		gl_read_byte_type((GLfloat*)mipmap->data, width, height, format, (const GLbyte*)pixels);
 		break;
 	case GL_UNSIGNED_SHORT_5_6_5:
@@ -434,7 +435,7 @@ NAIL_API void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	switch (type)
 	{
 	case GL_UNSIGNED_BYTE:
-break;
+		break;
 	case GL_UNSIGNED_SHORT_5_6_5:
 		CONDITION_VALIDATE(format != GL_RGB, GL_INVALID_VALUE, "format and type dosen't match!");
 		break;
@@ -532,6 +533,12 @@ GLint log2(GLint value)
 void gl_generate_mipmap(const gl_texture2d_mipmap* pre_mipmap, gl_texture2d_mipmap** pcur_mipmap, GLint level)
 {
 	gl_texture2d_mipmap* cur_mipmap = *pcur_mipmap;
+	if (cur_mipmap == nullptr)
+	{
+		cur_mipmap = (gl_texture2d_mipmap*)gl_malloc(sizeof(gl_texture2d_mipmap));
+		cur_mipmap->data = nullptr;
+		*pcur_mipmap = cur_mipmap;
+	}
 	if (cur_mipmap->data != nullptr)
 	{
 		gl_free(cur_mipmap->data);
@@ -542,6 +549,9 @@ void gl_generate_mipmap(const gl_texture2d_mipmap* pre_mipmap, gl_texture2d_mipm
 
 	GLint cur_w = pre_w >> 1;
 	GLint cur_h = pre_h >> 1;
+
+	cur_mipmap->width = cur_w;
+	cur_mipmap->height = cur_h;
 
 	if (cur_w <= 0) cur_w = 1;
 	if (cur_h <= 0) cur_h = 1;
@@ -599,7 +609,7 @@ void gl_generate_texture2d_mipmap(gl_texture2d* texture)
 	GLint max_size = glMax(w0, h0);
 	GLint level = log2(max_size);
 	texture->mipmap_count = level;
-	for (GLint l = level; l > 0; l--)
+	for (GLint l = 1; l <= level; ++l)
 	{
 		gl_generate_mipmap(texture->mipmaps[l-1], &texture->mipmaps[l], l);
 	}
@@ -641,7 +651,7 @@ NAIL_API void glGenerateMipmap(GLenum target)
 
 NAIL_API void glBindTexture(GLenum target, GLuint texture)
 {
-	CONDITION_VALIDATE(target != GL_TEXTURE_2D || target != GL_TEXTURE_CUBE_MAP, GL_INVALID_ENUM, "Invalid target!");
+	CONDITION_VALIDATE(target != GL_TEXTURE_2D && target != GL_TEXTURE_CUBE_MAP, GL_INVALID_ENUM, "Invalid target!");
 	gl_texture_object* object = gl_find_texture_object(texture);
 	CONDITION_VALIDATE(object == nullptr, GL_INVALID_VALUE, "Invalid texture parameter!");
 	CONDITION_VALIDATE(object->type != 0 && object->type != target, GL_INVALID_OPERATION, "Type not match!");
