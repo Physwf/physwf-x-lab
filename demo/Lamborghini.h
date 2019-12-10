@@ -11,5 +11,7 @@ public:
 	void Draw();
 private:
 	class Mesh* M;
-	GLuint Program;
+	GLuint BodyProgram;
+	GLuint ColliderProgram;
+	GLuint GlassProgram;
 };

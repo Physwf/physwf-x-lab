@@ -104,7 +104,7 @@ void Cat::Init()
 
 	glViewport(0, 0, 500, 500);
 	glDepthRangef(0.f, 1.0f);
-	glClearDepth(0.0f);
+	glClearDepth(1.0f);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);

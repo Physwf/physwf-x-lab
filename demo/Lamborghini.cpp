@@ -55,26 +55,31 @@ struct LamborghiniVertexShader : public gl_shader
 		return &Output;
 	}
 };
-struct LamborghiniFragmentShader : public gl_shader
+
+struct LamborghiniFragmentShaderBase : public gl_shader
 {
 	struct AmbientLight
 	{
-		vector4 Color;
+		vector3 Color;
 	};
 	struct DirectionalLight
 	{
-		vector4 Direction;
-		vector4 Color;
+		vector3 Direction;
+		vector3 Color;
 	};
 	struct PointLight
 	{
-		vector4 Position;
-		vector4 Color;
+		vector3 Position;
+		vector3 Color;
 	};
 	struct Material
 	{
-		vector4 ambient;
-		vector4 diffuse;
+		vector3 Ka;
+		vector3 Kd;
+		vector3 Ks;
+		vector3 Tf;
+		float Ni;
+		float Ns;
 	};
 
 	struct PS_Input
@@ -89,45 +94,135 @@ struct LamborghiniFragmentShader : public gl_shader
 		vector4 color;
 	};
 
-	LamborghiniFragmentShader()
+	LamborghiniFragmentShaderBase()
 	{
 		//size = sizeof(LamborghiniFragmentShader);
 		input_size = sizeof(PS_Input);
 		output_size = sizeof(PS_Output);
 	}
 
-	GLvoid compile()
+	virtual GLvoid compile()
 	{
-		uniforms = gl_uniform_node::create((GLuint*)&diffuse, "diffuse", sizeof(sampler2D), GL_UNSIGNED_INT);
-		uniforms->next = gl_uniform_node::create((GLuint*)&specular, "specular", sizeof(sampler2D), GL_UNSIGNED_INT);
-		uniforms->next->next = gl_uniform_node::create((GLfloat*)&material.ambient, "material.ambient", sizeof(material.ambient), GL_FLOAT_VEC4);
-		uniforms->next->next->next = gl_uniform_node::create((GLfloat*)&material.diffuse, "material.diffuse", sizeof(material.diffuse), GL_FLOAT_VEC4);
-		uniforms->next->next->next->next = gl_uniform_node::create((GLfloat*)&AL.Color, "AL.Color", sizeof(AL.Color), GL_FLOAT_VEC4);
-		uniforms->next->next->next->next->next = gl_uniform_node::create((GLfloat*)&DL.Color, "DL.Color", sizeof(DL.Color), GL_FLOAT_VEC4);
-		uniforms->next->next->next->next->next->next = gl_uniform_node::create((GLfloat*)&DL.Direction, "DL.Direction", sizeof(DL.Direction), GL_FLOAT_VEC4);
+		create_uniform((GLfloat*)&AL.Color, "AL.Color", sizeof(AL.Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&DL.Color, "DL.Color", sizeof(DL.Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&DL.Direction, "DL.Direction", sizeof(DL.Direction), GL_FLOAT_VEC3);
 	}
 
-	PS_Output process(PS_Input Input)
-	{
-		PS_Output Out;
-		Out.color = vector4(1.0f,0.0f,0.0f,1.0f);
-		vector3 normal = normalize(Input.normal.to_vector3());
-		vector4 ac = multiply(material.ambient, AL.Color);
-		vector4 dc = multiply(material.diffuse, multiply(dot(normal, DL.Direction.to_vector3()), DL.Color));
-		Out.color = add( ac,dc ) ;
-		//X_LOG("%f,%f,%f\n",Input.color.x, Input.color.y,Input.color.x);
-		return Out;
-	}
-
+	
 	PS_Output Output;
 
-	sampler2D diffuse;
-	sampler2D specular;
+	
+
 	Material material;
 
 	AmbientLight AL;
 	DirectionalLight DL;
 	PointLight PLs[8];
+
+	
+};
+
+struct LamborghiniFragmentShaderBody : public LamborghiniFragmentShaderBase
+{
+	virtual GLvoid compile()
+	{
+		create_uniform((GLuint*)&diffuseSampler2D, "diffuseSampler2D", sizeof(sampler2D), GL_UNSIGNED_INT);
+		create_uniform((GLuint*)&specularSampler2D, "diffuseSampler2D", sizeof(sampler2D), GL_UNSIGNED_INT);
+
+		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Tf, "material.Tf", sizeof(material.Tf), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Ks, "material.Ks", sizeof(material.Ks), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Ni, "material.Ni", sizeof(material.Ni), GL_FLOAT);
+		create_uniform((GLfloat*)&material.Ns, "material.Ns", sizeof(material.Ns), GL_FLOAT);
+	}
+
+	PS_Output process(PS_Input Input)
+	{
+		PS_Output Out;
+		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		vector3 normal = normalize(Input.normal.to_vector3());
+		vector3 light_dir = normalize(DL.Direction);
+		float lamb = clamp(dot(normal, light_dir));
+		vector3 ac = multiply(material.Ka, AL.Color);
+		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
+		vector3 color = add(ac, dc);
+		Out.color = vector4(color.x,color.y,color.z,1.0f);
+		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
+		return Out;
+	}
+
+	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
+	{
+		gl_shader::fs_process(Vertex, screenx, screeny);
+		Output = process(*(PS_Input*)Vertex);
+		return &Output;
+	}
+
+	sampler2D diffuseSampler2D;
+	sampler2D specularSampler2D;
+};
+
+struct LamborghiniFragmentShaderCollider : public LamborghiniFragmentShaderBase
+{
+	virtual GLvoid compile()
+	{
+		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Tf, "material.Tf", sizeof(material.Tf), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Ni, "material.Ni", sizeof(material.Ni), GL_FLOAT);
+	}
+
+	PS_Output process(PS_Input Input)
+	{
+		PS_Output Out;
+		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		vector3 normal = normalize(Input.normal.to_vector3());
+		vector3 light_dir = normalize(DL.Direction);
+		float lamb = clamp(dot(normal, light_dir));
+		vector3 ac = multiply(material.Ka, AL.Color);
+		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
+		vector3 color = add(ac, dc);
+		Out.color = vector4(color.x, color.y, color.z, 1.0f);
+		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
+		return Out;
+	}
+
+	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
+	{
+		gl_shader::fs_process(Vertex, screenx, screeny);
+		Output = process(*(PS_Input*)Vertex);
+		return &Output;
+	}
+};
+
+struct LamborghiniFragmentShaderGlass : public LamborghiniFragmentShaderBase
+{
+	virtual GLvoid compile()
+	{
+		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Tf, "material.Tf", sizeof(material.Tf), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Ks, "material.Ks", sizeof(material.Ks), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&material.Ni, "material.Ni", sizeof(material.Ni), GL_FLOAT);
+		create_uniform((GLfloat*)&material.Ns, "material.Ns", sizeof(material.Ns), GL_FLOAT);
+	}
+
+
+	PS_Output process(PS_Input Input)
+	{
+		PS_Output Out;
+		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		vector3 normal = normalize(Input.normal.to_vector3());
+		vector3 light_dir = normalize(DL.Direction);
+		float lamb = clamp(dot(normal, light_dir));
+		vector3 ac = multiply(material.Ka, AL.Color);
+		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
+		vector3 color = add(ac, dc);
+		Out.color = vector4(color.x, color.y, color.z, 1.0f);
+		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
+		return Out;
+	}
 
 	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
 	{
@@ -138,7 +233,9 @@ struct LamborghiniFragmentShader : public gl_shader
 };
 
 LamborghiniVertexShader LamborghiniVS;
-LamborghiniFragmentShader LamborghiniFS;
+LamborghiniFragmentShaderBody LamborghiniBodyFS;
+LamborghiniFragmentShaderCollider LamborghiniColliderFS;
+LamborghiniFragmentShaderGlass LamborghiniGlassFS;
 
 void Lamborghini::Init()
 {
@@ -148,40 +245,41 @@ void Lamborghini::Init()
 
 	glViewport(0, 0, 500, 500);
 	glDepthRangef(0.f, 1.0f);
-	glClearDepth(0.0f);
+	glClearDepth(1.0f);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 
-	//glVertexAttrib3f(1, 1.0f, 0.0f, 0.0f);
 	GLuint vs = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vs, &LamborghiniVS);
 	glCompileShader(vs);
-	GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fs, &LamborghiniFS);
-	glCompileShader(fs);
-	Program = glCreateProgram();
-	glAttachShader(Program, vs);
-	glAttachShader(Program, fs);
-	glLinkProgram(Program);
-	glUseProgram(Program);
-	GLfloat proj[16] = { 0 };
-	glutMatrixOrthoLH(proj, -250, 249, -250, 249, -300, 1500);
-	glUnitformMatrix4fv(0, 1, false, proj);
-	
 
-	AmbientLight AL;
-	AL.Color = LinearColor(0.4f, 0.4f, 0.4f, 1.0f);
-	DirctionalLight DL;
-	DL.Color = LinearColor(0.6f, 0.6f, 0.6f, 1.0f);
-	DL.Direction = { 1.6f, 1.6f, 1.6f };
+	GLuint body_fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(body_fs, &LamborghiniBodyFS);
+	glCompileShader(body_fs);
 
-	GLint loc = glGetUniformLocation(Program, "AL.Color");
-	glUniform4fv(loc, 1, &AL.Color.r);
-	loc = glGetUniformLocation(Program, "DL.Color");
-	glUniform4fv(loc, 1, &DL.Color.r);
-	loc = glGetUniformLocation(Program, "DL.Direction");
-	glUniform4fv(loc, 1, &DL.Direction.x);
+	BodyProgram = glCreateProgram();
+	glAttachShader(BodyProgram, vs);
+	glAttachShader(BodyProgram, body_fs);
+	glLinkProgram(BodyProgram);
+
+	GLuint collider_fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(collider_fs, &LamborghiniColliderFS);
+	glCompileShader(collider_fs);
+
+	ColliderProgram = glCreateProgram();
+	glAttachShader(ColliderProgram, vs);
+	glAttachShader(ColliderProgram, collider_fs);
+	glLinkProgram(ColliderProgram);
+
+	GLuint glass_fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(glass_fs, &LamborghiniGlassFS);
+	glCompileShader(glass_fs);
+
+	GlassProgram = glCreateProgram();
+	glAttachShader(GlassProgram, vs);
+	glAttachShader(GlassProgram, glass_fs);
+	glLinkProgram(GlassProgram);
 }
 
 void Lamborghini::Draw()
@@ -196,9 +294,12 @@ void Lamborghini::Draw()
 		glutMatrixRotationY(model, rad);
 		glUnitformMatrix4fv(1, 1, false, model);
 
+		int i = 0;
 		for (auto& Pair : M->GetSubMeshes())
 		{
 			const Mesh::SubMesh& Sub = Pair.second;
+			++i;
+			if(i==2) continue;
 			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), Sub.Vertices.data());
 			glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + sizeof(Vector));
 			glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + 2 * sizeof(Vector));
@@ -206,10 +307,48 @@ void Lamborghini::Draw()
 			glEnableVertexAttribArray(1);
 			glEnableVertexAttribArray(2);
 			const Material& Mtl = M->GetMaterial(Sub.MaterialName);
+			GLuint Program;
+			if (Sub.MaterialName == "Lamborghini_Aventador:BodySG")
+			{
+				Program = BodyProgram;
+				glUseProgram(Program);
+			}
+			else if(Sub.MaterialName == "Lamborghini_Aventador:ColliderSG")
+			{
+				Program = ColliderProgram;
+				glUseProgram(Program);
+			}
+			else if (Sub.MaterialName == "Lamborghini_Aventador:GlassSG")
+			{
+				Program = GlassProgram;
+				glUseProgram(Program);
+			}
+
+			GLfloat proj[16] = { 0 };
+			glutMatrixOrthoLH(proj, -250, 249, -200, 299, -300, 1500);
+			glUnitformMatrix4fv(0, 1, false, proj);
+
 			GLint loc = glGetUniformLocation(Program, "material.ambient");
 			glUniform4fv(loc, 1, &Mtl.Ka.r);
 			loc = glGetUniformLocation(Program, "material.diffuse");
 			glUniform4fv(loc, 1, &Mtl.Kd.r);
+
+			{
+				AmbientLight AL;
+				AL.Color = LinearColor(0.4f, 0.4f, 0.4f, 1.0f);
+				DirctionalLight DL;
+				DL.Color = LinearColor(0.6f, 0.6f, 0.6f, 1.0f);
+				DL.Direction = { 0.0f, -1.0, 1.0f };
+
+				GLint loc = glGetUniformLocation(Program, "AL.Color");
+				glUniform4fv(loc, 1, &AL.Color.r);
+				loc = glGetUniformLocation(Program, "DL.Color");
+				glUniform4fv(loc, 1, &DL.Color.r);
+				loc = glGetUniformLocation(Program, "DL.Direction");
+				glUniform4fv(loc, 1, &DL.Direction.x);
+			}
+			
+
 			glDrawElements(GL_TRIANGLE_LIST, Sub.Indices.size(), GL_SHORT, Sub.Indices.data());
 		}
 		glFlush();

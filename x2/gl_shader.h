@@ -74,6 +74,23 @@ struct gl_shader
 {
 	gl_uniform_node* uniforms;
 
+	template <typename T>
+	void create_uniform(T* value, const GLchar* name, GLsizei size, GLenum type)
+	{
+		if (uniforms == nullptr)
+		{
+			uniforms = gl_uniform_node::create(value, name, size, type);
+			return;
+		}
+
+		gl_uniform_node* tail = uniforms;
+		while (tail->next)
+		{
+			tail = tail->next;
+		}
+		tail->next = gl_uniform_node::create(value, name, size, type);
+	}
+
 	GLsizei input_size;
 	GLsizei output_size;
 	GLsizei screen_width;
@@ -111,7 +128,6 @@ struct gl_shader
 				float s, t, r;
 			};
 		};
-
 
 		vector3() :x(0.0f), y(0.0f), z(0.0f) {}
 		vector3(float _x, float _y, float _z) :x(_x), y(_y), z(_z) {}
