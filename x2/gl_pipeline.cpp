@@ -173,6 +173,11 @@ void gl_emit_draw_command()
 		}
 	}
 
+	for (int i=0;i<MAX_COMBINED_TEXTURE_IMAGE_UNITS;++i)
+	{
+		cmd->texture_params[i] = glContext.texture_params[i];
+	}
+
 	cmd->uniform_commands = glContext.uniform_commands;
 	glContext.uniform_commands = nullptr;
 	//todo multi-thread
@@ -209,6 +214,11 @@ void gl_do_draw()
 {
 	while (gl_draw_command* cmd = glPipeline.dequeue())
 	{
+		for (int i = 0; i < MAX_COMBINED_TEXTURE_IMAGE_UNITS; ++i)
+		{
+			glPipeline.texture_units[i].params = cmd->texture_params[i];
+		}
+
 		gl_do_uniform_command(cmd);
 		gl_input_assemble(cmd);
 		gl_vertex_shader(cmd);

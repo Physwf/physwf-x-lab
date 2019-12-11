@@ -394,6 +394,7 @@ struct gl_draw_command
 	gl_draw_command* next;
 
 	gl_uniform_command* uniform_commands;
+	gl_texture_unit_params texture_params[MAX_COMBINED_TEXTURE_IMAGE_UNITS];
 };
 
 struct gl_command_ring_buffer

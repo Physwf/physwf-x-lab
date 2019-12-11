@@ -17,10 +17,12 @@ along with this program.If not, see < http://www.gnu.org/licenses/>.
 #pragma once
 #include "NAIL.h"
 #include <cmath>
+#include <cstddef>
 
 #include "gl_objects.h"
 #include "gl_texture.h"
 #include "gl_utilities.h"
+
 
 #define ACTIVE_UNIFORM_MAX_LENGTH	64
 #define MAX_UNIFORMS				128
@@ -71,7 +73,7 @@ struct gl_uniform_command
 	void execute();
 };
 
-struct gl_shader
+struct NAIL_API gl_shader
 {
 	gl_uniform_node* uniforms;
 
@@ -98,6 +100,8 @@ struct gl_shader
 	GLsizei screen_height;
 	GLsizei screen_x;
 	GLsizei screen_y;
+	struct gl_rs_state* __rs;
+
 	struct vector2
 	{
 		union
@@ -148,7 +152,8 @@ struct gl_shader
 			};
 		};
 
-		vector3 to_vector3() { return vector3(x,y,z); }
+		vector3 to_vector3() { return vector3(x, y, z); }
+		vector2 to_vector2() { return vector2(x, y); }
 
 		vector4():x(0.0f), y(0.0f), z(0.0f), w(1.0f){}
 		vector4(float _x,float _y, float _z, float _w):x(_x), y(_y), z(_z), w(_w){}
@@ -215,13 +220,16 @@ struct gl_shader
 		return vector2(v.x / sqrt, v.y / sqrt);
 	}
 
+	const GLvoid* get_varing_attribute(GLsizei x, GLsizei y);
+	virtual const vector4* get_attribute_texcoord0(GLsizei x, GLsizei y) { return nullptr; };
+
 	vector4 texture(sampler2D sampler, const vector2* texCoord)
 	{
 		vector4 result;
-		const vector2* texCoord_left	= (screen_x % screen_width) != 0 ? (const vector2*)((GLbyte*)texCoord - input_size) : nullptr;
-		const vector2* texCoord_right	= (screen_x % screen_width) != (screen_width - 1) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
-		const vector2* texCoord_up		= (screen_y > 0) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
-		const vector2* texCoord_down	= (screen_y < screen_height - 1) ? (const vector2*)((GLbyte*)texCoord + input_size) : nullptr;
+		const vector2* texCoord_left	= (const vector2*)get_attribute_texcoord0(screen_x - 1, screen_y);
+		const vector2* texCoord_right	= (const vector2*)get_attribute_texcoord0(screen_x + 1, screen_y);
+		const vector2* texCoord_up		= (const vector2*)get_attribute_texcoord0(screen_x, screen_y - 1);
+		const vector2* texCoord_down	= (const vector2*)get_attribute_texcoord0(screen_x, screen_y + 1);
 		GLfloat p = 0.0f;
 		if (texCoord_left)
 		{
@@ -258,7 +266,7 @@ struct gl_shader
 	virtual GLvoid compile() = 0;
 	void update_screen_size(GLsizei w, GLsizei h) { screen_width = w; screen_height = h; }
 	virtual GLvoid* vs_process(GLvoid*) { return nullptr; };
-	virtual GLvoid* fs_process(GLvoid*, GLsizei screenx, GLsizei screeny) { screen_x = screenx; screen_y = screeny; return nullptr; };
+	virtual GLvoid* fs_process(GLvoid* Input, struct gl_rs_state* rs, GLsizei screenx, GLsizei screeny) { __rs = rs; screen_x = screenx; screen_y = screeny; return nullptr; };
 };
 
 struct gl_shader_object : public gl_named_object

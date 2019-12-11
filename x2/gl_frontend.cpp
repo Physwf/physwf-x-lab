@@ -111,10 +111,10 @@ NAIL_API void glClearColor(GLclampf r, GLclampf g, GLclampf b, GLclampf a)
 {
 	glClearError();
 
-	glContext.clear_color.r = glClamp(r, 0.0f, 0.1f);
-	glContext.clear_color.g = glClamp(g, 0.0f, 0.1f);
-	glContext.clear_color.b = glClamp(b, 0.0f, 0.1f);
-	glContext.clear_color.a = glClamp(a, 0.0f, 0.1f);
+	glContext.clear_color.r = glClamp(r, 0.0f, 1.0f);
+	glContext.clear_color.g = glClamp(g, 0.0f, 1.0f);
+	glContext.clear_color.b = glClamp(b, 0.0f, 1.0f);
+	glContext.clear_color.a = glClamp(a, 0.0f, 1.0f);
 }
 
 NAIL_API void glClearDepth(GLclampf d)

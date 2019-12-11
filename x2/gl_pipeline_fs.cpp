@@ -36,7 +36,7 @@ void gl_fragment_shader(gl_draw_command* cmd)
 			gl_frame_buffer* frame_buffer = glPipeline.frame_buffers[glPipeline.back_buffer_index];
 			if (fragment.depth < 1.0f && fragment.depth >= 0.0f && fragment.depth < frame_buffer->get_depth(x,y))
 			{
-				GLvoid* fs_out = fs->fs_process((GLbyte*)fragment.varing_attribute,x,y);
+				GLvoid* fs_out = fs->fs_process((GLbyte*)fragment.varing_attribute, &cmd->rs, x,y);
 				gl_vector4& color = ((gl_vector4*)fs_out)[0];
 				frame_buffer->set_color(x, y, color);
 				frame_buffer->set_depth(x, y, fragment.depth);

@@ -225,13 +225,14 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
-				GLubyte alpha = pixels[index];
+				GLsizei index_src = y * width + x;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
+				GLubyte alpha = pixels[index_src];
 				GLfloat nomalized_alpha = alpha / 255.0f;
-				data[index * 4 + 0] = 0.0f;
-				data[index * 4 + 1] = 0.0f;
-				data[index * 4 + 2] = 0.0f;
-				data[index * 4 + 3] = nomalized_alpha;
+				data[index_det + 0] = 0.0f;
+				data[index_det + 1] = 0.0f;
+				data[index_det + 2] = 0.0f;
+				data[index_det + 3] = nomalized_alpha;
 			}
 		}
 		break;
@@ -242,13 +243,14 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
-				GLubyte luminance = pixels[index];
+				GLsizei index_src = y * width + x;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
+				GLubyte luminance = pixels[index_src];
 				GLfloat nomalized_luminance = luminance / 255.0f;
-				data[index * 4 + 0] = nomalized_luminance;
-				data[index * 4 + 1] = nomalized_luminance;
-				data[index * 4 + 2] = nomalized_luminance;
-				data[index * 4 + 3] = 1.0f;
+				data[index_det + 0] = nomalized_luminance;
+				data[index_det + 1] = nomalized_luminance;
+				data[index_det + 2] = nomalized_luminance;
+				data[index_det + 3] = 1.0f;
 			}
 		}
 		break;
@@ -259,15 +261,16 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = (y * width + x);
-				GLubyte luminance =	pixels[index * 2 + 0];
-				GLubyte alpha =		pixels[index * 2 + 1];
+				GLsizei index_src = (y * width + x) * 2;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
+				GLubyte luminance =	pixels[index_src + 0];
+				GLubyte alpha =		pixels[index_src + 1];
 				GLfloat nomalized_luminance		= luminance / 255.0f;
 				GLfloat nomalized_alpha			= alpha		/ 255.0f;
-				data[index * 4 + 0] = nomalized_luminance;
-				data[index * 4 + 1] = nomalized_luminance;
-				data[index * 4 + 2] = nomalized_luminance;
-				data[index * 4 + 3] = alpha;
+				data[index_det + 0] = nomalized_luminance;
+				data[index_det + 1] = nomalized_luminance;
+				data[index_det + 2] = nomalized_luminance;
+				data[index_det + 3] = alpha;
 			}
 		}
 		break;
@@ -278,17 +281,18 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = (y * width + x);
-				GLubyte r = pixels[index * 3 + 0];
-				GLubyte g = pixels[index * 3 + 1];
-				GLubyte b = pixels[index * 3 + 2];
+				GLsizei index_src = (y * width + x) * 3;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
+				GLubyte r = pixels[index_src + 0];
+				GLubyte g = pixels[index_src + 1];
+				GLubyte b = pixels[index_src + 2];
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
-				data[index * 4 + 0] = nomalized_r;
-				data[index * 4 + 1] = nomalized_g;
-				data[index * 4 + 2] = nomalized_b;
-				data[index * 4 + 3] = 1.0f;
+				data[index_det + 0] = nomalized_r;
+				data[index_det + 1] = nomalized_g;
+				data[index_det + 2] = nomalized_b;
+				data[index_det + 3] = 1.0f;
 			}
 		}
 		break;
@@ -299,19 +303,20 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = (y * width + x)*4;
-				GLubyte r = pixels[index + 0];
-				GLubyte g = pixels[index + 1];
-				GLubyte b = pixels[index + 2];
-				GLubyte a = pixels[index + 2];
+				GLsizei index_src = (y * width + x) * 4;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
+				GLubyte r = pixels[index_src + 0];
+				GLubyte g = pixels[index_src + 1];
+				GLubyte b = pixels[index_src + 2];
+				GLubyte a = pixels[index_src + 3];
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
 				GLfloat nomalized_a = b / 255.0f;
-				data[index + 0] = nomalized_r;
-				data[index + 1] = nomalized_g;
-				data[index + 2] = nomalized_b;
-				data[index + 3] = nomalized_a;
+				data[index_det + 0] = nomalized_r;
+				data[index_det + 1] = nomalized_g;
+				data[index_det + 2] = nomalized_b;
+				data[index_det + 3] = nomalized_a;
 			}
 		}
 		break;
@@ -330,6 +335,7 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = y * width + x;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
 				GLshort pixel = pixels[index];
 				GLubyte r = pixel & 0b1111100000000000;
 				GLubyte g = pixel & 0b0000011111100000;
@@ -337,10 +343,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
-				data[index * 4 + 0] = nomalized_r;
-				data[index * 4 + 1] = nomalized_g;
-				data[index * 4 + 2] = nomalized_b;
-				data[index * 4 + 3] = 1.0f;
+				data[index_det + 0] = nomalized_r;
+				data[index_det + 1] = nomalized_g;
+				data[index_det + 2] = nomalized_b;
+				data[index_det + 3] = 1.0f;
 			}
 		}
 	}
@@ -352,6 +358,7 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = y * width + x;
+				GLsizei index_det = ((height - y - 1) * width + x) * 4;
 				GLshort pixel = pixels[index];
 				GLubyte r = pixel & 0b1111000000000000;
 				GLubyte g = pixel & 0b0000111100000000;
@@ -361,10 +368,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
 				GLfloat nomalized_a = a / 255.0f;
-				data[index * 4 + 0] = nomalized_r;
-				data[index * 4 + 1] = nomalized_g;
-				data[index * 4 + 2] = nomalized_b;
-				data[index * 4 + 3] = nomalized_a;
+				data[index_det + 0] = nomalized_r;
+				data[index_det + 1] = nomalized_g;
+				data[index_det + 2] = nomalized_b;
+				data[index_det + 3] = nomalized_a;
 			}
 		}
 	}
@@ -375,8 +382,9 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 		{
 			for (GLsizei x = 0; x < width; ++x)
 			{
-				GLsizei index = y * width + x;
-				GLshort pixel = pixels[index];
+				GLsizei index_src = y * width + x;
+				GLsizei index_det = ((height - y - 1) * width + x)*4;
+				GLshort pixel = pixels[index_src];
 				GLubyte r = pixel & 0b1111100000000000;
 				GLubyte g = pixel & 0b0000011111000000;
 				GLubyte b = pixel & 0b0000000000111110;
@@ -385,10 +393,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
 				GLfloat nomalized_a = a / 255.0f;
-				data[index * 4 + 0] = nomalized_r;
-				data[index * 4 + 1] = nomalized_g;
-				data[index * 4 + 2] = nomalized_b;
-				data[index * 4 + 3] = nomalized_a;
+				data[index_det + 0] = nomalized_r;
+				data[index_det + 1] = nomalized_g;
+				data[index_det + 2] = nomalized_b;
+				data[index_det + 3] = nomalized_a;
 			}
 		}
 	}

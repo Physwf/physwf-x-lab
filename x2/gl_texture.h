@@ -30,7 +30,7 @@ struct gl_texture2d_mipmap
 	{
 		x = glClamp(x, 0, width);
 		y = glClamp(y, 0, height);
-		return &data[(y*width + x) * 4];
+		return data + ((y*width + x) * 4);
 	}
 };
 

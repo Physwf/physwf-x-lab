@@ -799,3 +799,8 @@ gl_uniform_node* gl_uniform_node::create(GLuint* value, const GLchar* name, GLsi
 	strcpy_s(node->uniform->name, buffer_size, name);
 	return node;
 }
+
+const GLvoid* gl_shader::get_varing_attribute(GLsizei x, GLsizei y)
+{
+	return __rs->get_fragment(x, y).varing_attribute;
+}
