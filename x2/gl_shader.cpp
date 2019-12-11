@@ -329,12 +329,12 @@ NAIL_API void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufsize, 
 
 GLfloat* gl_get_uniform_f_check(GLuint program, GLint location)
 {
-	if (program)
+	if (program == 0)
 	{
 		glSetError(GL_INVALID_OPERATION, "No program is used!");
 		return nullptr;
 	}
-	gl_program_object* program_object = gl_find_program_object_check(glContext.program);
+	gl_program_object* program_object = gl_find_program_object_check(program);
 	if (program_object == nullptr) return nullptr;
 	if (location >= (GLint)program_object->active_uniforms)
 	{
@@ -351,7 +351,7 @@ GLint* gl_get_uniform_i_check(GLuint program, GLint location)
 		glSetError(GL_INVALID_OPERATION, "No program is used!");
 		return nullptr;
 	}
-	gl_program_object* program_object = gl_find_program_object_check(glContext.program);
+	gl_program_object* program_object = gl_find_program_object_check(program);
 	if (program_object == nullptr) return nullptr;
 	if (location >= (GLint)program_object->active_uniforms)
 	{
