@@ -327,9 +327,9 @@ NAIL_API void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufsize, 
 	if (name != nullptr) strcpy_s(name, bufsize, uniform->name); 
 }
 
-GLfloat* gl_get_uniform_f_check(GLint location)
+GLfloat* gl_get_uniform_f_check(GLuint program, GLint location)
 {
-	if (glContext.program == 0)
+	if (program)
 	{
 		glSetError(GL_INVALID_OPERATION, "No program is used!");
 		return nullptr;
@@ -344,9 +344,9 @@ GLfloat* gl_get_uniform_f_check(GLint location)
 	return (GLfloat*)program_object->uniforms[location]->fvalue;
 }
 
-GLint* gl_get_uniform_i_check(GLint location)
+GLint* gl_get_uniform_i_check(GLuint program, GLint location)
 {
-	if (glContext.program == 0)
+	if (program == 0)
 	{
 		glSetError(GL_INVALID_OPERATION, "No program is used!");
 		return nullptr;
@@ -381,14 +381,14 @@ void gl_uniform_command::execute()
 	{
 	case GL_INT:
 	{
-		GLint* value = gl_get_uniform_i_check(location);
+		GLint* value = gl_get_uniform_i_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_int(0);
 		break;
 	}
 	case GL_INT_VEC2:
 	{
-		GLint* value = gl_get_uniform_i_check(location);
+		GLint* value = gl_get_uniform_i_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_int(0);
 		value[1] = get_int(1);
@@ -396,7 +396,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_INT_VEC3:
 	{
-		GLint* value = gl_get_uniform_i_check(location);
+		GLint* value = gl_get_uniform_i_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_int(0);
 		value[1] = get_int(1);
@@ -405,7 +405,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_INT_VEC4:
 	{
-		GLint* value = gl_get_uniform_i_check(location);
+		GLint* value = gl_get_uniform_i_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_int(0);
 		value[1] = get_int(1);
@@ -415,14 +415,14 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		break;
 	}
 	case GL_FLOAT_VEC2:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -430,7 +430,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT_VEC3:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -439,7 +439,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT_VEC4:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -449,7 +449,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT_MAT2:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -459,7 +459,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT_MAT3:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -474,7 +474,7 @@ void gl_uniform_command::execute()
 	}
 	case GL_FLOAT_MAT4:
 	{
-		GLfloat* value = gl_get_uniform_f_check(location);
+		GLfloat* value = gl_get_uniform_f_check(program, location);
 		if (value == nullptr) return;
 		value[0] = get_float(0);
 		value[1] = get_float(1);
@@ -501,6 +501,7 @@ NAIL_API void glUniform1i(GLint location, GLint v0)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -512,6 +513,7 @@ NAIL_API void glUniform2i(GLint location, GLint v0, GLint v1)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC2;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -524,6 +526,7 @@ NAIL_API void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC3;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -537,6 +540,7 @@ NAIL_API void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC4;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -551,6 +555,7 @@ NAIL_API void glUniform1f(GLint location, GLfloat v0)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -562,6 +567,7 @@ NAIL_API void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC2;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -574,6 +580,7 @@ NAIL_API void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC3;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -587,6 +594,7 @@ NAIL_API void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GL
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC4;
 	cmd->next = nullptr;
 	cmd->set(0, v0);
@@ -601,6 +609,7 @@ NAIL_API void glUniform1fv(GLint location, GLsizei count, const GLfloat *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -612,6 +621,7 @@ NAIL_API void glUniform2fv(GLint location, GLsizei count, const GLfloat *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC2;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -624,6 +634,7 @@ NAIL_API void glUniform3fv(GLint location, GLsizei count, const GLfloat *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC3;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -637,6 +648,7 @@ NAIL_API void glUniform4fv(GLint location, GLsizei count, const GLfloat *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_VEC4;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -651,6 +663,7 @@ NAIL_API void glUniform1iv(GLint location, GLsizei count, const GLint *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -661,6 +674,7 @@ NAIL_API void glUniform2iv(GLint location, GLsizei count, const GLint *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC2;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -673,6 +687,7 @@ NAIL_API void glUniform3iv(GLint location, GLsizei count, const GLint *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC3;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -686,6 +701,7 @@ NAIL_API void glUniform4iv(GLint location, GLsizei count, const GLint *v)
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_INT_VEC4;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -700,6 +716,7 @@ NAIL_API void glUnitformMatrix2fv(GLint location, GLsizei count, GLbool transpos
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_MAT2;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -714,6 +731,7 @@ NAIL_API void glUnitformMatrix3fv(GLint location, GLsizei count, GLbool transpos
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_MAT3;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);
@@ -733,6 +751,7 @@ NAIL_API void glUnitformMatrix4fv(GLint location, GLsizei count, GLbool transpos
 {
 	gl_uniform_command* cmd = (gl_uniform_command*)gl_malloc(sizeof(gl_uniform_command));
 	cmd->location = location;
+	cmd->program = glContext.program;
 	cmd->type = GL_FLOAT_MAT4;
 	cmd->next = nullptr;
 	cmd->set(0, v[0]);

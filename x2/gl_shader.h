@@ -48,6 +48,7 @@ struct gl_uniform_command
 	GLbyte data[16 * 4];
 	GLenum type;
 	GLint location;
+	GLuint program;
 
 	gl_uniform_command* next;
 
