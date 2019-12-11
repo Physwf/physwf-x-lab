@@ -8,7 +8,7 @@ bool Texture2D::LoadFromJpg(const char* fileName)
 	unsigned char *data = stbi_load(fileName, &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		int datasize = width * height*nrChannels;
+		int datasize = width * height* nrChannels;
 		RawData.resize(datasize);
 		memcpy_s(RawData.data(), datasize, data, datasize);
 		stbi_image_free(data);

@@ -40,8 +40,7 @@ ${DIR_PROJECT}/scene.cpp
 )
 target_link_libraries(x-lab libx2)
 add_dependencies(x-lab libx2)
-CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-add_compile_options("/std:c++17")
+
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 

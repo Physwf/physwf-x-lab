@@ -4,8 +4,11 @@ file(GLOB_RECURSE DIR_SRC
 )
 add_library(libx2 SHARED ${DIR_SRC})
 set_target_properties(libx2 PROPERTIES FOLDER "Libraries")
-CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-add_compile_options("/std:c++17")
+
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+MESSAGE(STATUS "PROJECT_SOURCE_DIR is ${PROJECT_SOURCE_DIR}")
+MESSAGE(STATUS "CMAKE_BINARY_DIR is ${CMAKE_BINARY_DIR}")
+
 include(GenerateExportHeader)
 generate_export_header(libx2 
 						BASE_NAME NAIL

@@ -4,6 +4,7 @@
 #include "glut.h"
 #include "light.h"
 #include "material.h"
+#include <cmath>
 
 struct LamborghiniVertexShader : public gl_shader
 {
@@ -34,8 +35,8 @@ struct LamborghiniVertexShader : public gl_shader
 
 	GLvoid compile()
 	{
-		uniforms = gl_uniform_node::create((GLfloat*)&proj, "proj", sizeof(matrix4), GL_FLOAT_MAT4);
-		uniforms->next = gl_uniform_node::create((GLfloat*)&model, "model", sizeof(matrix4), GL_FLOAT_MAT4);
+		create_uniform((GLfloat*)&proj, "proj", sizeof(matrix4), GL_FLOAT_MAT4);
+		create_uniform((GLfloat*)&model, "model", sizeof(matrix4), GL_FLOAT_MAT4);
 	}
 
 	VS_Output process(VS_Input Input)
@@ -126,8 +127,10 @@ struct LamborghiniFragmentShaderBody : public LamborghiniFragmentShaderBase
 {
 	virtual GLvoid compile()
 	{
+		LamborghiniFragmentShaderBase::compile();
+
 		create_uniform((GLuint*)&diffuseSampler2D, "diffuseSampler2D", sizeof(sampler2D), GL_UNSIGNED_INT);
-		create_uniform((GLuint*)&specularSampler2D, "diffuseSampler2D", sizeof(sampler2D), GL_UNSIGNED_INT);
+		create_uniform((GLuint*)&specularSampler2D, "specularSampler2D", sizeof(sampler2D), GL_UNSIGNED_INT);
 
 		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
 		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
@@ -140,15 +143,24 @@ struct LamborghiniFragmentShaderBody : public LamborghiniFragmentShaderBase
 	PS_Output process(PS_Input Input)
 	{
 		PS_Output Out;
-		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		//ambient
+		vector3 ambientColor = multiply(AL.Color, material.Ka);
+		//diffuse
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
 		float lamb = clamp(dot(normal, light_dir));
-		vector3 ac = multiply(material.Ka, AL.Color);
-		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
-		vector3 color = add(ac, dc);
-		Out.color = vector4(color.x,color.y,color.z,1.0f);
-		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
+		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+		//specular
+		vector3 half = add(light_dir , vector3(0.0f, 0.0f, -1.0f));
+		half = normalize(half);
+		float ndoth = clamp(dot(normal, half));
+		float intensity = std::powf(ndoth, material.Ns);
+		vector3 specularColor = multiply(intensity, material.Ks);
+
+		vector3 color = add(ambientColor, lambColor);
+		color = add(specularColor, color);
+
+		Out.color = vector4(color.x, color.y, color.z, 1.0f);
 		return Out;
 	}
 
@@ -167,6 +179,8 @@ struct LamborghiniFragmentShaderCollider : public LamborghiniFragmentShaderBase
 {
 	virtual GLvoid compile()
 	{
+		LamborghiniFragmentShaderBase::compile();
+
 		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
 		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
 		create_uniform((GLfloat*)&material.Tf, "material.Tf", sizeof(material.Tf), GL_FLOAT_VEC3);
@@ -176,15 +190,24 @@ struct LamborghiniFragmentShaderCollider : public LamborghiniFragmentShaderBase
 	PS_Output process(PS_Input Input)
 	{
 		PS_Output Out;
-		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		//ambient
+		vector3 ambientColor = multiply(AL.Color, material.Ka);
+		//diffuse
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
 		float lamb = clamp(dot(normal, light_dir));
-		vector3 ac = multiply(material.Ka, AL.Color);
-		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
-		vector3 color = add(ac, dc);
+		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+		//specular
+		vector3 half = add(light_dir, vector3(0.0f, 0.0f, -1.0f));
+		half = normalize(half);
+		float ndoth = clamp(dot(normal, half));
+		float intensity = std::powf(ndoth, material.Ns);
+		vector3 specularColor = multiply(intensity, material.Ks);
+
+		vector3 color = add(ambientColor, lambColor);
+		color = add(specularColor, color);
+
 		Out.color = vector4(color.x, color.y, color.z, 1.0f);
-		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
 		return Out;
 	}
 
@@ -200,6 +223,8 @@ struct LamborghiniFragmentShaderGlass : public LamborghiniFragmentShaderBase
 {
 	virtual GLvoid compile()
 	{
+		LamborghiniFragmentShaderBase::compile();
+
 		create_uniform((GLfloat*)&material.Ka, "material.Ka", sizeof(material.Ka), GL_FLOAT_VEC3);
 		create_uniform((GLfloat*)&material.Kd, "material.Kd", sizeof(material.Kd), GL_FLOAT_VEC3);
 		create_uniform((GLfloat*)&material.Tf, "material.Tf", sizeof(material.Tf), GL_FLOAT_VEC3);
@@ -212,15 +237,24 @@ struct LamborghiniFragmentShaderGlass : public LamborghiniFragmentShaderBase
 	PS_Output process(PS_Input Input)
 	{
 		PS_Output Out;
-		Out.color = vector4(1.0f, 0.0f, 0.0f, 1.0f);
+		//ambient
+		vector3 ambientColor = multiply(AL.Color, material.Ka);
+		//diffuse
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
 		float lamb = clamp(dot(normal, light_dir));
-		vector3 ac = multiply(material.Ka, AL.Color);
-		vector3 dc = multiply(material.Kd, multiply(lamb, DL.Color));
-		vector3 color = add(ac, dc);
+		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+		//specular
+		vector3 half = add(light_dir, vector3(0.0f, 0.0f, -1.0f));
+		half = normalize(half);
+		float ndoth = clamp(dot(normal, half));
+		float intensity = std::powf(ndoth, material.Ns);
+		vector3 specularColor = multiply(intensity, material.Ks);
+
+		vector3 color = add(ambientColor, lambColor);
+		color = add(specularColor, color);
+
 		Out.color = vector4(color.x, color.y, color.z, 1.0f);
-		//X_LOG("%f,%f,%f\n", normal.x, normal.y, normal.z);
 		return Out;
 	}
 
@@ -288,18 +322,14 @@ void Lamborghini::Draw()
 	{
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-		GLfloat model[16] = { 0 };
-		static float rad = 0.0f;
-		rad += 0.01f;
-		glutMatrixRotationY(model, rad);
-		glUnitformMatrix4fv(1, 1, false, model);
+		
 
 		int i = 0;
 		for (auto& Pair : M->GetSubMeshes())
 		{
 			const Mesh::SubMesh& Sub = Pair.second;
-			++i;
-			if(i==2) continue;
+			//++i;
+			//if(i==2) continue;
 			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), Sub.Vertices.data());
 			glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + sizeof(Vector));
 			glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + 2 * sizeof(Vector));
@@ -331,9 +361,9 @@ void Lamborghini::Draw()
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, specularTexture->GetHandle());
 				loc = glGetUniformLocation(Program, "diffuseSampler2D");
-				glUniform1f(loc, 0);
+				glUniform1i(loc, 0);
 				loc = glGetUniformLocation(Program, "specularSampler2D");
-				glUniform1f(loc, 1);
+				glUniform1i(loc, 1);
 			}
 			else if(Sub.MaterialName == "Lamborghini_Aventador:ColliderSG")
 			{
@@ -356,6 +386,8 @@ void Lamborghini::Draw()
 				glUniform4fv(loc, 1, &Mtl.Ka.r);
 				loc = glGetUniformLocation(Program, "material.Kd");
 				glUniform4fv(loc, 1, &Mtl.Kd.r);
+				loc = glGetUniformLocation(Program, "material.Ks");
+				glUniform4fv(loc, 1, &Mtl.Ks.r);
 				loc = glGetUniformLocation(Program, "material.Tf");
 				glUniform4fv(loc, 1, &Mtl.Tf.r);
 				loc = glGetUniformLocation(Program, "material.Ni");
@@ -367,7 +399,14 @@ void Lamborghini::Draw()
 			{
 				GLfloat proj[16] = { 0 };
 				glutMatrixOrthoLH(proj, -250, 249, -200, 299, -300, 1500);
-				glUnitformMatrix4fv(0, 1, false, proj);
+				GLint loc = glGetUniformLocation(Program, "proj");
+				glUnitformMatrix4fv(loc, 1, false, proj);
+				GLfloat model[16] = { 0 };
+				static float rad = 0.0f;
+				rad += 0.01f;
+				glutMatrixRotationY(model, rad);
+				loc = glGetUniformLocation(Program, "model");
+				glUnitformMatrix4fv(loc, 1, false, model);
 			}
 
 
