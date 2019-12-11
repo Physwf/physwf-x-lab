@@ -214,7 +214,7 @@ NAIL_API void glActiveTexture(GLenum texture)
 	glContext.selected_texture_unit = &glContext.texture_params[index];
 }
 
-void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum format, const GLbyte *pixels)
+void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum format, const GLubyte *pixels)
 {
 	//todo alignment
 	switch (format)
@@ -226,7 +226,7 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = y * width + x;
-				GLbyte alpha = pixels[index];
+				GLubyte alpha = pixels[index];
 				GLfloat nomalized_alpha = alpha / 255.0f;
 				data[index * 4 + 0] = 0.0f;
 				data[index * 4 + 1] = 0.0f;
@@ -243,7 +243,7 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = y * width + x;
-				GLbyte luminance = pixels[index];
+				GLubyte luminance = pixels[index];
 				GLfloat nomalized_luminance = luminance / 255.0f;
 				data[index * 4 + 0] = nomalized_luminance;
 				data[index * 4 + 1] = nomalized_luminance;
@@ -260,8 +260,8 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = (y * width + x);
-				GLbyte luminance =	pixels[index * 2 + 0];
-				GLbyte alpha =		pixels[index * 2 + 1];
+				GLubyte luminance =	pixels[index * 2 + 0];
+				GLubyte alpha =		pixels[index * 2 + 1];
 				GLfloat nomalized_luminance		= luminance / 255.0f;
 				GLfloat nomalized_alpha			= alpha		/ 255.0f;
 				data[index * 4 + 0] = nomalized_luminance;
@@ -279,9 +279,9 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = (y * width + x);
-				GLbyte r = pixels[index * 3 + 0];
-				GLbyte g = pixels[index * 3 + 1];
-				GLbyte b = pixels[index * 3 + 2];
+				GLubyte r = pixels[index * 3 + 0];
+				GLubyte g = pixels[index * 3 + 1];
+				GLubyte b = pixels[index * 3 + 2];
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
@@ -300,10 +300,10 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 			for (GLsizei x = 0; x < width; ++x)
 			{
 				GLsizei index = (y * width + x)*4;
-				GLbyte r = pixels[index + 0];
-				GLbyte g = pixels[index + 1];
-				GLbyte b = pixels[index + 2];
-				GLbyte a = pixels[index + 2];
+				GLubyte r = pixels[index + 0];
+				GLubyte g = pixels[index + 1];
+				GLubyte b = pixels[index + 2];
+				GLubyte a = pixels[index + 2];
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
@@ -319,7 +319,7 @@ void gl_read_byte_type(GLfloat* data, GLsizei width, GLsizei height, GLenum form
 	}
 }
 
-void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum type, const GLshort *pixels)
+void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum type, const GLushort *pixels)
 {
 	switch (type)
 	{
@@ -331,9 +331,9 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 			{
 				GLsizei index = y * width + x;
 				GLshort pixel = pixels[index];
-				GLbyte r = pixel & 0b1111100000000000;
-				GLbyte g = pixel & 0b0000011111100000;
-				GLbyte b = pixel & 0b0000000000011111;
+				GLubyte r = pixel & 0b1111100000000000;
+				GLubyte g = pixel & 0b0000011111100000;
+				GLubyte b = pixel & 0b0000000000011111;
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
@@ -353,10 +353,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 			{
 				GLsizei index = y * width + x;
 				GLshort pixel = pixels[index];
-				GLbyte r = pixel & 0b1111000000000000;
-				GLbyte g = pixel & 0b0000111100000000;
-				GLbyte b = pixel & 0b0000000011110000;
-				GLbyte a = pixel & 0b0000000000001111;
+				GLubyte r = pixel & 0b1111000000000000;
+				GLubyte g = pixel & 0b0000111100000000;
+				GLubyte b = pixel & 0b0000000011110000;
+				GLubyte a = pixel & 0b0000000000001111;
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
@@ -377,10 +377,10 @@ void gl_read_short_type(GLfloat* data, GLsizei width, GLsizei height, GLenum typ
 			{
 				GLsizei index = y * width + x;
 				GLshort pixel = pixels[index];
-				GLbyte r = pixel & 0b1111100000000000;
-				GLbyte g = pixel & 0b0000011111000000;
-				GLbyte b = pixel & 0b0000000000111110;
-				GLbyte a = pixel & 0b0000000000000001;
+				GLubyte r = pixel & 0b1111100000000000;
+				GLubyte g = pixel & 0b0000011111000000;
+				GLubyte b = pixel & 0b0000000000111110;
+				GLubyte a = pixel & 0b0000000000000001;
 				GLfloat nomalized_r = r / 255.0f;
 				GLfloat nomalized_g = g / 255.0f;
 				GLfloat nomalized_b = b / 255.0f;
@@ -414,12 +414,12 @@ void gl_allocate_texture2d_mipmap(gl_texture2d_mipmap** pmipmap, GLint internalf
 	switch (type)
 	{
 	case GL_UNSIGNED_BYTE:
-		gl_read_byte_type((GLfloat*)mipmap->data, width, height, format, (const GLbyte*)pixels);
+		gl_read_byte_type((GLfloat*)mipmap->data, width, height, format, (const GLubyte*)pixels);
 		break;
 	case GL_UNSIGNED_SHORT_5_6_5:
 	case GL_UNSIGNED_SHORT_4_4_4_4:
 	case GL_UNSIGNED_SHORT_5_5_5_1:
-		gl_read_short_type((GLfloat*)mipmap->data, width, height, type, (const GLshort*)pixels);
+		gl_read_short_type((GLfloat*)mipmap->data, width, height, type, (const GLushort*)pixels);
 		break;
 	}
 }
