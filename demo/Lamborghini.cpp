@@ -61,12 +61,12 @@ struct LamborghiniFragmentShaderBase : public gl_shader
 {
 	struct AmbientLight
 	{
-		vector3 Color;
+		vector4 Color;
 	};
 	struct DirectionalLight
 	{
 		vector3 Direction;
-		vector3 Color;
+		vector4 Color;
 	};
 	struct PointLight
 	{
@@ -104,11 +104,27 @@ struct LamborghiniFragmentShaderBase : public gl_shader
 
 	virtual GLvoid compile()
 	{
-		create_uniform((GLfloat*)&AL.Color, "AL.Color", sizeof(AL.Color), GL_FLOAT_VEC3);
-		create_uniform((GLfloat*)&DL.Color, "DL.Color", sizeof(DL.Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&AL.Color, "AL.Color", sizeof(AL.Color), GL_FLOAT_VEC4);
+		create_uniform((GLfloat*)&DL.Color, "DL.Color", sizeof(DL.Color), GL_FLOAT_VEC4);
 		create_uniform((GLfloat*)&DL.Direction, "DL.Direction", sizeof(DL.Direction), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[0].Position, "PLs[0].Position", sizeof(PLs[0].Position), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[0].Color, "PLs[0].Color", sizeof(PLs[0].Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[1].Position, "PLs[1].Position", sizeof(PLs[1].Position), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[1].Color, "PLs[1].Color", sizeof(PLs[1].Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[2].Position, "PLs[2].Position", sizeof(PLs[2].Position), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[2].Color, "PLs[2].Color", sizeof(PLs[2].Color), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[3].Position, "PLs[3].Position", sizeof(PLs[3].Position), GL_FLOAT_VEC3);
+		create_uniform((GLfloat*)&PLs[3].Color, "PLs[3].Color", sizeof(PLs[3].Color), GL_FLOAT_VEC3);
 	}
 
+	virtual const vector4* get_attribute_texcoord0(GLsizei x, GLsizei y) override
+	{
+		if (x <= 0 || y < 0) return nullptr;
+		if (x >= screen_width || y >= screen_height) return nullptr;
+		const vector4* attribute = (const vector4*)get_varing_attribute(x, y);
+		if(attribute != nullptr) return attribute + 2;
+		return nullptr;
+	}
 	
 	PS_Output Output;
 
@@ -118,7 +134,7 @@ struct LamborghiniFragmentShaderBase : public gl_shader
 
 	AmbientLight AL;
 	DirectionalLight DL;
-	PointLight PLs[8];
+	PointLight PLs[4];
 
 	
 };
@@ -143,30 +159,44 @@ struct LamborghiniFragmentShaderBody : public LamborghiniFragmentShaderBase
 	PS_Output process(PS_Input Input)
 	{
 		PS_Output Out;
-		//ambient
-		vector3 ambientColor = multiply(AL.Color, material.Ka);
-		//diffuse
+
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
-		float lamb = clamp(dot(normal, light_dir));
-		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+
+		//ambient
+		vector3 ambient = multiply(AL.Color.to_vector3(), material.Ka);
+		//diffuse
+		float diffuseLight = maxf(dot(normal, light_dir), 0.0f);
+		vector4 diffuseTex = texture(diffuseSampler2D, (vector2*)&Input.TextCoord);
+		vector3 diffuse =  multiply(add(diffuseTex.to_vector3(),material.Ka), multiply(diffuseLight, DL.Color.to_vector3()));
 		//specular
-		vector3 half = add(light_dir , vector3(0.0f, 0.0f, -1.0f));
+		vector3 half = add(light_dir , vector3(0.0f, 0.0f, 1.0f));
 		half = normalize(half);
-		float ndoth = clamp(dot(normal, half));
-		float intensity = std::powf(ndoth, material.Ns);
-		vector3 specularColor = multiply(intensity, material.Ks);
+		float specularLight = std::powf(maxf(dot(normal, half), 0.0f), material.Ns);
+		if (diffuseLight <= 0) specularLight = 0.0f;
+		vector4 specularTex = texture(specularSampler2D, (vector2*)&Input.TextCoord);
+		vector3 specular = multiply(specularLight, multiply(DL.Color.to_vector3(), add(material.Ks, diffuseTex.to_vector3())));
 
-		vector3 color = add(ambientColor, lambColor);
-		color = add(specularColor, color);
+		for (int i = 0; i < 4; ++i)
+		{
+			vector3 LPos = PLs[i].Position;
+			vector4 LColor = vector4(1.0f, 1.0f, 1.0f, 1.0f);
+			vector3 LDir = sub(LPos, Input.position.to_vector3());
+			float len = length(LDir);
+			LDir = normalize(LDir);
+			diffuseLight = maxf(dot(normal, LDir), 0.0f);
+			diffuseLight *= (50.0f/len);
+			diffuse = add(diffuse, multiply(add(diffuseTex.to_vector3(), material.Ka), multiply(diffuseLight, LColor.to_vector3())));
+		}
 
+		vector3 color = add(add(ambient, diffuse),specular);
 		Out.color = vector4(color.x, color.y, color.z, 1.0f);
 		return Out;
 	}
 
-	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
+	virtual GLvoid* fs_process(GLvoid* Vertex,struct gl_rs_state* rs, GLsizei screenx, GLsizei screeny)
 	{
-		gl_shader::fs_process(Vertex, screenx, screeny);
+		gl_shader::fs_process(Vertex, rs, screenx, screeny);
 		Output = process(*(PS_Input*)Vertex);
 		return &Output;
 	}
@@ -191,12 +221,12 @@ struct LamborghiniFragmentShaderCollider : public LamborghiniFragmentShaderBase
 	{
 		PS_Output Out;
 		//ambient
-		vector3 ambientColor = multiply(AL.Color, material.Ka);
+		vector3 ambientColor = multiply(AL.Color.to_vector3(), material.Ka);
 		//diffuse
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
 		float lamb = clamp(dot(normal, light_dir));
-		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color.to_vector3()));
 		//specular
 		vector3 half = add(light_dir, vector3(0.0f, 0.0f, -1.0f));
 		half = normalize(half);
@@ -211,9 +241,9 @@ struct LamborghiniFragmentShaderCollider : public LamborghiniFragmentShaderBase
 		return Out;
 	}
 
-	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
+	virtual GLvoid* fs_process(GLvoid* Vertex, struct gl_rs_state* rs, GLsizei screenx, GLsizei screeny)
 	{
-		gl_shader::fs_process(Vertex, screenx, screeny);
+		gl_shader::fs_process(Vertex, rs, screenx, screeny);
 		Output = process(*(PS_Input*)Vertex);
 		return &Output;
 	}
@@ -238,12 +268,12 @@ struct LamborghiniFragmentShaderGlass : public LamborghiniFragmentShaderBase
 	{
 		PS_Output Out;
 		//ambient
-		vector3 ambientColor = multiply(AL.Color, material.Ka);
+		vector3 ambientColor = multiply(AL.Color.to_vector3(), material.Ka);
 		//diffuse
 		vector3 normal = normalize(Input.normal.to_vector3());
 		vector3 light_dir = normalize(DL.Direction);
 		float lamb = clamp(dot(normal, light_dir));
-		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color));
+		vector3 lambColor = multiply(material.Kd, multiply(lamb, DL.Color.to_vector3()));
 		//specular
 		vector3 half = add(light_dir, vector3(0.0f, 0.0f, -1.0f));
 		half = normalize(half);
@@ -258,9 +288,9 @@ struct LamborghiniFragmentShaderGlass : public LamborghiniFragmentShaderBase
 		return Out;
 	}
 
-	virtual GLvoid* fs_process(GLvoid* Vertex, GLsizei screenx, GLsizei screeny)
+	virtual GLvoid* fs_process(GLvoid* Vertex, struct gl_rs_state* rs, GLsizei screenx, GLsizei screeny)
 	{
-		gl_shader::fs_process(Vertex, screenx, screeny);
+		gl_shader::fs_process(Vertex, rs, screenx, screeny);
 		Output = process(*(PS_Input*)Vertex);
 		return &Output;
 	}
@@ -280,7 +310,7 @@ void Lamborghini::Init()
 	glViewport(0, 0, 500, 500);
 	glDepthRangef(0.f, 1.0f);
 	glClearDepth(1.0f);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 
@@ -328,8 +358,8 @@ void Lamborghini::Draw()
 		for (auto& Pair : M->GetSubMeshes())
 		{
 			const Mesh::SubMesh& Sub = Pair.second;
-			//++i;
-			//if(i==2) continue;
+			++i;
+			if(i==2) continue;
 			glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), Sub.Vertices.data());
 			glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + sizeof(Vector));
 			glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Mesh::Vertex), ((unsigned char*)Sub.Vertices.data()) + 2 * sizeof(Vector));
@@ -347,6 +377,8 @@ void Lamborghini::Draw()
 				glUniform4fv(loc, 1, &Mtl.Ka.r);
 				loc = glGetUniformLocation(Program, "material.Kd");
 				glUniform4fv(loc, 1, &Mtl.Kd.r);
+				loc = glGetUniformLocation(Program, "material.Ks");
+				glUniform4fv(loc, 1, &Mtl.Ks.r);
 				loc = glGetUniformLocation(Program, "material.Tf");
 				glUniform4fv(loc, 1, &Mtl.Tf.r);
 				loc = glGetUniformLocation(Program, "material.Ni");
@@ -358,10 +390,10 @@ void Lamborghini::Draw()
 				const Texture2D* specularTexture = M->GetTexture2D(Mtl.map_Ks);
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, diffuseTexture->GetHandle());
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, specularTexture->GetHandle());
 				loc = glGetUniformLocation(Program, "diffuseSampler2D");
 				glUniform1i(loc, 0);
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, specularTexture->GetHandle());
 				loc = glGetUniformLocation(Program, "specularSampler2D");
 				glUniform1i(loc, 1);
 			}
@@ -414,15 +446,40 @@ void Lamborghini::Draw()
 				AmbientLight AL;
 				AL.Color = LinearColor(0.4f, 0.4f, 0.4f, 1.0f);
 				DirctionalLight DL;
-				DL.Color = LinearColor(0.6f, 0.6f, 0.6f, 1.0f);
+				DL.Color = LinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 				DL.Direction = { 0.0f, -1.0, 1.0f };
+				PointLight PLs[4];
+				PLs[0].Position = { -100.0f, 50.0, 100.0f };
+				PLs[1].Position = { -100.0f, 50.0, 500.0f };
+				PLs[2].Position = { 100.0f, 50.0, 100.0f };
+				PLs[3].Position = { 100.0f, 50.0, 500.0f };
+				PLs[0].Color = LinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+				PLs[1].Color = LinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+				PLs[2].Color = LinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+				PLs[3].Color = LinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 				GLint loc = glGetUniformLocation(Program, "AL.Color");
 				glUniform4fv(loc, 1, &AL.Color.r);
 				loc = glGetUniformLocation(Program, "DL.Color");
 				glUniform4fv(loc, 1, &DL.Color.r);
 				loc = glGetUniformLocation(Program, "DL.Direction");
-				glUniform4fv(loc, 1, &DL.Direction.x);
+				glUniform3fv(loc, 1, &DL.Direction.x);
+				loc = glGetUniformLocation(Program, "PLs[0].Position");
+				glUniform3fv(loc, 1, &(PLs[0].Position.x));
+				loc = glGetUniformLocation(Program, "PLs[0].Color");
+				glUniform4fv(loc, 1, &(PLs[0].Color.r));
+				loc = glGetUniformLocation(Program, "PLs[1].Position");
+				glUniform3fv(loc, 1, &(PLs[1].Position.x));
+				loc = glGetUniformLocation(Program, "PLs[1].Color");
+				glUniform4fv(loc, 1, &(PLs[1].Color.r));
+				loc = glGetUniformLocation(Program, "PLs[2].Position");
+				glUniform3fv(loc, 1, &(PLs[2].Position.x));
+				loc = glGetUniformLocation(Program, "PLs[2].Color");
+				glUniform4fv(loc, 1, &(PLs[2].Color.r));
+				loc = glGetUniformLocation(Program, "PLs[3].Position");
+				glUniform3fv(loc, 1, &(PLs[3].Position.x));
+// 				loc = glGetUniformLocation(Program, "PLs[3].Color");
+// 				glUniform4fv(loc, 1, &(PLs[3].Color.r));
 			}
 			
 

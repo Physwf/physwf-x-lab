@@ -187,6 +187,13 @@ struct NAIL_API gl_shader
 		if (v > 1.0f) return 1.0f;
 		return v;
 	}
+
+	float maxf(float v1, float v2)
+	{
+		if (v1 > v2) return v1;
+		return v2;
+	}
+
 	vector4 add(const vector4& v1, const vector4& v2) { return vector4(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z, v1.w + v2.w); }
 	vector3 add(const vector3& v1, const vector3& v2) { return vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
 	vector2 add(const vector2& v1, const vector2& v2) { return vector2(v1.x + v2.x, v1.y + v2.y); }
@@ -218,6 +225,10 @@ struct NAIL_API gl_shader
 	{
 		float sqrt = std::sqrt(v.x*v.x + v.y*v.y);
 		return vector2(v.x / sqrt, v.y / sqrt);
+	}
+	float length(const vector3& v)
+	{
+		return std::sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 	}
 
 	const GLvoid* get_varing_attribute(GLsizei x, GLsizei y);
