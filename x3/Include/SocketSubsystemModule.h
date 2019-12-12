@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-#include "Modules/ModuleInterface.h"
-
-class XSocketSubstemModule : public IModuleInterface
+class XSocketSubstemModule 
 {
 private:
 	class ISocketSubsystem* SocketSubsystem;

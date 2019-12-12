@@ -4,7 +4,6 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Actor.h"
-#include "Rendering/StaticMeshResources.h"
 
 struct FVector
 {
@@ -26,11 +25,15 @@ struct Vertex
 	FVector2 UV2;
 };
 
-class FStaticMeshRenderData
+struct XStaticMeshSection
 {
+	int MaterialIndex;
 
+	unsigned int FirstIndex;
+	unsigned int NumTriangles;
+	unsigned int MinVertexIndex;
+	unsigned int MaxVertexIndex;
 };
-
 class Mesh : public Actor
 {
 public:
