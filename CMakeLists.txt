@@ -2,6 +2,8 @@
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 project (x-lab)
+add_subdirectory(x0)
+include_directories(x0)
 add_subdirectory(x2)
 include_directories(x2)
 add_subdirectory(x3)
