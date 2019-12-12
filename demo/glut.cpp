@@ -63,7 +63,7 @@ float* glutMatrixRotationX(float* pOut, float rad)
 {
 	float result[]
 	{
-		1.0f,			1.0f,				0.0f,				0.0f,
+		1.0f,			0.0f,				0.0f,				0.0f,
 		0.0f,			std::cos(rad),		-std::sin(rad),		0.0f,
 		0.0f,			std::sin(rad),		std::cos(rad),		0.0f,
 		0.0f,			0.0f,				0.0f,				1.0f,
