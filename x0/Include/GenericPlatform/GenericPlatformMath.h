@@ -1,6 +1,10 @@
 #pragma once
 
-struct XMath
+#include <stdlib.h>
+#include <math.h>
+#include "CoreTypes.h"
+
+struct XGenericPlatformMath
 {
 	static constexpr inline int32 TruncToInt(float F)
 	{
@@ -167,8 +171,6 @@ struct XMath
 
 	static inline uint32 FloorLog2(uint32 Value)
 	{
-		// see http://codinggorilla.domemtech.com/?p=81 or http://en.wikipedia.org/wiki/Binary_logarithm but modified to return 0 for a input value of 0
-		// 686ms on test data
 		uint32 pos = 0;
 		if (Value >= 1 << 16) { Value >>= 16; pos += 16; }
 		if (Value >= 1 << 8) { Value >>= 8; pos += 8; }
@@ -176,6 +178,136 @@ struct XMath
 		if (Value >= 1 << 2) { Value >>= 2; pos += 2; }
 		if (Value >= 1 << 1) { pos += 1; }
 		return (Value == 0) ? 0 : pos;
+	}
 
+	/**
+	 * Computes the base 2 logarithm for a 64-bit value that is greater than 0.
+	 * The result is rounded down to the nearest integer.
+	 *
+	 * @param Value		The value to compute the log of
+	 * @return			Log2 of Value. 0 if Value is 0.
+	 */
+	static inline uint64 FloorLog2_64(uint64 Value)
+	{
+		uint64 pos = 0;
+		if (Value >= 1ull << 32) { Value >>= 32; pos += 32; }
+		if (Value >= 1ull << 16) { Value >>= 16; pos += 16; }
+		if (Value >= 1ull << 8) { Value >>= 8; pos += 8; }
+		if (Value >= 1ull << 4) { Value >>= 4; pos += 4; }
+		if (Value >= 1ull << 2) { Value >>= 2; pos += 2; }
+		if (Value >= 1ull << 1) { pos += 1; }
+		return (Value == 0) ? 0 : pos;
+	}
+
+	/**
+	 * Counts the number of leading zeros in the bit representation of the value
+	 *
+	 * @param Value the value to determine the number of leading zeros for
+	 *
+	 * @return the number of zeros before the first "on" bit
+	 */
+	static inline uint32 CountLeadingZeros(uint32 Value)
+	{
+		if (Value == 0) return 32;
+		return 31 - FloorLog2(Value);
+	}
+
+	/**
+	 * Counts the number of leading zeros in the bit representation of the 64-bit value
+	 *
+	 * @param Value the value to determine the number of leading zeros for
+	 *
+	 * @return the number of zeros before the first "on" bit
+	 */
+	static inline uint64 CountLeadingZeros64(uint64 Value)
+	{
+		if (Value == 0) return 64;
+		return 63 - FloorLog2_64(Value);
+	}
+
+	/**
+	 * Counts the number of trailing zeros in the bit representation of the value
+	 *
+	 * @param Value the value to determine the number of trailing zeros for
+	 *
+	 * @return the number of zeros after the last "on" bit
+	 */
+	static inline uint32 CountTrailingZeros(uint32 Value)
+	{
+		if (Value == 0)
+		{
+			return 32;
+		}
+		uint32 Result = 0;
+		while ((Value & 1) == 0)
+		{
+			Value >>= 1;
+			++Result;
+		}
+		return Result;
+	}
+
+	/**
+	 * Returns smallest N such that (1<<N)>=Arg.
+	 * Note: CeilLogTwo(0)=0 because (1<<0)=1 >= 0.
+	 */
+	static inline uint32 CeilLogTwo(uint32 Arg)
+	{
+		int32 Bitmask = ((int32)(CountLeadingZeros(Arg) << 26)) >> 31;
+		return (32 - CountLeadingZeros(Arg - 1)) & (~Bitmask);
+	}
+
+	static inline uint64 CeilLogTwo64(uint64 Arg)
+	{
+		int64 Bitmask = ((int64)(CountLeadingZeros64(Arg) << 57)) >> 63;
+		return (64 - CountLeadingZeros64(Arg - 1)) & (~Bitmask);
+	}
+
+	/** @return Rounds the given number up to the next highest power of two. */
+	static inline uint32 RoundUpToPowerOfTwo(uint32 Arg)
+	{
+		return 1 << CeilLogTwo(Arg);
+	}
+
+	static inline uint64 RoundUpToPowerOfTwo64(uint64 V)
+	{
+		return uint64(1) << CeilLogTwo64(V);
+	}
+
+	/** Computes absolute value in a generic way */
+	template< class T >
+	static constexpr inline T Abs(const T A)
+	{
+		return (A >= (T)0) ? A : -A;
+	}
+
+	/** Returns 1, 0, or -1 depending on relation of T to 0 */
+	template< class T >
+	static constexpr inline T Sign(const T A)
+	{
+		return (A > (T)0) ? (T)1 : ((A < (T)0) ? (T)-1 : (T)0);
+	}
+
+	/** Returns higher value in a generic way */
+	template< class T >
+	static constexpr inline T Max(const T A, const T B)
+	{
+		return (A >= B) ? A : B;
+	}
+
+	/** Returns lower value in a generic way */
+	template< class T >
+	static constexpr inline T Min(const T A, const T B)
+	{
+		return (A <= B) ? A : B;
+	}
+
+	static inline int32 CountBits(uint64 Bits)
+	{
+		// https://en.wikipedia.org/wiki/Hamming_weight
+		Bits -= (Bits >> 1) & 0x5555555555555555ull;
+		Bits = (Bits & 0x3333333333333333ull) + ((Bits >> 2) & 0x3333333333333333ull);
+		Bits = (Bits + (Bits >> 4)) & 0x0f0f0f0f0f0f0f0full;
+		return (Bits * 0x0101010101010101) >> 56;
 	}
 };

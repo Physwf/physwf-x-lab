@@ -22,9 +22,9 @@ struct XVector
 	explicit XVector(const XLinearColor& InColor) :X(InColor.R), Y(InColor.G), Z(InColor.B) {}
 
 
-	FVector operator^(const XVector& V) const
+	XVector operator^(const XVector& V) const
 	{
-		return FVector
+		return XVector
 		(
 			Y * V.Z - Z * V.Y,
 			Z * V.X - X * V.Z,
@@ -139,4 +139,50 @@ struct XVector
 		X /= V.X; Y /= V.Y; Z /= V.Z;
 		return *this;
 	}
+
+	float Size() const
+	{
+		return XMath::Sqrt(X*X + Y * Y + Z * Z);
+	}
+
+	float SizeSquared() const
+	{
+		return X * X + Y * Y + Z * Z;
+	}
+
+	bool inline Normalize(float Tolerance = SMALL_NUMBER)
+	{
+		const float SquareSum = X * X + Y * Y + Z * Z;
+		if (SquareSum > Tolerance)
+		{
+			const float Scale = XMath::InvSqrt(SquareSum);
+			X *= Scale; Y *= Scale; Z *= Scale;
+			return true;
+		}
+		return false;
+	}
+
+	static inline float DistSquared(const XVector &V1, const XVector &V2)
+	{
+		return XMath::Sqrt(XVector::DistSquared(V1, V2));
+	}
 };
+
+inline XVector2D::XVector2D(const XVector& V)
+	: X(V.X), Y(V.Y)
+{
+}
+
+XVector4::XVector4(const XVector& InVector, float InW /*= 1.0f*/)
+	: X(InVector.X)
+	, Y(InVector.Y)
+	, Z(InVector.Z)
+	, W(InW)
+{
+}
+
+inline XVector operator*(float Scale, const XVector& V)
+{
+	return V.operator*(Scale);
+}
+
