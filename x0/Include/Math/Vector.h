@@ -5,92 +5,92 @@
 #include "Vector4.h"
 #include "Color.h"
 
-struct XVector
+struct FVector
 {
 	float X, Y, Z;
 
-	XVector() {}
+	FVector() {}
 
-	explicit XVector(float Value) :X(Value), Y(Value), Z(Value) {}
+	explicit FVector(float Value) :X(Value), Y(Value), Z(Value) {}
 
-	XVector(float InX, float InY, float InZ) :X(InX), Y(InY), Z(InZ) {}
+	FVector(float InX, float InY, float InZ) :X(InX), Y(InY), Z(InZ) {}
 
-	explicit XVector(const XVector2D V, float InZ) :X(V.X), Y(V.Y), Z(InZ) {}
+	explicit FVector(const FVector2D V, float InZ) :X(V.X), Y(V.Y), Z(InZ) {}
 
-	XVector(const XVector4& V) :X(V.X), Y(V.Y), Z(V.Z) {}
+	FVector(const FVector4& V) :X(V.X), Y(V.Y), Z(V.Z) {}
 
-	explicit XVector(const XLinearColor& InColor) :X(InColor.R), Y(InColor.G), Z(InColor.B) {}
+	explicit FVector(const FLinearColor& InColor) :X(InColor.R), Y(InColor.G), Z(InColor.B) {}
 
 
-	XVector operator^(const XVector& V) const
+	FVector operator^(const FVector& V) const
 	{
-		return XVector
+		return FVector
 		(
 			Y * V.Z - Z * V.Y,
 			Z * V.X - X * V.Z,
 			X * V.Y - Y * V.X
 		);
 	}
-	static XVector CrossProduct(const XVector& A, const XVector& B)
+	static FVector CrossProduct(const FVector& A, const FVector& B)
 	{
 		return A ^ B;
 	}
 
-	float operator|(const XVector& V) const
+	float operator|(const FVector& V) const
 	{
 		return X * V.X + Y * V.Y + Z * V.Z;
 	}
-	static float DotProduct(const XVector& A, const XVector& B)
+	static float DotProduct(const FVector& A, const FVector& B)
 	{
 		return A | B;
 	}
 
-	XVector operator+(const XVector& V) const
+	FVector operator+(const FVector& V) const
 	{
-		return XVector(X + V.X, Y + V.Y, Z + V.Z);
+		return FVector(X + V.X, Y + V.Y, Z + V.Z);
 	}
-	XVector operator-(const XVector& V) const
+	FVector operator-(const FVector& V) const
 	{
-		return XVector(X - V.X, Y - V.Y, Z - V.Z);
-	}
-
-	XVector operator-(float Bias) const
-	{
-		return XVector(X - Bias, Y - Bias, Z - Bias);
+		return FVector(X - V.X, Y - V.Y, Z - V.Z);
 	}
 
-	XVector operator+(float Bias) const
+	FVector operator-(float Bias) const
 	{
-		return XVector(X + Bias, Y + Bias, Z + Bias);
+		return FVector(X - Bias, Y - Bias, Z - Bias);
 	}
 
-	XVector operator*(float Scale) const
+	FVector operator+(float Bias) const
 	{
-		return XVector(X * Scale, Y * Scale, Z * Scale);
+		return FVector(X + Bias, Y + Bias, Z + Bias);
 	}
 
-	XVector operator/(float Scale) const
+	FVector operator*(float Scale) const
+	{
+		return FVector(X * Scale, Y * Scale, Z * Scale);
+	}
+
+	FVector operator/(float Scale) const
 	{
 		const float RScale = 1.f / Scale;
-		return XVector(X * RScale, Y * RScale, Z * RScale);
+		return FVector(X * RScale, Y * RScale, Z * RScale);
 	}
 
-	XVector operator*(const XVector& V) const
+	FVector operator*(const FVector& V) const
 	{
-		return XVector(X * V.X, Y * V.Y, Z * V.Z);
+		return FVector(X * V.X, Y * V.Y, Z * V.Z);
 	}
 
-	XVector operator/(const XVector& V) const
+	FVector operator/(const FVector& V) const
 	{
-		return XVector(X / V.X, Y / V.Y, Z / V.Z);
+		return FVector(X / V.X, Y / V.Y, Z / V.Z);
 	}
 
-	bool operator==(const XVector& V) const
+	bool operator==(const FVector& V) const
 	{
 		return X == V.X && Y == V.Y && Z == V.Z;
 	}
 
-	bool operator!=(const XVector& V) const
+	bool operator!=(const FVector& V) const
 	{
 		return X != V.X || Y != V.Y || Z != V.Z;
 	}
@@ -98,43 +98,43 @@ struct XVector
 	//bool Equals(const XVector& V, float Tolerance = KINDA_SMALL_NUMBER) const;
 
 
-	XVector operator-() const
+	FVector operator-() const
 	{
-		return XVector(-X, -Y, -Z);
+		return FVector(-X, -Y, -Z);
 	}
 
-	XVector operator+=(const XVector& V)
+	FVector operator+=(const FVector& V)
 	{
 		X += V.X; Y += V.Y; Z += V.Z;
 		return *this;
 	}
 	
-	XVector operator-=(const XVector& V)
+	FVector operator-=(const FVector& V)
 	{
 		X -= V.X; Y -= V.Y; Z -= V.Z;
 		return *this;
 	}
 
-	XVector operator*=(float Scale)
+	FVector operator*=(float Scale)
 	{
 		X *= Scale; Y *= Scale; Z *= Scale;
 		return *this;
 	}
 
-	XVector operator/=(float V)
+	FVector operator/=(float V)
 	{
 		const float RV = 1.f / V;
 		X *= RV; Y *= RV; Z *= RV;
 		return *this;
 	}
 
-	XVector operator*=(const XVector& V)
+	FVector operator*=(const FVector& V)
 	{
 		X *= V.X; Y *= V.Y; Z *= V.Z;
 		return *this;
 	}
 
-	XVector operator/=(const XVector& V)
+	FVector operator/=(const FVector& V)
 	{
 		X /= V.X; Y /= V.Y; Z /= V.Z;
 		return *this;
@@ -142,7 +142,7 @@ struct XVector
 
 	float Size() const
 	{
-		return XMath::Sqrt(X*X + Y * Y + Z * Z);
+		return FMath::Sqrt(X*X + Y * Y + Z * Z);
 	}
 
 	float SizeSquared() const
@@ -155,25 +155,25 @@ struct XVector
 		const float SquareSum = X * X + Y * Y + Z * Z;
 		if (SquareSum > Tolerance)
 		{
-			const float Scale = XMath::InvSqrt(SquareSum);
+			const float Scale = FMath::InvSqrt(SquareSum);
 			X *= Scale; Y *= Scale; Z *= Scale;
 			return true;
 		}
 		return false;
 	}
 
-	static inline float DistSquared(const XVector &V1, const XVector &V2)
+	static inline float DistSquared(const FVector &V1, const FVector &V2)
 	{
-		return XMath::Sqrt(XVector::DistSquared(V1, V2));
+		return FMath::Sqrt(FVector::DistSquared(V1, V2));
 	}
 };
 
-inline XVector2D::XVector2D(const XVector& V)
+inline FVector2D::FVector2D(const FVector& V)
 	: X(V.X), Y(V.Y)
 {
 }
 
-XVector4::XVector4(const XVector& InVector, float InW /*= 1.0f*/)
+FVector4::FVector4(const FVector& InVector, float InW /*= 1.0f*/)
 	: X(InVector.X)
 	, Y(InVector.Y)
 	, Z(InVector.Z)
@@ -181,7 +181,7 @@ XVector4::XVector4(const XVector& InVector, float InW /*= 1.0f*/)
 {
 }
 
-inline XVector operator*(float Scale, const XVector& V)
+inline FVector operator*(float Scale, const FVector& V)
 {
 	return V.operator*(Scale);
 }

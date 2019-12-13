@@ -4,7 +4,7 @@
 #include <math.h>
 #include "CoreTypes.h"
 
-struct XGenericPlatformMath
+struct FGenericPlatformMath
 {
 	static constexpr inline int32 TruncToInt(float F)
 	{

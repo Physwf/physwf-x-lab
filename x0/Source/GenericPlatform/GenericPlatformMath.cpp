@@ -3,10 +3,10 @@
 
 static int32 GSRandSeed;
 
-float XGenericPlatformMath::Atan2(float Y, float X)
+float FGenericPlatformMath::Atan2(float Y, float X)
 {
-	const float absX = XGenericPlatformMath::Abs(X);
-	const float absY = XGenericPlatformMath::Abs(Y);
+	const float absX = FGenericPlatformMath::Abs(X);
+	const float absY = FGenericPlatformMath::Abs(Y);
 	const bool yAbsBigger = (absY > absX);
 	float t0 = yAbsBigger ? absY : absX; // Max(absY, absX)
 	float t1 = yAbsBigger ? absX : absY; // Min(absX, absY)
@@ -43,17 +43,17 @@ float XGenericPlatformMath::Atan2(float Y, float X)
 	return t3;
 }
 
-void XGenericPlatformMath::SRandInit(int32 Seed)
+void FGenericPlatformMath::SRandInit(int32 Seed)
 {
 	GSRandSeed = Seed;
 }
 
-int32 XGenericPlatformMath::GetRandSeed()
+int32 FGenericPlatformMath::GetRandSeed()
 {
 	return GSRandSeed;
 }
 
-float XGenericPlatformMath::SRand()
+float FGenericPlatformMath::SRand()
 {
 	GSRandSeed = (GSRandSeed * 196314165) + 907633515;
 	union { float f; int32 i; } Result;
@@ -61,5 +61,5 @@ float XGenericPlatformMath::SRand()
 	const float SRandTemp = 1.0f;
 	Temp.f = SRandTemp;
 	Result.i = (Temp.i & 0xff800000) | (GSRandSeed & 0x007fffff);
-	return XGenericPlatformMath::Fractional(Result.f);
+	return FGenericPlatformMath::Fractional(Result.f);
 }

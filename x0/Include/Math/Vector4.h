@@ -1,114 +1,114 @@
 #pragma once
 
-struct XVector;
-struct XLinearColor;
+struct FVector;
+struct FLinearColor;
 
-struct alignas(16) XVector4
+struct alignas(16) FVector4
 {
 	float X, Y, Z, W;
 
-	XVector4(const XVector& InVector, float InW = 1.0f);
+	FVector4(const FVector& InVector, float InW = 1.0f);
 
-	XVector4(const XLinearColor& InColor);
+	FVector4(const FLinearColor& InColor);
 
-	explicit XVector4(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f, float InW = 1.0f) : X(InX), Y(InY), Z(InZ), W(InW) {}
+	explicit FVector4(float InX = 0.0f, float InY = 0.0f, float InZ = 0.0f, float InW = 1.0f) : X(InX), Y(InY), Z(InZ), W(InW) {}
 
-	explicit XVector4(XVector2D InXY, XVector2D InZW) : X(InXY.X), Y(InXY.Y), Z(InZW.X), W(InZW.Y) {}
+	explicit FVector4(FVector2D InXY, FVector2D InZW) : X(InXY.X), Y(InXY.Y), Z(InZW.X), W(InZW.Y) {}
 
-	inline XVector4 operator-() const
+	inline FVector4 operator-() const
 	{
-		return XVector4(-X, -Y, -Z, -W);
+		return FVector4(-X, -Y, -Z, -W);
 	}
 
-	inline XVector4 operator+(const XVector4& V) const
+	inline FVector4 operator+(const FVector4& V) const
 	{
-		return XVector4(X + V.X, Y + V.Y, Z + V.Z, W + V.W);
+		return FVector4(X + V.X, Y + V.Y, Z + V.Z, W + V.W);
 	}
 
-	inline XVector4 operator+=(const XVector4& V)
+	inline FVector4 operator+=(const FVector4& V)
 	{
 		X += V.X; Y += V.Y; Z += V.Z; W += V.W;
 		return *this;
 	}
 
-	inline XVector4 operator-(const XVector4& V) const
+	inline FVector4 operator-(const FVector4& V) const
 	{
-		return XVector4(X - V.X, Y - V.Y, Z - V.Z, W - V.W);
+		return FVector4(X - V.X, Y - V.Y, Z - V.Z, W - V.W);
 	}
 
-	inline XVector4 operator-=(const XVector4& V)
+	inline FVector4 operator-=(const FVector4& V)
 	{
 		X -= V.X; Y -= V.Y; Z -= V.Z; W -= V.W;
 		return *this;
 	}
 
-	inline XVector4 operator*(float Scale) const
+	inline FVector4 operator*(float Scale) const
 	{
-		return XVector4(X * Scale, Y * Scale, Z * Scale, W * Scale);
+		return FVector4(X * Scale, Y * Scale, Z * Scale, W * Scale);
 	}
 
-	XVector4 operator/(float Scale) const
+	FVector4 operator/(float Scale) const
 	{
 		const float RScale = 1.f / Scale;
-		return XVector4(X * RScale, Y * RScale, Z * RScale, W * RScale);
+		return FVector4(X * RScale, Y * RScale, Z * RScale, W * RScale);
 	}
 
-	XVector4 operator/(const XVector4& V) const
+	FVector4 operator/(const FVector4& V) const
 	{
-		return XVector4(X / V.X, Y / V.Y, Z / V.Z, W / V.W);
+		return FVector4(X / V.X, Y / V.Y, Z / V.Z, W / V.W);
 	}
 
-	XVector4 operator*(const XVector4& V) const
+	FVector4 operator*(const FVector4& V) const
 	{
-		return XVector4(X * V.X, Y * V.Y, Z * V.Z, W * V.W);
+		return FVector4(X * V.X, Y * V.Y, Z * V.Z, W * V.W);
 	}
 
-	XVector4 operator*=(const XVector4& V)
+	FVector4 operator*=(const FVector4& V)
 	{
 		X *= V.X; Y *= V.Y; Z *= V.Z; W *= V.W;
 		return *this;
 	}
 
-	XVector4 operator/=(const XVector4& V)
+	FVector4 operator/=(const FVector4& V)
 	{
 		X /= V.X; Y /= V.Y; Z /= V.Z; W /= V.W;
 		return *this;
 	}
 
-	XVector4 operator*=(float S)
+	FVector4 operator*=(float S)
 	{
 		X *= S; Y *= S; Z *= S; W *= S;
 		return *this;
 	}
 
-	friend inline float Dot3(const XVector4& V1, const XVector4& V2)
+	friend inline float Dot3(const FVector4& V1, const FVector4& V2)
 	{
 		return V1.X*V2.X + V1.Y*V2.Y + V1.Z*V2.Z;
 	}
 
-	friend inline float Dot4(const XVector4& V1, const XVector4& V2)
+	friend inline float Dot4(const FVector4& V1, const FVector4& V2)
 	{
 		return V1.X*V2.X + V1.Y*V2.Y + V1.Z*V2.Z + V1.W*V2.W;
 	}
 
-	friend inline XVector4 operator*(float Scale, const XVector4& V)
+	friend inline FVector4 operator*(float Scale, const FVector4& V)
 	{
 		return V.operator*(Scale);
 	}
 
-	bool operator==(const XVector4& V) const
+	bool operator==(const FVector4& V) const
 	{
 		return ((X == V.X) && (Y == V.Y) && (Z == V.Z) && (W == V.W));
 	}
 
-	bool operator!=(const XVector4& V) const
+	bool operator!=(const FVector4& V) const
 	{
 		return ((X != V.X) || (Y != V.Y) || (Z != V.Z) || (W != V.W));
 	}
 
-	XVector4 operator^(const XVector4& V) const
+	FVector4 operator^(const FVector4& V) const
 	{
-		return XVector4(
+		return FVector4(
 			Y * V.Z - Z * V.Y,
 			Z * V.X - X * V.Z,
 			X * V.Y - Y * V.X,

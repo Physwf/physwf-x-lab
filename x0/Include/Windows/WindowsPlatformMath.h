@@ -2,9 +2,9 @@
 
 #include "GenericPlatform/GenericPlatformMath.h"
 
-struct XWindowsPlatformMath : public XGenericPlatformMath
+struct FWindowsPlatformMath : public FGenericPlatformMath
 {
 
 };
 
-typedef XWindowsPlatformMath XPlatformMath;
+typedef FWindowsPlatformMath FPlatformMath;

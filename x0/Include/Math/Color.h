@@ -2,11 +2,11 @@
 
 #include "XMath.h"
 
-struct XColor;
-struct XVector;
-struct XVector4;
+struct FColor;
+struct FVector;
+struct FVector4;
 
-struct XLinearColor
+struct FLinearColor
 {
 	float R, G, B, A;
 
@@ -14,31 +14,31 @@ struct XLinearColor
 
 	static float sRGBToLinearTable[256];
 
-	inline XLinearColor() {}
-	inline XLinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
+	inline FLinearColor() {}
+	inline FLinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
 
-	XLinearColor(const XColor& Color);
+	FLinearColor(const FColor& Color);
 
-	XLinearColor(const XVector& Vector);
+	FLinearColor(const FVector& Vector);
 
-	explicit XLinearColor(const XVector4& Vector);
+	explicit FLinearColor(const FVector4& Vector);
 
-	XColor ToRGBE() const;
+	FColor ToRGBE() const;
 
-	static XLinearColor FromSRGBColor(const XColor& Color);
+	static FLinearColor FromSRGBColor(const FColor& Color);
 
-	static XLinearColor FromPow22Color(const XColor& Color);
+	static FLinearColor FromPow22Color(const FColor& Color);
 
-	inline XLinearColor operator+(const XLinearColor& ColorB) const
+	inline FLinearColor operator+(const FLinearColor& ColorB) const
 	{
-		return XLinearColor(
+		return FLinearColor(
 			this->R + ColorB.R,
 			this->G + ColorB.G,
 			this->B + ColorB.B,
 			this->A + ColorB.A
 		);
 	}
-	inline XLinearColor& operator+=(const XLinearColor& ColorB)
+	inline FLinearColor& operator+=(const FLinearColor& ColorB)
 	{
 		R += ColorB.R;
 		G += ColorB.G;
@@ -47,16 +47,16 @@ struct XLinearColor
 		return *this;
 	}
 
-	inline XLinearColor operator-(const XLinearColor& ColorB) const
+	inline FLinearColor operator-(const FLinearColor& ColorB) const
 	{
-		return XLinearColor(
+		return FLinearColor(
 			this->R - ColorB.R,
 			this->G - ColorB.G,
 			this->B - ColorB.B,
 			this->A - ColorB.A
 		);
 	}
-	inline XLinearColor& operator-=(const XLinearColor& ColorB)
+	inline FLinearColor& operator-=(const FLinearColor& ColorB)
 	{
 		R -= ColorB.R;
 		G -= ColorB.G;
@@ -65,16 +65,16 @@ struct XLinearColor
 		return *this;
 	}
 
-	inline XLinearColor operator*(const XLinearColor& ColorB) const
+	inline FLinearColor operator*(const FLinearColor& ColorB) const
 	{
-		return XLinearColor(
+		return FLinearColor(
 			this->R * ColorB.R,
 			this->G * ColorB.G,
 			this->B * ColorB.B,
 			this->A * ColorB.A
 		);
 	}
-	inline XLinearColor& operator*=(const XLinearColor& ColorB)
+	inline FLinearColor& operator*=(const FLinearColor& ColorB)
 	{
 		R *= ColorB.R;
 		G *= ColorB.G;
@@ -83,9 +83,9 @@ struct XLinearColor
 		return *this;
 	}
 
-	inline XLinearColor operator*(float Scalar) const
+	inline FLinearColor operator*(float Scalar) const
 	{
-		return XLinearColor(
+		return FLinearColor(
 			this->R * Scalar,
 			this->G * Scalar,
 			this->B * Scalar,
@@ -93,7 +93,7 @@ struct XLinearColor
 		);
 	}
 
-	inline XLinearColor& operator*=(float Scalar)
+	inline FLinearColor& operator*=(float Scalar)
 	{
 		R *= Scalar;
 		G *= Scalar;
@@ -102,16 +102,16 @@ struct XLinearColor
 		return *this;
 	}
 
-	inline XLinearColor operator/(const XLinearColor& ColorB) const
+	inline FLinearColor operator/(const FLinearColor& ColorB) const
 	{
-		return XLinearColor(
+		return FLinearColor(
 			this->R / ColorB.R,
 			this->G / ColorB.G,
 			this->B / ColorB.B,
 			this->A / ColorB.A
 		);
 	}
-	inline XLinearColor& operator/=(const XLinearColor& ColorB)
+	inline FLinearColor& operator/=(const FLinearColor& ColorB)
 	{
 		R /= ColorB.R;
 		G /= ColorB.G;
@@ -120,17 +120,17 @@ struct XLinearColor
 		return *this;
 	}
 
-	inline XLinearColor operator/(float Scalar) const
+	inline FLinearColor operator/(float Scalar) const
 	{
 		const float	InvScalar = 1.0f / Scalar;
-		return XLinearColor(
+		return FLinearColor(
 			this->R * InvScalar,
 			this->G * InvScalar,
 			this->B * InvScalar,
 			this->A * InvScalar
 		);
 	}
-	inline XLinearColor& operator/=(float Scalar)
+	inline FLinearColor& operator/=(float Scalar)
 	{
 		const float	InvScalar = 1.0f / Scalar;
 		R *= InvScalar;
@@ -141,60 +141,60 @@ struct XLinearColor
 	}
 
 	// clamped in 0..1 range
-	inline XLinearColor GetClamped(float InMin = 0.0f, float InMax = 1.0f) const
+	inline FLinearColor GetClamped(float InMin = 0.0f, float InMax = 1.0f) const
 	{
-		XLinearColor Ret;
+		FLinearColor Ret;
 
-		Ret.R = XMath::Clamp(R, InMin, InMax);
-		Ret.G = XMath::Clamp(G, InMin, InMax);
-		Ret.B = XMath::Clamp(B, InMin, InMax);
-		Ret.A = XMath::Clamp(A, InMin, InMax);
+		Ret.R = FMath::Clamp(R, InMin, InMax);
+		Ret.G = FMath::Clamp(G, InMin, InMax);
+		Ret.B = FMath::Clamp(B, InMin, InMax);
+		Ret.A = FMath::Clamp(A, InMin, InMax);
 
 		return Ret;
 	}
 
-	inline bool operator==(const XLinearColor& ColorB) const
+	inline bool operator==(const FLinearColor& ColorB) const
 	{
 		return this->R == ColorB.R && this->G == ColorB.G && this->B == ColorB.B && this->A == ColorB.A;
 	}
-	inline bool operator!=(const XLinearColor& Other) const
+	inline bool operator!=(const FLinearColor& Other) const
 	{
 		return this->R != Other.R || this->G != Other.G || this->B != Other.B || this->A != Other.A;
 	}
 
-	static XLinearColor FGetHSV(uint8 H, uint8 S, uint8 V);
+	static FLinearColor FGetHSV(uint8 H, uint8 S, uint8 V);
 
 	/**
 	* Makes a random but quite nice color.
 	*/
-	static XLinearColor MakeRandomColor();
+	static FLinearColor MakeRandomColor();
 
 	/**
 	* Converts temperature in Kelvins of a black body radiator to RGB chromaticity.
 	*/
-	static XLinearColor MakeFromColorTemperature(float Temp);
+	static FLinearColor MakeFromColorTemperature(float Temp);
 
 	/**
 	 * Euclidean distance between two points.
 	 */
-	static inline float Dist(const XLinearColor &V1, const XLinearColor &V2)
+	static inline float Dist(const FLinearColor &V1, const FLinearColor &V2)
 	{
-		return XMath::Sqrt(XMath::Square(V2.R - V1.R) + XMath::Square(V2.G - V1.G) + XMath::Square(V2.B - V1.B) + XMath::Square(V2.A - V1.A));
+		return FMath::Sqrt(FMath::Square(V2.R - V1.R) + FMath::Square(V2.G - V1.G) + FMath::Square(V2.B - V1.B) + FMath::Square(V2.A - V1.A));
 	}
 
-	XLinearColor LinearRGBToHSV() const;
+	FLinearColor LinearRGBToHSV() const;
 
-	XLinearColor HSVToLinearRGB() const;
+	FLinearColor HSVToLinearRGB() const;
 
-	static XLinearColor LerpUsingHSV(const XLinearColor& From, const XLinearColor& To, const float Progress);
+	static FLinearColor LerpUsingHSV(const FLinearColor& From, const FLinearColor& To, const float Progress);
 
-	XColor Quantize() const;
+	FColor Quantize() const;
 
-	XColor QuantizeRound() const;
+	FColor QuantizeRound() const;
 
-	XColor ToXColor(const bool bSRGB) const;
+	FColor ToXColor(const bool bSRGB) const;
 
-	XLinearColor Desaturate(float Desaturation) const;
+	FLinearColor Desaturate(float Desaturation) const;
 
 	inline float ComputeLuminance() const
 	{
@@ -206,77 +206,77 @@ struct XLinearColor
 		return R * 0.3f + G * 0.59f + B * 0.11f;
 	}
 
-	static const XLinearColor White;
-	static const XLinearColor Gray;
-	static const XLinearColor Black;
-	static const XLinearColor Transparent;
-	static const XLinearColor Red;
-	static const XLinearColor Green;
-	static const XLinearColor Blue;
-	static const XLinearColor Yellow;
+	static const FLinearColor White;
+	static const FLinearColor Gray;
+	static const FLinearColor Black;
+	static const FLinearColor Transparent;
+	static const FLinearColor Red;
+	static const FLinearColor Green;
+	static const FLinearColor Blue;
+	static const FLinearColor Yellow;
 };
 
-struct XColor
+struct FColor
 {
 	union { struct { uint8 B, G, R, A; }; uint32 AlignmentDummy; };
 
 	uint32& DWColor(void) { return *((uint32*)this); }
 	const uint32& DWColor(void) const { return *((uint32*)this); }
 
-	inline XColor() {}
+	inline FColor() {}
 
-	inline XColor(uint8 InR, uint8 InG, uint8 InB, uint8 InA = 255)
+	inline FColor(uint8 InR, uint8 InG, uint8 InB, uint8 InA = 255)
 	{
 		R = InR;
 		G = InG;
 		B = InB;
 		A = InA;
 	}
-	inline explicit XColor(uint32 InColor)
+	inline explicit FColor(uint32 InColor)
 	{
 		DWColor() = InColor;
 	}
 
 	// Operators.
-	inline bool operator==(const XColor &C) const
+	inline bool operator==(const FColor &C) const
 	{
 		return DWColor() == C.DWColor();
 	}
 
-	inline bool operator!=(const XColor& C) const
+	inline bool operator!=(const FColor& C) const
 	{
 		return DWColor() != C.DWColor();
 	}
 
-	inline void operator+=(const XColor& C)
+	inline void operator+=(const FColor& C)
 	{
-		R = (uint8)XMath::Min((int32)R + (int32)C.R, 255);
-		G = (uint8)XMath::Min((int32)G + (int32)C.G, 255);
-		B = (uint8)XMath::Min((int32)B + (int32)C.B, 255);
-		A = (uint8)XMath::Min((int32)A + (int32)C.A, 255);
+		R = (uint8)FMath::Min((int32)R + (int32)C.R, 255);
+		G = (uint8)FMath::Min((int32)G + (int32)C.G, 255);
+		B = (uint8)FMath::Min((int32)B + (int32)C.B, 255);
+		A = (uint8)FMath::Min((int32)A + (int32)C.A, 255);
 	}
 
-	 XLinearColor FromRGBE() const;
+	 FLinearColor FromRGBE() const;
 
-	static XColor MakeRandomColor();
+	static FColor MakeRandomColor();
 
 	/**
 	 * Makes a color red->green with the passed in scalar (e.g. 0 is red, 1 is green)
 	 */
-	static XColor MakeRedToGreenColorFromScalar(float Scalar);
+	static FColor MakeRedToGreenColorFromScalar(float Scalar);
 
 	/**
 	* Converts temperature in Kelvins of a black body radiator to RGB chromaticity.
 	*/
-	static XColor MakeFromColorTemperature(float Temp);
+	static FColor MakeFromColorTemperature(float Temp);
 
 	/**
 	 *	@return a new XColor based of this color with the new alpha value.
 	 *	Usage: const XColor& MyColor = XColorList::Green.WithAlpha(128);
 	 */
-	XColor WithAlpha(uint8 Alpha) const
+	FColor WithAlpha(uint8 Alpha) const
 	{
-		return XColor(R, G, B, Alpha);
+		return FColor(R, G, B, Alpha);
 	}
 
 	/**
@@ -284,9 +284,9 @@ struct XColor
 	 *
 	 * @return The linear color representation.
 	 */
-	inline XLinearColor ReinterpretAsLinear() const
+	inline FLinearColor ReinterpretAsLinear() const
 	{
-		return XLinearColor(R / 255.f, G / 255.f, B / 255.f, A / 255.f);
+		return FLinearColor(R / 255.f, G / 255.f, B / 255.f, A / 255.f);
 	}
 
 	inline uint32 ToPackedARGB() const
@@ -319,23 +319,23 @@ struct XColor
 	}
 
 	/** Some pre-inited colors, useful for debug code */
-	static const XColor White;
-	static const XColor Black;
-	static const XColor Transparent;
-	static const XColor Red;
-	static const XColor Green;
-	static const XColor Blue;
-	static const XColor Yellow;
-	static const XColor Cyan;
-	static const XColor Magenta;
-	static const XColor Orange;
-	static const XColor Purple;
-	static const XColor Turquoise;
-	static const XColor Silver;
-	static const XColor Emerald;
+	static const FColor White;
+	static const FColor Black;
+	static const FColor Transparent;
+	static const FColor Red;
+	static const FColor Green;
+	static const FColor Blue;
+	static const FColor Yellow;
+	static const FColor Cyan;
+	static const FColor Magenta;
+	static const FColor Orange;
+	static const FColor Purple;
+	static const FColor Turquoise;
+	static const FColor Silver;
+	static const FColor Emerald;
 };
 
-inline XLinearColor operator*(float Scalar, const XLinearColor& Color)
+inline FLinearColor operator*(float Scalar, const FLinearColor& Color)
 {
 	return Color.operator*(Scalar);
 }

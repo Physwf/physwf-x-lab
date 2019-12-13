@@ -3,157 +3,157 @@
 #include "CoreTypes.h"
 #include "Math/XMath.h"
 
-struct XVector;
+struct FVector;
 
-struct XVector2D
+struct FVector2D
 {
 	float X, Y;
 
-	XVector2D() { }
+	FVector2D() { }
 
-	XVector2D(float InX, float InY) :X(InX), Y(InY) { }
+	FVector2D(float InX, float InY) :X(InX), Y(InY) { }
 
-	explicit inline XVector2D(const XVector& V);
+	explicit inline FVector2D(const FVector& V);
 
-	XVector2D operator+(const XVector2D& V) const
+	FVector2D operator+(const FVector2D& V) const
 	{
-		return XVector2D(X + V.X, Y + V.Y);
+		return FVector2D(X + V.X, Y + V.Y);
 	}
 
-	XVector2D operator-(const XVector2D& V) const
+	FVector2D operator-(const FVector2D& V) const
 	{
-		return XVector2D(X - V.X, Y - V.Y);
+		return FVector2D(X - V.X, Y - V.Y);
 	}
 
-	XVector2D operator*(float Scale) const
+	FVector2D operator*(float Scale) const
 	{
-		return XVector2D(X * Scale, Y * Scale);
+		return FVector2D(X * Scale, Y * Scale);
 	}
 
-	XVector2D operator/(float Scale) const
+	FVector2D operator/(float Scale) const
 	{
 		const float RScale = 1.f / Scale;
-		return XVector2D(X * RScale, Y * RScale);
+		return FVector2D(X * RScale, Y * RScale);
 	}
 
-	XVector2D operator+(float A) const
+	FVector2D operator+(float A) const
 	{
-		return XVector2D(X + A, Y + A);
+		return FVector2D(X + A, Y + A);
 	}
 
-	XVector2D operator-(float A) const
+	FVector2D operator-(float A) const
 	{
-		return XVector2D(X - A, Y - A);
+		return FVector2D(X - A, Y - A);
 	}
 
-	XVector2D operator*(const XVector2D& V) const
+	FVector2D operator*(const FVector2D& V) const
 	{
-		return XVector2D(X * V.X, Y * V.Y);
+		return FVector2D(X * V.X, Y * V.Y);
 	}
 
-	XVector2D operator/(const XVector2D& V) const
+	FVector2D operator/(const FVector2D& V) const
 	{
-		return XVector2D(X / V.X, Y / V.Y);
+		return FVector2D(X / V.X, Y / V.Y);
 	}
 
-	float operator|(const XVector2D& V) const
+	float operator|(const FVector2D& V) const
 	{
 		return X * V.X + Y * V.Y;
 	}
 
-	float operator^(const XVector2D& V) const
+	float operator^(const FVector2D& V) const
 	{
 		return X * V.Y - Y * V.X;
 	}
 
-	bool operator==(const XVector2D& V) const
+	bool operator==(const FVector2D& V) const
 	{
 		return X == V.X && Y == V.Y;
 	}
 
-	bool operator!=(const XVector2D& V) const
+	bool operator!=(const FVector2D& V) const
 	{
 		return X != V.X || Y != V.Y;
 	}
 
-	bool operator<(const XVector2D& Other) const
+	bool operator<(const FVector2D& Other) const
 	{
 		return X < Other.X && Y < Other.Y;
 	}
 
-	bool operator>(const XVector2D& Other) const
+	bool operator>(const FVector2D& Other) const
 	{
 		return X > Other.X && Y > Other.Y;
 	}
 
-	bool operator<=(const XVector2D& Other) const
+	bool operator<=(const FVector2D& Other) const
 	{
 		return X <= Other.X && Y <= Other.Y;
 	}
 
-	bool operator>=(const XVector2D& Other) const
+	bool operator>=(const FVector2D& Other) const
 	{
 		return X >= Other.X && Y >= Other.Y;
 	}
 
-	XVector2D operator-() const
+	FVector2D operator-() const
 	{
-		return XVector2D(-X, -Y);
+		return FVector2D(-X, -Y);
 	}
 
-	XVector2D operator+=(const XVector2D& V)
+	FVector2D operator+=(const FVector2D& V)
 	{
 		X += V.X; Y += V.Y;
 		return *this;
 	}
 
-	XVector2D operator-=(const XVector2D& V)
+	FVector2D operator-=(const FVector2D& V)
 	{
 		X -= V.X; Y -= V.Y;
 		return *this;
 	}
 
-	XVector2D operator*=(float Scale)
+	FVector2D operator*=(float Scale)
 	{
 		X *= Scale; Y *= Scale;
 		return *this;
 	}
 
-	XVector2D operator/=(float V)
+	FVector2D operator/=(float V)
 	{
 		const float RV = 1.f / V;
 		X *= RV; Y *= RV;
 		return *this;
 	}
 
-	XVector2D operator*=(const XVector2D& V)
+	FVector2D operator*=(const FVector2D& V)
 	{
 		X *= V.X; Y *= V.Y;
 		return *this;
 	}
 
-	XVector2D operator/=(const XVector2D& V)
+	FVector2D operator/=(const FVector2D& V)
 	{
 		X /= V.X; Y /= V.Y;
 		return *this;
 	}
 
-	static float DotProduct(const XVector2D& A, const XVector2D& B)
+	static float DotProduct(const FVector2D& A, const FVector2D& B)
 	{
 		return A | B;
 	}
 
-	static float DistSquared(const XVector2D& V1, const XVector2D& V2)
+	static float DistSquared(const FVector2D& V1, const FVector2D& V2)
 	{
-		return XMath::Square(V2.X - V1.X) + XMath::Square(V2.Y - V1.Y);
+		return FMath::Square(V2.X - V1.X) + FMath::Square(V2.Y - V1.Y);
 	}
 
-	static float Distance(const XVector2D& V1, const XVector2D& V2)
+	static float Distance(const FVector2D& V1, const FVector2D& V2)
 	{
-		return XMath::Sqrt(XVector2D::DistSquared(V1, V2));
+		return FMath::Sqrt(FVector2D::DistSquared(V1, V2));
 	}
 
-	static float CrossProduct(const XVector2D& A, const XVector2D& B)
+	static float CrossProduct(const FVector2D& A, const FVector2D& B)
 	{
 		return A ^ B;
 	}
@@ -162,7 +162,7 @@ struct XVector2D
 
 	float Size() const
 	{
-		return XMath::Sqrt(X*X + Y * Y);
+		return FMath::Sqrt(X*X + Y * Y);
 	}
 
 	float SizeSquared() const
@@ -175,7 +175,7 @@ struct XVector2D
 		const float SquareSum = X * X + Y * Y;
 		if (SquareSum > Tolerance)
 		{
-			const float Scale = XMath::InvSqrt(SquareSum);
+			const float Scale = FMath::InvSqrt(SquareSum);
 			X *= Scale;
 			Y *= Scale;
 			return;

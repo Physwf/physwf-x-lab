@@ -2,7 +2,7 @@
 
 #include "HAL/PlatformMath.h"
 
-struct XVector;
+struct FVector;
 
 #undef  PI
 #define PI 					(3.1415926535897932f)
@@ -21,7 +21,7 @@ struct XVector;
 // Magic numbers for numerical precision.
 #define DELTA			(0.00001f)
 
-struct XMath : public XPlatformMath
+struct FMath : public FPlatformMath
 {
 	static inline int32 RandHelper(int32 A)
 	{
