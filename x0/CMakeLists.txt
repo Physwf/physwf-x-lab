@@ -18,11 +18,12 @@ set_target_properties(libx0 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx0 PRIVATE "./Include")
 target_include_directories(libx0 PRIVATE "./Source")
 
+message(status "PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}")
 include(GenerateExportHeader)
 generate_export_header(libx0 
 						BASE_NAME X0
 						EXPORT_MACRO_NAME X0_API
-						EXPORT_FILE_NAME ./Include/X0.h
+						EXPORT_FILE_NAME ${PROJECT_SOURCE_DIR}/x0/Include/X0.h
 						)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")

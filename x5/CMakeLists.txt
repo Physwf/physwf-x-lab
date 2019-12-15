@@ -17,6 +17,12 @@ add_library(libx5 SHARED ${_source_list})
 set_target_properties(libx5 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx5 PRIVATE "./Include")
 target_include_directories(libx5 PRIVATE "./Source")
+target_include_directories(libx5 PRIVATE $ENV{FBX_SDK_HOME}/include)
+target_include_directories(libx5 PRIVATE "../x0/Include")
+target_link_libraries(libx5 libx0)
+
+find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
+target_link_libraries(libx5 ${FBXSDK_LIBRARY})
 
 include(GenerateExportHeader)
 generate_export_header(libx5 

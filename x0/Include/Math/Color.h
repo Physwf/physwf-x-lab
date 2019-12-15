@@ -1,5 +1,6 @@
 #pragma once
 
+#include "X0.h"
 #include "XMath.h"
 
 struct FColor;
@@ -206,14 +207,14 @@ struct FLinearColor
 		return R * 0.3f + G * 0.59f + B * 0.11f;
 	}
 
-	static const FLinearColor White;
-	static const FLinearColor Gray;
-	static const FLinearColor Black;
-	static const FLinearColor Transparent;
-	static const FLinearColor Red;
-	static const FLinearColor Green;
-	static const FLinearColor Blue;
-	static const FLinearColor Yellow;
+	X0_API static const FLinearColor White;
+	X0_API static const FLinearColor Gray;
+	X0_API static const FLinearColor Black;
+	X0_API static const FLinearColor Transparent;
+	X0_API static const FLinearColor Red;
+	X0_API static const FLinearColor Green;
+	X0_API static const FLinearColor Blue;
+	X0_API static const FLinearColor Yellow;
 };
 
 struct FColor
@@ -319,20 +320,20 @@ struct FColor
 	}
 
 	/** Some pre-inited colors, useful for debug code */
-	static const FColor White;
-	static const FColor Black;
-	static const FColor Transparent;
-	static const FColor Red;
-	static const FColor Green;
-	static const FColor Blue;
-	static const FColor Yellow;
-	static const FColor Cyan;
-	static const FColor Magenta;
-	static const FColor Orange;
-	static const FColor Purple;
-	static const FColor Turquoise;
-	static const FColor Silver;
-	static const FColor Emerald;
+	X0_API static const FColor White;
+	X0_API static const FColor Black;
+	X0_API static const FColor Transparent;
+	X0_API static const FColor Red;
+	X0_API static const FColor Green;
+	X0_API static const FColor Blue;
+	X0_API static const FColor Yellow;
+	X0_API static const FColor Cyan;
+	X0_API static const FColor Magenta;
+	X0_API static const FColor Orange;
+	X0_API static const FColor Purple;
+	X0_API static const FColor Turquoise;
+	X0_API static const FColor Silver;
+	X0_API static const FColor Emerald;
 };
 
 inline FLinearColor operator*(float Scalar, const FLinearColor& Color)
