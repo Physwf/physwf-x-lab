@@ -13,25 +13,17 @@ foreach(_source IN ITEMS ${_source_list})
     source_group("${_group_path}" FILES "${_source}")
 endforeach()
 
-add_library(libx5 SHARED ${_source_list})
-set_target_properties(libx5 PROPERTIES FOLDER "Libraries")
-target_include_directories(libx5 PRIVATE "./Include")
-target_include_directories(libx5 PRIVATE "./Source")
-target_include_directories(libx5 PRIVATE $ENV{FBX_SDK_HOME}/include)
-target_include_directories(libx5 PRIVATE "../x0/Include")
-target_link_libraries(libx5 libx0)
+add_executable(JEngine ${_source_list})
+target_include_directories(JEngine PRIVATE "./Include")
+target_include_directories(JEngine PRIVATE "./Source")
+target_include_directories(JEngine PRIVATE "../x0/Include")
+target_include_directories(JEngine PRIVATE "../x5/Include")
+target_link_libraries(JEngine libx0)
+target_link_libraries(JEngine libx5)
 
-find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
-target_link_libraries(libx5 ${FBXSDK_LIBRARY})
+SET(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 
-SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-
-include(GenerateExportHeader)
-generate_export_header(libx5 
-						BASE_NAME X5
-						EXPORT_MACRO_NAME X5_API
-						EXPORT_FILE_NAME ${PROJECT_SOURCE_DIR}/x5/Include/X5.h
-						)
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	message(status " current platform: Linux ")

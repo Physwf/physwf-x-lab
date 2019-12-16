@@ -13,6 +13,233 @@ void FFbxImporter::ReadAllMeshNodes(FbxNode* pNode, std::vector<FbxNode*>& pOutM
 	}
 }
 
+void FFbxImporter::ParseVertexPosition(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter)
+{
+	FbxVector4* ContorlPoints = pMesh->GetControlPoints();
+	FbxVector4 Position = ContorlPoints[ControlPointIndex];
+}
+
+void FFbxImporter::ParseVertexColor(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter)
+{
+	int VertexColorCount = pMesh->GetElementVertexColorCount();
+	if (VertexColorCount <= 0) return;
+
+	FbxLayerElementVertexColor* VertexColors = pMesh->GetElementVertexColor();
+
+	switch (VertexColors->GetMappingMode())
+	{
+	case FbxLayerElement::eByControlPoint:
+	{
+		switch (VertexColors->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxColor Color = VertexColors->GetDirectArray().GetAt(ControlPointIndex);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexColors->GetIndexArray().GetAt(ControlPointIndex);
+			FbxColor Color = VertexColors->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	case FbxLayerElement::eByPolygonVertex:
+	{
+		switch (VertexColors->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxColor Color = VertexColors->GetDirectArray().GetAt(VertexCounter);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			 int Index = VertexColors->GetIndexArray().GetAt(VertexCounter);
+			 FbxColor Color = VertexColors->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	}
+}
+
+void FFbxImporter::ParseVertexNormal(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter)
+{
+	if (pMesh->GetElementNormalCount() <= 0) return;
+
+	FbxLayerElementNormal* VertexNormals = pMesh->GetElementNormal();
+
+	switch (VertexNormals->GetMappingMode())
+	{
+	case FbxLayerElement::eByControlPoint:
+	{
+		switch (VertexNormals->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexNormals->GetDirectArray().GetAt(ControlPointIndex);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index =	VertexNormals->GetIndexArray().GetAt(ControlPointIndex);
+			FbxVector4 Normal = VertexNormals->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	case FbxLayerElement::eByPolygonVertex:
+	{
+		switch (VertexNormals->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexNormals->GetDirectArray().GetAt(VertexCounter);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexNormals->GetIndexArray().GetAt(VertexCounter);
+			FbxVector4 Normal = VertexNormals->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	}
+}
+
+void FFbxImporter::ParseVertexBinormal(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter)
+{
+	if (pMesh->GetElementBinormalCount() <= 0) return;
+
+	FbxLayerElementBinormal* VertexBinormals = pMesh->GetElementBinormal();
+
+	switch (VertexBinormals->GetMappingMode())
+	{
+	case FbxLayerElement::eByControlPoint:
+	{
+		switch (VertexBinormals->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexBinormals->GetDirectArray().GetAt(ControlPointIndex);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexBinormals->GetIndexArray().GetAt(ControlPointIndex);
+			FbxVector4 Normal = VertexBinormals->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	case FbxLayerElement::eByPolygonVertex:
+	{
+		switch (VertexBinormals->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexBinormals->GetDirectArray().GetAt(VertexCounter);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexBinormals->GetIndexArray().GetAt(VertexCounter);
+			FbxVector4 Normal = VertexBinormals->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	}
+}
+
+void FFbxImporter::ParseVertexTangent(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter)
+{
+	if (pMesh->GetElementTangentCount() <= 0) return;
+
+	FbxLayerElementTangent* VertexTangents = pMesh->GetElementTangent();
+
+	switch (VertexTangents->GetMappingMode())
+	{
+	case FbxLayerElement::eByControlPoint:
+	{
+		switch (VertexTangents->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexTangents->GetDirectArray().GetAt(ControlPointIndex);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexTangents->GetIndexArray().GetAt(ControlPointIndex);
+			FbxVector4 Normal = VertexTangents->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	case FbxLayerElement::eByPolygonVertex:
+	{
+		switch (VertexTangents->GetReferenceMode())
+		{
+		case FbxLayerElement::eDirect:
+		{
+			FbxVector4 Normal = VertexTangents->GetDirectArray().GetAt(VertexCounter);
+			break;
+		}
+		case FbxLayerElement::eIndex:
+		{
+			break;
+		}
+		case FbxLayerElement::eIndexToDirect:
+		{
+			int Index = VertexTangents->GetIndexArray().GetAt(VertexCounter);
+			FbxVector4 Normal = VertexTangents->GetDirectArray().GetAt(Index);
+			break;
+		}
+		}
+		break;
+	}
+	}
+}
+
 void FFbxImporter::Import(const char* InFileName, UStaticMesh* OutMesh)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
@@ -25,6 +252,7 @@ void FFbxImporter::Import(const char* InFileName, UStaticMesh* OutMesh)
 	{
 		//X_LOG("Call to FbxImporter::Initialize() failed.\n");
 		//X_LOG("Error returned: %s \n\n", lImporter->GetStatus().GetErrorString());
+		std::string error = lImporter->GetStatus().GetErrorString();
 		return;
 	}
 	FbxScene* lScene = FbxScene::Create(lFbxManager, "Mesh");
@@ -57,69 +285,22 @@ void FFbxImporter::Import(const char* InFileName, UStaticMesh* OutMesh)
 				}
 			}
 
-			FbxLayer* BaseLayer = lMesh->GetLayer(0);
 
-			bool bSmootingAvaliable = false;
-			FbxLayerElementSmoothing* SmoothingInfo = BaseLayer->GetSmoothing();
-			FbxLayerElement::EReferenceMode SmoothingReferenceMode(FbxLayerElement::eDirect);
-			FbxLayerElement::EMappingMode SmoothingMappingMode(FbxLayerElement::eByEdge);
-			if (SmoothingInfo)
+			int PolygonCount = lMesh->GetPolygonCount();
+			int VertexCounter = 0;
+			for (int i = 0; i < PolygonCount; ++i)
 			{
-				if (SmoothingInfo->GetMappingMode() == FbxLayerElement::eByPolygon)
+				for (int j = 0; j < lMesh->GetPolygonSize(i); ++i)
 				{
-					GeometryConverter->ComputeEdgeSmoothingFromPolygonSmoothing(lMesh, 0);
+					int ContorlPointIndex = lMesh->GetPolygonVertex(i, j);
+					ParseVertexPosition(lMesh, ContorlPointIndex, VertexCounter);
+					ParseVertexColor(lMesh, ContorlPointIndex, VertexCounter);
+					ParseVertexNormal(lMesh, ContorlPointIndex, VertexCounter);
+					ParseVertexBinormal(lMesh, ContorlPointIndex, VertexCounter);
+					ParseVertexTangent(lMesh, ContorlPointIndex, VertexCounter);
+					++VertexCounter;
 				}
-
-				if (SmoothingInfo->GetMappingMode() == FbxLayerElement::eByEdge)
-				{
-					bSmootingAvaliable = true;
-				}
-
-				SmoothingReferenceMode = SmoothingInfo->GetReferenceMode();
-				SmoothingMappingMode = SmoothingInfo->GetMappingMode();
 			}
-
-			FbxLayerElementVertexColor* LayerElementVertexColor = BaseLayer->GetVertexColors();
-			FbxLayerElement::EReferenceMode VertexColorReferenceMode(FbxLayerElement::eDirect);
-			FbxLayerElement::EMappingMode VertexColorMappingMode(FbxLayerElement::eByControlPoint);
-			if (LayerElementVertexColor)
-			{
-				VertexColorReferenceMode = LayerElementVertexColor->GetReferenceMode();
-				VertexColorMappingMode = LayerElementVertexColor->GetMappingMode();
-			}
-
-			FbxLayerElementNormal* LayerElementNormal = BaseLayer->GetNormals();
-			FbxLayerElementTangent* LayerElementTangent = BaseLayer->GetTangents();
-			FbxLayerElementBinormal* LayerElementBinormal = BaseLayer->GetBinormals();
-
-			bool bHasNTBInfomation = LayerElementNormal && LayerElementTangent && LayerElementBinormal;
-
-			FbxLayerElement::EReferenceMode NormalReferenceMode(FbxLayerElement::eDirect);
-			FbxLayerElement::EMappingMode NormalMappingMode(FbxLayerElement::eByControlPoint);
-			if (LayerElementNormal)
-			{
-				NormalReferenceMode = LayerElementNormal->GetReferenceMode();
-				NormalMappingMode = LayerElementNormal->GetMappingMode();
-			}
-
-			FbxLayerElement::EReferenceMode TangentReferenceMode(FbxLayerElement::eDirect);
-			FbxLayerElement::EMappingMode TangentMappingMode(FbxLayerElement::eByControlPoint);
-			if (LayerElementTangent)
-			{
-				TangentReferenceMode = LayerElementTangent->GetReferenceMode();
-				TangentMappingMode = LayerElementTangent->GetMappingMode();
-			}
-
-			FbxLayerElement::EReferenceMode BinormalReferenceMode(FbxLayerElement::eDirect);
-			FbxLayerElement::EMappingMode BinormalMappingMode(FbxLayerElement::eByControlPoint);
-			if (LayerElementBinormal)
-			{
-				BinormalReferenceMode = LayerElementBinormal->GetReferenceMode();
-				BinormalMappingMode = LayerElementBinormal->GetMappingMode();
-			}
-
-			lMesh->GetElementVertexColorCount();
-			lMesh->GetElementVertexColor()
 		}
 	}
 }
