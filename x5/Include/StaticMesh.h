@@ -8,19 +8,13 @@
 #include "Math/Vector4.h"
 #include "Math/Color.h"
 
+#include "MeshDescription/MeshDescription.h"
+
 class UStaticMesh
 {
-	struct Vertex
-	{
-		FVector Position;
-		FLinearColor Color;
-		FVector Normal;
-		FVector Binormal;
-		FVector Tangent;
-	};
 
 private:
-
+	FMeshDescription* MeshDescription;
 };
 
 class FFbxImporter

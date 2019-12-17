@@ -173,7 +173,7 @@ inline FVector2D::FVector2D(const FVector& V)
 {
 }
 
-FVector4::FVector4(const FVector& InVector, float InW /*= 1.0f*/)
+inline FVector4::FVector4(const FVector& InVector, float InW /*= 1.0f*/)
 	: X(InVector.X)
 	, Y(InVector.Y)
 	, Z(InVector.Z)
