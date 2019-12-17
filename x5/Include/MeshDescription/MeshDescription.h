@@ -3,6 +3,7 @@
 #include <vector>
 #include "MeshElementArray.h"
 #include "MeshTypes.h"
+#include "MeshAttributeArray.h"
 
 struct FMeshVertex
 {
@@ -137,4 +138,10 @@ private:
 	FEdgeArray EdgeArray;
 	FPolygonArray PolygonArray;
 	FPolygonGroupArray PolygonGroupArray;
+
+	TAttributesSet<FVertexID> VertexAttributesSet;
+	TAttributesSet<FVertexInstanceID> VertexInstanceAttributesSet;
+	TAttributesSet<FEdgeID> EdgeAttributesSet;
+	TAttributesSet<FPolygonID> PolygonAttributesSet;
+	TAttributesSet<FPolygonGroupID> PolygonGroupAttributesSet;
 };

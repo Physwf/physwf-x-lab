@@ -1,5 +1,63 @@
 #include "StaticMesh.h"
 
+UStaticMeshDescriptions::UStaticMeshDescriptions()
+{
+
+}
+
+UStaticMeshDescriptions::~UStaticMeshDescriptions()
+{
+
+}
+
+void UStaticMeshDescriptions::Empty()
+{
+	MeshDescriptions.clear();
+}
+
+int32 UStaticMeshDescriptions::Num() const
+{
+	return (int32)MeshDescriptions.size();
+}
+
+void UStaticMeshDescriptions::SetNum(const int32 Num)
+{
+	MeshDescriptions.resize(Num);
+}
+
+FMeshDescription* UStaticMeshDescriptions::Get(int32 Index) const
+{
+	return MeshDescriptions[Index].get();
+}
+
+FMeshDescription* UStaticMeshDescriptions::Create(int32 Index)
+{
+	return (MeshDescriptions[Index] = std::make_unique<FMeshDescription>()).get();
+}
+
+void UStaticMeshDescriptions::Reset(int32 Index)
+{
+	MeshDescriptions[Index].reset();
+}
+
+void UStaticMeshDescriptions::InsertAt(int32 Index, int32 Count /*= 1*/)
+{
+	while (Count--)
+	{
+		MeshDescriptions.insert(MeshDescriptions.begin() + Index, std::make_unique<FMeshDescription>());
+	}
+}
+
+void UStaticMeshDescriptions::RemoveAt(int32 Index, int32 Count /*= 1*/)
+{
+	MeshDescriptions.erase(MeshDescriptions.begin() + Index, MeshDescriptions.begin() + Index + Count);
+}
+
+FMeshDescription* UStaticMesh::GetOriginalMeshDescription(int32 LodIndex)
+{
+	return nullptr;
+}
+
 void FFbxImporter::ReadAllMeshNodes(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray)
 {
 	if (pNode->GetMesh())
@@ -240,7 +298,7 @@ void FFbxImporter::ParseVertexTangent(FbxMesh* pMesh, int ControlPointIndex, int
 	}
 }
 
-void FFbxImporter::Import(const char* InFileName, UStaticMesh* OutMesh)
+void FFbxImporter::ImportStaticMeshAsSingle(const char* InFileName, UStaticMesh* OutMesh)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
 
