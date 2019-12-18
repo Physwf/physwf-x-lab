@@ -168,15 +168,23 @@ private:
 
 class FFbxImporter
 {
-private:
-	static void ReadAllMeshNodes(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray);
-	static void ParseVertexPosition(FbxMesh* pMesh,int ControlPointIndex,int VertexCounter);
-	static void ParseVertexColor(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter);
-	static void ParseVertexNormal(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter);
-	static void ParseVertexBinormal(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter);
-	static void ParseVertexTangent(FbxMesh* pMesh, int ControlPointIndex, int VertexCounter);
 public:
-	static UStaticMesh* ImportStaticMesh(const char* InFileName, int LODIndex = 0);
+	struct FFbxMaterial
+	{
+		FbxSurfaceMaterial* FbxMaterial;
+		//UMaterialInterface* Material;
+
+		std::string GetName() const { return FbxMaterial ? FbxMaterial->GetName() : ("None"); }
+	};
+
+	FFbxImporter();
+
+	void ReadAllMeshNodes(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray);
+
+	UStaticMesh*		ImportStaticMesh(const char* InFileName, int LODIndex = 0);
+	bool				BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* StaticMesh, std::vector<FFbxMaterial>& MeshMaterials, int LODIndex);
+protected:
+	FbxGeometryConverter* GeometryConverter;
 };
 
 class FObjImporter

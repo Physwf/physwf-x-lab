@@ -26,7 +26,7 @@ protected:
 
 	void Insert(const int32 Index, const ElementType& Default)
 	{
-		if (Index >= Container.size())
+		if (Index >= (int32)Container.size())
 		{
 			Container.resize(Index, ElementType(Default));
 		}
