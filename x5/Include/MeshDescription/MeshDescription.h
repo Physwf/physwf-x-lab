@@ -132,6 +132,56 @@ using FPolygonGroupArray = TMeshElementArray<FMeshPolygonGroup, FPolygonGroupID>
 
 class FMeshDescription
 {
+public:
+	FVertexArray& Vertices() { return VertexArray; }
+	const FVertexArray& Vertices() const { return VertexArray; }
+
+	FMeshVertex& GetVertex(const FVertexID VertexID) { return VertexArray[VertexID]; }
+	const FMeshVertex& GetVertex(const FVertexID VertexID) const { return VertexArray[VertexID]; }
+
+	FVertexInstanceArray& VertexInstances() { return VertexInstanceArray; }
+	const FVertexInstanceArray& VertexInstances() const { return VertexInstanceArray; }
+
+	FMeshVertexInstance& GetVertexInstance(const FVertexInstanceID VertexInstanceID) { return VertexInstanceArray[VertexInstanceID]; }
+	const FMeshVertexInstance& GetVertexInstance(const FVertexInstanceID VertexInstanceID) const { return VertexInstanceArray[VertexInstanceID]; }
+
+	FEdgeArray& Edges() { return EdgeArray; }
+	const FEdgeArray& Edges() const { return EdgeArray; }
+
+	FMeshEdge& GetEdge(const FEdgeID EdgeID) { return EdgeArray[EdgeID]; }
+	const FMeshEdge& GetEdge(const FEdgeID EdgeID) const { return EdgeArray[EdgeID]; }
+
+	FPolygonArray& Polygons() { return PolygonArray; }
+	const FPolygonArray& Polygons() const { return PolygonArray; }
+
+	FMeshPolygon& GetPolygon(const FPolygonID PolygonID) { return PolygonArray[PolygonID]; }
+	const FMeshPolygon& GetPolygon(const FPolygonID PolygonID) const { return PolygonArray[PolygonID]; }
+
+	FPolygonGroupArray& PolygonGroups() { return PolygonGroupArray; }
+	const FPolygonGroupArray& PolygonGroups() const { return PolygonGroupArray; }
+
+	FMeshPolygonGroup& GetPolygonGroup(const FPolygonGroupID PolygonGroupID) { return PolygonGroupArray[PolygonGroupID]; }
+	const FMeshPolygonGroup& GetPolygonGroup(const FPolygonGroupID PolygonGroupID) const { return PolygonGroupArray[PolygonGroupID]; }
+
+	TAttributesSet<FVertexID>& VertexAttributes() { return VertexAttributesSet; }
+	const TAttributesSet<FVertexID>& VertexAttributes() const { return VertexAttributesSet; }
+
+	TAttributesSet<FVertexInstanceID>& VertexInstanceAttributes() { return VertexInstanceAttributesSet; }
+	const TAttributesSet<FVertexInstanceID>& VertexInstanceAttributes() const { return VertexInstanceAttributesSet; }
+
+	TAttributesSet<FEdgeID>& EdgeAttributes() { return EdgeAttributesSet; }
+	const TAttributesSet<FEdgeID>& EdgeAttributes() const { return EdgeAttributesSet; }
+
+	TAttributesSet<FPolygonID>& PolygonAttributes() { return PolygonAttributesSet; }
+	const TAttributesSet<FPolygonID>& PolygonAttributes() const { return PolygonAttributesSet; }
+
+	TAttributesSet<FPolygonGroupID>& PolygonGroupAttributes() { return PolygonGroupAttributesSet; }
+	const TAttributesSet<FPolygonGroupID>& PolygonGroupAttributes() const { return PolygonGroupAttributesSet; }
+private:
+	void CreateVertex_Internal(const FVertexID VertexID)
+	{
+		VertexAttributesSet.Insert(VertexID);
+	}
 private:
 	FVertexArray VertexArray;
 	FVertexInstanceArray VertexInstanceArray;

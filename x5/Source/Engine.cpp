@@ -4,7 +4,7 @@
 
 void JEngine::Init()
 {
-	FFbxImporter::ImportStaticMeshAsSingle("./4gikevqde8-IronMan/ironman.FBX", NULL);
+	FFbxImporter::ImportStaticMesh("./4gikevqde8-IronMan/ironman.FBX", NULL);
 }
 
 void JEngine::Tick()

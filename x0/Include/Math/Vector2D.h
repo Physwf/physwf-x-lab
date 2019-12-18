@@ -1,5 +1,7 @@
 #pragma once
 
+#include "X0.h"
+
 #include "CoreTypes.h"
 #include "Math/XMath.h"
 
@@ -8,6 +10,14 @@ struct FVector;
 struct FVector2D
 {
 	float X, Y;
+
+public:
+
+	/** Global 2D zero vector constant (0,0) */
+	static X0_API const FVector2D ZeroVector;
+
+	/** Global 2D unit vector constant (1,1) */
+	static X0_API const FVector2D UnitVector;
 
 	FVector2D() { }
 

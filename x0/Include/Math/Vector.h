@@ -1,5 +1,7 @@
 #pragma once
 
+#include "X0.h"
+
 #include "CoreTypes.h"
 #include "Vector2D.h"
 #include "Vector4.h"
@@ -8,6 +10,20 @@
 struct FVector
 {
 	float X, Y, Z;
+public:
+	static X0_API const FVector ZeroVector;
+
+	/** One vector (1,1,1) */
+	static X0_API const FVector OneVector;
+
+	/** World up vector (0,0,1) */
+	static X0_API const FVector UpVector;
+
+	/** Unreal forward vector (1,0,0) */
+	static X0_API const FVector ForwardVector;
+
+	/** Unreal right vector (0,1,0) */
+	static X0_API const FVector RightVector;
 
 	FVector() {}
 
@@ -185,4 +201,3 @@ inline FVector operator*(float Scale, const FVector& V)
 {
 	return V.operator*(Scale);
 }
-

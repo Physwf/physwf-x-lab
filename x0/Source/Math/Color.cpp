@@ -27,6 +27,16 @@ const FColor FColor::Turquoise(26, 188, 156);
 const FColor FColor::Silver(189, 195, 199);
 const FColor FColor::Emerald(46, 204, 113);
 
+
+X0_API const FVector FVector::ZeroVector(0.0f, 0.0f, 0.0f);
+X0_API const FVector FVector::OneVector(1.0f, 1.0f, 1.0f);
+X0_API const FVector FVector::UpVector(0.0f, 0.0f, 1.0f);
+X0_API const FVector FVector::ForwardVector(1.0f, 0.0f, 0.0f);
+X0_API const FVector FVector::RightVector(0.0f, 1.0f, 0.0f);
+X0_API const FVector2D FVector2D::ZeroVector(0.0f, 0.0f);
+X0_API const FVector2D FVector2D::UnitVector(1.0f, 1.0f);
+
+
 static const float OneOver255 = 1.0f / 255.0f;
 
 FLinearColor::FLinearColor(const FColor& Color)

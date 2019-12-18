@@ -77,7 +77,7 @@ public:
 	inline const ElementType& operator[](const ElementIDType ID) const
 	{
 		//checkSlow(Container.IsAllocated(ID.GetValue()));
-		return Container[ID.GetValue()];
+		return Container.at(ID.GetValue());
 	}
 
 	/** Returns the number of elements in the container */
@@ -89,7 +89,7 @@ public:
 	/** Returns the first valid ID */
 	inline ElementIDType GetFirstValidID() const
 	{
-		return Container.Num() > 0 ? ElementIDType(Container.begin()->first) : ElementIDType::Invalid;
+		return MaxID > 0 ? ElementIDType(Container.begin()->first) : ElementIDType::Invalid;
 	}
 
 	/** Returns whether the given ID is valid or not */

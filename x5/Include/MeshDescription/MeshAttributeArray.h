@@ -20,6 +20,10 @@ template <typename ElementType>
 class TMeshAttributeArrayBase
 {
 public:
+protected:
+
+	friend class UMeshDescription;
+
 	void Insert(const int32 Index, const ElementType& Default)
 	{
 		if (Index >= Container.size())
@@ -30,12 +34,15 @@ public:
 
 	void Initialize(const int32 ElementCount, const ElementType& Default)
 	{
-		Container.Reset(ElementCount);
+		Container.clear();
 		Insert(ElementCount - 1, Default);
 	}
 protected:
 	std::vector<ElementType> Container;
 };
+
+template <typename AttributeType, typename ElementIDType>
+class TAttributeIndicesArray;
 
 template <typename ElementType, typename ElementIDType>
 class TMeshAttributeArray : private TMeshAttributeArrayBase<ElementType>
@@ -52,6 +59,9 @@ public:
 
 	/** Return base of data */
 	inline const ElementType* GetData() const { return Container.data(); }
+
+protected:
+	friend class TAttributeIndicesArray <ElementType, ElementIDType>;
 };
 
 enum class EMeshAttributeFlags : uint32
@@ -119,7 +129,7 @@ public:
 	void SetNumIndices(const int32 NumIndices)
 	{
 		//check(NumIndices > 0);
-		const int32 OriginalNumIndices = ArrayForIndices.Num();
+		const int32 OriginalNumIndices = ArrayForIndices.size();
 		ArrayForIndices.resize(NumIndices);
 
 		// If we have added new indices, ensure they are filled out with the correct number of elements
@@ -157,7 +167,7 @@ public:
 
 	inline void RegisterAttribute(const std::string& AttributeName, const int32 NumberOfIndices, const AttributeType& Default, const EMeshAttributeFlags Flags)
 	{
-		if (!Map.find(AttributeName) == Map.end())
+		if (Map.find(AttributeName) == Map.end())
 		{
 			Map.emplace(AttributeName, TAttributeIndicesArray<AttributeType, ElementIDType>(NumberOfIndices, Default, Flags, NumElements));
 		}
@@ -215,34 +225,40 @@ public:
 	template <typename AttributeType>
 	void RegisterAttribute(const std::string& AttributeName, const int32 NumberOfIndices = 1, const AttributeType& Default = AttributeType(), const EMeshAttributeFlags Flags = EMeshAttributeFlags::None)
 	{
-		Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().RegisterAttribute(AttributeName, NumberOfIndices, Default, Flags);
+		std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).RegisterAttribute(AttributeName, NumberOfIndices, Default, Flags);
 	}
 	/** Unregister an attribute name with the given type */
 	template <typename AttributeType>
 	void UnregisterAttribute(const std::string& AttributeName)
 	{
-		Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().UnregisterAttribute(AttributeName);
+		std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).UnregisterAttribute(AttributeName);
 	}
 
 	template <typename AttributeType>
 	bool HasAttribute(const std::string& AttributeName) const
 	{
-		return Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().HasAttribute(AttributeName);
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).HasAttribute(AttributeName);
 	}
 
 	template <typename AttributeType>
 	TMeshAttributeArray<AttributeType, ElementIDType>& GetAttributes(const std::string& AttributeName, const int32 AttributeIndex = 0)
 	{
 		// @todo mesh description: should this handle non-existent attribute names and indices gracefully?
-		return Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().GetAttributes(AttributeName, AttributeIndex);
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributes(AttributeName, AttributeIndex);
 	}
 
 	template <typename AttributeType>
 	const TMeshAttributeArray<AttributeType, ElementIDType>& GetAttributes(const std::string& AttributeName, const int32 AttributeIndex = 0) const
 	{
 		// @todo mesh description: should this handle non-existent attribute names and indices gracefully?
-		return Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().GetAttributes(AttributeName, AttributeIndex);
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributes(AttributeName, AttributeIndex);
 	}
+
+	void Insert(const ElementIDType ElementID)
+	{
+		//VisitTupleElements([ElementID](auto& AttributesMap) { AttributesMap.Insert(ElementID); }, Container);
+	}
+
 private:
 	using ContainerType = 
 	std::tuple
