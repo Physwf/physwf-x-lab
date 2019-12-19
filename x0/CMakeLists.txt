@@ -4,6 +4,7 @@ file(
     LIST_DIRECTORIES false
     "${DIR_PROJECT}/*.cpp"
     "${DIR_PROJECT}/*.h"
+    "${DIR_PROJECT}/*.inl"
 )
 
 foreach(_source IN ITEMS ${_source_list})
