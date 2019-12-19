@@ -190,6 +190,23 @@ public:
 		return VertexID;
 	}
 private:
+	void CreateVertexInstance_Internal(const FVertexInstanceID VertexInstanceID, const FVertexID VertexID)
+	{
+		VertexInstanceArray[VertexInstanceID].VertexID = VertexID;
+		//check(!VertexArray[VertexID].VertexInstanceIDs.Contains(VertexInstanceID));
+		VertexArray[VertexID].VertexInstanceIDs.push_back(VertexInstanceID);
+		VertexInstanceAttributesSet.Insert(VertexInstanceID);
+	}
+
+public:
+	/** Adds a new vertex instance to the mesh and returns its ID */
+	FVertexInstanceID CreateVertexInstance(const FVertexID VertexID)
+	{
+		const FVertexInstanceID VertexInstanceID = VertexInstanceArray.Add();
+		CreateVertexInstance_Internal(VertexInstanceID, VertexID);
+		return VertexInstanceID;
+	}
+private:
 	FVertexArray VertexArray;
 	FVertexInstanceArray VertexInstanceArray;
 	FEdgeArray EdgeArray;

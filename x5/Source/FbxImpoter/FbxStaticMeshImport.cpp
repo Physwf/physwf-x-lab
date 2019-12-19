@@ -1,5 +1,6 @@
 #include "FbxImporter/FbxImporter.h"
 #include "MeshDescription/MeshAttributes.h"
+#include "Misc/AssertionMacros.h"
 
 FVector FFbxDataConverter::ConvertPos(FbxVector4 Vector)
 {
@@ -289,7 +290,93 @@ bool FFbxImporter::BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* Stati
 			return false;
 		}
 	}
+	Mesh->BeginGetMeshEdgeIndexForPolygon();
+	int32 CurrentVertexInstanceIndex = 0;
+	int32 SkippedVertexInstance = 0;
+	for (int32 PolygonIndex = 0; PolygonIndex < PolygonCount; PolygonIndex++)
+	{
+		int32 PolygonVertexCount = Mesh->GetPolygonSize(PolygonIndex);
+		//Verify if the polygon is degenerate, in this case do not add them
+		{
+			float ComparisonThreshold = ImportOptions->bRemoveDegenerates ? SMALL_NUMBER : 0.0f;
+			std::vector<FVector> P;
+			P.resize(PolygonVertexCount);
+			for (int32 CornerIndex = 0; CornerIndex < PolygonVertexCount; CornerIndex++)
+			{
+				const int32 ControlPointIndex = Mesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+				const FVertexID VertexID(VertexOffset + ControlPointIndex);
+				P[CornerIndex] = VertexPositions[VertexID];
+			}
+			//check(P.Num() > 2); //triangle is the smallest polygon we can have
+			const FVector Normal = ((P[1] - P[2]) ^ (P[0] - P[2])).GetSafeNormal(ComparisonThreshold);
+			//Check for degenerated polygons, avoid NAN
+			if (Normal.IsNearlyZero(ComparisonThreshold))
+			{
+				SkippedVertexInstance += PolygonVertexCount;
+				continue;
+			}
+		}
 
+		int32 RealPolygonIndex = PolygonOffset + PolygonIndex;
+		std::vector<FVertexInstanceID> CornerInstanceIDs;
+		CornerInstanceIDs.resize(PolygonVertexCount);
+		std::vector<FVertexID> CornerVerticesIDs;
+		CornerVerticesIDs.resize(PolygonVertexCount);
+		for (int32 CornerIndex = 0; CornerIndex < PolygonVertexCount; CornerIndex++, CurrentVertexInstanceIndex++)
+		{
+			int32 VertexInstanceIndex = VertexInstanceOffset + CurrentVertexInstanceIndex;
+			int32 RealFbxVertexIndex = SkippedVertexInstance + CurrentVertexInstanceIndex;
+			const FVertexInstanceID VertexInstanceID(VertexInstanceIndex);
+			CornerInstanceIDs[CornerIndex] = VertexInstanceID;
+			const int32 ControlPointIndex = Mesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+			const FVertexID VertexID(VertexOffset + ControlPointIndex);
+			const FVector VertexPosition = VertexPositions[VertexID];
+			CornerVerticesIDs[CornerIndex] = VertexID;
+
+			FVertexInstanceID AddedVertexInstanceId = MeshDescription->CreateVertexInstance(VertexID);
+
+			check(AddedVertexInstanceId == VertexInstanceID);
+
+			if (LayerElementNormal)
+			{
+				//normals may have different reference and mapping mode than tangents and binormals
+				int NormalMapIndex = (NormalMappingMode == FbxLayerElement::eByControlPoint) ?
+					ControlPointIndex : RealFbxVertexIndex;
+				int NormalValueIndex = (NormalReferenceMode == FbxLayerElement::eDirect) ?
+					NormalMapIndex : LayerElementNormal->GetIndexArray().GetAt(NormalMapIndex);
+
+				FbxVector4 TempValue = LayerElementNormal->GetDirectArray().GetAt(NormalValueIndex);
+				TempValue = TotalMatrixForNormal.MultT(TempValue);
+				FVector TangentZ = Converter.ConvertDir(TempValue);
+				VertexInstanceNormals[AddedVertexInstanceId] = TangentZ.GetSafeNormal();
+				//tangents and binormals share the same reference, mapping mode and index array
+				if (bHasNTBInformation)
+				{
+					int TangentMapIndex = (TangentMappingMode == FbxLayerElement::eByControlPoint) ?
+						ControlPointIndex : RealFbxVertexIndex;
+					int TangentValueIndex = (TangentReferenceMode == FbxLayerElement::eDirect) ?
+						TangentMapIndex : LayerElementTangent->GetIndexArray().GetAt(TangentMapIndex);
+
+					TempValue = LayerElementTangent->GetDirectArray().GetAt(TangentValueIndex);
+					TempValue = TotalMatrixForNormal.MultT(TempValue);
+					FVector TangentX = Converter.ConvertDir(TempValue);
+					VertexInstanceTangents[AddedVertexInstanceId] = TangentX.GetSafeNormal();
+
+					int BinormalMapIndex = (BinormalMappingMode == FbxLayerElement::eByControlPoint) ?
+						ControlPointIndex : RealFbxVertexIndex;
+					int BinormalValueIndex = (BinormalReferenceMode == FbxLayerElement::eDirect) ?
+						BinormalMapIndex : LayerElementBinormal->GetIndexArray().GetAt(BinormalMapIndex);
+
+					TempValue = LayerElementBinormal->GetDirectArray().GetAt(BinormalValueIndex);
+					TempValue = TotalMatrixForNormal.MultT(TempValue);
+					FVector TangentY = -Converter.ConvertDir(TempValue);
+					//VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
+				}
+			}
+		}
+	}
+	
+	Mesh->EndGetMeshEdgeIndexForPolygon();
 	return true;
 }
 

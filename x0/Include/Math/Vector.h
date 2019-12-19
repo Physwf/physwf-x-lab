@@ -214,6 +214,31 @@ public:
 	{
 		return FMath::Sqrt(FVector::DistSquared(V1, V2));
 	}
+
+	FVector GetSafeNormal(float Tolerance = SMALL_NUMBER) const
+	{
+		const float SquareSum = X * X + Y * Y + Z * Z;
+
+		// Not sure if it's safe to add tolerance in there. Might introduce too many errors
+		if (SquareSum == 1.f)
+		{
+			return *this;
+		}
+		else if (SquareSum < Tolerance)
+		{
+			return FVector::ZeroVector;
+		}
+		const float Scale = FMath::InvSqrt(SquareSum);
+		return FVector(X*Scale, Y*Scale, Z*Scale);
+	}
+
+	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
+	{
+		return
+			FMath::Abs(X) <= Tolerance
+			&& FMath::Abs(Y) <= Tolerance
+			&& FMath::Abs(Z) <= Tolerance;
+	}
 };
 
 inline FVector2D::FVector2D(const FVector& V)
