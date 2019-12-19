@@ -26,6 +26,10 @@ target_link_libraries(libx5 ${FBXSDK_LIBRARY})
 
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
+if(MSVC)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+endif(MSVC)
+
 include(GenerateExportHeader)
 generate_export_header(libx5 
 						BASE_NAME X5

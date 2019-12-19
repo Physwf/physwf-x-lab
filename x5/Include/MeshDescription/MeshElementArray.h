@@ -21,22 +21,22 @@ public:
 	/** Add a new element at the next available index, and return the new ID */
 	inline ElementIDType Add() 
 	{ 
-		Container.insert(MaxID, ElementType());
-		return ElementIDType(++MaxID);
+		Container.insert({ MaxID, ElementType() });
+		return ElementIDType(MaxID++);
 	}
 
 	/** Add the provided element at the next available index, and return the new ID */
 	inline ElementIDType Add(const typename std::remove_reference<ElementType>::type& Element) 
 	{ 
 		Container.insert(MaxID, Element);
-		return ElementIDType(++MaxID);
+		return ElementIDType(MaxID++);
 	}
 
 	/** Add the provided element at the next available index, and return the ID */
 	inline ElementIDType Add(ElementType&& Element) 
 	{ 
 		Container.Add(MaxID, std::forward<ElementType>(Element));
-		return ElementIDType(++MaxID);
+		return ElementIDType(MaxID++);
 	}
 
 	/** Inserts a new element with the given ID */

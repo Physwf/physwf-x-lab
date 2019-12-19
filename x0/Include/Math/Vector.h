@@ -156,6 +156,38 @@ public:
 		return *this;
 	}
 
+	float& operator[](int32 Index)
+	{
+		if (Index == 0)
+		{
+			return X;
+		}
+		else if (Index == 1)
+		{
+			return Y;
+		}
+		else
+		{
+			return Z;
+		}
+	}
+
+	float operator[](int32 Index)const
+	{
+		if (Index == 0)
+		{
+			return X;
+		}
+		else if (Index == 1)
+		{
+			return Y;
+		}
+		else
+		{
+			return Z;
+		}
+	}
+
 	float Size() const
 	{
 		return FMath::Sqrt(X*X + Y * Y + Z * Z);

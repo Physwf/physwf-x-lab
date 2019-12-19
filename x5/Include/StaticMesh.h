@@ -166,26 +166,7 @@ private:
 	FMeshSectionInfoMap SectionInfoMap;
 };
 
-class FFbxImporter
-{
-public:
-	struct FFbxMaterial
-	{
-		FbxSurfaceMaterial* FbxMaterial;
-		//UMaterialInterface* Material;
 
-		std::string GetName() const { return FbxMaterial ? FbxMaterial->GetName() : ("None"); }
-	};
-
-	FFbxImporter();
-
-	void ReadAllMeshNodes(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray);
-
-	UStaticMesh*		ImportStaticMesh(const char* InFileName, int LODIndex = 0);
-	bool				BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* StaticMesh, std::vector<FFbxMaterial>& MeshMaterials, int LODIndex);
-protected:
-	FbxGeometryConverter* GeometryConverter;
-};
 
 class FObjImporter
 {

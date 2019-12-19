@@ -182,6 +182,13 @@ private:
 	{
 		VertexAttributesSet.Insert(VertexID);
 	}
+public:
+	FVertexID CreateVertex()
+	{
+		const FVertexID VertexID = VertexArray.Add();
+		CreateVertex_Internal(VertexID);
+		return VertexID;
+	}
 private:
 	FVertexArray VertexArray;
 	FVertexInstanceArray VertexInstanceArray;

@@ -28,7 +28,7 @@ protected:
 	{
 		if (Index >= (int32)Container.size())
 		{
-			Container.resize(Index, ElementType(Default));
+			Container.resize(Index+1, ElementType(Default));
 		}
 	}
 
@@ -62,7 +62,19 @@ public:
 
 protected:
 	friend class TAttributeIndicesArray <ElementType, ElementIDType>;
+
+	inline void Insert(const ElementIDType Index, const ElementType& Default)
+	{
+		TMeshAttributeArrayBase<ElementType>::Insert(Index.GetValue(), Default);
+	}
+
 };
+
+template <typename AttributeType> using TVertexAttributeArray = TMeshAttributeArray<AttributeType, FVertexID>;
+template <typename AttributeType> using TVertexInstanceAttributeArray = TMeshAttributeArray<AttributeType, FVertexInstanceID>;
+template <typename AttributeType> using TEdgeAttributeArray = TMeshAttributeArray<AttributeType, FEdgeID>;
+template <typename AttributeType> using TPolygonAttributeArray = TMeshAttributeArray<AttributeType, FPolygonID>;
+template <typename AttributeType> using TPolygonGroupAttributeArray = TMeshAttributeArray<AttributeType, FPolygonGroupID>;
 
 enum class EMeshAttributeFlags : uint32
 {
@@ -152,6 +164,12 @@ private:
 	EMeshAttributeFlags Flags;
 };
 
+template <typename AttributeType> using TVertexAttributeIndicesArray = TAttributeIndicesArray<AttributeType, FVertexID>;
+template <typename AttributeType> using TVertexInstanceAttributeIndicesArray = TAttributeIndicesArray<AttributeType, FVertexInstanceID>;
+template <typename AttributeType> using TEdgeAttributeIndicesArray = TAttributeIndicesArray<AttributeType, FEdgeID>;
+template <typename AttributeType> using TPolygonAttributeIndicesArray = TAttributeIndicesArray<AttributeType, FPolygonID>;
+template <typename AttributeType> using TPolygonGroupAttributeIndicesArray = TAttributeIndicesArray<AttributeType, FPolygonGroupID>;
+
 template <typename T, typename U>
 class TAttributesMap
 {
@@ -196,7 +214,86 @@ public:
 		return Map.at(AttributeName).GetArrayForIndex(AttributeIndex);
 	}
 
-	
+	inline TAttributeIndicesArray<AttributeType, ElementIDType>& GetAttributesSet(const std::string& AttributeName)
+	{
+		// @todo mesh description: should this handle non-existent attribute names gracefully?
+		return Map.at(AttributeName);
+	}
+
+	inline const TAttributeIndicesArray<AttributeType, ElementIDType>& GetAttributesSet(const std::string& AttributeName) const
+	{
+		// @todo mesh description: should this handle non-existent attribute names gracefully?
+		return Map.at(AttributeName);
+	}
+
+	/** Returns the number of indices for the attribute with the given name */
+	inline int32 GetAttributeIndexCount(const std::string& AttributeName) const
+	{
+		// @todo mesh description: should this handle non-existent attribute names and indices gracefully?
+		return Map.at(AttributeName).GetNumIndices();
+	}
+
+	/** Sets the number of indices for the attribute with the given name */
+	inline void SetAttributeIndexCount(const std::string& AttributeName, const int32 NumIndices)
+	{
+		Map.at(AttributeName).SetNumIndices(NumIndices);
+	}
+
+	/** Returns an array of all the attribute names registered for this attribute type */
+	template <typename Allocator>
+	inline void GetAttributeNames(std::vector<std::string, Allocator>& OutAttributeNames) const
+	{
+		//Map.GetKeys(OutAttributeNames);
+	}
+
+	/** Gets a single attribute with the given ElementID, Name and Index */
+	inline AttributeType GetAttribute(const ElementIDType ElementID, const std::string& AttributeName, const int32 AttributeIndex = 0) const
+	{
+		return Map.at(AttributeName).GetArrayForIndex(AttributeIndex)[ElementID];
+	}
+
+	/** Sets a single attribute with the given ElementID, Name and Index to the given value */
+	inline void SetAttribute(const ElementIDType ElementID, const std::string& AttributeName, const int32 AttributeIndex, const AttributeType& AttributeValue)
+	{
+		Map.at(AttributeName).GetArrayForIndex(AttributeIndex)[ElementID] = AttributeValue;
+	}
+
+	/** Inserts a default-initialized value for all attributes of the given ID */
+	void Insert(const ElementIDType ElementID)
+	{
+		NumElements = FMath::Max(NumElements, ElementID.GetValue() + 1);
+		for (auto& AttributeNameAndIndicesArray : Map)
+		{
+			AttributeNameAndIndicesArray.second.Insert(ElementID);
+			//check(AttributeNameAndIndicesArray.Value.GetNumElements() == this->NumElements);
+		}
+	}
+
+	/** Removes all attributes with the given ID */
+	void Remove(const ElementIDType ElementID)
+	{
+		for (auto& AttributeNameAndIndicesArray : Map)
+		{
+			AttributeNameAndIndicesArray.second.Remove(ElementID);
+		}
+	}
+
+	/** Initializes all attributes to have the given number of elements with the default value */
+	void Initialize(const int32 Count)
+	{
+		NumElements = Count;
+		for (auto& AttributeNameAndIndicesArray : Map)
+		{
+			AttributeNameAndIndicesArray.Value.Initialize(Count);
+		}
+	}
+
+	/** Returns the number of elements held by each attribute in this map */
+	inline int32 GetNumElements() const
+	{
+		return NumElements;
+	}
+
 private:
 	/** Number of elements for each attribute index */
 	int32 NumElements;
@@ -254,11 +351,102 @@ public:
 		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributes(AttributeName, AttributeIndex);
 	}
 
+	/**
+ * Get a set of attribute arrays with the given type and name.
+ *
+ * Example of use:
+ *
+ *		const TArray<TVertexInstanceAttributeArray<FVector2D>>& UVs = VertexInstanceAttributes().GetAttributesSet<FVector2D>( "UV" );
+ *		for( const FVertexInstanceID VertexInstanceID : GetVertexInstances().GetElementIDs() )
+ *		{
+ *			const FVector2D UV0 = UVs[ 0 ][ VertexInstanceID ];
+ *			const FVector2D UV1 = UVs[ 1 ][ VertexInstanceID ];
+ *			DoSomethingWith( UV0, UV1 );
+ *		}
+ */
+	template <typename AttributeType>
+	TAttributeIndicesArray<AttributeType, ElementIDType>& GetAttributesSet(const std::string& AttributeName)
+	{
+		// @todo mesh description: should this handle non-existent attribute names gracefully?
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributesSet(AttributeName);
+	}
+
+	template <typename AttributeType>
+	const TAttributeIndicesArray<AttributeType, ElementIDType>& GetAttributesSet(const std::string& AttributeName) const
+	{
+		// @todo mesh description: should this handle non-existent attribute names gracefully?
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributesSet(AttributeName);
+	}
+
+	/** Returns the number of indices for the attribute with the given name */
+	template <typename AttributeType>
+	int32 GetAttributeIndexCount(const std::string& AttributeName) const
+	{
+		// @todo mesh description: should this handle non-existent attribute names and indices gracefully?
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributeIndexCount(AttributeName);
+	}
+
+	/** Sets the number of indices for the attribute with the given name */
+	template <typename AttributeType>
+	void SetAttributeIndexCount(const std::string&, const int32 NumIndices)
+	{
+		std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).SetAttributeIndexCount(AttributeName, NumIndices);
+	}
+
+	/** Returns an array of all the attribute names registered for this attribute type */
+	template <typename AttributeType, typename Allocator>
+	void GetAttributeNames(std::vector<std::string, Allocator>& OutAttributeNames) const
+	{
+		std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttributeNames(OutAttributeNames);
+	}
+
+	template <typename AttributeType>
+	AttributeType GetAttribute(const ElementIDType ElementID, const std::string& AttributeName, const int32 AttributeIndex = 0) const
+	{
+		return std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).GetAttribute(ElementID, AttributeName, AttributeIndex);
+	}
+
+	template <typename AttributeType>
+	void SetAttribute(const ElementIDType ElementID, const std::string& AttributeName, const int32 AttributeIndex, const AttributeType& AttributeValue)
+	{
+		std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Container).SetAttribute(ElementID, AttributeName, AttributeIndex, AttributeValue);
+	}
+
 	void Insert(const ElementIDType ElementID)
 	{
 		//VisitTupleElements([ElementID](auto& AttributesMap) { AttributesMap.Insert(ElementID); }, Container);
+		std::get<0>(Container).Insert(ElementID);
+		std::get<1>(Container).Insert(ElementID);
+		std::get<2>(Container).Insert(ElementID);
+		std::get<3>(Container).Insert(ElementID);
+		std::get<4>(Container).Insert(ElementID);
+		std::get<5>(Container).Insert(ElementID);
+		std::get<6>(Container).Insert(ElementID);
 	}
 
+	/** Removes all attributes with the given ID */
+	void Remove(const ElementIDType ElementID)
+	{
+		std::get<0>(Container).Remove(ElementID);
+		std::get<1>(Container).Remove(ElementID);
+		std::get<2>(Container).Remove(ElementID);
+		std::get<3>(Container).Remove(ElementID);
+		std::get<4>(Container).Remove(ElementID);
+		std::get<5>(Container).Remove(ElementID);
+		std::get<6>(Container).Remove(ElementID);
+	}
+
+	/** Initializes the attribute set with the given number of elements, all at the default value */
+	void Initialize(const int32 NumElements)
+	{
+		std::get<0>(Container).Initialize(NumElements);
+		std::get<1>(Container).Initialize(NumElements);
+		std::get<2>(Container).Initialize(NumElements);
+		std::get<3>(Container).Initialize(NumElements);
+		std::get<4>(Container).Initialize(NumElements);
+		std::get<5>(Container).Initialize(NumElements);
+		std::get<6>(Container).Initialize(NumElements);
+	}
 private:
 	using ContainerType = 
 	std::tuple
