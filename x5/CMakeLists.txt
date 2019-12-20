@@ -21,7 +21,7 @@ target_include_directories(libx5 PRIVATE $ENV{FBX_SDK_HOME}/include)
 target_include_directories(libx5 PRIVATE "../x0/Include")
 target_link_libraries(libx5 libx0)
 target_include_directories(libx5 PRIVATE "../x4/Include")
-
+target_link_libraries(libx5 libx4)
 
 find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
 target_link_libraries(libx5 ${FBXSDK_LIBRARY})

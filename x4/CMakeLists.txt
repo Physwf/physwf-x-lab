@@ -22,7 +22,7 @@ include(GenerateExportHeader)
 generate_export_header(libx4 
 						BASE_NAME X4
 						EXPORT_MACRO_NAME X4_API
-						EXPORT_FILE_NAME ./Include/X4.h
+						EXPORT_FILE_NAME ${PROJECT_SOURCE_DIR}/x4/Include/X4.h
 						)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
