@@ -1,6 +1,7 @@
 #include "FbxImporter/FbxImporter.h"
 #include "MeshDescription/MeshAttributes.h"
 #include "Misc/AssertionMacros.h"
+#include "RenderUtils.h"
 
 FVector FFbxDataConverter::ConvertPos(FbxVector4 Vector)
 {
@@ -370,7 +371,7 @@ bool FFbxImporter::BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* Stati
 					TempValue = LayerElementBinormal->GetDirectArray().GetAt(BinormalValueIndex);
 					TempValue = TotalMatrixForNormal.MultT(TempValue);
 					FVector TangentY = -Converter.ConvertDir(TempValue);
-					//VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
+					VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
 				}
 			}
 		}

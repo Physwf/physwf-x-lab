@@ -30,14 +30,14 @@ void FMatrix::SetIdentity()
 
 FMatrix FMatrix::operator*(const FMatrix& Other) const
 {
-	VectorMatrixMultiply(this, this, &Other);
+	FMatrix Result;
+	VectorMatrixMultiply(&Result, this, &Other);
+	return Result;
 }
 
 void FMatrix::operator*=(const FMatrix& Other)
 {
-	FMatrix Result;
-	VectorMatrixMultiply(&Result, this, &Other);
-	return Result;
+	VectorMatrixMultiply(this, this, &Other);
 }
 
 
@@ -119,7 +119,7 @@ bool FMatrix::operator!=(const FMatrix& Other) const
 	return !(*this == Other);
 }
 
-FVector4 FMatrix::TransformFVector4(const FVector4& V) const
+FVector4 FMatrix::TransformFVector4(const FVector4& P) const
 {
 	FVector4 Result;
 	VectorRegister VecP = VectorLoadAligned(&P);
@@ -680,3 +680,21 @@ void FMatrix::Mirror(EAxis::Type MirrorAxis, EAxis::Type FlipAxis)
 	}
 }
 
+FPlane FPlane::TransformBy(const FMatrix& M) const
+{
+	const FMatrix tmpTA = M.TransposeAdjoint();
+	const float DetM = M.Determinant();
+	return this->TransformByUsingAdjointT(M, DetM, tmpTA);
+}
+
+inline FPlane FPlane::TransformByUsingAdjointT(const FMatrix& M, float DetM, const FMatrix& TA) const
+{
+	FVector newNorm = TA.TransformVector(*this).GetSafeNormal();
+
+	if (DetM < 0.f)
+	{
+		newNorm *= -1.0f;
+	}
+
+	return FPlane(M.TransformPosition(*this * W), newNorm);
+}

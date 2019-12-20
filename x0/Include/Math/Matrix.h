@@ -2,6 +2,13 @@
 
 #include "X0.h"
 
+#include "XMath.h"
+#include "Vector.h"
+#include "Plane.h"
+#include "Axis.h"
+#include "Misc/AssertionMacros.h"
+#include "XMathSSE.h"
+
 struct FMatrix
 {
 public:
@@ -98,9 +105,9 @@ public:
 
 	inline FVector GetColumn(int32 i) const;
 
-	X0_API FRotator Rotator() const;
+	//X0_API FRotator Rotator() const;
 
-	X0_API FQuat ToQuat() const;
+	//X0_API FQuat ToQuat() const;
 
 	inline bool GetFrustumNearPlane(FPlane& OutPlane) const;
 
@@ -116,7 +123,7 @@ public:
 
 	inline void Mirror(EAxis::Type MirrorAxis, EAxis::Type FlipAxis);
 
-	X0_API uint32 ComputeHash() const;
+	//X0_API uint32 ComputeHash() const;
 
 	void To3x4MatrixTranspose(float* Out) const
 	{

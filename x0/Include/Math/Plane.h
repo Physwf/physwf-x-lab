@@ -4,6 +4,8 @@
 #include "Vector4.h"
 #include "XMath.h"
 
+struct FMatrix;
+
 struct alignas(16) FPlane
 	: public FVector
 {
@@ -63,10 +65,7 @@ public:
 		return FPlane(-X, -Y, -Z, -W);
 	}
 
-	FPlane TransformBy(const FMatrix& M) const
-	{
-		return (X == V.X) && (Y == V.Y) && (Z == V.Z) && (W == V.W);
-	}
+	FPlane TransformBy(const FMatrix& M) const;
 
 	FPlane TransformByUsingAdjointT(const FMatrix& M, float DetM, const FMatrix& TA) const;
 

@@ -274,6 +274,16 @@ struct FGenericPlatformMath
 		return uint64(1) << CeilLogTwo64(V);
 	}
 
+	static constexpr inline float FloatSelect(float Comparand, float ValueGEZero, float ValueLTZero)
+	{
+		return Comparand >= 0.f ? ValueGEZero : ValueLTZero;
+	}
+
+	static constexpr inline double FloatSelect(double Comparand, double ValueGEZero, double ValueLTZero)
+	{
+		return Comparand >= 0.f ? ValueGEZero : ValueLTZero;
+	}
+
 	/** Computes absolute value in a generic way */
 	template< class T >
 	static constexpr inline T Abs(const T A)
