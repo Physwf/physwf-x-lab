@@ -680,7 +680,7 @@ void FMatrix::Mirror(EAxis::Type MirrorAxis, EAxis::Type FlipAxis)
 	}
 }
 
-FPlane FPlane::TransformBy(const FMatrix& M) const
+inline FPlane FPlane::TransformBy(const FMatrix& M) const
 {
 	const FMatrix tmpTA = M.TransposeAdjoint();
 	const float DetM = M.Determinant();

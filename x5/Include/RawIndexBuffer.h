@@ -4,6 +4,7 @@
 
 #include "CoreTypes.h"
 #include "RenderResource.h"
+#include "Misc/AssertionMacros.h"
 
 class FRawIndexBuffer : public FIndexBuffer
 {
@@ -44,16 +45,16 @@ public:
 
 	inline void SetIndex(const uint32 At, const uint32 NewIndexValue)
 	{
-		check(At >= 0 && At < (uint32)IndexStorage.Num());
+		check(At >= 0 && At < (uint32)IndexStorage.size());
 
 		if (b32Bit)
 		{
-			uint32* Indices32Bit = (uint32*)IndexStorage.GetData();
+			uint32* Indices32Bit = (uint32*)IndexStorage.data();
 			Indices32Bit[At] = NewIndexValue;
 		}
 		else
 		{
-			uint16* Indices16Bit = (uint16*)IndexStorage.GetData();
+			uint16* Indices16Bit = (uint16*)IndexStorage.data();
 			Indices16Bit[At] = (uint16)NewIndexValue;
 		}
 	}
@@ -88,12 +89,12 @@ public:
 		uint32 IndexValue;
 		if (b32Bit)
 		{
-			const uint32* SrcIndices32Bit = (const uint32*)IndexStorage.GetData();
+			const uint32* SrcIndices32Bit = (const uint32*)IndexStorage.data();
 			IndexValue = SrcIndices32Bit[At];
 		}
 		else
 		{
-			const uint16* SrcIndices16Bit = (const uint16*)IndexStorage.GetData();
+			const uint16* SrcIndices16Bit = (const uint16*)IndexStorage.data();
 			IndexValue = SrcIndices16Bit[At];
 		}
 
@@ -137,7 +138,7 @@ public:
 	 */
 	inline int32 GetNumIndices() const
 	{
-		return b32Bit ? (IndexStorage.Num() / 4) : (IndexStorage.Num() / 2);
+		return b32Bit ? (IndexStorage.size() / 4) : (IndexStorage.size() / 2);
 	}
 
 	/**
@@ -145,7 +146,7 @@ public:
 	 */
 	inline uint32 GetAllocatedSize() const
 	{
-		return IndexStorage.GetAllocatedSize();
+		return IndexStorage.size();
 	}
 	/**
 	 * Discard
