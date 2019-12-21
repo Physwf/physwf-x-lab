@@ -29,7 +29,7 @@ public:
 	*/
 	void ResizeBuffer(uint32 NumVertices, EResizeBufferFlags BufferFlags = EResizeBufferFlags::None) override
 	{
-		if ((uint32)Data.Num() < NumVertices)
+		if ((uint32)Data.size() < NumVertices)
 		{
 			// Enlarge the array.
 			if (!EnumHasAnyFlags(BufferFlags, EResizeBufferFlags::AllowSlackOnGrow))
@@ -39,7 +39,7 @@ public:
 
 			Data.resize(NumVertices);
 		}
-		else if ((uint32)Data.Num() > NumVertices)
+		else if ((uint32)Data.size() > NumVertices)
 		{
 			// Shrink the array.
 			//bool AllowShinking = !EnumHasAnyFlags(BufferFlags, EResizeBufferFlags::AllowSlackOnReduce);
@@ -70,7 +70,7 @@ public:
 	*/
 	uint8* GetDataPointer() override
 	{
-		return (uint8*)Data.GetData();
+		return (uint8*)Data.data();
 	}
 
 	/**
@@ -101,7 +101,7 @@ public:
 	*/
 	uint32 GetResourceSize() const override
 	{
-		return Data.GetAllocatedSize();
+		return Data.size() * sizeof(TResourceArray<VertexDataType, VERTEXBUFFER_ALIGNMENT>::size_type);
 	}
 
 	/**

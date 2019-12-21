@@ -336,6 +336,16 @@ public:
 	{
 		return TexcoordDataPtr;
 	}
+
+	class FTangentsVertexBuffer : public FVertexBuffer
+	{
+		virtual std::string GetFriendlyName() const override { return ("FTangentsVertexBuffer"); }
+	} TangentsVertexBuffer;
+
+	class FTexcoordVertexBuffer : public FVertexBuffer
+	{
+		virtual std::string GetFriendlyName() const override { return ("FTexcoordVertexBuffer"); }
+	} TexCoordVertexBuffer;
 private:
 	/** The vertex data storage type */
 	FStaticMeshVertexDataInterface * TangentsData;
@@ -368,4 +378,6 @@ private:
 
 	/** Allocates the vertex data storage type. */
 	void AllocateData(bool bNeedsCPUAccess = true);
+
+	void ConvertHalfTexcoordsToFloat(const uint8* InData);
 };

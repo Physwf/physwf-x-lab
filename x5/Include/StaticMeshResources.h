@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Rendering/StaticMeshVertexBuffer.h"
+#include "Rendering/PositionVertexBuffer.h"
 
 struct FStaticMeshSection
 {
@@ -34,7 +35,8 @@ struct FStaticMeshSection
 struct FStaticMeshVertexBuffers
 {
 	FStaticMeshVertexBuffer StaticMeshVertexBuffer;
-
+	FPositionVertexBuffer PositionVertexBuffer;
+	FColorVertexBuffer ColorVertexBuffer;
 };
 
 struct FStaticMeshLODResources
