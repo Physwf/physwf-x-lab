@@ -1,6 +1,11 @@
 #pragma once
 
+#include <vector>
+
 #include "RenderResource.h"
+#include "Math/Vector.h"
+#include "Misc/AssertionMacros.h"
+#include "Components.h"
 
 struct FStaticMeshBuildVertex;
 

@@ -3,7 +3,9 @@
 #include "RenderResource.h"
 
 #include <vector>
-#include <string>
+#include "Math/Color.h"
+#include "Components.h"
+#include "Misc/AssertionMacros.h"
 
 struct FStaticMeshBuildVertex;
 
@@ -35,7 +37,7 @@ public:
 	* Initializes the buffer with the given vertices, used to convert legacy layouts.
 	* @param InVertices - The vertices to initialize the buffer with.
 	*/
-	void Init(const TArray<FStaticMeshBuildVertex>& InVertices);
+	void Init(const std::vector<FStaticMeshBuildVertex>& InVertices);
 
 	/**
 	* Initializes this vertex buffer with the contents of the given vertex buffer.
@@ -99,9 +101,9 @@ public:
 	* Load from raw color array.
 	* @param InColors - InColors must not be empty
 	*/
-	void InitFromColorArray(const TArray<FColor> &InColors)
+	void InitFromColorArray(const std::vector<FColor> &InColors)
 	{
-		InitFromColorArray(InColors.GetData(), InColors.Num());
+		InitFromColorArray(InColors.data(), InColors.size());
 	}
 
 	/**
