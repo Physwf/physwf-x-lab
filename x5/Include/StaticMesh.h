@@ -10,6 +10,7 @@
 #include "Math/Color.h"
 
 #include "MeshDescription/MeshDescription.h"
+#include "StaticMeshResources.h"
 
 struct FStaticMeshSourceModel
 {
@@ -146,6 +147,8 @@ class UStaticMesh
 {
 	friend class FFbxImporter;
 public:
+	std::unique_ptr<class FStaticMeshRenderData> RenderData;
+
 	static void RegisterMeshAttributes(FMeshDescription& MeshDescription);
 
 	void LoadMeshDescriptions();

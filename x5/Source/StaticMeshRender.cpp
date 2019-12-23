@@ -1,11 +1,22 @@
 #include "StaticMeshResources.h"
 #include "Components/StaticMeshComponet.h"
 #include "SceneManagement.h"
+#include "RHI/RHIDefinitions.h"
+#include "Misc/AssertionMacros.h"
 
-FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* Component, bool bForceLODsShareStaticLighting):
-	FPrimitiveSceneProxy(Component)
+FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent, bool bForceLODsShareStaticLighting):
+	FPrimitiveSceneProxy(InComponent),
+	RenderData(InComponent->GetStaticMesh()->RenderData.get())
 {
+	check(RenderData);
 
+	LODs.reserve(RenderData->LODResources.size());
+
+	for (uint32 LODIndex = 0; LODIndex < RenderData->LODResources.size(); LODIndex++)
+	{
+		FLODInfo* NewLODInfo = new FLODInfo(InComponent, RenderData->LODVertexFactories, LODIndex/*, bLODsShareStaticLighting*/);
+		LODs.push_back(NewLODInfo);
+	}
 }
 
 FStaticMeshSceneProxy::~FStaticMeshSceneProxy()
@@ -20,7 +31,27 @@ bool FStaticMeshSceneProxy::GetMeshElement(int32 LODIndex, int32 BatchIndex, int
 	const FStaticMeshSection& Section = LOD.Sections[SectionIndex];
 
 	OutMeshBatch.VertexFactory = &VFs.VertexFactory;
-	return true;
+
+	SetIndexSource(LODIndex, SectionIndex, OutMeshBatch);
+
+	FMeshBatchElement& OutBatchElement = OutMeshBatch.Elements[0];
+
+	if (OutBatchElement.NumPrimitives > 0)
+	{
+		//OutMeshBatch.LCI = &ProxyLODInfo;
+		//OutBatchElement.PrimitiveUniformBufferResource = &GetUniformBuffer();
+		OutBatchElement.MinVertexIndex = Section.MinVertexIndex;
+		OutBatchElement.MaxVertexIndex = Section.MaxVertexIndex;
+		OutMeshBatch.LODIndex = LODIndex;
+
+		//OutMeshBatch.ReverseCulling = (bReverseCulling || IsLocalToWorldDeterminantNegative()) && !bUseReversedIndices;
+		//OutMeshBatch.CastShadow = bCastShadow && Section.bCastShadow;
+		//OutMeshBatch.DepthPriorityGroup = (ESceneDepthPriorityGroup)InDepthPriorityGroup;
+
+		return true;
+	}
+	return false;
+
 }
 
 void FStaticMeshSceneProxy::DrawStaticElements(FStaticPrimitiveDrawInterface* PDI)
@@ -53,6 +84,19 @@ void FStaticMeshSceneProxy::DrawStaticElements(FStaticPrimitiveDrawInterface* PD
 	}
 }
 
+void FStaticMeshSceneProxy::SetIndexSource(int32 LODIndex, int32 SectionIndex, FMeshBatch& OutMeshElement/*, bool bWireframe, bool bRequiresAdjacencyInformation, bool bUseInversedIndices, bool bAllowPreCulledIndices*/) const
+{
+	FMeshBatchElement& OutElement = OutMeshElement.Elements[0];
+	const FStaticMeshLODResources& LODModel = *RenderData->LODResources[LODIndex];
+
+	const FStaticMeshSection& Section = LODModel.Sections[SectionIndex];
+	OutMeshElement.Type = PT_TriangleList;
+
+	OutElement.IndexBuffer = &LODModel.IndexBuffer;
+	OutElement.FirstIndex = Section.FirstIndex;
+	OutElement.NumPrimitives = Section.NumTriangles;
+}
+
 
 float FStaticMeshSceneProxy::GetScreenSize(int32 LODIndex) const
 {
@@ -60,6 +104,9 @@ float FStaticMeshSceneProxy::GetScreenSize(int32 LODIndex) const
 	//return RenderData->ScreenSize[LODIndex].GetValueForFeatureLevel(GetScene().GetFeatureLevel());
 }
 
+FStaticMeshSceneProxy::FLODInfo::FLODInfo(const UStaticMeshComponent* InComponent, const std::vector<FStaticMeshVertexFactories*>& InLODVertexFactories, int32 InLODIndex/*, bool bLODsShareStaticLighting*/)
+{
 
+}
 
 

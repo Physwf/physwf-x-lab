@@ -5,7 +5,14 @@
 
 class UStaticMeshComponent : public UPrimitiveComponent
 {
-	UStaticMesh* StaticMesh;
+	
 protected:
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+private:
+	UStaticMesh* StaticMesh;
+public:
+	UStaticMesh* GetStaticMesh() const
+	{
+		return StaticMesh;
+	}
 };
