@@ -3,6 +3,8 @@
 #include "SceneManagement.h"
 #include "ScenePrivate.h"
 #include "PrimitiveSceneProxy.h"
+#include "Misc/AssertionMacros.h"
+#include "SceneCore.h"
 
 class FBatchingSPDI : public FStaticPrimitiveDrawInterface
 {
@@ -13,7 +15,20 @@ public:
 
 	virtual void DrawMesh(const FMeshBatch& Mesh, float ScreenSize) final override
 	{
+		if (Mesh.GetNumPrimitives() > 0)
+		{
+			check(Mesh.VertexFactory);
+			check(Mesh.VertexFactory->IsInitialized());
 
+			//PrimitiveSceneInfo->Proxy->VerifyUsedMaterial(Mesh.MaterialRenderProxy);
+
+			FStaticMesh* StaticMesh = new FStaticMesh(
+				PrimitiveSceneInfo,
+				Mesh,
+				ScreenSize
+			);
+			PrimitiveSceneInfo->StaticMeshes.push_back(StaticMesh);
+		}
 	}
 private:
 	FPrimitiveSceneInfo* PrimitiveSceneInfo;
