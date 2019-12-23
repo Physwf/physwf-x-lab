@@ -2,6 +2,12 @@
 
 #include "Rendering/StaticMeshVertexBuffer.h"
 #include "Rendering/PositionVertexBuffer.h"
+#include "Rendering/ColorVertexBuffer.h"
+#include "PrimitiveSceneProxy.h"
+#include "LocalVertexFactory.h"
+#include "RawIndexBuffer.h"
+
+class UStaticMeshComponent;
 
 struct FStaticMeshSection
 {
@@ -43,6 +49,8 @@ struct FStaticMeshLODResources
 {
 	FStaticMeshVertexBuffers VertexBuffers;
 	FRawStaticIndexBuffer IndexBuffer;
+
+	std::vector<FStaticMeshSection> Sections;
 };
 
 struct FStaticMeshVertexFactories
@@ -52,6 +60,44 @@ struct FStaticMeshVertexFactories
 
 class FStaticMeshRenderData
 {
+public:
 	std::vector<FStaticMeshLODResources*> LODResources;
 	std::vector<FStaticMeshVertexFactories*> LODVertexFactories;
+};
+
+/**
+ * A static mesh component scene proxy.
+ */
+class FStaticMeshSceneProxy : public FPrimitiveSceneProxy
+{
+public:
+	FStaticMeshSceneProxy(UStaticMeshComponent* Component, bool bForceLODsShareStaticLighting);
+
+	virtual ~FStaticMeshSceneProxy();
+
+	virtual int32 GetNumMeshBatches() const
+	{
+		return 1;
+	}
+
+	virtual bool GetMeshElement(
+		int32 LODIndex,
+		int32 BatchIndex,
+		int32 ElementIndex,
+		/*uint8 InDepthPriorityGroup,*/
+		/*bool bUseSelectedMaterial,*/
+		/*bool bUseHoveredMaterial,*/
+		/*bool bAllowPreCulledIndices,*/
+		FMeshBatch& OutMeshBatch) const;
+
+
+	virtual void DrawStaticElements(FStaticPrimitiveDrawInterface* PDI) override;
+
+protected:
+	FStaticMeshRenderData* RenderData;
+
+	int32 ClampedMinLOD;
+
+public:
+	float GetScreenSize(int32 LODIndex) const;
 };

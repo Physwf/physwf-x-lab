@@ -1,5 +1,8 @@
 #include "Renderer/PrimitiveSceneInfo.h"
+#include "Components/PrimitiveComponent.h"
 #include "SceneManagement.h"
+#include "ScenePrivate.h"
+#include "PrimitiveSceneProxy.h"
 
 class FBatchingSPDI : public FStaticPrimitiveDrawInterface
 {
@@ -16,8 +19,28 @@ private:
 	FPrimitiveSceneInfo* PrimitiveSceneInfo;
 };
 
-void FPrimitiveSceneInfo::AddStaticMeshes(bool bUpdateStaticDrawLists /*= true*/)
+FPrimitiveSceneInfo::FPrimitiveSceneInfo(UPrimitiveComponent* InPrimitive, FScene* InScene):
+	Proxy(InPrimitive->SceneProxy),
+	Scene(InScene)
+{
+}
+
+FPrimitiveSceneInfo::~FPrimitiveSceneInfo()
 {
 
+}
+
+void FPrimitiveSceneInfo::AddToScene(bool bUpdateStaticDrawLists, bool bAddToStaticDrawLists /*= true*/)
+{
+	if (bUpdateStaticDrawLists)
+	{
+		AddStaticMeshes(bAddToStaticDrawLists);
+	}
+}
+
+void FPrimitiveSceneInfo::AddStaticMeshes(bool bUpdateStaticDrawLists /*= true*/)
+{
+	FBatchingSPDI BatchingSPDI(this);
+	Proxy->DrawStaticElements(&BatchingSPDI);
 }
 

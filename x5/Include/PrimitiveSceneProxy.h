@@ -6,6 +6,7 @@
 
 class FStaticPrimitiveDrawInterface;
 class UPrimitiveComponent;
+class FPrimitiveSceneInfo;
 
 class FPrimitiveSceneProxy
 {
@@ -20,4 +21,9 @@ public:
 
 	/** Gathers a description of the mesh elements to be rendered for the given LOD index, without consideration for views. */
 	virtual void GetMeshDescription(int32 LODIndex, std::vector<FMeshBatch>& OutMeshElements) const {}
+
+private:
+	friend class FScene;
+
+	FPrimitiveSceneInfo* PrimitiveSceneInfo;
 };
