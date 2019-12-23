@@ -6,8 +6,11 @@
 class FStaticMesh : public FMeshBatch
 {
 public:
-	FPrimitiveSceneInfo* PrimitiveSceneInfo;
 	float ScreenSize;
+
+	FPrimitiveSceneInfo* PrimitiveSceneInfo;
+
+	uint32 Id;
 
 	FStaticMesh(
 		FPrimitiveSceneInfo* InPrimitiveSceneInfo,
@@ -19,4 +22,6 @@ public:
 		PrimitiveSceneInfo(InPrimitiveSceneInfo)
 	{
 	}
+
+	void AddToDrawLists(FScene* Scene);
 };

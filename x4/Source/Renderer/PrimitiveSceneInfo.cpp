@@ -53,9 +53,22 @@ void FPrimitiveSceneInfo::AddToScene(bool bUpdateStaticDrawLists, bool bAddToSta
 	}
 }
 
-void FPrimitiveSceneInfo::AddStaticMeshes(bool bUpdateStaticDrawLists /*= true*/)
+void FPrimitiveSceneInfo::AddStaticMeshes(bool bAddToStaticDrawLists /*= true*/)
 {
 	FBatchingSPDI BatchingSPDI(this);
 	Proxy->DrawStaticElements(&BatchingSPDI);
+
+	for (uint32 MeshIndex = 0; MeshIndex < StaticMeshes.size(); MeshIndex++)
+	{
+		FStaticMesh& Mesh = StaticMeshes[MeshIndex];
+
+		Scene->StaticMeshes.push_back(&Mesh);
+		Mesh.Id = Scene->StaticMeshes.size() - 1;
+
+		if (bAddToStaticDrawLists)
+		{
+			Mesh;
+		}
+	}
 }
 

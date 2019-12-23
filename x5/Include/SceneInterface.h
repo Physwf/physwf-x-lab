@@ -2,6 +2,13 @@
 
 class UPrimitiveComponent;
 
+enum class EShadingPath
+{
+	Mobile,
+	Deferred,
+	Num,
+};
+
 class FSceneInterface
 {
 public:
@@ -22,4 +29,10 @@ public:
 	 * @param Primitive - primitive component to remove
 	 */
 	virtual void RemovePrimitive(UPrimitiveComponent* Primitive) = 0;
+
+
+	EShadingPath GetShadingPath() const
+	{
+		return EShadingPath::Mobile;
+	}
 };
