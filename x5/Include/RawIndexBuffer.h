@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "CoreTypes.h"
-#include "RenderResource.h"
+#include "RenderCore/RenderResource.h"
 #include "Misc/AssertionMacros.h"
 
 class FRawIndexBuffer : public FIndexBuffer

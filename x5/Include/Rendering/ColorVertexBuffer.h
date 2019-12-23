@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderResource.h"
+#include "RenderCore/RenderResource.h"
 
 #include <vector>
 #include "Math/Color.h"

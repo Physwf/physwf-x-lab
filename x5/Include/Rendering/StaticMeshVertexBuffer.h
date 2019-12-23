@@ -5,13 +5,13 @@
 
 #include "CoreTypes.h"
 #include "Math/Vector2DHalf.h"
-#include "RenderResource.h"
-#include "PackedNormal.h"
+#include "RenderCore/RenderResource.h"
+#include "RenderCore/PackedNormal.h"
 #include "Components.h"
-#include "RHIDefinitions.h"
+#include "RHI/RHIDefinitions.h"
 #include "Rendering/StaticMeshVertexDataInterface.h"
 #include "Misc/AssertionMacros.h"
-#include "RenderUtils.h"
+#include "RenderCore/RenderUtils.h"
 
 class FStaticMeshVertexDataInterface;
 

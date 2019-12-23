@@ -45,8 +45,13 @@ struct FStaticMeshLODResources
 	FRawStaticIndexBuffer IndexBuffer;
 };
 
+struct FStaticMeshVertexFactories
+{
+	FLocalVertexFactory VertexFactory;
+};
+
 class FStaticMeshRenderData
 {
-	std::vector<FStaticMeshLODResources> LODResources;
-	//std::vector<FStaticMeshVertexFactories> LODVertexFactories;
+	std::vector<FStaticMeshLODResources*> LODResources;
+	std::vector<FStaticMeshVertexFactories*> LODVertexFactories;
 };
