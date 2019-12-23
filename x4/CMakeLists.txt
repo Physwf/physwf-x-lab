@@ -17,6 +17,7 @@ add_library(libx4 SHARED ${_source_list})
 set_target_properties(libx4 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx4 PRIVATE "./Include")
 target_include_directories(libx4 PRIVATE "./Source")
+target_include_directories(libx4 PRIVATE "../x5/Include")
 
 include(GenerateExportHeader)
 generate_export_header(libx4 

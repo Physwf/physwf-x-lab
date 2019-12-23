@@ -1,4 +1,4 @@
-#include "ActorComponent.h"
+#include "Components/ActorComponent.h"
 
 void UActorComponent::RegisterComponent()
 {

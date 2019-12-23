@@ -4,5 +4,6 @@
 
 class UPrimitiveComponent : public UActorComponent
 {
-
+protected:
+	virtual void CreateRenderState_Concurrent() override;
 };

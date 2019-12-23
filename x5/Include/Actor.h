@@ -25,5 +25,6 @@ private:
 	FVector Rotation;
 	FVector Scale;
 
+	class ULevel* LevelPrivite;
 	class UStaticMeshComponent* Component;
 };
