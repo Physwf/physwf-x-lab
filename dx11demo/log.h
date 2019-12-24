@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
 

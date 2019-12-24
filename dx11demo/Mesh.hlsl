@@ -23,6 +23,31 @@ cbuffer	ACTOR_CBUFFER : register(b1)
 	float4x4 World;
 };
 
+struct AmbientLight
+{
+	float3 Color;
+};
+
+struct DirectionalLight
+{
+	float3 Direction;
+	float3 Color;
+};
+
+struct PointLight
+{
+	float4 PoistionAndRadias;
+	float4 ColorAndFalloffExponent;
+};
+
+cbuffer LIGHT_CBUFFER : register(b0)
+{
+	AmbientLight AmLight;
+	DirectionalLight DirLight;
+	PointLight PointLights[8];
+};
+
+
 VertexOut VS_Main(VertexIn vin)
 {
     VertexOut vout;
@@ -30,7 +55,7 @@ VertexOut VS_Main(VertexIn vin)
     float4 WorldPostion = mul(World,float4(vin.Position,1.0));
 	float4x4 VP = mul(Proj, View);
     vout.PosH = mul(VP,WorldPostion);
-    vout.Color = float4(1,0,0,1);
+    vout.Color = float4(0.1,0.2,0.4,1);
     
     return vout;
 }

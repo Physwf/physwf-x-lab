@@ -54,21 +54,21 @@ FbxAMatrix ComputeTotalMatrix(FbxScene* pScence, FbxNode* pNode, bool bTransform
 	return TotalMatrix;
 }
 
-FVector ConvertPos(FbxVector4 pPos)
+Vector ConvertPos(FbxVector4 pPos)
 {
-	FVector Result;
+	Vector Result;
 	Result.X = (float)pPos[0];
 	Result.Y = (float)pPos[1];
 	Result.Z = (float)pPos[2];
 	return Result;
 }
 
-FVector ConvertDir(FbxVector4 Vector)
+Vector ConvertDir(FbxVector4 Vec)
 {
-	FVector Result;
-	Result.X = (float)Vector[0];
-	Result.Y = (float)Vector[1];
-	Result.Z = (float)Vector[2];
+	Vector Result;
+	Result.X = (float)Vec[0];
+	Result.Y = (float)Vec[1];
+	Result.Z = (float)Vec[2];
 	return Result;
 }
 
@@ -203,7 +203,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				int RealVertexIndex = VertexOffset + VertexIndex;
 				FbxVector4 FbxPosition = lMesh->GetControlPoints()[VertexIndex];
 				FbxPosition = TotalMatrix.MultT(FbxPosition);
-				FVector const VectorPositon = ConvertPos(FbxPosition);
+				Vector const VectorPositon = ConvertPos(FbxPosition);
 				int VertexID = CreateVertex();
 				mVertices[VertexID].Postion = VectorPositon;
 			}
@@ -239,7 +239,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 						int NormalValueIndex = (NormalReferenceMode == FbxLayerElement::eDirect) ? NormalMapIndex : LayerElementNormal->GetIndexArray().GetAt(NormalMapIndex);
 						FbxVector4 TempValue = LayerElementNormal->GetDirectArray().GetAt(NormalValueIndex);
 						TempValue = TotalMatrixForNormal.MultT(TempValue);
-						FVector TangentZ = ConvertDir(TempValue);
+						Vector TangentZ = ConvertDir(TempValue);
 						mVertices;
 					}
 				}

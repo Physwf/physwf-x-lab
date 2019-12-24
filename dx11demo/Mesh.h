@@ -4,25 +4,14 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Actor.h"
-
-struct FVector
-{
-	float X, Y, Z;
-
-
-};
-
-struct FVector2
-{
-	float X, Y, Z;
-};
+#include "Math.h"
 
 struct Vertex
 {
-	FVector Postion;
-	FVector Normal;
-	FVector2 UV1;
-	FVector2 UV2;
+	Vector Postion;
+	Vector Normal;
+	Vector2 UV1;
+	Vector2 UV2;
 };
 
 struct XStaticMeshSection
@@ -34,6 +23,7 @@ struct XStaticMeshSection
 	unsigned int MinVertexIndex;
 	unsigned int MaxVertexIndex;
 };
+
 class Mesh : public Actor
 {
 public:
