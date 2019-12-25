@@ -35,7 +35,8 @@ void Scene::Setup()
 {
 	Mesh* M = new Mesh();
 	//M->ImportFromFBX("./4gikevqde8-IronMan/ironman.fbx");
-	M->ImportFromFBX("./Free_House_FBX/Free House FBX.FBX");
+	//M->ImportFromFBX("./Free_House_FBX/Free House FBX.FBX");
+	M->ImportFromFBX("./k526efluton4-House_15/247_House 15_fbx.FBX");
 	M->InitResource();
 	Meshes.push_back(M);
 

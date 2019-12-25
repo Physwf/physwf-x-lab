@@ -520,6 +520,7 @@ struct Matrix
 
 	inline bool operator!=(const Matrix& Other) const;
 
+	static Matrix	FromScale(float Scale);
 	static Matrix	DXFromPitch(float fPitch);
 	static Matrix	DXFromYaw(float fYaw);
 	static Matrix	DXFromRoll(float fRoll);
@@ -527,6 +528,7 @@ struct Matrix
 	static Matrix	DXFromTranslation(Vector Translation);
 	static Matrix	DXLooAtLH(const Vector& Eye,const Vector& LookAtPosition, const Vector& Up);
 	static Matrix	DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
+	static Matrix	DXFromPerspectiveLH(float w, float h, float zn, float zf);
 };
 
 inline void Matrix::SetIndentity()
@@ -696,6 +698,16 @@ inline void Matrix::operator*=(const Matrix& Other)
 	*this = operator*(Other);
 }
 
+inline Matrix Matrix::FromScale(float Scale)
+{
+	Matrix Result;
+	Result.M[0][0] = Scale;				Result.M[0][1] = 0.0f;			Result.M[0][2] = 0.0f;						Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;				Result.M[1][1] = Scale;			Result.M[1][2] = 0.0f;						Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;				Result.M[2][1] = 0.0f;			Result.M[2][2] = Scale;						Result.M[2][3] = 0.0f;
+	Result.M[3][0] = 0.0f;				Result.M[3][1] = 0.0f;			Result.M[3][2] = 0.0f;						Result.M[3][3] = 1.0f;
+	return Result;
+}
+
 inline Matrix Matrix::DXFromPitch(float fPitch)
 {
 	Matrix Result;
@@ -737,7 +749,7 @@ inline Matrix Matrix::DXFormRotation(Vector Rotation)
 	Matrix Pitch =	DXFromPitch(Rotation.X);
 	Matrix Yaw =	DXFromYaw(Rotation.Y);
 	Matrix Roll =	DXFromRoll(Rotation.Z);
-	return Yaw;
+	return Pitch * Yaw * Roll;
 }
 
 inline Matrix Matrix::DXFromTranslation(Vector Translation)
@@ -768,13 +780,41 @@ inline Matrix Matrix::DXLooAtLH(const Vector& Eye, const Vector& LookAtPosition,
 
 inline Matrix Matrix::DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane)
 {
+	/*
+		xScale     0          0               0
+		0        yScale       0               0
+		0          0       zf/(zf-zn)         1
+		0          0       -zn*zf/(zf-zn)     0
+		where:
+		yScale = cot(fovY/2)
+
+		xScale = yScale / aspect ratio
+	*/
 	Matrix Result;
 	float Cot = 1.0f / tanf(0.5f * fieldOfViewY);
-	float InverNF = 1.0f / (zfarPlane - znearPlane);
+	float InverNF = zfarPlane / (zfarPlane - znearPlane);
+
 	Result.M[0][0] = Cot / aspectRatio;			Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
 	Result.M[1][0] = 0.0f;						Result.M[1][1] = Cot;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
-	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = zfarPlane * InverNF;					Result.M[2][3] = zfarPlane * zfarPlane * (-InverNF);
-	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = 1.0f;									Result.M[3][3] = 0.0f;
+	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] =  InverNF;								Result.M[2][3] = 1.0f;
+	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = -InverNF * znearPlane;					Result.M[3][3] = 0.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXFromPerspectiveLH(float w, float h, float zn, float zf)
+{
+	/*
+		2 * zn / w			0				0					0
+		0					2 * zn / h		0					0
+		0					0				zf / (zf - zn)		1
+		0					0				zn*zf / (zn - zf)	0
+	*/
+
+	Matrix Result;
+	Result.M[0][0] = 2 * zn / w;		Result.M[0][1] = 0.0f;				Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;				Result.M[1][1] = 2.0f * zn / h;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;				Result.M[2][1] = 0.0f;				Result.M[2][2] = zf / (zf - zn);						Result.M[2][3] = 1.0f;
+	Result.M[3][0] = 0.0f;				Result.M[3][1] = 0.0f;				Result.M[3][2] = zn * zf / (zn - zf);					Result.M[3][3] = 0.0f;
 	return Result;
 }
 

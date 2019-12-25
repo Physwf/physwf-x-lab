@@ -12,6 +12,8 @@ ID3D11DeviceContext*	D3D11DeviceContext = NULL;
 ID3D11RenderTargetView* RenderTargetView = NULL;
 D3D11_VIEWPORT Viewport;
 
+ID3D11RasterizerState* RasterState;
+
 UINT WindowWidth = 500;
 UINT WindowHeight = 400;
 
@@ -137,8 +139,15 @@ bool D3D11Setup()
 	Viewport.TopLeftX = 0;
 	Viewport.TopLeftY = 0;
 
+	D3D11_RASTERIZER_DESC wfdesc;
+	ZeroMemory(&wfdesc, sizeof(D3D11_RASTERIZER_DESC));
+	wfdesc.FillMode = D3D11_FILL_SOLID;
+	wfdesc.CullMode = D3D11_CULL_BACK;
+	hr = D3D11Device->CreateRasterizerState(&wfdesc, &RasterState);
+
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
 	D3D11DeviceContext->RSSetViewports(1, &Viewport);
+	D3D11DeviceContext->RSSetState(RasterState);
 
 	return true;
 }

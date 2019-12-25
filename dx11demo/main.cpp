@@ -71,10 +71,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	S.Setup();
 
 	Camera C;
-	C.SetPostion({ 0, 100, -200 });
-	C.LookAt({ 0, 100, 0 });
+	C.SetPostion({ 0, 400, 50 });
+	C.LookAt({ 0, 0, 100 });
 	C.SetViewport(720, 720);
-	C.SetLen(1, 400);
+	C.SetLen(10, 1000);
 	C.InitResource();
 
 	MSG msg;

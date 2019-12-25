@@ -413,9 +413,9 @@ void Mesh::Draw()
 	UINT Offset = 0;
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
-	Yall(0.01f);
+	//Pitch(0.01f);
+	Roll(0.01f);
 	Matrix World = GetWorldMatrix();
-	World.SetIndentity();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);

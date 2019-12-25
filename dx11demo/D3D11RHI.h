@@ -11,6 +11,7 @@ extern ID3D11DeviceContext*	D3D11DeviceContext;
 
 extern ID3D11RenderTargetView* RenderTargetView;
 extern D3D11_VIEWPORT Viewport;
+extern ID3D11RasterizerState* RasterState;
 
 extern UINT WindowWidth;
 extern UINT WindowHeight;

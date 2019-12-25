@@ -71,12 +71,13 @@ void Camera::Render()
 void Camera::UpdateViewMatrix()
 {
 	VSConstBuffer.ViewMatrix = Matrix::DXLooAtLH(Eye,LookAtTarget,Up);
-	VSConstBuffer.ViewMatrix.SetIndentity();
+	//VSConstBuffer.ViewMatrix.SetIndentity();
 }
 
 void Camera::UpdateProjMatrix()
 {
 	float fRad = 90.0f * ( 3.14159f / 180.0f);
 	VSConstBuffer.ProjMatrix = Matrix::DXFromPerspectiveFovLH(fRad, fViewportWidth / fViewportHeight, Near, Far);
-	VSConstBuffer.ProjMatrix.SetIndentity();
+	//VSConstBuffer.ProjMatrix = Matrix::DXFromPerspectiveLH(50.0f, 50.0f, Near, Far);
+	//VSConstBuffer.ProjMatrix.SetIndentity();
 }
