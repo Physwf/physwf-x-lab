@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <d3d11.h>
-#include <DirectXMath.h>
 #include "Actor.h"
 #include "Math.h"
 

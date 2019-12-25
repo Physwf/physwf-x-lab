@@ -4,16 +4,16 @@
 Camera::Camera():Near(1.0f), Far(1000.0f)
 {
 	ConstantBuffer = NULL;
-	Up = XMVectorSet(0, 1, 0, 1);
+	Up = { 0, 1, 0 };
 }
 
-void Camera::SetPostion(XMVECTOR Position)
+void Camera::SetPostion(Vector Position)
 {
 	Eye = Position;
 	UpdateViewMatrix();
 }
 
-void Camera::LookAt(XMVECTOR Target)
+void Camera::LookAt(Vector Target)
 {
 	LookAtTarget = Target;
 	UpdateViewMatrix();
@@ -70,11 +70,13 @@ void Camera::Render()
 
 void Camera::UpdateViewMatrix()
 {
-	VSConstBuffer.ViewMatrix = XMMatrixLookAtLH(Eye,LookAtTarget,Up);
+	VSConstBuffer.ViewMatrix = Matrix::DXLooAtLH(Eye,LookAtTarget,Up);
+	VSConstBuffer.ViewMatrix.SetIndentity();
 }
 
 void Camera::UpdateProjMatrix()
 {
-	float fRad = 90.0f * ( XM_PI / 180.0f);
-	VSConstBuffer.ProjMatrix = XMMatrixPerspectiveFovLH(fRad, fViewportWidth / fViewportHeight, Near, Far);
+	float fRad = 90.0f * ( 3.14159f / 180.0f);
+	VSConstBuffer.ProjMatrix = Matrix::DXFromPerspectiveFovLH(fRad, fViewportWidth / fViewportHeight, Near, Far);
+	VSConstBuffer.ProjMatrix.SetIndentity();
 }

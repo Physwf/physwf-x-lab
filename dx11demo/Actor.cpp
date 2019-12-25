@@ -2,8 +2,8 @@
 
 Actor::Actor()
 {
-	Position = XMVectorSet(0, 0, 0, 0);
-	Rotation = XMVectorSet(0, 0, 0, 0);
+	Position = { 0, 0, 0 };
+	Rotation = { 0, 0, 0 };
 }
 
 Actor::~Actor()
@@ -13,30 +13,27 @@ Actor::~Actor()
 
 void Actor::SetPosition(float fX, float fY, float fZ)
 {
-	Position = XMVectorSet(fX, fY, fZ, 1);
+	Position = { fX, fY, fZ };
 }
 
 void Actor::SetRotation(float fRoll, float fPitch, float fYall)
 {
-	Rotation = XMVectorSet(fRoll, fPitch, fYall, 1);
+	Rotation = { fRoll, fPitch, fYall };
 }
 
 void Actor::Pitch(float fValue)
 {
-	float fNewPitch = XMVectorGetX(Rotation) + fValue;
-	Rotation = XMVectorSetX(Rotation, fNewPitch);
+	Rotation.X += fValue;
 }
 
 void Actor::Yall(float fValue)
 {
-	float fNewYall = XMVectorGetY(Rotation) + fValue;
-	Rotation = XMVectorSetY(Rotation, fNewYall);
+	Rotation.Y += fValue;
 }
 
 void Actor::Roll(float fValue)
 {
-	float fNewRoll = XMVectorGetZ(Rotation) + fValue;
-	Rotation = XMVectorSetZ(Rotation, fNewRoll);
+	Rotation.Z += fValue;
 }
 
 

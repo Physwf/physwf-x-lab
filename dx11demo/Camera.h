@@ -1,14 +1,13 @@
 #pragma once
 
-#include "DirectXMath.h"
+#include "Math.h"
 #include "D3D11RHI.h"
 
-using namespace DirectX;
 
 struct CAMERA_CBUFFER
 {
-	XMMATRIX ViewMatrix;
-	XMMATRIX ProjMatrix;
+	Matrix ViewMatrix;
+	Matrix ProjMatrix;
 };
 
 class Camera
@@ -17,8 +16,8 @@ public:
 	Camera();
 	~Camera() {};
 
-	void SetPostion(XMVECTOR Position);
-	void LookAt(XMVECTOR Target);
+	void SetPostion(Vector Position);
+	void LookAt(Vector Target);
 	void SetViewport(float fWidth, float fHeight);
 	void SetLen(float fNear, float fFar);
 
@@ -31,9 +30,9 @@ private:
 private:
 	CAMERA_CBUFFER VSConstBuffer;
 
-	XMVECTOR Eye;
-	XMVECTOR LookAtTarget;
-	XMVECTOR Up;
+	Vector Eye;
+	Vector LookAtTarget;
+	Vector Up;
 
 	float Near;
 	float Far;

@@ -71,8 +71,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	S.Setup();
 
 	Camera C;
-	C.SetPostion(XMVectorSet(0, 100, -200, 1));
-	C.LookAt(XMVectorSet(0, 100, 0, 1));
+	C.SetPostion({ 0, 100, -200 });
+	C.LookAt({ 0, 100, 0 });
 	C.SetViewport(720, 720);
 	C.SetLen(1, 400);
 	C.InitResource();

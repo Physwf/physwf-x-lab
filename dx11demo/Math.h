@@ -3,6 +3,7 @@
 #include <initializer_list>
 #include <cassert>
 #include <cmath>
+#include <memory>
 
 typedef	signed char			int8;	
 typedef signed short int	int16;	
@@ -13,6 +14,18 @@ typedef unsigned char		uint8;
 typedef unsigned short		uint16;
 typedef unsigned int		uint32;
 typedef unsigned long long	uint64;
+
+class Math
+{
+public:
+	template<typename T>
+	static void Swap(T&A, T& B)
+	{
+		T Temp = A;
+		A = B;
+		B = Temp;
+	}
+};
 
 struct alignas(16) Vector4
 {
@@ -478,3 +491,319 @@ struct Color
 	uint8 R, G, B, A;
 };
 
+struct Matrix
+{
+	union
+	{
+		alignas(16) float M[4][4];
+	};
+
+	Matrix() {}
+
+	void SetIndentity();
+
+	void Transpose();
+
+	Matrix operator* (const Matrix& Other) const;
+
+	void operator*=(const Matrix& Other);
+
+	Matrix operator+ (const Matrix& Other) const;
+
+	void operator+=(const Matrix& Other);
+
+	Matrix operator* (float Other) const;
+
+	void operator*=(float Other);
+
+	 bool operator==(const Matrix& Other) const;
+
+	inline bool operator!=(const Matrix& Other) const;
+
+	static Matrix	DXFromPitch(float fPitch);
+	static Matrix	DXFromYaw(float fYaw);
+	static Matrix	DXFromRoll(float fRoll);
+	static Matrix	DXFormRotation(Vector Rotation);
+	static Matrix	DXFromTranslation(Vector Translation);
+	static Matrix	DXLooAtLH(const Vector& Eye,const Vector& LookAtPosition, const Vector& Up);
+	static Matrix	DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
+};
+
+inline void Matrix::SetIndentity()
+{
+	M[0][0] = 1; M[0][1] = 0;  M[0][2] = 0;  M[0][3] = 0;
+	M[1][0] = 0; M[1][1] = 1;  M[1][2] = 0;  M[1][3] = 0;
+	M[2][0] = 0; M[2][1] = 0;  M[2][2] = 1;  M[2][3] = 0;
+	M[3][0] = 0; M[3][1] = 0;  M[3][2] = 0;  M[3][3] = 1;
+}
+
+
+inline void Matrix::Transpose()
+{
+	Math::Swap(M[0][1], M[1][0]);
+	Math::Swap(M[0][2], M[2][0]);
+	Math::Swap(M[0][3], M[3][0]);
+	Math::Swap(M[2][1], M[1][2]);
+	Math::Swap(M[3][1], M[1][3]);
+	Math::Swap(M[3][2], M[2][3]);
+}
+
+inline Matrix Matrix::operator+(const Matrix& Other) const
+{
+	Matrix Result;
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			Result.M[X][Y] = M[X][Y] + Other.M[X][Y];
+		}
+	}
+	return Result;
+}
+
+inline void Matrix::operator+=(const Matrix& Other)
+{
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			M[X][Y] += Other.M[X][Y];
+		}
+	}
+}
+
+inline Matrix Matrix::operator*(float Other) const
+{
+	Matrix Result;
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			Result.M[X][Y] = M[X][Y] * Other;
+		}
+	}
+	return Result;
+}
+
+inline void Matrix::operator*=(float Other)
+{
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			M[X][Y] *= Other;
+		}
+	}
+}
+
+inline Matrix Matrix::operator*(const Matrix& Other) const
+{
+	Matrix Result;
+	//coloum major
+// 	Result.M[0][0] = M[0][0] * Other.M[0][0] + M[1][0] * Other.M[0][1] + M[2][0] * Other.M[0][2] + M[3][0] * Other.M[0][3];
+// 	Result.M[1][0] = M[0][1] * Other.M[0][0] + M[1][1] * Other.M[0][1] + M[2][1] * Other.M[0][2] + M[3][1] * Other.M[0][3];
+// 	Result.M[2][0] = M[0][2] * Other.M[0][0] + M[1][2] * Other.M[0][1] + M[2][2] * Other.M[0][2] + M[3][2] * Other.M[0][3];
+// 	Result.M[3][0] = M[0][3] * Other.M[0][0] + M[1][3] * Other.M[0][1] + M[2][3] * Other.M[0][2] + M[3][3] * Other.M[0][3];
+// 
+// 	Result.M[0][1] = M[0][0] * Other.M[1][0] + M[1][0] * Other.M[1][1] + M[2][0] * Other.M[1][2] + M[3][0] * Other.M[1][3];
+// 	Result.M[1][1] = M[0][1] * Other.M[1][0] + M[1][1] * Other.M[1][1] + M[2][1] * Other.M[1][2] + M[3][1] * Other.M[1][3];
+// 	Result.M[2][1] = M[0][2] * Other.M[1][0] + M[1][2] * Other.M[1][1] + M[2][2] * Other.M[1][2] + M[3][2] * Other.M[1][3];
+// 	Result.M[3][1] = M[0][3] * Other.M[1][0] + M[1][3] * Other.M[1][1] + M[2][3] * Other.M[1][2] + M[3][3] * Other.M[1][3];
+// 
+// 	Result.M[0][2] = M[0][0] * Other.M[2][0] + M[1][0] * Other.M[2][1] + M[2][0] * Other.M[2][2] + M[3][0] * Other.M[2][3];
+// 	Result.M[1][3] = M[0][1] * Other.M[2][0] + M[1][1] * Other.M[2][1] + M[2][1] * Other.M[2][2] + M[3][1] * Other.M[2][3];
+// 	Result.M[2][2] = M[0][2] * Other.M[2][0] + M[1][2] * Other.M[2][1] + M[2][2] * Other.M[2][2] + M[3][2] * Other.M[2][3];
+// 	Result.M[3][2] = M[0][3] * Other.M[2][0] + M[1][3] * Other.M[2][1] + M[2][3] * Other.M[2][2] + M[3][3] * Other.M[2][3];
+// 
+// 	Result.M[0][3] = M[0][0] * Other.M[3][0] + M[1][0] * Other.M[3][1] + M[2][0] * Other.M[3][2] + M[3][0] * Other.M[3][3];
+// 	Result.M[1][3] = M[0][1] * Other.M[3][0] + M[1][1] * Other.M[3][1] + M[2][1] * Other.M[3][2] + M[3][1] * Other.M[3][3];
+// 	Result.M[2][3] = M[0][2] * Other.M[3][0] + M[1][2] * Other.M[3][1] + M[2][2] * Other.M[3][2] + M[3][2] * Other.M[3][3];
+// 	Result.M[3][3] = M[0][3] * Other.M[3][0] + M[1][3] * Other.M[3][1] + M[2][3] * Other.M[3][2] + M[3][3] * Other.M[3][3];
+
+
+	//column major
+// 	Result.M[0][0] = M[0][0] * Other.M[0][0] + M[1][0] * Other.M[0][1] + M[2][0] * Other.M[0][2] + M[3][0] * Other.M[0][3];
+// 	Result.M[1][0] = M[0][0] * Other.M[1][0] + M[1][0] * Other.M[1][1] + M[2][0] * Other.M[1][2] + M[3][0] * Other.M[1][3];
+// 	Result.M[2][0] = M[0][0] * Other.M[2][0] + M[1][0] * Other.M[2][1] + M[2][0] * Other.M[1][2] + M[3][0] * Other.M[2][3];
+// 	Result.M[3][0] = M[0][0] * Other.M[3][0] + M[1][0] * Other.M[3][1] + M[2][0] * Other.M[1][2] + M[3][0] * Other.M[3][3];
+// 
+// 	Result.M[0][1] = M[0][1] * Other.M[0][0] + M[1][1] * Other.M[0][1] + M[2][1] * Other.M[0][2] + M[3][1] * Other.M[0][3];
+// 	Result.M[1][1] = M[0][1] * Other.M[1][0] + M[1][1] * Other.M[1][1] + M[2][1] * Other.M[1][2] + M[3][1] * Other.M[1][3];
+// 	Result.M[2][1] = M[0][1] * Other.M[2][0] + M[1][1] * Other.M[2][1] + M[2][1] * Other.M[1][2] + M[3][1] * Other.M[2][3];
+// 	Result.M[3][1] = M[0][1] * Other.M[3][0] + M[1][1] * Other.M[3][1] + M[2][1] * Other.M[1][2] + M[3][1] * Other.M[3][3];
+// 
+// 	Result.M[0][2] = M[0][2] * Other.M[0][0] + M[1][2] * Other.M[0][1] + M[2][2] * Other.M[0][2] + M[3][2] * Other.M[0][3];
+// 	Result.M[1][2] = M[0][2] * Other.M[1][0] + M[1][2] * Other.M[1][1] + M[2][2] * Other.M[1][2] + M[3][2] * Other.M[1][3];
+// 	Result.M[2][2] = M[0][2] * Other.M[2][0] + M[1][2] * Other.M[2][1] + M[2][2] * Other.M[1][2] + M[3][2] * Other.M[2][3];
+// 	Result.M[3][2] = M[0][2] * Other.M[3][0] + M[1][2] * Other.M[3][1] + M[2][2] * Other.M[1][2] + M[3][2] * Other.M[3][3];
+// 
+// 	Result.M[0][3] = M[0][3] * Other.M[0][0] + M[1][3] * Other.M[0][1] + M[2][3] * Other.M[0][2] + M[3][3] * Other.M[0][3];
+// 	Result.M[1][3] = M[0][3] * Other.M[1][0] + M[1][3] * Other.M[1][1] + M[2][3] * Other.M[1][2] + M[3][3] * Other.M[1][3];
+// 	Result.M[2][3] = M[0][3] * Other.M[2][0] + M[1][3] * Other.M[2][1] + M[2][3] * Other.M[1][2] + M[3][3] * Other.M[2][3];
+// 	Result.M[3][3] = M[0][3] * Other.M[3][0] + M[1][3] * Other.M[3][1] + M[2][3] * Other.M[1][2] + M[3][3] * Other.M[3][3];
+
+	//row major
+// 	Result.M[0][0] = M[0][0] * Other.M[0][0] + M[0][1] * Other.M[1][0] + M[0][2] * Other.M[2][0] + M[0][3] * Other.M[3][0];
+// 	Result.M[1][0] = M[1][0] * Other.M[0][0] + M[1][1] * Other.M[1][0] + M[1][2] * Other.M[2][0] + M[1][3] * Other.M[3][0];
+// 	Result.M[2][0] = M[2][0] * Other.M[0][0] + M[2][1] * Other.M[1][0] + M[2][2] * Other.M[2][0] + M[2][3] * Other.M[3][0];
+// 	Result.M[3][0] = M[3][0] * Other.M[0][0] + M[3][1] * Other.M[1][0] + M[3][2] * Other.M[2][0] + M[3][3] * Other.M[3][0];
+// 
+// 	Result.M[0][1] = M[0][0] * Other.M[0][1] + M[0][1] * Other.M[1][1] + M[0][2] * Other.M[2][1] + M[0][3] * Other.M[3][1];
+// 	Result.M[1][1] = M[1][0] * Other.M[0][1] + M[1][1] * Other.M[1][1] + M[1][2] * Other.M[2][1] + M[1][3] * Other.M[3][1];
+// 	Result.M[2][1] = M[2][0] * Other.M[0][1] + M[2][1] * Other.M[1][1] + M[2][2] * Other.M[2][1] + M[2][3] * Other.M[3][1];
+// 	Result.M[3][1] = M[3][0] * Other.M[0][1] + M[3][1] * Other.M[1][1] + M[3][2] * Other.M[2][1] + M[3][3] * Other.M[3][1];
+// 
+// 	Result.M[0][2] = M[0][0] * Other.M[0][2] + M[0][1] * Other.M[1][2] + M[0][2] * Other.M[2][2] + M[0][3] * Other.M[3][2];
+// 	Result.M[1][2] = M[1][0] * Other.M[0][2] + M[1][1] * Other.M[1][2] + M[1][2] * Other.M[2][2] + M[1][3] * Other.M[3][2];
+// 	Result.M[2][2] = M[2][0] * Other.M[0][2] + M[2][1] * Other.M[1][2] + M[2][2] * Other.M[2][2] + M[2][3] * Other.M[3][2];
+// 	Result.M[3][2] = M[3][0] * Other.M[0][2] + M[3][1] * Other.M[1][2] + M[3][2] * Other.M[2][2] + M[3][3] * Other.M[3][2];
+// 
+// 	Result.M[0][3] = M[0][0] * Other.M[0][3] + M[0][1] * Other.M[1][3] + M[0][2] * Other.M[2][3] + M[0][3] * Other.M[3][3];
+// 	Result.M[1][3] = M[1][0] * Other.M[0][3] + M[1][1] * Other.M[1][3] + M[1][2] * Other.M[2][3] + M[1][3] * Other.M[3][3];
+// 	Result.M[2][3] = M[2][0] * Other.M[0][3] + M[2][1] * Other.M[1][3] + M[2][2] * Other.M[2][3] + M[2][3] * Other.M[3][3];
+// 	Result.M[3][3] = M[3][0] * Other.M[0][3] + M[3][1] * Other.M[1][3] + M[3][2] * Other.M[2][3] + M[3][3] * Other.M[3][3];
+
+	typedef float Float4x4[4][4];
+	const Float4x4& A = *((const Float4x4*)this);
+	const Float4x4& B = *((const Float4x4*)&Other);
+	Float4x4 Temp;
+	Temp[0][0] = A[0][0] * B[0][0] + A[0][1] * B[1][0] + A[0][2] * B[2][0] + A[0][3] * B[3][0];
+	Temp[0][1] = A[0][0] * B[0][1] + A[0][1] * B[1][1] + A[0][2] * B[2][1] + A[0][3] * B[3][1];
+	Temp[0][2] = A[0][0] * B[0][2] + A[0][1] * B[1][2] + A[0][2] * B[2][2] + A[0][3] * B[3][2];
+	Temp[0][3] = A[0][0] * B[0][3] + A[0][1] * B[1][3] + A[0][2] * B[2][3] + A[0][3] * B[3][3];
+
+	Temp[1][0] = A[1][0] * B[0][0] + A[1][1] * B[1][0] + A[1][2] * B[2][0] + A[1][3] * B[3][0];
+	Temp[1][1] = A[1][0] * B[0][1] + A[1][1] * B[1][1] + A[1][2] * B[2][1] + A[1][3] * B[3][1];
+	Temp[1][2] = A[1][0] * B[0][2] + A[1][1] * B[1][2] + A[1][2] * B[2][2] + A[1][3] * B[3][2];
+	Temp[1][3] = A[1][0] * B[0][3] + A[1][1] * B[1][3] + A[1][2] * B[2][3] + A[1][3] * B[3][3];
+
+	Temp[2][0] = A[2][0] * B[0][0] + A[2][1] * B[1][0] + A[2][2] * B[2][0] + A[2][3] * B[3][0];
+	Temp[2][1] = A[2][0] * B[0][1] + A[2][1] * B[1][1] + A[2][2] * B[2][1] + A[2][3] * B[3][1];
+	Temp[2][2] = A[2][0] * B[0][2] + A[2][1] * B[1][2] + A[2][2] * B[2][2] + A[2][3] * B[3][2];
+	Temp[2][3] = A[2][0] * B[0][3] + A[2][1] * B[1][3] + A[2][2] * B[2][3] + A[2][3] * B[3][3];
+
+	Temp[3][0] = A[3][0] * B[0][0] + A[3][1] * B[1][0] + A[3][2] * B[2][0] + A[3][3] * B[3][0];
+	Temp[3][1] = A[3][0] * B[0][1] + A[3][1] * B[1][1] + A[3][2] * B[2][1] + A[3][3] * B[3][1];
+	Temp[3][2] = A[3][0] * B[0][2] + A[3][1] * B[1][2] + A[3][2] * B[2][2] + A[3][3] * B[3][2];
+	Temp[3][3] = A[3][0] * B[0][3] + A[3][1] * B[1][3] + A[3][2] * B[2][3] + A[3][3] * B[3][3];
+	memcpy(&Result, &Temp, 16 * sizeof(float));
+
+	return Result;
+}
+
+inline void Matrix::operator*=(const Matrix& Other)
+{
+	*this = operator*(Other);
+}
+
+inline Matrix Matrix::DXFromPitch(float fPitch)
+{
+	Matrix Result;
+	float CosTheta = cosf(fPitch);
+	float SinTheta = sinf(fPitch);
+	Result.M[0][0] = 1.0f;	Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;		Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;	Result.M[1][1] = CosTheta;	Result.M[1][2] = SinTheta;	Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;	Result.M[2][1] = -SinTheta;	Result.M[2][2] = CosTheta;	Result.M[2][3] = 0.0f;
+	Result.M[3][0] = 0.0f;	Result.M[3][1] = 0.0f;		Result.M[3][2] = 0.0f;		Result.M[3][3] = 1.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXFromYaw(float fYaw)
+{
+	Matrix Result;
+	float CosTheta = cosf(fYaw);
+	float SinTheta = sinf(fYaw);
+	Result.M[0][0] = CosTheta;	Result.M[0][1] = 0.0f;		Result.M[0][2] = -SinTheta;		Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;		Result.M[1][1] = 1.0f;		Result.M[1][2] = 0.0f;			Result.M[1][3] = 0.0f;
+	Result.M[2][0] = SinTheta;	Result.M[2][1] = 0.0f;		Result.M[2][2] = CosTheta;		Result.M[2][3] = 0.0f;
+	Result.M[3][0] = 0.0f;		Result.M[3][1] = 0.0f;		Result.M[3][2] = 0.0f;			Result.M[3][3] = 1.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXFromRoll(float fRoll)
+{
+	Matrix Result;
+	float CosTheta = cosf(fRoll);
+	float SinTheta = sinf(fRoll);
+	Result.M[0][0] = CosTheta;	Result.M[0][1] = SinTheta;		Result.M[0][2] = 0.0f;		Result.M[0][3] = 0.0f;
+	Result.M[1][0] = -SinTheta;	Result.M[1][1] = CosTheta;		Result.M[1][2] = 0.0f;		Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;		Result.M[2][1] = 0.0f;			Result.M[2][2] = 1.0f;		Result.M[2][3] = 0.0f;
+	Result.M[3][0] = 0.0f;		Result.M[3][1] = 0.0f;			Result.M[3][2] = 0.0f;		Result.M[3][3] = 1.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXFormRotation(Vector Rotation)
+{
+	Matrix Pitch =	DXFromPitch(Rotation.X);
+	Matrix Yaw =	DXFromYaw(Rotation.Y);
+	Matrix Roll =	DXFromRoll(Rotation.Z);
+	return Yaw;
+}
+
+inline Matrix Matrix::DXFromTranslation(Vector Translation)
+{
+	Matrix Result;
+	Result.M[0][0] = 1;					Result.M[0][1] = 0.0f;			Result.M[0][2] = 0.0f;						Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;				Result.M[1][1] = 1.0f;			Result.M[1][2] = 0.0f;						Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;				Result.M[2][1] = 0.0f;			Result.M[2][2] = 1.0f;						Result.M[2][3] = 0.0f;
+	Result.M[3][0] = Translation.X;		Result.M[3][1] = Translation.Y;	Result.M[3][2] = Translation.Z;				Result.M[3][3] = 1.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXLooAtLH(const Vector& Eye, const Vector& LookAtPosition, const Vector& Up)
+{
+	Matrix Result;
+	Vector Z = LookAtPosition - Eye;
+	Z.Normalize();
+	Vector X = Up ^ Z;
+	X.Normalize();
+	Vector Y = Z ^ X;
+	Y.Normalize();
+	Result.M[0][0] = X.X;			Result.M[0][1] = Y.X;			Result.M[0][2] = Z.X;				Result.M[0][3] = 0.0f;
+	Result.M[1][0] = X.Y;			Result.M[1][1] = Y.Y;			Result.M[1][2] = Z.Y;				Result.M[1][3] = 0.0f;
+	Result.M[2][0] = X.Z;			Result.M[2][1] = Y.Z;			Result.M[2][2] = Z.Z;				Result.M[2][3] = 0.0f;
+	Result.M[3][0] = X | (-Eye);	Result.M[3][1] = Y | (-Eye);	Result.M[3][2] = Z | (-Eye);		Result.M[3][3] = 1.0f;
+	return Result;
+}
+
+inline Matrix Matrix::DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane)
+{
+	Matrix Result;
+	float Cot = 1.0f / tanf(0.5f * fieldOfViewY);
+	float InverNF = 1.0f / (zfarPlane - znearPlane);
+	Result.M[0][0] = Cot / aspectRatio;			Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;						Result.M[1][1] = Cot;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = zfarPlane * InverNF;					Result.M[2][3] = zfarPlane * zfarPlane * (-InverNF);
+	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = 1.0f;									Result.M[3][3] = 0.0f;
+	return Result;
+}
+
+inline bool Matrix::operator==(const Matrix& Other) const
+{
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			if (M[X][Y] != Other.M[X][Y])
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+inline bool Matrix::operator!=(const Matrix& Other) const
+{
+	for (int32 X = 0; X < 4; ++X)
+	{
+		for (int32 Y = 0; Y < 4; ++Y)
+		{
+			if (M[X][Y] != Other.M[X][Y])
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}

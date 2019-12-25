@@ -299,12 +299,13 @@ void Mesh::InitResource()
 
 	D3D11_BUFFER_DESC ConstBufferDesc;
 	ZeroMemory(&ConstBufferDesc, sizeof(D3D11_BUFFER_DESC));
-	ConstBufferDesc.ByteWidth = sizeof(XMMATRIX);
+	ConstBufferDesc.ByteWidth = sizeof(Matrix);
 	ConstBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	ConstBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA ConstInitData;
-	XMMATRIX World = XMMatrixIdentity();
+	Matrix World;
+	World.SetIndentity();
 	ConstInitData.pSysMem = &World;
 	ConstInitData.SysMemPitch = 0;
 	ConstInitData.SysMemSlicePitch = 0;
@@ -413,7 +414,8 @@ void Mesh::Draw()
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
 	Yall(0.01f);
-	XMMATRIX World = GetWorldMatrix();
+	Matrix World = GetWorldMatrix();
+	World.SetIndentity();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);

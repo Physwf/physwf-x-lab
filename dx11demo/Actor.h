@@ -1,8 +1,6 @@
 #pragma once
 
-#include <DirectXMath.h>
-
-using namespace DirectX;
+#include "Math.h"
 
 class Actor
 {
@@ -17,11 +15,11 @@ public:
 	void Roll(float fValue);
 	
 protected:
-	XMMATRIX GetWorldMatrix() 
+	Matrix GetWorldMatrix() 
 	{ 
-		return XMMatrixRotationRollPitchYawFromVector(Rotation) * XMMatrixTranslationFromVector(Position);
+		return Matrix::DXFormRotation(Rotation) * Matrix::DXFromTranslation(Position);
 	}
 
-	XMVECTOR Position;
-	XMVECTOR Rotation;
+	Vector Position;
+	Vector Rotation;
 };
