@@ -10,6 +10,7 @@ ID3D11Device*			D3D11Device = NULL;
 ID3D11DeviceContext*	D3D11DeviceContext = NULL;
 
 ID3D11RenderTargetView* RenderTargetView = NULL;
+ID3D11DepthStencilView* DepthStencialView = NULL;
 D3D11_VIEWPORT Viewport;
 
 ID3D11RasterizerState* RasterState;
@@ -130,7 +131,41 @@ bool D3D11Setup()
 		return false;
 	}
 	hr = D3D11Device->CreateRenderTargetView(BackBuffer, NULL, &RenderTargetView);
+	if (FAILED(hr))
+	{
+		X_LOG("CreateRenderTargetView failed!");
+		return false;
+	}
 	BackBuffer->Release();
+
+
+	D3D11_TEXTURE2D_DESC DepthStencialDesc;
+	ZeroMemory(&DepthStencialDesc, sizeof(D3D11_TEXTURE2D_DESC));
+	DepthStencialDesc.Width = WindowWidth;
+	DepthStencialDesc.Height = WindowHeight;
+	DepthStencialDesc.MipLevels = 1;
+	DepthStencialDesc.ArraySize = 1;
+	DepthStencialDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DepthStencialDesc.SampleDesc.Count = 1;
+	DepthStencialDesc.SampleDesc.Quality = 0;
+	DepthStencialDesc.Usage = D3D11_USAGE_DEFAULT;
+	DepthStencialDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	//DepthStencialDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	//DepthStencialDesc.MiscFlags = 
+	ID3D11Texture2D* DepthStencialTexture;
+	hr = D3D11Device->CreateTexture2D(&DepthStencialDesc, 0, &DepthStencialTexture);
+	if (FAILED(hr))
+	{
+		X_LOG("CreateTexture2D failed!");
+		return false;
+	}
+	hr = D3D11Device->CreateDepthStencilView(DepthStencialTexture,0,&DepthStencialView);
+	if (FAILED(hr))
+	{
+		X_LOG("CreateDepthStencilView failed!");
+		return false;
+	}
+
 
 	Viewport.Width = (FLOAT)WindowWidth;
 	Viewport.Height = (FLOAT)WindowHeight;
@@ -145,7 +180,7 @@ bool D3D11Setup()
 	wfdesc.CullMode = D3D11_CULL_BACK;
 	hr = D3D11Device->CreateRasterizerState(&wfdesc, &RasterState);
 
-	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
+	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
 	D3D11DeviceContext->RSSetViewports(1, &Viewport);
 	D3D11DeviceContext->RSSetState(RasterState);
 
@@ -156,6 +191,7 @@ void D3D11ClearViewTarget()
 {
 	float ClearColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
+	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
 void D3D11Present()

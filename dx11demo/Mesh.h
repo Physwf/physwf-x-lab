@@ -40,6 +40,9 @@ public:
 private:
 	int CreateVertex();
 private:
+	std::vector<Vector> mPoistions;
+	std::vector<unsigned int> mVertexInstances;
+	std::vector<Vector> mVertexInstanceNormals;
 	std::vector<Vertex> mVertices;
 	std::vector<unsigned int> mIndices;
 	

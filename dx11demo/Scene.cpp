@@ -57,7 +57,7 @@ void Scene::Setup()
 	Plane->SetPosition(0.0f, 0.0f, 500.0f);
 	Plane->SetRotation(3.14f / 2.0f, 0.0f, 0.0f);
 	Plane->InitResource();
-	Meshes.push_back(Plane);
+	//Meshes.push_back(Plane);
 
 
 	Camera* C = new Camera();
