@@ -520,6 +520,8 @@ struct Matrix
 
 	inline bool operator!=(const Matrix& Other) const;
 
+	Vector Transform(Vector InVector);
+
 	static Matrix	FromScale(float Scale);
 	static Matrix	DXFromPitch(float fPitch);
 	static Matrix	DXFromYaw(float fYaw);
@@ -696,6 +698,16 @@ inline Matrix Matrix::operator*(const Matrix& Other) const
 inline void Matrix::operator*=(const Matrix& Other)
 {
 	*this = operator*(Other);
+}
+
+inline Vector Matrix::Transform(Vector InVector)
+{
+	return 
+	{ 
+		InVector.X * M[0][0] + InVector.Y * M[1][0] + InVector.Z * M[2][0],
+		InVector.X * M[0][1] + InVector.Y * M[1][1] + InVector.Z * M[2][1],
+		InVector.X * M[0][2] + InVector.Y * M[1][2] + InVector.Z * M[2][2],
+	};
 }
 
 inline Matrix Matrix::FromScale(float Scale)

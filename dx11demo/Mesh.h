@@ -7,7 +7,7 @@
 
 struct Vertex
 {
-	Vector Postion;
+	Vector Position;
 	Vector Normal;
 	Vector2 UV1;
 	Vector2 UV2;
@@ -30,6 +30,8 @@ public:
 	~Mesh() {}
 
 	void ImportFromFBX(const char* pFileName);
+	void GeneratePlane(float InWidth, float InHeight,int InNumSectionW, int InNumSectionH);
+	void GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSectionX, int InNumSectionY, int InNumSectionZ);
 
 	void InitResource();
 	void ReleaseResource();

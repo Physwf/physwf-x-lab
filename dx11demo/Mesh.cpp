@@ -205,7 +205,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				FbxPosition = TotalMatrix.MultT(FbxPosition);
 				Vector const VectorPositon = ConvertPos(FbxPosition);
 				int VertexID = CreateVertex();
-				mVertices[VertexID].Postion = VectorPositon;
+				mVertices[VertexID].Position = VectorPositon;
 			}
 
 			int PolygonCount = lMesh->GetPolygonCount();
@@ -249,6 +249,49 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 	delete GeometryConverter;
 	GeometryConverter = nullptr;
+}
+
+void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int InNumSectionH)
+{
+	mVertices.clear();
+	mIndices.clear();
+	Sections.clear();
+
+	float IntervalX = InWidth / InNumSectionW;
+	float IntervalY = InHeight / InNumSectionH;
+	for (int i = 0; i <= InNumSectionW; ++i)
+	{
+		for (int j = 0; j <= InNumSectionH; ++j)
+		{
+			float X = IntervalX * i;
+			float Y = IntervalY * j;
+			Vertex V;
+			V.Position = { X, Y, 0.0f };
+			V.Normal = {0,0,1};
+			mVertices.push_back(V);
+		}
+	}
+
+	int Count = InNumSectionW * InNumSectionH;
+	for (int i = 0; i < Count;++i)
+	{
+		mIndices.push_back(i);
+		mIndices.push_back(i + 1);
+		mIndices.push_back(i + 1 + InNumSectionW + 1);
+		mIndices.push_back(i);
+		mIndices.push_back(i + 1 + InNumSectionW + 1);
+		mIndices.push_back(i + InNumSectionW + 1);
+	}
+
+	XStaticMeshSection Section;
+	Section.FirstIndex = 0;
+	Section.NumTriangles = Count * 2;
+	Sections.push_back(Section);
+}
+
+void Mesh::GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSectionX, int InNumSectionY, int InNumSectionZ)
+{
+
 }
 
 void Mesh::InitResource()
@@ -414,7 +457,7 @@ void Mesh::Draw()
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
 	//Pitch(0.01f);
-	Roll(0.01f);
+	//Roll(0.01f);
 	Matrix World = GetWorldMatrix();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 

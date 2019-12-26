@@ -12,39 +12,22 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-cbuffer CAMERA_CBUFFER : register(b0)
+cbuffer ViewUniform : register(b0)
 {
-	float4x4 View;
-	float4x4 Proj;
+	float4x4 WorldToView;
+	float4x4 ViewToClip;
+	float4x4 WorldToClip;
 };
  
-cbuffer	ACTOR_CBUFFER : register(b1)
+cbuffer	PrimitiveUniform : register(b1)
 {
-	float4x4 World;
+	float4x4 LocalToWorld;
 };
 
-struct AmbientLight
+cbuffer	DirectionalLightUniform: register(b2)
 {
-	float3 Color;
-};
-
-struct DirectionalLight
-{
-	float3 Direction;
-	float3 Color;
-};
-
-struct PointLight
-{
-	float4 PoistionAndRadias;
-	float4 ColorAndFalloffExponent;
-};
-
-cbuffer LIGHT_CBUFFER : register(b0)
-{
-	AmbientLight AmLight;
-	DirectionalLight DirLight;
-	PointLight PointLights[8];
+	float4 DirectionalLightColor;
+	float4 DirectionalLightDirectionAndShadowTransition;
 };
 
 
@@ -52,8 +35,8 @@ VertexOut VS_Main(VertexIn vin)
 {
     VertexOut vout;
 
-    float4 WorldPostion = mul(World,float4(vin.Position,1.0));
-	float4x4 VP = mul(Proj, View);
+    float4 WorldPostion = mul(LocalToWorld,float4(vin.Position,1.0));
+	float4x4 VP = mul(ViewToClip, WorldToView);
     vout.PosH = mul(VP,WorldPostion);
     vout.Color = float4(0.1,0.2,0.4,1);
     

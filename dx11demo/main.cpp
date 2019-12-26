@@ -15,6 +15,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 
 HWND g_hWind = NULL;
 
+Scene S;
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	WNDCLASSEX wc;
@@ -66,16 +68,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//CreateTriangleBuffer();
 
-	Scene S;
+	
 	S.InitResource();
 	S.Setup();
 
-	Camera C;
-	C.SetPostion({ 0, 400, 50 });
-	C.LookAt({ 0, 0, 100 });
-	C.SetViewport(720, 720);
-	C.SetLen(10, 1000);
-	C.InitResource();
+	
 
 	MSG msg;
 	while (true)
@@ -89,19 +86,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
-		else
-		{
-			D3D11ClearViewTarget();
-			//RenderTriangle();
-			C.Render();
-			S.Draw();
-			D3D11Present();
-		}
+
+		D3D11ClearViewTarget();
+		//RenderTriangle();
+		S.Draw();
+		D3D11Present();
+
 		Sleep(10);
 	}
 
 	S.ReleaseResource();
-	C.ReleaseResource();
 
 	return msg.wParam;
 }
@@ -114,7 +108,42 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	{
 		PostQuitMessage(0);
 		return 0;
-	}break;
+	}
+	case WM_KEYDOWN:
+	{
+		S.OnKeyDown(wParam);
+		break;
+	}
+	case WM_KEYUP:
+	{
+		S.OnKeyUp(wParam);
+		break;
+	}
+	case WM_LBUTTONDOWN:
+	{
+		S.OnMouseDown(LOWORD(lParam), HIWORD(lParam));
+		break;
+	}
+	case WM_LBUTTONUP:
+	{
+		S.OnMouseUp(LOWORD(lParam), HIWORD(lParam));
+		break;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		S.OnRightMouseDown(LOWORD(lParam), HIWORD(lParam));
+		break;
+	}
+	case WM_RBUTTONUP:
+	{
+		S.OnRightMouseUp(LOWORD(lParam), HIWORD(lParam));
+		break;
+	}
+	case WM_MOUSEMOVE:
+	{
+		S.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+		break;
+	}
 	}
 
 	return	DefWindowProc(hWnd, message, wParam, lParam);
