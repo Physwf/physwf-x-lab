@@ -95,6 +95,9 @@ bool D3D11Setup()
 			return false;
 		}
 
+		UINT NumQualityLevels = 0;
+		D3D11Device->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM,4,&NumQualityLevels);
+
 		extern HWND g_hWind;
 
 		DXGI_SWAP_CHAIN_DESC SwapChainDesc;
@@ -107,8 +110,8 @@ bool D3D11Setup()
 		SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		SwapChainDesc.OutputWindow = g_hWind;
-		SwapChainDesc.SampleDesc.Count = 1;
-		SwapChainDesc.SampleDesc.Quality = 0;
+		SwapChainDesc.SampleDesc.Count = 8;
+		SwapChainDesc.SampleDesc.Quality = NumQualityLevels-1;
 		SwapChainDesc.Windowed = TRUE;
 		SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
