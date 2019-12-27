@@ -13,7 +13,6 @@ ID3D11RenderTargetView* RenderTargetView = NULL;
 ID3D11DepthStencilView* DepthStencialView = NULL;
 ID3D11Texture2D* DepthStencialTexture = NULL;
 D3D11_VIEWPORT Viewport;
-
 ID3D11RasterizerState* RasterState;
 
 LONG WindowWidth = 720;
