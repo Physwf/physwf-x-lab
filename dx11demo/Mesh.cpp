@@ -191,7 +191,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 
 			int VertexCount = lMesh->GetControlPointsCount();
-			auto VertexOffset = mVertices.size();
+			auto VertexOffset = mPoistions.size();
 			auto VertexInstanceOffset = mIndices.size();
 
 			Section.FirstIndex = VertexInstanceOffset;
@@ -205,7 +205,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				FbxPosition = TotalMatrix.MultT(FbxPosition);
 				Vector const VectorPositon = ConvertPos(FbxPosition);
 				int VertexID = CreateVertex();
-				mVertices[VertexID].Position = VectorPositon;
+				mPoistions[VertexID] = VectorPositon;
 			}
 
 			int PolygonCount = lMesh->GetPolygonCount();
@@ -222,7 +222,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				{
 					//int VertexInstanceIndex = vertex
 					const int iControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
-					mIndices.push_back(iControlPointIndex + VertexOffset);
+					int VertexID = VertexOffset + iControlPointIndex;
 					int RealFbxVertexIndex = SkippedVertexInstance + CurrentVertexInstanceIndex;
 
 					if (LayerElementVertexColor)
@@ -232,7 +232,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 						FbxColor VertexColor = LayerElementVertexColor->GetDirectArray().GetAt(VertexColorIndex);
 						//todo setcolor
 					}
-
+					Vector Normal;
 					if (LayerElementNormal)
 					{
 						int NormalMapIndex = (NormalMappingMode == FbxLayerElement::eByControlPoint) ? iControlPointIndex : RealFbxVertexIndex;
@@ -240,8 +240,14 @@ void Mesh::ImportFromFBX(const char* pFileName)
 						FbxVector4 TempValue = LayerElementNormal->GetDirectArray().GetAt(NormalValueIndex);
 						TempValue = TotalMatrixForNormal.MultT(TempValue);
 						Vector TangentZ = ConvertDir(TempValue);
-						mVertices;
+						Normal = TangentZ;
 					}
+
+					Vertex V;
+					V.Position = mPoistions[VertexID];
+					V.Normal = Normal;
+					mVertices.push_back(V);
+					mIndices.push_back(mVertices.size()-1);
 				}
 			}
 		}
@@ -266,7 +272,7 @@ void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int I
 			float X = IntervalX * i;
 			float Y = IntervalY * j;
 			Vertex V;
-			V.Position = { X, Y, 0.0f };
+			V.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
 			V.Normal = {0,0,1};
 			mVertices.push_back(V);
 		}
@@ -473,7 +479,7 @@ void Mesh::Draw()
 
 int Mesh::CreateVertex()
 {
-	mVertices.push_back(Vertex());
-	return (int)(mVertices.size() - 1);
+	mPoistions.push_back(Vector());
+	return (int)(mPoistions.size() - 1);
 }
 
