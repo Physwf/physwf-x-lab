@@ -11,12 +11,13 @@ ID3D11DeviceContext*	D3D11DeviceContext = NULL;
 
 ID3D11RenderTargetView* RenderTargetView = NULL;
 ID3D11DepthStencilView* DepthStencialView = NULL;
+ID3D11Texture2D* DepthStencialTexture = NULL;
 D3D11_VIEWPORT Viewport;
 
 ID3D11RasterizerState* RasterState;
 
-UINT WindowWidth = 500;
-UINT WindowHeight = 400;
+LONG WindowWidth = 720;
+LONG WindowHeight = 720;
 
 bool D3D11Setup()
 {
@@ -149,13 +150,13 @@ bool D3D11Setup()
 	DepthStencialDesc.MipLevels = 1;
 	DepthStencialDesc.ArraySize = 1;
 	DepthStencialDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DepthStencialDesc.SampleDesc.Count = 1;
+	DepthStencialDesc.SampleDesc.Count = 8;
 	DepthStencialDesc.SampleDesc.Quality = 0;
 	DepthStencialDesc.Usage = D3D11_USAGE_DEFAULT;
 	DepthStencialDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	//DepthStencialDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	//DepthStencialDesc.MiscFlags = 
-	ID3D11Texture2D* DepthStencialTexture;
+	
 	hr = D3D11Device->CreateTexture2D(&DepthStencialDesc, 0, &DepthStencialTexture);
 	if (FAILED(hr))
 	{

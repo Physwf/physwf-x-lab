@@ -13,9 +13,10 @@ extern ID3D11RenderTargetView* RenderTargetView;
 extern ID3D11DepthStencilView* DepthStencialView;
 extern D3D11_VIEWPORT Viewport;
 extern ID3D11RasterizerState* RasterState;
+extern ID3D11Texture2D* DepthStencialTexture;
 
-extern UINT WindowWidth;
-extern UINT WindowHeight;
+extern LONG WindowWidth;
+extern LONG WindowHeight;
 
 bool D3D11Setup();
 void D3D11ClearViewTarget();
