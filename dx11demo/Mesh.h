@@ -23,6 +23,7 @@ struct XStaticMeshSection
 	unsigned int MaxVertexIndex;
 };
 
+
 class Mesh : public Actor
 {
 public:
