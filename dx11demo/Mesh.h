@@ -4,6 +4,8 @@
 #include <d3d11.h>
 #include "Actor.h"
 #include "Math.h"
+#include "MeshDescription.h"
+#include "fbxsdk.h"
 
 struct Vertex
 {
@@ -23,6 +25,12 @@ struct XStaticMeshSection
 	unsigned int MaxVertexIndex;
 };
 
+struct FbxMaterial
+{
+	FbxSurfaceMaterial* fbxMaterial;
+
+	std::string GetName() const { return fbxMaterial ? fbxMaterial->GetName() : "None"; }
+};
 
 class Mesh : public Actor
 {
@@ -48,6 +56,7 @@ private:
 	std::vector<unsigned int> mIndices;
 	
 	std::vector<XStaticMeshSection> Sections;
+	MeshDescription MD;
 
 	ID3D11InputLayout* InputLayout = NULL;
 	ID3D11Buffer* ConstantBuffer = NULL;
@@ -56,3 +65,5 @@ private:
 	ID3D11VertexShader* VertexShader = NULL;
 	ID3D11PixelShader* PixelShader = NULL;
 };
+
+static void RegisterMeshAttributes(MeshDescription& MD);

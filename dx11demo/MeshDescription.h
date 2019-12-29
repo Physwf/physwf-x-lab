@@ -5,6 +5,49 @@
 #include <string>
 #include <unordered_map>
 #include <tuple>
+#include <set>
+
+#include "Math.h"
+
+namespace MeshAttribute
+{
+	namespace Vertex
+	{
+		extern const std::string Position;
+		extern const std::string CornerSharpness;
+	}
+
+	namespace VertexInstance
+	{
+		extern const std::string TextureCoordinate;
+		extern const std::string Normal;
+		extern const std::string Tangent;
+		extern const std::string BinormalSign;
+		extern const std::string Color;
+	}
+
+	namespace Edge
+	{
+		extern const std::string IsHard;
+		extern const std::string IsUVSeam;
+		extern const std::string CreaseSharpness;
+	}
+
+	namespace Polygon
+	{
+		extern const std::string Normal;
+		extern const std::string Tangent;
+		extern const std::string Binormal;
+		extern const std::string Center;
+	}
+
+	namespace PolygonGroup
+	{
+		extern const std::string ImportedMaterialSlotName;
+		extern const std::string EnableCollision;
+		extern const std::string CastShadow;
+	}
+}
 
 struct MeshVertex
 {
@@ -83,8 +126,8 @@ public:
 
 	inline void Reset(const int32 Elements = 0)
 	{
-		Container.Reset();
-		Container.Reserve(Elements);
+		Container.empty();
+		Container.reserve(Elements);
 	}
 
 	inline void Reserve(const int32 Elements) { /*Container.Reserve(Elements);*/ }
@@ -130,7 +173,7 @@ public:
 		Container.RemoveAt(ID);
 	}
 
-	inline ElementType& operator[](const ElementIDType ID)
+	inline ElementType& operator[](const int ID)
 	{
 		return Container[ID];
 	}
@@ -149,11 +192,20 @@ public:
 		return MaxID > 0 ? Container.begin()->first : -1;
 	}
 
-	inline bool IsValid(const ElementIDType ID) const
+	inline bool IsValid(const int ID) const
 	{
 		return ID >= 0 && ID < MaxID && Container.find(ID) != Container.end();
 	}
 
+	std::vector<int> GetElementIDs() 
+	{ 
+		std::vector<int> Keys;
+		for (auto kv : Container)
+		{
+			Keys.push_back(kv.first);
+		}
+		return Keys;
+	}
 private:
 	int MaxID{ 0 };
 	std::unordered_map<int, ElementType> Container;
@@ -161,9 +213,9 @@ private:
 
 using AttributeTypes = std::tuple
 <
-	FVector4,
-	FVector,
-	FVector2D,
+	Vector4,
+	Vector,
+	Vector2,
 	float,
 	int,
 	bool,
@@ -192,17 +244,18 @@ class AttributeSet
 		std::map<std::string, std::vector<std::vector<Vector2>>>,
 		std::map<std::string, std::vector<std::vector<float>>>,
 		std::map<std::string, std::vector<std::vector<int>>>,
+		std::map<std::string, std::vector<std::vector<bool>>>,
 		std::map<std::string, std::vector<std::vector<std::string>>>
 		>
 		Containers;
-
+public:
 	template <typename AttributeType>
 	void RegisterAttribute(const std::string& AttriName, const int NumOfIndices, const AttributeType& DefaultValue = AttributeType())
 	{
 		auto& Map = std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Containers);
 		if (Map.find(AttriName) == Map.end())
 		{
-			Map.emplace(AttriName,std::vector<AttributeType>());
+			Map.emplace(AttriName, std::vector<std::vector<AttributeType>>());
 		}
 	}
 
@@ -274,103 +327,202 @@ class AttributeSet
 
 	void Insert(const int ElementID)
 	{
-		for (std::vector<Vector4>& Attributes : std::get<0>(Containers).second)
+		for (auto& Pair : std::get<0>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<Vector4>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, Vector4());
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, Vector4());
+				}
 			}
 		}
-		for (std::vector<Vector>& Attributes : std::get<1>(Containers).second)
+		for (auto& Pair : std::get<1>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<Vector>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, Vector());
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, Vector());
+				}
 			}
 		}
-		for (std::vector<Vector2>& Attributes : std::get<2>(Containers).second)
+		for (auto& Pair : std::get<2>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<Vector2>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, Vector2());
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, Vector2());
+				}
 			}
 		}
-		for (std::vector<float>& Attributes : std::get<3>(Containers).second)
+		for (auto& Pair : std::get<3>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<float>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, 0.0f);
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, 0.0f);
+				}
 			}
 		}
-		for (std::vector<int>& Attributes : std::get<4>(Containers).second)
+		for (auto& Pair : std::get<4>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<int>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, 0);
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, 0);
+				}
 			}
 		}
-		for (std::vector<std::string>& Attributes : std::get<5>(Containers).second)
+		for (auto& Pair : std::get<5>(Containers))
 		{
-			if (ElementID >= (int)Attributes.size())
+			for (std::vector<bool>& Attributes : Pair.second)
 			{
-				Attributes.resize(ElementID, std::string());
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, false);
+				}
+			}
+		}
+		for (auto& Pair : std::get<6>(Containers))
+		{
+			for (std::vector<std::string>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes.resize(ElementID, std::string());
+				}
 			}
 		}
 	}
 
 	void Remove(const int ElementID)
 	{
-		for (std::vector<Vector4>& Attributes : std::get<0>(Containers).second)
+		for (auto& Pair : std::get<0>(Containers))
 		{
-			Attributes[ElementID] = Vector4();
+			for (std::vector<Vector4>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = Vector4();
+				}
+			}
 		}
-		for (std::vector<Vector>& Attributes : std::get<1>(Containers).second)
+		for (auto& Pair : std::get<1>(Containers))
 		{
-			Attributes[ElementID] = Vector();
+			for (std::vector<Vector>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = Vector();
+				}
+			}
 		}
-		for (std::vector<Vector2>& Attributes : std::get<2>(Containers).second)
+		for (auto& Pair : std::get<2>(Containers))
 		{
-			Attributes[ElementID] = Vector2();
+			for (std::vector<Vector2>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = Vector2();
+				}
+			}
 		}
-		for (std::vector<float>& Attributes : std::get<3>(Containers).second)
+		for (auto& Pair : std::get<3>(Containers))
 		{
-			Attributes[ElementID] = 0.0f;
+			for (std::vector<float>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = 0.0f;
+				}
+			}
 		}
-		for (std::vector<int>& Attributes : std::get<4>(Containers).second)
+		for (auto& Pair : std::get<4>(Containers))
 		{
-			Attributes[ElementID] = 0;
+			for (std::vector<int>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = 0;
+				}
+			}
 		}
-		for (std::vector<std::string>& Attributes : std::get<5>(Containers).second)
+		for (auto& Pair : std::get<5>(Containers))
 		{
-			Attributes[ElementID] = std::string();
+			for (std::vector<bool>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = false;
+				}
+			}
+		}
+		for (auto& Pair : std::get<6>(Containers))
+		{
+			for (std::vector<std::string>& Attributes : Pair.second)
+			{
+				if (ElementID >= (int)Attributes.size())
+				{
+					Attributes[ElementID] = std::string();
+				}
+			}
 		}
 	}
 
 	void Initialize(const int NumElements)
 	{
-		for (std::vector<Vector4>& Attributes : std::get<0>(Containers).second)
+		for (auto& Pair : std::get<0>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<Vector4>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
-		for (std::vector<Vector>& Attributes : std::get<1>(Containers).second)
+		for (auto& Pair : std::get<1>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<Vector>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
-		for (std::vector<Vector2>& Attributes : std::get<2>(Containers).second)
+		for (auto& Pair : std::get<2>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<Vector2>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
-		for (std::vector<float>& Attributes : std::get<3>(Containers).second)
+		for (auto& Pair : std::get<3>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<float>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
-		for (std::vector<int>& Attributes : std::get<4>(Containers).second)
+		for (auto& Pair : std::get<4>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<int>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
-		for (std::vector<std::string>& Attributes : std::get<5>(Containers).second)
+		for (auto& Pair : std::get<5>(Containers))
 		{
-			Attributes.resize(NumElements);
+			for (std::vector<bool>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
+		}
+		for (auto& Pair : std::get<6>(Containers))
+		{
+			for (std::vector<std::string>& Attributes : Pair.second)
+			{
+				Attributes.resize(NumElements);
+			}
 		}
 
 		Insert(NumElements - 1);
@@ -438,7 +590,7 @@ public:
 		return VertexID;
 	}
 private:
-	void CreateVertexInstance_Internal(const int VertexInstanceID. const int VertexID)
+	void CreateVertexInstance_Internal(const int VertexInstanceID, const int VertexID)
 	{
 		VertexInstanceArray[VertexInstanceID].VertexID = VertexID;
 		VertexArray[VertexID].VertexInstanceIDs.push_back(VertexInstanceID);
@@ -463,7 +615,7 @@ private:
 		EdgeAttributesSet.Insert(EdgeID);
 	}
 public:
-	int CreateEdge(const int EdgeID, const int VertexID0, const int VertexID1, std::vector<int> ConnectedPolygons = std::vector<int>())
+	int CreateEdge(const int VertexID0, const int VertexID1, std::vector<int> ConnectedPolygons = std::vector<int>())
 	{
 		const int EdgeID = EdgeArray.Add();
 		CreateEdge_Interal(EdgeID, VertexID0, VertexID1, ConnectedPolygons);
@@ -471,8 +623,8 @@ public:
 	}
 	struct ContourPoint
 	{
-		FVertexInstanceID VertexInstanceID;
-		FEdgeID EdgeID;
+		int VertexInstanceID;
+		int EdgeID;
 	};
 private:
 	void CreatePolygonContour_Internal(const int PolygonID, const std::vector<ContourPoint>& ContourPoints, MeshPolygonContour& Contour)
@@ -483,7 +635,7 @@ private:
 			const int VertexInstanceID = CP.VertexInstanceID;
 			const int EdgeID = CP.EdgeID;
 
-			Contour.VertexInstanceIDs.Add(VertexInstanceID);
+			Contour.VertexInstanceIDs.push_back(VertexInstanceID);
 			//check(!VertexInstanceArray[VertexInstanceID].ConnectedPolygons.Contains(PolygonID));
 			VertexInstanceArray[VertexInstanceID].ConnectedPolygons.push_back(PolygonID);
 
@@ -498,8 +650,8 @@ private:
 		CreatePolygonContour_Internal(PolygonID, Perimeter, Polygon.PerimeterContour);
 		for (const std::vector<ContourPoint>& Hole : Holes)
 		{
-			Polygon.HoleContours.emplace();
-			CreatePolygon_Internal(PolygonID,Hole, Polygon.HoleContours.back());
+			Polygon.HoleContours.emplace(Polygon.HoleContours.end());
+			CreatePolygonContour_Internal(PolygonID, Hole, Polygon.HoleContours.back());
 		}
 		Polygon.PolygonGroupID = PolygonGroupID;
 		PolygonGroupArray[PolygonGroupID].Polygons.push_back(PolygonID);
@@ -524,6 +676,21 @@ public:
 		const int PolygonGroupID = PolygonGroupArray.Add();
 		CreatePolygonGroup_Internal(PolygonGroupID);
 		return PolygonGroupID;
+	}
+public:
+	int GetVertexPairEdge(const int VertexID0, const int VertexID1) const
+	{
+		for (const int VertexConnectedEdgeID : VertexArray[VertexID0].ConnectedEdgeIDs)
+		{
+			const int EdgeVertexID0 = EdgeArray[VertexConnectedEdgeID].VertexIDs[0];
+			const int EdgeVertexID1 = EdgeArray[VertexConnectedEdgeID].VertexIDs[1];
+			if ((EdgeVertexID0 == VertexID0 && EdgeVertexID1 == VertexID1) || (EdgeVertexID0 == VertexID1 && EdgeVertexID1 == VertexID0))
+			{
+				return VertexConnectedEdgeID;
+			}
+		}
+
+		return -1;
 	}
 private:
 	TMeshElementArray<MeshVertex> VertexArray;

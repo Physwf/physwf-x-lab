@@ -72,6 +72,34 @@ Vector ConvertDir(FbxVector4 Vec)
 	return Result;
 }
 
+void RegisterMeshAttributes(MeshDescription& MD)
+{
+	// Add basic vertex attributes
+	MD.VertexAttributes().RegisterAttribute<Vector>(MeshAttribute::Vertex::Position, 1, Vector());
+	MD.VertexAttributes().RegisterAttribute<float>(MeshAttribute::Vertex::CornerSharpness, 1, 0.0f);
+
+	// Add basic vertex instance attributes
+	MD.VertexInstanceAttributes().RegisterAttribute<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate, 1, Vector2());
+	MD.VertexInstanceAttributes().RegisterAttribute<Vector>(MeshAttribute::VertexInstance::Normal, 1, Vector());
+	MD.VertexInstanceAttributes().RegisterAttribute<Vector>(MeshAttribute::VertexInstance::Tangent, 1, Vector());
+	MD.VertexInstanceAttributes().RegisterAttribute<float>(MeshAttribute::VertexInstance::BinormalSign, 1, 0.0f);
+	MD.VertexInstanceAttributes().RegisterAttribute<Vector4>(MeshAttribute::VertexInstance::Color, 1, Vector4(1.0f));
+
+	// Add basic edge attributes
+	MD.EdgeAttributes().RegisterAttribute<bool>(MeshAttribute::Edge::IsHard, 1, false);
+	MD.EdgeAttributes().RegisterAttribute<bool>(MeshAttribute::Edge::IsUVSeam, 1, false);
+	MD.EdgeAttributes().RegisterAttribute<float>(MeshAttribute::Edge::CreaseSharpness, 1, 0.0f);
+
+	// Add basic polygon attributes
+	MD.PolygonAttributes().RegisterAttribute<Vector>(MeshAttribute::Polygon::Normal, 1, Vector());
+	MD.PolygonAttributes().RegisterAttribute<Vector>(MeshAttribute::Polygon::Tangent, 1, Vector());
+	MD.PolygonAttributes().RegisterAttribute<Vector>(MeshAttribute::Polygon::Binormal, 1, Vector());
+	MD.PolygonAttributes().RegisterAttribute<Vector>(MeshAttribute::Polygon::Center, 1, Vector());
+
+	// Add basic polygon group attributes
+	MD.PolygonGroupAttributes().RegisterAttribute<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName,1,std::string()); //The unique key to match the mesh material slot
+}
+
 void Mesh::ImportFromFBX(const char* pFileName)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
@@ -87,6 +115,8 @@ void Mesh::ImportFromFBX(const char* pFileName)
 		return;
 	}
 
+	RegisterMeshAttributes(MD);
+
 	FbxScene* lScene = FbxScene::Create(lFbxManager, "Mesh");
 	lImporter->Import(lScene);
 	lImporter->Destroy();
@@ -96,10 +126,23 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 	FbxGeometryConverter* GeometryConverter = new FbxGeometryConverter(lFbxManager);
 
+	std::vector<FbxMaterial> MeshMaterials;
+
 	for (int Index = 0; Index < (int)lOutMeshArray.size(); ++Index)
 	{
 		FbxNode* lNode = lOutMeshArray[Index];
 
+		int MaterialCount = lNode->GetMaterialCount();
+		int MaterialIndexOffset = (int)MeshMaterials.size();
+		for (int MaterialIndex = 0; MaterialIndex < MaterialCount; ++MaterialIndex)
+		{
+			MeshMaterials.push_back(FbxMaterial());
+			FbxMaterial* NewMaterial = &MeshMaterials.back();
+			FbxSurfaceMaterial* fbxMaterial = lNode->GetMaterial(MaterialIndex);
+			NewMaterial->fbxMaterial = fbxMaterial;
+		}
+
+		
 		if (lNode->GetMesh())
 		{
 			FbxMesh* lMesh = lNode->GetMesh();
@@ -124,6 +167,9 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			FbxLayer* BaseLayer = lMesh->GetLayer(0);
 
+			FbxLayerElementMaterial* LayerElementMaterial = BaseLayer->GetMaterials();
+			FbxLayerElement::EMappingMode MaterialMappingMode = LayerElementMaterial ? LayerElementMaterial->GetMappingMode() : FbxLayerElement::eByPolygon;
+			
 			bool bSmootingAvaliable = false;
 			FbxLayerElementSmoothing* SmoothingInfo = BaseLayer->GetSmoothing();
 			FbxLayerElement::EReferenceMode SmoothingReferenceMode(FbxLayerElement::eDirect);
@@ -189,14 +235,25 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			TotalMatrixForNormal = TotalMatrix.Inverse();
 			TotalMatrixForNormal = TotalMatrixForNormal.Transpose();
 
+			std::vector<Vector>& VertexPositions =  MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
+
+			std::vector<Vector>& VertexInstanceNormals = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
+			std::vector<Vector>& VertexInstanceTangents = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
+			std::vector<float>& VertexInstanceBinormalSigns = MD.VertexAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+			std::vector<Vector4>& VertexInstanceColors = MD.VertexAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
+			std::vector<Vector2>& VertexInstanceUVs = MD.VertexAttributes().GetAttributes<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+
+			std::vector<bool>& EdgeHardnesses = MD.VertexAttributes().GetAttributes<bool>(MeshAttribute::Edge::IsHard);
+			std::vector<float>& EdgeCreaseSharpnesses = MD.VertexAttributes().GetAttributes<float>(MeshAttribute::Edge::CreaseSharpness);
+
+			std::vector<std::string>& PolygonGroupImportedMaterialSlotNames = MD.PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
 
 			int VertexCount = lMesh->GetControlPointsCount();
-			auto VertexOffset = mPoistions.size();
-			auto VertexInstanceOffset = mIndices.size();
+			int VertexOffset = MD.Vertices().Num();
+			int VertexInstanceOffset = MD.VertexInstances().Num();
+			int PolygonOffset = MD.Polygons().Num();
 
-			Section.FirstIndex = VertexInstanceOffset;
-			Section.MinVertexIndex = VertexInstanceOffset;
-			Section.MaxVertexIndex = VertexInstanceOffset + VertexCount;
+			std::map<int, int> PolygonGroupMapping;
 
 			for (auto VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 			{
@@ -204,8 +261,8 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				FbxVector4 FbxPosition = lMesh->GetControlPoints()[VertexIndex];
 				FbxPosition = TotalMatrix.MultT(FbxPosition);
 				Vector const VectorPositon = ConvertPos(FbxPosition);
-				int VertexID = CreateVertex();
-				mPoistions[VertexID] = VectorPositon;
+				int VertexID = MD.CreateVertex();
+				VertexPositions[VertexID] = VectorPositon;
 			}
 
 			int PolygonCount = lMesh->GetPolygonCount();
@@ -214,16 +271,37 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			Section.NumTriangles = lMesh->GetPolygonCount();
 			Sections.push_back(Section);
-
+			lMesh->BeginGetMeshEdgeIndexForPolygon();
 			for (auto PolygonIndex = 0; PolygonIndex < PolygonCount; ++PolygonIndex)
 			{
 				int PolygonVertexCount = lMesh->GetPolygonSize(PolygonIndex);
+				std::vector<Vector> P;
+				P.resize(PolygonVertexCount, Vector());
+				for (int32 CornerIndex = 0; CornerIndex < PolygonVertexCount; CornerIndex++)
+				{
+					const int ControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+					const int VertexID = VertexOffset + ControlPointIndex;
+					P[CornerIndex] = VertexPositions[VertexID];
+				}
+
+				int RealPolygonIndex = PolygonOffset + PolygonIndex;
+				std::vector<int> CornerInstanceIDs;
+				CornerInstanceIDs.resize(PolygonVertexCount);
+				std::vector<int> CornerVerticesIDs;
+				CornerVerticesIDs.resize(PolygonVertexCount);
+
 				for (auto CornerIndex = 0; CornerIndex < PolygonVertexCount; ++CornerIndex, CurrentVertexInstanceIndex++)
 				{
-					//int VertexInstanceIndex = vertex
-					const int iControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
-					int VertexID = VertexOffset + iControlPointIndex;
+					int VertexInstanceIndex = VertexInstanceOffset + CurrentVertexInstanceIndex;
 					int RealFbxVertexIndex = SkippedVertexInstance + CurrentVertexInstanceIndex;
+					const int VertexInstanceID = VertexInstanceIndex;
+					CornerInstanceIDs[CornerIndex] = VertexInstanceID;
+					const int ControlPointIndex = lMesh->GetPolygonVertex(PolygonIndex, CornerIndex);
+					const int VertexID = VertexOffset + ControlPointIndex;
+					const Vector VertexPostion = VertexPositions[VertexID];
+					CornerVerticesIDs[CornerIndex] = VertexID;
+
+					int AddedVertexInstanceId = MD.CreateVertexInstance(VertexID);
 
 					if (LayerElementVertexColor)
 					{
@@ -232,24 +310,110 @@ void Mesh::ImportFromFBX(const char* pFileName)
 						FbxColor VertexColor = LayerElementVertexColor->GetDirectArray().GetAt(VertexColorIndex);
 						//todo setcolor
 					}
-					Vector Normal;
+					
 					if (LayerElementNormal)
 					{
-						int NormalMapIndex = (NormalMappingMode == FbxLayerElement::eByControlPoint) ? iControlPointIndex : RealFbxVertexIndex;
+						int NormalMapIndex = (NormalMappingMode == FbxLayerElement::eByControlPoint) ? ControlPointIndex : RealFbxVertexIndex;
 						int NormalValueIndex = (NormalReferenceMode == FbxLayerElement::eDirect) ? NormalMapIndex : LayerElementNormal->GetIndexArray().GetAt(NormalMapIndex);
 						FbxVector4 TempValue = LayerElementNormal->GetDirectArray().GetAt(NormalValueIndex);
 						TempValue = TotalMatrixForNormal.MultT(TempValue);
 						Vector TangentZ = ConvertDir(TempValue);
-						Normal = TangentZ;
+						VertexInstanceNormals[AddedVertexInstanceId] = TangentZ;
+
+						if (bHasNTBInfomation)
+						{
+							int TangentMapIndex = (TangentMappingMode == FbxLayerElement::eByControlPoint) ? ControlPointIndex : RealFbxVertexIndex;
+							int TangentValueIndex = (TangentReferenceMode == FbxLayerElement::eDirect) ? TangentMapIndex : LayerElementTangent->GetIndexArray().GetAt(TangentMapIndex);
+
+							TempValue = LayerElementTangent->GetDirectArray().GetAt(TangentValueIndex);
+							TempValue = TotalMatrixForNormal.MultT(TempValue);
+							Vector TangentX = ConvertDir(TempValue);
+							VertexInstanceTangents[AddedVertexInstanceId] = TangentX;
+
+							int BinormalMapIndex = (BinormalMappingMode == FbxLayerElement::eByControlPoint) ? ControlPointIndex : RealFbxVertexIndex;
+							int BinormalValueIndex = (BinormalReferenceMode == FbxLayerElement::eDirect) ? BinormalMapIndex : LayerElementBinormal->GetIndexArray().GetAt(BinormalMapIndex);
+
+							TempValue = LayerElementBinormal->GetDirectArray().GetAt(BinormalValueIndex);
+							TempValue = TotalMatrixForNormal.MultT(TempValue);
+							Vector TangentY = -ConvertDir(TempValue);
+							//VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
+						}
 					}
 
-					Vertex V;
-					V.Position = mPoistions[VertexID];
-					V.Normal = Normal;
-					mVertices.push_back(V);
-					mIndices.push_back(mVertices.size()-1);
+					int MaterialIndex = 0;
+					if (MaterialCount > 0)
+					{
+						if (LayerElementMaterial)
+						{
+							switch (MaterialMappingMode)
+							{
+							case FbxLayerElement::eAllSame:
+								MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(0);
+								break;
+							case FbxLayerElement::eByPolygon:
+								MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(PolygonIndex);
+								break;
+							}
+						}
+					}
+
+					int RealMaterialIndex = MaterialIndexOffset + MaterialIndex;
+					if (PolygonGroupMapping.find(RealMaterialIndex) == PolygonGroupMapping.end())
+					{
+						std::string ImportedMaterialSlotName = RealMaterialIndex < (int)MeshMaterials.size() ? MeshMaterials[RealMaterialIndex].GetName() : "None";
+						int ExistingPolygonGroup = -1;
+						for (const int PolygonGroupID : MD.PolygonGroups().GetElementIDs())
+						{
+							if (PolygonGroupImportedMaterialSlotNames[PolygonGroupID] == ImportedMaterialSlotName)
+							{
+								ExistingPolygonGroup = PolygonGroupID;
+								break;
+							}
+						}
+						if (ExistingPolygonGroup == -1)
+						{
+							ExistingPolygonGroup = MD.CreatePolygonGroup();
+							PolygonGroupImportedMaterialSlotNames[ExistingPolygonGroup] = ImportedMaterialSlotName;
+						}
+						PolygonGroupMapping.insert(std::make_pair(RealMaterialIndex, ExistingPolygonGroup));
+					}
+
+					std::vector<MeshDescription::ContourPoint> Contours;
+					{
+						for (uint32 PolygonEdgeNumber = 0; PolygonEdgeNumber < (uint32)PolygonVertexCount; ++PolygonEdgeNumber)
+						{
+							Contours.push_back(MeshDescription::ContourPoint());
+							uint32 ContourPointIndex = Contours.size() - 1;
+							MeshDescription::ContourPoint& CP = Contours[CurrentVertexInstanceIndex];
+							uint32 CornerIndices[2];
+							CornerIndices[0] = (PolygonEdgeNumber + 0) % PolygonVertexCount;
+							CornerIndices[1] = (PolygonEdgeNumber + 1) % PolygonVertexCount;
+
+							int EdgeVertexIDs[2];
+							EdgeVertexIDs[0] = CornerVerticesIDs[CornerIndices[0]];
+							EdgeVertexIDs[1] = CornerVerticesIDs[CornerIndices[1]];
+
+							int MatchEdgeId = MD.GetVertexPairEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+							if (MatchEdgeId == -1)
+							{
+								MatchEdgeId = MD.CreateEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+							}
+							CP.EdgeID = MatchEdgeId;
+							CP.VertexInstanceID = CornerInstanceIDs[CornerIndices[0]];
+						
+							//int EdgeIndex = -1;
+
+
+						}
+					}
+
+					int PolygonGroupID = PolygonGroupID = PolygonGroupMapping[RealMaterialIndex];
+					const int NewPolygonID = MD.CreatePolygon(PolygonGroupID, Contours);
+					MeshPolygon& Polygon = MD.GetPolygon(NewPolygonID);
+					//MeshDescription->ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
 				}
 			}
+			lMesh->EndGetMeshEdgeIndexForPolygon();
 		}
 	}
 
