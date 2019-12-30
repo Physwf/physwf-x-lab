@@ -5,6 +5,66 @@
 #include <d3dcompiler.h>
 #include <vector>
 
+
+void MeshLODResources::InitResource()
+{
+	HRESULT hr;
+
+	D3D11_BUFFER_DESC VertexDesc;
+	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
+	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
+	VertexDesc.ByteWidth = sizeof(Vertex) * Vertices.size();
+	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	VertexDesc.CPUAccessFlags = 0;
+	VertexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = &Vertices[0];
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	hr = D3D11Device->CreateBuffer(&VertexDesc, &InitData, &VertexBuffer);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateBuffer failed!");
+		return;
+	}
+
+	D3D11_BUFFER_DESC IndexDesc;
+	ZeroMemory(&IndexDesc, sizeof(IndexDesc));
+	IndexDesc.Usage = D3D11_USAGE_DEFAULT;
+	IndexDesc.ByteWidth = sizeof(unsigned int) * Indices.size();
+	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	IndexDesc.CPUAccessFlags = 0;
+	IndexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA IndexData;
+	ZeroMemory(&IndexData, sizeof(IndexData));
+	IndexData.pSysMem = &Indices[0];
+	IndexData.SysMemPitch = 0;
+	IndexData.SysMemSlicePitch = 0;
+
+	hr = D3D11Device->CreateBuffer(&IndexDesc, &IndexData, &IndexBuffer);
+	if (FAILED(hr))
+	{
+		X_LOG("D3D11Device->CreateBuffer failed!");
+		return;
+	}
+}
+
+void MeshLODResources::ReleaseResource()
+{
+	if (VertexBuffer)
+	{
+		VertexBuffer->Release();
+	}
+	if (IndexBuffer)
+	{
+		IndexBuffer->Release();
+	}
+}
+
 void FillFbxArray(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray)
 {
 	if (pNode->GetMesh())
@@ -147,8 +207,6 @@ void Mesh::ImportFromFBX(const char* pFileName)
 		{
 			FbxMesh* lMesh = lNode->GetMesh();
 
-			XStaticMeshSection Section;
-
 			lMesh->RemoveBadPolygons();
 
 			if (!lMesh->IsTriangleMesh())
@@ -237,14 +295,14 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			std::vector<Vector>& VertexPositions =  MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
 
-			std::vector<Vector>& VertexInstanceNormals = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
-			std::vector<Vector>& VertexInstanceTangents = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
-			std::vector<float>& VertexInstanceBinormalSigns = MD.VertexAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
-			std::vector<Vector4>& VertexInstanceColors = MD.VertexAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
-			std::vector<Vector2>& VertexInstanceUVs = MD.VertexAttributes().GetAttributes<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+			std::vector<Vector>& VertexInstanceNormals = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
+			std::vector<Vector>& VertexInstanceTangents = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
+			std::vector<float>& VertexInstanceBinormalSigns = MD.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+			std::vector<Vector4>& VertexInstanceColors = MD.VertexInstanceAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
+			std::vector<Vector2>& VertexInstanceUVs = MD.VertexInstanceAttributes().GetAttributes<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
 
-			std::vector<bool>& EdgeHardnesses = MD.VertexAttributes().GetAttributes<bool>(MeshAttribute::Edge::IsHard);
-			std::vector<float>& EdgeCreaseSharpnesses = MD.VertexAttributes().GetAttributes<float>(MeshAttribute::Edge::CreaseSharpness);
+			std::vector<bool>& EdgeHardnesses = MD.EdgeAttributes().GetAttributes<bool>(MeshAttribute::Edge::IsHard);
+			std::vector<float>& EdgeCreaseSharpnesses = MD.EdgeAttributes().GetAttributes<float>(MeshAttribute::Edge::CreaseSharpness);
 
 			std::vector<std::string>& PolygonGroupImportedMaterialSlotNames = MD.PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
 
@@ -269,8 +327,6 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			int CurrentVertexInstanceIndex = 0;
 			int SkippedVertexInstance = 0;
 
-			Section.NumTriangles = lMesh->GetPolygonCount();
-			Sections.push_back(Section);
 			lMesh->BeginGetMeshEdgeIndexForPolygon();
 			for (auto PolygonIndex = 0; PolygonIndex < PolygonCount; ++PolygonIndex)
 			{
@@ -384,7 +440,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 						{
 							Contours.push_back(MeshDescription::ContourPoint());
 							uint32 ContourPointIndex = Contours.size() - 1;
-							MeshDescription::ContourPoint& CP = Contours[CurrentVertexInstanceIndex];
+							MeshDescription::ContourPoint& CP = Contours[ContourPointIndex];
 							uint32 CornerIndices[2];
 							CornerIndices[0] = (PolygonEdgeNumber + 0) % PolygonVertexCount;
 							CornerIndices[1] = (PolygonEdgeNumber + 1) % PolygonVertexCount;
@@ -410,7 +466,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 					int PolygonGroupID = PolygonGroupID = PolygonGroupMapping[RealMaterialIndex];
 					const int NewPolygonID = MD.CreatePolygon(PolygonGroupID, Contours);
 					MeshPolygon& Polygon = MD.GetPolygon(NewPolygonID);
-					//MeshDescription->ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
+					MD.ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
 				}
 			}
 			lMesh->EndGetMeshEdgeIndexForPolygon();
@@ -419,13 +475,15 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 	delete GeometryConverter;
 	GeometryConverter = nullptr;
+
+	Build();
 }
 
 void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int InNumSectionH)
 {
-	mVertices.clear();
-	mIndices.clear();
-	Sections.clear();
+	LODResource.Vertices.clear();
+	LODResource.Indices.clear();
+	LODResource.Sections.clear();
 
 	float IntervalX = InWidth / InNumSectionW;
 	float IntervalY = InHeight / InNumSectionH;
@@ -438,25 +496,27 @@ void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int I
 			Vertex V;
 			V.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
 			V.Normal = {0,0,1};
-			mVertices.push_back(V);
+			LODResource.Vertices.push_back(V);
 		}
 	}
 
 	int Count = InNumSectionW * InNumSectionH;
 	for (int i = 0; i < Count;++i)
 	{
-		mIndices.push_back(i);
-		mIndices.push_back(i + 1);
-		mIndices.push_back(i + 1 + InNumSectionW + 1);
-		mIndices.push_back(i);
-		mIndices.push_back(i + 1 + InNumSectionW + 1);
-		mIndices.push_back(i + InNumSectionW + 1);
+		LODResource.Indices.push_back(i);
+		LODResource.Indices.push_back(i + 1);
+		LODResource.Indices.push_back(i + 1 + InNumSectionW + 1);
+		LODResource.Indices.push_back(i);
+		LODResource.Indices.push_back(i + 1 + InNumSectionW + 1);
+		LODResource.Indices.push_back(i + InNumSectionW + 1);
 	}
 
-	XStaticMeshSection Section;
+	StaticMeshSection Section;
 	Section.FirstIndex = 0;
 	Section.NumTriangles = Count * 2;
-	Sections.push_back(Section);
+	LODResource.Sections.push_back(Section);
+
+	LODResource.InitResource();
 }
 
 void Mesh::GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSectionX, int InNumSectionY, int InNumSectionZ)
@@ -466,50 +526,8 @@ void Mesh::GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSect
 
 void Mesh::InitResource()
 {
+	LODResource.InitResource();
 	HRESULT hr;
-
-	D3D11_BUFFER_DESC VertexDesc;
-	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
-	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
-	VertexDesc.ByteWidth = sizeof(Vertex) * mVertices.size();
-	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	VertexDesc.CPUAccessFlags = 0;
-	VertexDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = &mVertices[0];
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
-
-	hr = D3D11Device->CreateBuffer(&VertexDesc, &InitData, &VertexBuffer);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateBuffer failed!");
-		return;
-	}
-
-	D3D11_BUFFER_DESC IndexDesc;
-	ZeroMemory(&IndexDesc, sizeof(IndexDesc));
-	IndexDesc.Usage = D3D11_USAGE_DEFAULT;
-	IndexDesc.ByteWidth = sizeof(unsigned int) * mIndices.size();
-	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	IndexDesc.CPUAccessFlags = 0;
-	IndexDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA IndexData;
-	ZeroMemory(&IndexData, sizeof(IndexData));
-	IndexData.pSysMem = &mIndices[0];
-	IndexData.SysMemPitch = 0;
-	IndexData.SysMemSlicePitch = 0;
-
-	hr = D3D11Device->CreateBuffer(&IndexDesc, &IndexData, &IndexBuffer);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateBuffer failed!");
-		return;
-	}
-
 	D3D11_BUFFER_DESC ConstBufferDesc;
 	ZeroMemory(&ConstBufferDesc, sizeof(D3D11_BUFFER_DESC));
 	ConstBufferDesc.ByteWidth = sizeof(Matrix);
@@ -552,19 +570,18 @@ void Mesh::InitResource()
 		return;
 	}
 
-	hr = D3D11Device->CreateVertexShader(VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), NULL, &VertexShader);
+	hr = D3D11Device->CreateVertexShader(VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), NULL, &ShaderState.VertexShader);
 	if (FAILED(hr))
 	{
 		X_LOG("D3D11Device->CreateVertexShader failed!");
 		return;
 	}
-	hr = D3D11Device->CreatePixelShader(PSByteCode->GetBufferPointer(), PSByteCode->GetBufferSize(), NULL, &PixelShader);
+	hr = D3D11Device->CreatePixelShader(PSByteCode->GetBufferPointer(), PSByteCode->GetBufferSize(), NULL, &ShaderState.PixelShader);
 	if (FAILED(hr))
 	{
 		X_LOG("D3D11Device->CreatePixelShader failed!");
 		return;
 	}
-
 
 
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
@@ -577,7 +594,7 @@ void Mesh::InitResource()
 
 	UINT NumElement = ARRAYSIZE(InputDesc);
 
-	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &InputLayout);
+	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &ShaderState.InputLayout);
 	if (FAILED(hr))
 	{
 		X_LOG("D3D11Device->CreateInputLayout failed!");
@@ -600,50 +617,45 @@ void Mesh::InitResource()
 
 void Mesh::ReleaseResource()
 {
-	if (VertexBuffer)
+	if (ShaderState.VertexShader)
 	{
-		VertexBuffer->Release();
+		ShaderState.VertexShader->Release();
 	}
-	if (VertexShader)
+	if (ShaderState.PixelShader)
 	{
-		VertexShader->Release();
+		ShaderState.PixelShader->Release();
 	}
-	if (PixelShader)
+	if (ShaderState.InputLayout)
 	{
-		PixelShader->Release();
+		ShaderState.InputLayout->Release();
 	}
-	if (InputLayout)
-	{
-		InputLayout->Release();
-	}
+
+	LODResource.ReleaseResource();
 }
 
 void Mesh::Draw()
 {
-	D3D11DeviceContext->IASetInputLayout(InputLayout);
+	D3D11DeviceContext->IASetInputLayout(ShaderState.InputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	UINT Stride = sizeof(Vertex);
-	UINT Offset = 0;
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
 	//Pitch(0.01f);
 	//Roll(0.01f);
 	Matrix World = GetWorldMatrix();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
-
-	D3D11DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-	D3D11DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	D3D11DeviceContext->VSSetShader(VertexShader, 0, 0);
-	D3D11DeviceContext->PSSetShader(PixelShader, 0, 0);
-	for (const auto& Section : Sections)
+	UINT Stride = sizeof(Vertex);
+	UINT Offset = 0;
+	D3D11DeviceContext->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
+	D3D11DeviceContext->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	for (const auto& Section : LODResource.Sections)
 	{
+		D3D11DeviceContext->VSSetShader(ShaderState.VertexShader, 0, 0);
+		D3D11DeviceContext->PSSetShader(ShaderState.PixelShader, 0, 0);
 		D3D11DeviceContext->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
 	}
 }
 
-int Mesh::CreateVertex()
+void Mesh::Build()
 {
-	mPoistions.push_back(Vector());
-	return (int)(mPoistions.size() - 1);
-}
 
+}

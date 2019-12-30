@@ -255,7 +255,9 @@ public:
 		auto& Map = std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Containers);
 		if (Map.find(AttriName) == Map.end())
 		{
-			Map.emplace(AttriName, std::vector<std::vector<AttributeType>>());
+			std::vector<std::vector<AttributeType>> Attributes;
+			Attributes.resize(NumOfIndices, std::vector<AttributeType>());
+			Map.emplace(AttriName, Attributes);
 		}
 	}
 
@@ -333,7 +335,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, Vector4());
+					Attributes.resize(ElementID + 1, Vector4());
 				}
 			}
 		}
@@ -343,7 +345,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, Vector());
+					Attributes.resize(ElementID + 1, Vector());
 				}
 			}
 		}
@@ -353,7 +355,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, Vector2());
+					Attributes.resize(ElementID + 1, Vector2());
 				}
 			}
 		}
@@ -363,7 +365,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, 0.0f);
+					Attributes.resize(ElementID + 1, 0.0f);
 				}
 			}
 		}
@@ -373,7 +375,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, 0);
+					Attributes.resize(ElementID + 1, 0);
 				}
 			}
 		}
@@ -383,7 +385,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, false);
+					Attributes.resize(ElementID + 1, false);
 				}
 			}
 		}
@@ -393,7 +395,7 @@ public:
 			{
 				if (ElementID >= (int)Attributes.size())
 				{
-					Attributes.resize(ElementID, std::string());
+					Attributes.resize(ElementID + 1, std::string());
 				}
 			}
 		}
@@ -691,6 +693,37 @@ public:
 		}
 
 		return -1;
+	}
+	const std::vector<int>& GetPolygonPerimeterVertexInstances(const int PolygonID) const
+	{
+		return PolygonArray[PolygonID].PerimeterContour.VertexInstanceIDs;
+	}
+	void ComputePolygonTriangulation(const int PolygonID, std::vector<MeshTriangle>& OutTriangles)
+	{
+		OutTriangles.clear();
+
+		// @todo mesheditor holes: Does not support triangles with holes yet!
+		// @todo mesheditor: Perhaps should always attempt to triangulate by splitting polygons along the shortest edge, for better determinism.
+
+		//	const FMeshPolygon& Polygon = GetPolygon( PolygonID );
+		const std::vector<int>& PolygonVertexInstanceIDs = GetPolygonPerimeterVertexInstances(PolygonID);
+
+		// Polygon must have at least three vertices/edges
+		const int PolygonVertexCount = (int)PolygonVertexInstanceIDs.size();
+		//check(PolygonVertexCount >= 3);
+
+		// If perimeter has 3 vertices, just copy content of perimeter out 
+		if (PolygonVertexCount == 3)
+		{
+			OutTriangles.emplace(OutTriangles.end());
+			MeshTriangle& Triangle = OutTriangles.back();
+
+			Triangle.SetVertexInstanceID(0, PolygonVertexInstanceIDs[0]);
+			Triangle.SetVertexInstanceID(1, PolygonVertexInstanceIDs[1]);
+			Triangle.SetVertexInstanceID(2, PolygonVertexInstanceIDs[2]);
+
+			return;
+		}
 	}
 private:
 	TMeshElementArray<MeshVertex> VertexArray;

@@ -15,7 +15,7 @@ struct Vertex
 	Vector2 UV2;
 };
 
-struct XStaticMeshSection
+struct StaticMeshSection
 {
 	int MaterialIndex;
 
@@ -23,6 +23,27 @@ struct XStaticMeshSection
 	unsigned int NumTriangles;
 	unsigned int MinVertexIndex;
 	unsigned int MaxVertexIndex;
+};
+
+struct MeshLODResources
+{
+	ID3D11Buffer* VertexBuffer = NULL;
+	ID3D11Buffer* IndexBuffer = NULL;
+
+	std::vector<Vertex> Vertices;
+	std::vector<unsigned int> Indices;
+
+	std::vector<StaticMeshSection> Sections;
+
+	void InitResource();
+	void ReleaseResource();
+};
+
+struct MeshShaderState
+{
+	ID3D11InputLayout* InputLayout = NULL;
+	ID3D11VertexShader* VertexShader = NULL;
+	ID3D11PixelShader* PixelShader = NULL;
 };
 
 struct FbxMaterial
@@ -47,23 +68,13 @@ public:
 
 	void Draw();
 private:
-	int CreateVertex();
+	void Build();
 private:
-	std::vector<Vector> mPoistions;
-	std::vector<unsigned int> mVertexInstances;
-	std::vector<Vector> mVertexInstanceNormals;
-	std::vector<Vertex> mVertices;
-	std::vector<unsigned int> mIndices;
-	
-	std::vector<XStaticMeshSection> Sections;
 	MeshDescription MD;
-
-	ID3D11InputLayout* InputLayout = NULL;
+	MeshLODResources LODResource;
+	MeshShaderState ShaderState;
 	ID3D11Buffer* ConstantBuffer = NULL;
-	ID3D11Buffer* VertexBuffer = NULL;
-	ID3D11Buffer* IndexBuffer = NULL;
-	ID3D11VertexShader* VertexShader = NULL;
-	ID3D11PixelShader* PixelShader = NULL;
+	
 };
 
 static void RegisterMeshAttributes(MeshDescription& MD);
