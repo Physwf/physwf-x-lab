@@ -694,9 +694,29 @@ public:
 
 		return -1;
 	}
+
+	std::vector<MeshTriangle>& GetPolygonTriangles(const int PolygonID)
+	{
+		return PolygonArray[PolygonID].Triangles;
+	}
+
+	const std::vector<MeshTriangle>& GetPolygonTriangles(const int PolygonID) const
+	{
+		return PolygonArray[PolygonID].Triangles;
+	}
+
 	const std::vector<int>& GetPolygonPerimeterVertexInstances(const int PolygonID) const
 	{
 		return PolygonArray[PolygonID].PerimeterContour.VertexInstanceIDs;
+	}
+
+	int GetVertexInstanceVertex(const int VertexInstanceID) const
+	{
+		return VertexInstanceArray[VertexInstanceID].VertexID;
+	}
+	int GetPolygonPolygonGroup(const int PolygonID) const
+	{
+		return PolygonArray[PolygonID].PolygonGroupID;
 	}
 	void ComputePolygonTriangulation(const int PolygonID, std::vector<MeshTriangle>& OutTriangles)
 	{

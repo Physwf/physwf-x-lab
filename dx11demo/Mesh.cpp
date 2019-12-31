@@ -13,7 +13,7 @@ void MeshLODResources::InitResource()
 	D3D11_BUFFER_DESC VertexDesc;
 	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
 	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
-	VertexDesc.ByteWidth = sizeof(Vertex) * Vertices.size();
+	VertexDesc.ByteWidth = sizeof(StaticMeshBuildVertex) * Vertices.size();
 	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	VertexDesc.CPUAccessFlags = 0;
 	VertexDesc.MiscFlags = 0;
@@ -493,9 +493,9 @@ void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int I
 		{
 			float X = IntervalX * i;
 			float Y = IntervalY * j;
-			Vertex V;
+			StaticMeshBuildVertex V;
 			V.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
-			V.Normal = {0,0,1};
+			V.TangentZ = {0,0,1};
 			LODResource.Vertices.push_back(V);
 		}
 	}
@@ -643,7 +643,7 @@ void Mesh::Draw()
 	//Roll(0.01f);
 	Matrix World = GetWorldMatrix();
 	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
-	UINT Stride = sizeof(Vertex);
+	UINT Stride = sizeof(StaticMeshBuildVertex);
 	UINT Offset = 0;
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
 	D3D11DeviceContext->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -658,4 +658,83 @@ void Mesh::Draw()
 void Mesh::Build()
 {
 
+}
+
+void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices)
+{
+	const TMeshElementArray<MeshVertex>& Vertices = MD.Vertices();
+	const TMeshElementArray<MeshVertexInstance>& VertexInstances = MD.VertexInstances();
+	const TMeshElementArray<MeshPolygonGroup>& PolygonGroupArray = MD.PolygonGroups();
+	const TMeshElementArray<MeshPolygon>& PolygonArray = MD.Polygons();
+
+	const std::vector<std::string>& PolygonGroupImportedMaterialSlotNames = MD.PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
+
+	const std::vector<Vector>& VertexPositions = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
+	const std::vector<Vector>& VertexInstanceNormals = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
+	const std::vector<Vector>& VertexInstanceTangents = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
+	const std::vector<float>& VertexInstanceBinormalSigns = MD.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+	const std::vector<Vector4>& VertexInstanceColors = MD.VertexInstanceAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
+	const std::vector<std::vector<Vector2>>& VertexInstanceUVs = MD.VertexInstanceAttributes().GetAttributesSet<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+
+	std::map<int, int> PolygonGroupToSectionIndex;
+	for (const int PolgyonGroupID : MD.PolygonGroups().GetElementIDs())
+	{
+		int& SectionIndex = PolygonGroupToSectionIndex[PolgyonGroupID];
+		LODResource.Sections.push_back(StaticMeshSection());
+		SectionIndex = (int)LODResource.Sections.size() - 1;
+		StaticMeshSection& Section = LODResource.Sections[SectionIndex];
+		if (Section.MaterialIndex == -1)
+		{
+			Section.MaterialIndex = PolgyonGroupID;
+		}
+	}
+
+	int ReserveIndicesCount = 0;
+	for (const int PolygonID : MD.Polygons().GetElementIDs())
+	{
+		const std::vector<MeshTriangle>& PolygonTriangles = MD.GetPolygonTriangles(PolygonID);
+		ReserveIndicesCount += PolygonTriangles.size() * 3;
+	}
+	LODResource.Indices.reserve(ReserveIndicesCount);
+
+	for (const int PolygonID : MD.Polygons().GetElementIDs())
+	{
+		const int PolygonGroupID = MD.GetPolygonPolygonGroup(PolygonID);
+		const int SectionIndex = PolygonGroupToSectionIndex[PolygonGroupID];
+		std::vector<uint32> SectionIndices = OutPerSectionIndices[SectionIndex];
+		const std::vector<MeshTriangle>& PolygonTriangles = MD.GetPolygonTriangles(PolygonID);
+		uint32 MinIndex = 0;
+		uint32 MaxIndex = 0xFFFFFFFF;
+		for (int TriangleIndex = 0; TriangleIndex < (int)PolygonTriangles.size(); ++TriangleIndex)
+		{
+			const MeshTriangle& Triangle = PolygonTriangles[TriangleIndex];
+			Vector CornerPositions[3];
+			for (int TriVert = 0; TriVert < 3; ++TriVert)
+			{
+				const int VertexInstanceID = Triangle.GetVertexInstanceID(TriVert);
+				const int VertexID = MD.GetVertexInstanceVertex(VertexInstanceID);
+				CornerPositions[TriVert] = VertexPositions[VertexID];
+			}
+
+			for (int TriVert = 0; TriVert < 3; ++TriVert)
+			{
+				const int VertexInstanceID = Triangle.GetVertexInstanceID(TriVert);
+				const int VertexInstanceValue = VertexInstanceID;
+				const Vector& VertexPosition = CornerPositions[TriVert];
+				const Vector& VertexNormal = VertexInstanceNormals[VertexInstanceID];
+				const Vector& VertexTangent = VertexInstanceTangents[VertexInstanceID];
+				const float VertexInstanceBinormalSign = VertexInstanceBinormalSigns[VertexInstanceID];
+
+				StaticMeshBuildVertex StaticMeshVertex;
+				StaticMeshVertex.Position = VertexPosition;
+				StaticMeshVertex.TangentX = VertexTangent;
+				StaticMeshVertex.TangentY = VertexNormal ^ VertexTangent * VertexInstanceBinormalSign;
+				StaticMeshVertex.TangentZ = VertexNormal;
+
+				StaticMeshBuildVertices.push_back(StaticMeshVertex);
+				SectionIndices.push_back(StaticMeshBuildVertices.size() - 1) ;
+			}
+		}
+
+	}
 }

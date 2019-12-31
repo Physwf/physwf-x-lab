@@ -7,12 +7,16 @@
 #include "MeshDescription.h"
 #include "fbxsdk.h"
 
-struct Vertex
+struct StaticMeshBuildVertex
 {
 	Vector Position;
-	Vector Normal;
-	Vector2 UV1;
-	Vector2 UV2;
+
+	Vector TangentX;
+	Vector TangentY;
+	Vector TangentZ;
+
+	//Vector2 UVs[MAX_STATIC_TEXCOORDS];
+	//FColor Color;
 };
 
 struct StaticMeshSection
@@ -30,7 +34,7 @@ struct MeshLODResources
 	ID3D11Buffer* VertexBuffer = NULL;
 	ID3D11Buffer* IndexBuffer = NULL;
 
-	std::vector<Vertex> Vertices;
+	std::vector<StaticMeshBuildVertex> Vertices;
 	std::vector<unsigned int> Indices;
 
 	std::vector<StaticMeshSection> Sections;
@@ -69,6 +73,7 @@ public:
 	void Draw();
 private:
 	void Build();
+	void BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
 private:
 	MeshDescription MD;
 	MeshLODResources LODResource;
