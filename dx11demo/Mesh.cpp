@@ -587,9 +587,9 @@ void Mesh::InitResource()
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
 	{
 		{"POSITION",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"NORMAL",		0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"TEXCOORD",	0,	DXGI_FORMAT_R32G32_FLOAT,		0, 24, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"TEXCOORD",	1,	DXGI_FORMAT_R32G32_FLOAT,		0, 32, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"ATTRIBUTE",	1,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 24, D3D11_INPUT_PER_VERTEX_DATA,	0},
+		{"ATTRIBUTE",	2,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 36, D3D11_INPUT_PER_VERTEX_DATA,	0},
 	};
 
 	UINT NumElement = ARRAYSIZE(InputDesc);
@@ -657,7 +657,46 @@ void Mesh::Draw()
 
 void Mesh::Build()
 {
+	std::vector<std::vector<uint32> > OutPerSectionIndices;
+	OutPerSectionIndices.resize(MD.PolygonGroups().Num());
+	std::vector<StaticMeshBuildVertex> StaticMeshBuildVertices;
+	BuildVertexBuffer(OutPerSectionIndices, StaticMeshBuildVertices);
 
+	std::vector<uint32> CombinedIndices;
+	for (uint32 i = 0; i < LODResource.Sections.size(); ++i)
+	{
+		StaticMeshSection& Section = LODResource.Sections[i];
+		std::vector<uint32> const& SectionIndices = OutPerSectionIndices[i];
+		Section.FirstIndex = 0;
+		Section.NumTriangles = 0;
+		Section.MinVertexIndex = 0;
+		Section.MaxVertexIndex = 0;
+
+		if (SectionIndices.size())
+		{
+			Section.FirstIndex = CombinedIndices.size();
+			Section.NumTriangles = SectionIndices.size() / 3;
+
+			CombinedIndices.resize(CombinedIndices.size() + SectionIndices.size(), 0);
+			uint32* DestPtr = &CombinedIndices[Section.FirstIndex];
+			uint32 const* SrcPtr = SectionIndices.data();
+
+			Section.MinVertexIndex = *SrcPtr;
+			Section.MaxVertexIndex = *DestPtr;
+
+			for (uint32 Index = 0; Index < SectionIndices.size(); Index++)
+			{
+				uint32 VertIndex = *SrcPtr++;
+				Section.MinVertexIndex = Section.MinVertexIndex > VertIndex ? VertIndex : Section.MinVertexIndex;
+				Section.MaxVertexIndex = Section.MaxVertexIndex < VertIndex ? VertIndex : Section.MaxVertexIndex;
+				*DestPtr++ = VertIndex;
+			}
+
+			
+		}
+	}
+	LODResource.Indices = std::move(CombinedIndices);
+	LODResource.Vertices = std::move(StaticMeshBuildVertices);
 }
 
 void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices)
@@ -701,7 +740,7 @@ void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionInd
 	{
 		const int PolygonGroupID = MD.GetPolygonPolygonGroup(PolygonID);
 		const int SectionIndex = PolygonGroupToSectionIndex[PolygonGroupID];
-		std::vector<uint32> SectionIndices = OutPerSectionIndices[SectionIndex];
+		std::vector<uint32>& SectionIndices = OutPerSectionIndices[SectionIndex];
 		const std::vector<MeshTriangle>& PolygonTriangles = MD.GetPolygonTriangles(PolygonID);
 		uint32 MinIndex = 0;
 		uint32 MaxIndex = 0xFFFFFFFF;

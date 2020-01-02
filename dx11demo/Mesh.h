@@ -23,10 +23,10 @@ struct StaticMeshSection
 {
 	int MaterialIndex;
 
-	unsigned int FirstIndex;
-	unsigned int NumTriangles;
-	unsigned int MinVertexIndex;
-	unsigned int MaxVertexIndex;
+	uint32 FirstIndex;
+	uint32 NumTriangles;
+	uint32 MinVertexIndex;
+	uint32 MaxVertexIndex;
 };
 
 struct MeshLODResources
@@ -35,7 +35,7 @@ struct MeshLODResources
 	ID3D11Buffer* IndexBuffer = NULL;
 
 	std::vector<StaticMeshBuildVertex> Vertices;
-	std::vector<unsigned int> Indices;
+	std::vector<uint32> Indices;
 
 	std::vector<StaticMeshSection> Sections;
 
