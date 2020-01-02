@@ -47,7 +47,7 @@ void Scene::Setup()
 	//M->ImportFromFBX("./4gikevqde8-IronMan/ironman.fbx");
 	//M->ImportFromFBX("./Free_House_FBX/Free House FBX.FBX");
 	M->ImportFromFBX("./k526efluton4-House_15/247_House 15_fbx.FBX");
-	M->SetPosition(0.0f, 0.0f, 500.0f);
+	M->SetPosition(0.0f, 10.0f, 500.0f);
 	M->SetRotation(-3.14f / 2.0f, 0.0f, 0.0f);
 	M->InitResource();
 	Meshes.push_back(M);

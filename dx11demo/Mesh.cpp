@@ -392,82 +392,82 @@ void Mesh::ImportFromFBX(const char* pFileName)
 							TempValue = LayerElementBinormal->GetDirectArray().GetAt(BinormalValueIndex);
 							TempValue = TotalMatrixForNormal.MultT(TempValue);
 							Vector TangentY = -ConvertDir(TempValue);
-							//VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
+							VertexInstanceBinormalSigns[AddedVertexInstanceId] = 1.0f;// GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
 						}
 					}
-
-					int MaterialIndex = 0;
-					if (MaterialCount > 0)
-					{
-						if (LayerElementMaterial)
-						{
-							switch (MaterialMappingMode)
-							{
-							case FbxLayerElement::eAllSame:
-								MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(0);
-								break;
-							case FbxLayerElement::eByPolygon:
-								MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(PolygonIndex);
-								break;
-							}
-						}
-					}
-
-					int RealMaterialIndex = MaterialIndexOffset + MaterialIndex;
-					if (PolygonGroupMapping.find(RealMaterialIndex) == PolygonGroupMapping.end())
-					{
-						std::string ImportedMaterialSlotName = RealMaterialIndex < (int)MeshMaterials.size() ? MeshMaterials[RealMaterialIndex].GetName() : "None";
-						int ExistingPolygonGroup = -1;
-						for (const int PolygonGroupID : MD.PolygonGroups().GetElementIDs())
-						{
-							if (PolygonGroupImportedMaterialSlotNames[PolygonGroupID] == ImportedMaterialSlotName)
-							{
-								ExistingPolygonGroup = PolygonGroupID;
-								break;
-							}
-						}
-						if (ExistingPolygonGroup == -1)
-						{
-							ExistingPolygonGroup = MD.CreatePolygonGroup();
-							PolygonGroupImportedMaterialSlotNames[ExistingPolygonGroup] = ImportedMaterialSlotName;
-						}
-						PolygonGroupMapping.insert(std::make_pair(RealMaterialIndex, ExistingPolygonGroup));
-					}
-
-					std::vector<MeshDescription::ContourPoint> Contours;
-					{
-						for (uint32 PolygonEdgeNumber = 0; PolygonEdgeNumber < (uint32)PolygonVertexCount; ++PolygonEdgeNumber)
-						{
-							Contours.push_back(MeshDescription::ContourPoint());
-							uint32 ContourPointIndex = Contours.size() - 1;
-							MeshDescription::ContourPoint& CP = Contours[ContourPointIndex];
-							uint32 CornerIndices[2];
-							CornerIndices[0] = (PolygonEdgeNumber + 0) % PolygonVertexCount;
-							CornerIndices[1] = (PolygonEdgeNumber + 1) % PolygonVertexCount;
-
-							int EdgeVertexIDs[2];
-							EdgeVertexIDs[0] = CornerVerticesIDs[CornerIndices[0]];
-							EdgeVertexIDs[1] = CornerVerticesIDs[CornerIndices[1]];
-
-							int MatchEdgeId = MD.GetVertexPairEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
-							if (MatchEdgeId == -1)
-							{
-								MatchEdgeId = MD.CreateEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
-							}
-							CP.EdgeID = MatchEdgeId;
-							CP.VertexInstanceID = CornerInstanceIDs[CornerIndices[0]];
-						
-							//int EdgeIndex = -1;
-
-
-						}
-					}
-
-					int PolygonGroupID = PolygonGroupID = PolygonGroupMapping[RealMaterialIndex];
-					const int NewPolygonID = MD.CreatePolygon(PolygonGroupID, Contours);
-					MeshPolygon& Polygon = MD.GetPolygon(NewPolygonID);
-					MD.ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
 				}
+
+				int MaterialIndex = 0;
+				if (MaterialCount > 0)
+				{
+					if (LayerElementMaterial)
+					{
+						switch (MaterialMappingMode)
+						{
+						case FbxLayerElement::eAllSame:
+							MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(0);
+							break;
+						case FbxLayerElement::eByPolygon:
+							MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(PolygonIndex);
+							break;
+						}
+					}
+				}
+
+				int RealMaterialIndex = MaterialIndexOffset + MaterialIndex;
+				if (PolygonGroupMapping.find(RealMaterialIndex) == PolygonGroupMapping.end())
+				{
+					std::string ImportedMaterialSlotName = RealMaterialIndex < (int)MeshMaterials.size() ? MeshMaterials[RealMaterialIndex].GetName() : "None";
+					int ExistingPolygonGroup = -1;
+					for (const int PolygonGroupID : MD.PolygonGroups().GetElementIDs())
+					{
+						if (PolygonGroupImportedMaterialSlotNames[PolygonGroupID] == ImportedMaterialSlotName)
+						{
+							ExistingPolygonGroup = PolygonGroupID;
+							break;
+						}
+					}
+					if (ExistingPolygonGroup == -1)
+					{
+						ExistingPolygonGroup = MD.CreatePolygonGroup();
+						PolygonGroupImportedMaterialSlotNames[ExistingPolygonGroup] = ImportedMaterialSlotName;
+					}
+					PolygonGroupMapping.insert(std::make_pair(RealMaterialIndex, ExistingPolygonGroup));
+				}
+
+				std::vector<MeshDescription::ContourPoint> Contours;
+				{
+					for (uint32 PolygonEdgeNumber = 0; PolygonEdgeNumber < (uint32)PolygonVertexCount; ++PolygonEdgeNumber)
+					{
+						Contours.push_back(MeshDescription::ContourPoint());
+						uint32 ContourPointIndex = Contours.size() - 1;
+						MeshDescription::ContourPoint& CP = Contours[ContourPointIndex];
+						uint32 CornerIndices[2];
+						CornerIndices[0] = (PolygonEdgeNumber + 0) % PolygonVertexCount;
+						CornerIndices[1] = (PolygonEdgeNumber + 1) % PolygonVertexCount;
+
+						int EdgeVertexIDs[2];
+						EdgeVertexIDs[0] = CornerVerticesIDs[CornerIndices[0]];
+						EdgeVertexIDs[1] = CornerVerticesIDs[CornerIndices[1]];
+
+						int MatchEdgeId = MD.GetVertexPairEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+						if (MatchEdgeId == -1)
+						{
+							MatchEdgeId = MD.CreateEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+						}
+						CP.EdgeID = MatchEdgeId;
+						CP.VertexInstanceID = CornerInstanceIDs[CornerIndices[0]];
+
+						//int EdgeIndex = -1;
+
+
+					}
+				}
+
+				int PolygonGroupID = PolygonGroupID = PolygonGroupMapping[RealMaterialIndex];
+				const int NewPolygonID = MD.CreatePolygon(PolygonGroupID, Contours);
+				MeshPolygon& Polygon = MD.GetPolygon(NewPolygonID);
+				MD.ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
 			}
 			lMesh->EndGetMeshEdgeIndexForPolygon();
 		}
@@ -647,8 +647,10 @@ void Mesh::Draw()
 	UINT Offset = 0;
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
 	D3D11DeviceContext->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	int i = 0;
 	for (const auto& Section : LODResource.Sections)
 	{
+		//if(i++!=0) continue;
 		D3D11DeviceContext->VSSetShader(ShaderState.VertexShader, 0, 0);
 		D3D11DeviceContext->PSSetShader(ShaderState.PixelShader, 0, 0);
 		D3D11DeviceContext->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
@@ -722,7 +724,7 @@ void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionInd
 		LODResource.Sections.push_back(StaticMeshSection());
 		SectionIndex = (int)LODResource.Sections.size() - 1;
 		StaticMeshSection& Section = LODResource.Sections[SectionIndex];
-		if (Section.MaterialIndex == -1)
+		//if (Section.MaterialIndex == -1)
 		{
 			Section.MaterialIndex = PolgyonGroupID;
 		}
