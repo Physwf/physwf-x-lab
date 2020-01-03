@@ -70,14 +70,14 @@ public:
 	void InitResource();
 	void ReleaseResource();
 
-	void Draw();
+	void Draw(MeshShaderState* ShaderState);
 private:
 	void Build();
 	void BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
 private:
 	MeshDescription MD;
 	MeshLODResources LODResource;
-	MeshShaderState ShaderState;
+	//MeshShaderState ShaderState;
 	ID3D11Buffer* ConstantBuffer = NULL;
 	
 };

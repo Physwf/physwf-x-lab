@@ -617,23 +617,10 @@ void Mesh::InitResource()
 
 void Mesh::ReleaseResource()
 {
-	if (ShaderState.VertexShader)
-	{
-		ShaderState.VertexShader->Release();
-	}
-	if (ShaderState.PixelShader)
-	{
-		ShaderState.PixelShader->Release();
-	}
-	if (ShaderState.InputLayout)
-	{
-		ShaderState.InputLayout->Release();
-	}
-
 	LODResource.ReleaseResource();
 }
 
-void Mesh::Draw()
+void Mesh::Draw(MeshShaderState* ShaderState)
 {
 	D3D11DeviceContext->IASetInputLayout(ShaderState.InputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
