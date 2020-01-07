@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "D3D11RHI.h"
-#include "Scene.h"
-#include "Camera.h"
+#include "GameViewport.h"
 
 void OutputDebug(const char* Format)
 {
@@ -15,7 +14,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 
 HWND g_hWind = NULL;
 
-Scene S;
+GameViewport GW;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -69,9 +68,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//CreateTriangleBuffer();
 
 	
-	S.InitResource();
-	S.Setup();
-
+	//S.InitResource();
+	//S.Setup();
 	
 
 	MSG msg;
@@ -87,15 +85,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		D3D11ClearViewTarget();
-		//RenderTriangle();
-		S.Draw();
+		//D3D11ClearViewTarget();
+		GW.Draw();
 		D3D11Present();
 
 		Sleep(10);
 	}
 
-	S.ReleaseResource();
+	//S.ReleaseResource();
 
 	return msg.wParam;
 }
@@ -111,37 +108,37 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 	case WM_KEYDOWN:
 	{
-		S.OnKeyDown(wParam);
+		GW.OnKeyDown(wParam);
 		break;
 	}
 	case WM_KEYUP:
 	{
-		S.OnKeyUp(wParam);
+		GW.OnKeyUp(wParam);
 		break;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		S.OnMouseDown(LOWORD(lParam), HIWORD(lParam));
+		GW.OnMouseDown(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
-		S.OnMouseUp(LOWORD(lParam), HIWORD(lParam));
+		GW.OnMouseUp(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		S.OnRightMouseDown(LOWORD(lParam), HIWORD(lParam));
+		GW.OnRightMouseDown(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
-		S.OnRightMouseUp(LOWORD(lParam), HIWORD(lParam));
+		GW.OnRightMouseUp(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_MOUSEMOVE:
 	{
-		S.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+		GW.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	}

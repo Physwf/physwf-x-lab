@@ -859,3 +859,67 @@ inline bool Matrix::operator!=(const Matrix& Other) const
 	}
 	return false;
 }
+
+struct Box
+{
+	Vector Min;
+	Vector Max;
+	uint8 IsValid;
+
+	Box() {}
+
+	Box(const Vector& InMin, const Vector& InMax)
+		:Min(InMin)
+		,Max(InMax)
+		,IsValid(1)
+	{ }
+
+	inline Box& operator+=(const Vector& Other)
+	{
+		if (IsValid)
+		{
+			Min.X = fminf(Min.X, Other.X);
+			Min.Y = fminf(Min.Y, Other.Y);
+			Min.Z = fminf(Min.Z, Other.Z);
+
+			Max.X = fmaxf(Min.X, Other.X);
+			Max.Y = fmaxf(Min.Y, Other.Y);
+			Max.Z = fmaxf(Min.Z, Other.Z);
+		}
+		else
+		{
+			Min = Max = Other;
+			IsValid = 1;
+		}
+		return *this;
+	}
+
+	inline Box& operator+=(const Box& Other)
+	{
+		if (IsValid && Other.IsValid)
+		{
+			Min.X = fminf(Min.X, Other.Min.X);
+			Min.Y = fminf(Min.Y, Other.Min.Y);
+			Min.Z = fminf(Min.Z, Other.Min.Z);
+
+			Max.X = fmaxf(Min.X, Other.Max.X);
+			Max.Y = fmaxf(Min.Y, Other.Max.Y);
+			Max.Z = fmaxf(Min.Z, Other.Max.Z);
+		}
+		else if (Other.IsValid)
+		{
+			*this = Other;
+		}
+		return *this;
+	}
+
+	inline Box operator+(const Vector& Other)
+	{
+		return Box(*this) += Other;
+	}
+
+	inline Box operator+(const Box& Other)
+	{
+		return Box(*this) += Other;
+	}
+};

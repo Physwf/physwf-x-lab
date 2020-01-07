@@ -79,100 +79,84 @@ void Scene::Setup()
 	LightConstBuffer.PointLights[0].ColorAndFalloffExponent = {0.99f,0.5f,0.7f};
 
 }
-
-void Scene::Draw()
-{
-	D3D11DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
-	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &LightConstBuffer, 0, 0);
-
-	for (Camera* C : Cameras)
-	{
-		C->Render();
-	}
-
-	for (Mesh* M : Meshes)
-	{
-		M->Draw();
-	}
-}
-
-void Scene::OnKeyDown(unsigned int KeyCode)
-{
-	switch (KeyCode)
-	{
-	case 'W':
-	case 'w':
-		if (CurrentCamera)
-		{
-			CurrentCamera->Walk(20.0f);
-		}
-		break;
-	case 'A':
-	case 'a':
-		if (CurrentCamera)
-		{
-			CurrentCamera->Side(20.0f);
-		}
-		break;
-	case 'D':
-	case 'd':
-		if (CurrentCamera)
-		{
-			CurrentCamera->Side(-20.0f);
-		}
-		break;
-	case 'S':
-	case 's':
-		if (CurrentCamera)
-		{
-			CurrentCamera->Back(20.0f);
-		}
-		break;
-	}
-}
-
-void Scene::OnKeyUp(unsigned int KeyCode)
-{
-
-}
-
-void Scene::OnMouseDown(int X, int Y)
-{
-	if (CurrentCamera)
-	{
-		CurrentCamera->StartDrag(X,Y);
-	}
-}
-
-void Scene::OnMouseUp(int X, int Y)
-{
-	if (CurrentCamera)
-	{
-		CurrentCamera->StopDrag(X, Y);
-	}
-}
-
-void Scene::OnRightMouseDown(int X, int Y)
-{
-	if (CurrentCamera)
-	{
-		CurrentCamera->StartRotate(X, Y);
-	}
-}
-
-void Scene::OnRightMouseUp(int X, int Y)
-{
-	if (CurrentCamera)
-	{
-		CurrentCamera->StopRotate(X, Y);
-	}
-}
-
-void Scene::OnMouseMove(int X, int Y)
-{
-	if (CurrentCamera)
-	{
-		CurrentCamera->Drag(X, Y);
-		CurrentCamera->Rotate(X, Y);
-	}
-}
+// 
+// void Scene::OnKeyDown(unsigned int KeyCode)
+// {
+// 	switch (KeyCode)
+// 	{
+// 	case 'W':
+// 	case 'w':
+// 		if (CurrentCamera)
+// 		{
+// 			CurrentCamera->Walk(20.0f);
+// 		}
+// 		break;
+// 	case 'A':
+// 	case 'a':
+// 		if (CurrentCamera)
+// 		{
+// 			CurrentCamera->Side(20.0f);
+// 		}
+// 		break;
+// 	case 'D':
+// 	case 'd':
+// 		if (CurrentCamera)
+// 		{
+// 			CurrentCamera->Side(-20.0f);
+// 		}
+// 		break;
+// 	case 'S':
+// 	case 's':
+// 		if (CurrentCamera)
+// 		{
+// 			CurrentCamera->Back(20.0f);
+// 		}
+// 		break;
+// 	}
+// }
+// 
+// void Scene::OnKeyUp(unsigned int KeyCode)
+// {
+// 
+// }
+// 
+// void Scene::OnMouseDown(int X, int Y)
+// {
+// 	if (CurrentCamera)
+// 	{
+// 		CurrentCamera->StartDrag(X,Y);
+// 	}
+// }
+// 
+// void Scene::OnMouseUp(int X, int Y)
+// {
+// 	if (CurrentCamera)
+// 	{
+// 		CurrentCamera->StopDrag(X, Y);
+// 	}
+// }
+// 
+// void Scene::OnRightMouseDown(int X, int Y)
+// {
+// 	if (CurrentCamera)
+// 	{
+// 		CurrentCamera->StartRotate(X, Y);
+// 	}
+// }
+// 
+// void Scene::OnRightMouseUp(int X, int Y)
+// {
+// 	if (CurrentCamera)
+// 	{
+// 		CurrentCamera->StopRotate(X, Y);
+// 	}
+// }
+// 
+// void Scene::OnMouseMove(int X, int Y)
+// {
+// 	if (CurrentCamera)
+// 	{
+// 		CurrentCamera->Drag(X, Y);
+// 		CurrentCamera->Rotate(X, Y);
+// 	}
+// }

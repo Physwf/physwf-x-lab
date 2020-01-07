@@ -547,7 +547,7 @@ void Mesh::InitResource()
 		X_LOG("D3D11Device->CreateBuffer failed!");
 		return;
 	}
-
+	/*
 	ID3DBlob* VSByteCode;
 	ID3DBlob* PSByteCode;
 	ID3DBlob* ErrorMsg;
@@ -613,6 +613,7 @@ void Mesh::InitResource()
 	{
 		ErrorMsg->Release();
 	}
+	*/
 }
 
 void Mesh::ReleaseResource()
@@ -622,7 +623,7 @@ void Mesh::ReleaseResource()
 
 void Mesh::Draw(MeshShaderState* ShaderState)
 {
-	D3D11DeviceContext->IASetInputLayout(ShaderState.InputLayout);
+	D3D11DeviceContext->IASetInputLayout(ShaderState->InputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
@@ -638,8 +639,8 @@ void Mesh::Draw(MeshShaderState* ShaderState)
 	for (const auto& Section : LODResource.Sections)
 	{
 		//if(i++!=0) continue;
-		D3D11DeviceContext->VSSetShader(ShaderState.VertexShader, 0, 0);
-		D3D11DeviceContext->PSSetShader(ShaderState.PixelShader, 0, 0);
+		D3D11DeviceContext->VSSetShader(ShaderState->VertexShader, 0, 0);
+		D3D11DeviceContext->PSSetShader(ShaderState->PixelShader, 0, 0);
 		D3D11DeviceContext->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
 	}
 }
