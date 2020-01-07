@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreTypes.h"
-#include "Math/XMath.h"
+#include "Math/XMathUtility.h"
 #include "Math/Float32.h"
 
 /**

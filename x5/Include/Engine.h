@@ -2,10 +2,15 @@
 
 #include "X5.h"
 
-class X5_API JEngine
+class X5_API UEngine
 {
 public:
-	void Init();
+	virtual void Init();
 
-	void Tick();
+	virtual void Tick();
+
+	virtual void RedrawViewports(bool bShouldPresent = true) { }
+
+public:
+	class UGameViewportClient* GameViewport;
 };
