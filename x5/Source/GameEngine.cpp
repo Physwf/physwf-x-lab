@@ -3,6 +3,8 @@
 
 void UGameEngine::Init()
 {
+	UEngine::Init();
+
 	GameViewport = new UGameViewportClient();
 }
 
