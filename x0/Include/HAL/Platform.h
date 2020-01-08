@@ -9,3 +9,8 @@
 #else
 #error Unknown platform
 #endif
+
+
+#ifndef PLATFORM_ENABLE_VECTORINTRINSICS
+#define PLATFORM_ENABLE_VECTORINTRINSICS	0
+#endif

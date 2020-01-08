@@ -3,9 +3,7 @@
 #include "X0.h"
 
 #include "CoreTypes.h"
-#include "Math/XMath.h"
-
-struct FVector;
+#include "Math/XMathUtility.h"
 
 struct FVector2D
 {

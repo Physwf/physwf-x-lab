@@ -1,8 +1,11 @@
 #pragma once
 
 #include "X0.h"
-struct FVector;
-struct FQuat;
+
+#include "CoreTypes.h"
+#include "Math/XMathUtility.h"
+#include "Math/Vector.h"
+#include "Math/VectorRegister.h"
 
 struct FRotator
 {
@@ -55,6 +58,10 @@ public:
 	float GetManhattanDistance(const FRotator & Rotator) const;
 
 	FRotator GetEquivalentRotator() const;
+
+	static float ClampAxis(float Angle);
+
+	static float NormalizeAxis(float Angle);
 };
 
 inline FRotator::FRotator(float InF)
@@ -63,56 +70,56 @@ inline FRotator::FRotator(float InF)
 
 }
 
-FRotator::FRotator(float InPitch, float InYaw, float InRoll)
+inline FRotator::FRotator(float InPitch, float InYaw, float InRoll)
 	: Pitch(InPitch), Yaw(InYaw), Roll(InRoll)
 {
 
 }
 
-FRotator FRotator::operator+(const FRotator& R) const
+inline FRotator FRotator::operator+(const FRotator& R) const
 {
 	return FRotator(Pitch + R.Pitch, Yaw + R.Yaw, Roll + R.Roll);
 }
 
-FRotator FRotator::operator-(const FRotator& R) const
+inline FRotator FRotator::operator-(const FRotator& R) const
 {
 	return FRotator(Pitch - R.Pitch, Yaw - R.Yaw, Roll - R.Roll);
 }
 
-FRotator FRotator::operator*(float Scale) const
+inline FRotator FRotator::operator*(float Scale) const
 {
 	return FRotator(Pitch*Scale, Yaw*Scale, Roll*Scale);
 }
 
-FRotator FRotator::operator*=(float Scale)
+inline FRotator FRotator::operator*=(float Scale)
 {
 	Pitch = Pitch * Scale; Yaw = Yaw * Scale; Roll = Roll * Scale;
 	return *this;
 }
 
-bool FRotator::operator==(const FRotator& R) const
+inline bool FRotator::operator==(const FRotator& R) const
 {
 	return Pitch == R.Pitch && Yaw == R.Yaw && Roll == R.Roll;
 }
 
-bool FRotator::operator!=(const FRotator& V) const
+inline bool FRotator::operator!=(const FRotator& V) const
 {
 	return Pitch != V.Pitch || Yaw != V.Yaw || Roll != V.Roll;
 }
 
-FRotator FRotator::operator+=(const FRotator& R)
+inline FRotator FRotator::operator+=(const FRotator& R)
 {
 	Pitch += R.Pitch; Yaw += R.Yaw; Roll += R.Roll;
 	return *this;
 }
 
-FRotator FRotator::operator-=(const FRotator& R)
+inline FRotator FRotator::operator-=(const FRotator& R)
 {
 	Pitch -= R.Pitch; Yaw -= R.Yaw; Roll -= R.Roll;
 	return *this;
 }
 
-FRotator FRotator::Add(float DeltaPitch, float DeltaYaw, float DeltaRoll)
+inline FRotator FRotator::Add(float DeltaPitch, float DeltaYaw, float DeltaRoll)
 {
 	Yaw += DeltaYaw;
 	Pitch += DeltaPitch;
@@ -120,13 +127,63 @@ FRotator FRotator::Add(float DeltaPitch, float DeltaYaw, float DeltaRoll)
 	return *this;
 }
 
-X0_API FRotator FRotator::GetInverse() const
-{
 
+inline FRotator FRotator::Clamp() const
+{
+	return FRotator(ClampAxis(Pitch), ClampAxis(Yaw), ClampAxis(Roll));
 }
 
-X0_API FVector FRotator::Euler() const
+inline FRotator FRotator::GetNormalized() const
 {
-	return FVector(Roll, Pitch, Yaw);
+	FRotator Rot = *this;
+	Rot.Normalize();
+	return Rot;
+}
+
+inline FRotator FRotator::GetDenormalized() const
+{
+	FRotator Rot = *this;
+	Rot.Pitch = ClampAxis(Rot.Pitch);
+	Rot.Yaw = ClampAxis(Rot.Yaw);
+	Rot.Roll = ClampAxis(Rot.Roll);
+	return Rot;
+}
+
+inline void FRotator::Normalize()
+{
+	Pitch = NormalizeAxis(Pitch);
+	Yaw = NormalizeAxis(Yaw);
+	Roll = NormalizeAxis(Roll);
+}
+
+inline float FRotator::GetManhattanDistance(const FRotator & Rotator) const
+{
+	return FMath::Abs<float>(Yaw - Rotator.Yaw) + FMath::Abs<float>(Pitch - Rotator.Pitch) + FMath::Abs<float>(Roll - Rotator.Roll);
+}
+
+inline FRotator FRotator::GetEquivalentRotator() const
+{
+	return FRotator(180.0f - Pitch, Yaw + 180.0f, Roll + 180.0f);
+}
+
+inline float FRotator::ClampAxis(float Angle)
+{
+	Angle = FMath::Fmod(Angle,360.0f);
+	if (Angle < 0.0f)
+	{
+		Angle += 360.0f;
+	}
+	return Angle;
+}
+
+inline float FRotator::NormalizeAxis(float Angle)
+{
+	Angle = ClampAxis(Angle);
+
+	if (Angle > 180.f)
+	{
+		Angle -= 360.0f;
+	}
+	return Angle;
 }
 

@@ -8,3 +8,6 @@
 #include "Math/Plane.h"
 #include "Math/Rotator.h"
 #include "Math/Matrix.h"
+#include "Math/Float16.h"
+#include "Math/Float32.h"
+#include "Math/Quat.h"

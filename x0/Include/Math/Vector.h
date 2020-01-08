@@ -3,9 +3,9 @@
 #include "X0.h"
 
 #include "CoreTypes.h"
-#include "Vector2D.h"
-#include "Vector4.h"
-#include "Color.h"
+#include "Math/XMathUtility.h"
+#include "Math/Color.h"
+#include "Math/Vector2D.h"
 
 struct FVector
 {
@@ -33,7 +33,7 @@ public:
 
 	explicit FVector(const FVector2D V, float InZ) :X(V.X), Y(V.Y), Z(InZ) {}
 
-	FVector(const FVector4& V) :X(V.X), Y(V.Y), Z(V.Z) {}
+	FVector(const FVector4& V);
 
 	explicit FVector(const FLinearColor& InColor) :X(InColor.R), Y(InColor.G), Z(InColor.B) {}
 
@@ -243,14 +243,6 @@ public:
 
 inline FVector2D::FVector2D(const FVector& V)
 	: X(V.X), Y(V.Y)
-{
-}
-
-inline FVector4::FVector4(const FVector& InVector, float InW /*= 1.0f*/)
-	: X(InVector.X)
-	, Y(InVector.Y)
-	, Z(InVector.Z)
-	, W(InW)
 {
 }
 

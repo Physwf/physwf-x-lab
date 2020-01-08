@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Vector.h"
-#include "Vector4.h"
-#include "XMath.h"
+#include "CoreTypes.h"
+#include "Math/XMathUtility.h"
+#include "Math/Vector.h"
+#include "Math/Vector4.h"
 
 struct FMatrix;
 

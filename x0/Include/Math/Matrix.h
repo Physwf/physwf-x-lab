@@ -2,12 +2,14 @@
 
 #include "X0.h"
 
-#include "XMath.h"
-#include "Vector.h"
-#include "Plane.h"
-#include "Axis.h"
+#include "CoreTypes.h"
+#include "Math/XMathUtility.h"
+#include "Math/Vector.h"
+#include "Math/Vector4.h"
+#include "Math/Plane.h"
+#include "Math/Rotator.h"
+#include "Math/Axis.h"
 #include "Misc/AssertionMacros.h"
-#include "XMathSSE.h"
 
 struct FMatrix
 {

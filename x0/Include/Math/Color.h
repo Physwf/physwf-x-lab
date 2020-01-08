@@ -1,11 +1,9 @@
 #pragma once
 
 #include "X0.h"
-#include "XMath.h"
+#include "Math/XMathUtility.h"
 
 struct FColor;
-struct FVector;
-struct FVector4;
 
 struct FLinearColor
 {

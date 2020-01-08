@@ -1,7 +1,9 @@
 #pragma once
 
-struct FVector;
-struct FLinearColor;
+#include "CoreTypes.h"
+#include "Math/XMathUtility.h"
+#include "Math/Vector2D.h"
+#include "Math/Vector.h"
 
 struct alignas(16) FVector4
 {
@@ -135,4 +137,15 @@ struct alignas(16) FVector4
 	}
 };
 
+inline FVector4::FVector4(const FVector& InVector, float InW /*= 1.0f*/)
+	: X(InVector.X)
+	, Y(InVector.Y)
+	, Z(InVector.Z)
+	, W(InW)
+{
+}
 
+inline FVector::FVector(const FVector4& V) :X(V.X), Y(V.Y), Z(V.Z)
+{
+
+}

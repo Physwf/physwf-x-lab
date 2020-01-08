@@ -3,6 +3,17 @@
 #include "HAL/PlatformMath.h"
 
 struct FVector;
+struct  FVector4;
+struct  FPlane;
+struct  FBox;
+struct  FRotator;
+struct  FMatrix;
+struct  FQuat;
+struct  FTwoVectors;
+struct  FTransform;
+class  FSphere;
+struct FVector2D;
+struct FLinearColor;
 
 #undef  PI
 #define PI 					(3.1415926535897932f)

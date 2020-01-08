@@ -1319,10 +1319,10 @@ inline VectorRegister VectorLoadSRGBA16N(void* Ptr)
 	float V[4];
 	int16* E = (int16*)Ptr;
 
-	V[0] = float(E[0]) / 32767.0;
-	V[1] = float(E[1]) / 32767.0;
-	V[2] = float(E[2]) / 32767.0;
-	V[3] = float(E[3]) / 32767.0;
+	V[0] = float(E[0]) / 32767.0f;
+	V[1] = float(E[1]) / 32767.0f;
+	V[2] = float(E[2]) / 32767.0f;
+	V[3] = float(E[3]) / 32767.0f;
 
 	return MakeVectorRegister(V[0], V[1], V[2], V[3]);
 }
