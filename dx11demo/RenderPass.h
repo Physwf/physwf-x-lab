@@ -26,6 +26,20 @@ private:
 	ID3D11RasterizerState* mRasterState = NULL;
 };
 
+class ShadowMapPass : public RenderPass
+{
+public:
+	virtual void InitResource() override;
+	virtual void ReleaseResource() override;
+	virtual void SetRenderState() override;
+	virtual void Draw() override;
+private:
+	ID3D11DepthStencilView* mDepthStencialView = NULL;
+	ID3D11Texture2D* mDepthStencialBuffer = NULL;
+	D3D11_VIEWPORT mViewport;
+	ID3D11RasterizerState* mRasterState = NULL;
+};
+
 class BaseRenderPass : public RenderPass
 {
 	virtual void InitResource() override;
