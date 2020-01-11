@@ -5,7 +5,7 @@
 class FMobileBasePassOpaqueDrawingPolicyFactory
 {
 public:
-	enum { bAllowSimpleElements = true; };
+	enum { bAllowSimpleElements = true };
 	struct ContexType
 	{
 		ContexType()

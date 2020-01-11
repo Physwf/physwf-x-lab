@@ -11,3 +11,6 @@
 #include "Math/Float16.h"
 #include "Math/Float32.h"
 #include "Math/Quat.h"
+#include "Math/IntRect.h"
+#include "Math/InverseRotationMatrix.h"
+#include "Math/TranslationMatrix.h"

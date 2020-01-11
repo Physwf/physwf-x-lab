@@ -60,7 +60,7 @@ void FPrimitiveSceneInfo::AddStaticMeshes(bool bAddToStaticDrawLists /*= true*/)
 
 	for (uint32 MeshIndex = 0; MeshIndex < StaticMeshes.size(); MeshIndex++)
 	{
-		FStaticMesh& Mesh = StaticMeshes[MeshIndex];
+		FStaticMesh& Mesh = *StaticMeshes[MeshIndex];
 
 		Scene->StaticMeshes.push_back(&Mesh);
 		Mesh.Id = Scene->StaticMeshes.size() - 1;

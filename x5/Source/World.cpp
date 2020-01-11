@@ -1,5 +1,5 @@
 #include "World.h"
-#include "Actor.h"
+#include "GameFramework/Actor.h"
 #include "Level.h"
 
 AActor* UWorld::SpawnActor()

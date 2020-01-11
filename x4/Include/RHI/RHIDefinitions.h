@@ -91,3 +91,13 @@ enum EPrimitiveType
 };
 static_assert(PT_Num <= (1 << 8), "EPrimitiveType doesn't fit in a byte");
 static_assert(PT_Num <= (1 << PT_NumBits), "PT_NumBits is too small");
+
+enum EUniformBufferUsage
+{
+	// the uniform buffer is temporary, used for a single draw call then discarded
+	UniformBuffer_SingleDraw = 0,
+	// the uniform buffer is used for multiple draw calls but only for the current frame
+	UniformBuffer_SingleFrame,
+	// the uniform buffer is used for multiple draw calls, possibly across multiple frames
+	UniformBuffer_MultiFrame,
+};

@@ -11,7 +11,7 @@ class FRenderTarget
 public:
 	virtual ~FRenderTarget() {}
 
-	X5_API virtual const ID3D11Texture2D*& GetRenderTargetTexture() const;
+	X5_API virtual const ID3D11Texture2D* GetRenderTargetTexture() const;
 protected:
 	ID3D11Texture2D* RenderTargetTextureRHI;
 };

@@ -4,6 +4,8 @@
 #include <unordered_map>
 
 #include "SceneInterface.h"
+#include "PrimitiveSceneProxy.h"
+#include "Renderer/SceneCore.h"
 
 class FPrimitiveSceneInfo;
 
