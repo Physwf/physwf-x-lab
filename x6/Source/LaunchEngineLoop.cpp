@@ -18,6 +18,7 @@ int32 FEngineLoop::Init()
 {
 	GEngine = new UGameEngine();
 	GEngine->Init();
+	GEngine->Start();
 	return 0;
 }
 

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "X5.h"
 #include "Engine.h"
 
-class UGameEngine : public UEngine
+
+class X5_API UGameEngine : public UEngine
 {
 public:
 	virtual void Init() override;
+	virtual void Start() override;
 
 	virtual void Tick() override;
 

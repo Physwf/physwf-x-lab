@@ -19,6 +19,8 @@ target_include_directories(libx4 PRIVATE "./Include")
 target_include_directories(libx4 PRIVATE "./Source")
 target_include_directories(libx4 PRIVATE "../x5/Include")
 
+SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+
 include(GenerateExportHeader)
 generate_export_header(libx4 
 						BASE_NAME X4

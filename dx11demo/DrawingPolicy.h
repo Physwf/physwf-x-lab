@@ -10,7 +10,6 @@ public:
 	virtual void ReleaseResource() = 0;
 	virtual void SetRenderState() = 0;
 	virtual void Draw(const ShaderPipeline* Pipeline);
-
 };
 
 class DepthOnlyDrawingPolicy : public DrawingPolicy

@@ -10,3 +10,26 @@ AActor* UWorld::SpawnActor()
 	return NewActor;
 }
 
+void UWorld::InitWorld()
+{
+	CurrentLevel = new ULevel();
+	AActor* NewActor = SpawnActor();
+}
+
+void UWorld::InitializeNewWorld()
+{
+	InitWorld();
+}
+
+UWorld* UWorld::CreateWorld()
+{
+	UWorld* NewWorld = new UWorld();
+	NewWorld->InitializeNewWorld();
+	return NewWorld;
+}
+
+void UWorld::DestroyWorld()
+{
+
+}
+

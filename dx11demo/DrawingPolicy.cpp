@@ -1,6 +1,11 @@
 #include "DrawingPolicy.h"
 #include "log.h"
 
+void DrawingPolicy::Draw(const ShaderPipeline* Pipeline)
+{
+
+}
+
 void DepthOnlyDrawingPolicy::InitResource()
 {
 	HRESULT hr;
@@ -121,4 +126,3 @@ void BaseDrawingPolicy::Draw(const ShaderPipeline* Pipeline)
 	D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
 	D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
 }
-
