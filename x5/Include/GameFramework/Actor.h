@@ -3,11 +3,12 @@
 #include "Math/Vector.h"
 
 class UWorld;
+class ULevel;
 
 class AActor
 {
 public:
-	AActor();
+	AActor(ULevel* InOwner);
 	~AActor();
 
 	void PostSpawnActor();
@@ -25,6 +26,6 @@ private:
 	FVector Rotation;
 	FVector Scale;
 
-	class ULevel* LevelPrivite;
+	class ULevel* Owner;
 	class UStaticMeshComponent* Component;
 };

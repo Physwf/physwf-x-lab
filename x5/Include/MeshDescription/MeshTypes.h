@@ -28,6 +28,16 @@ struct FElementID	// @todo mesheditor script: BP doesn't have name spaces, so we
 		return IDValue != Other.IDValue;
 	}
 
+	inline bool operator<(const FElementID& Other) const
+	{
+		return IDValue < Other.IDValue;
+	}
+
+	inline bool operator>(const FElementID& Other) const
+	{
+		return IDValue > Other.IDValue;
+	}
+
 	static const FElementID Invalid;
 
 protected:

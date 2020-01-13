@@ -3,9 +3,9 @@
 #include "Components/StaticMeshComponet.h"
 
 
-AActor::AActor()
+AActor::AActor(ULevel* InOwner):Owner(InOwner)
 {
-	Component = new UStaticMeshComponent();
+	Component = new UStaticMeshComponent(this);
 }
 
 AActor::~AActor()
@@ -20,6 +20,6 @@ void AActor::PostSpawnActor()
 
 UWorld* AActor::GetWorld() const
 {
-	return LevelPrivite->OwningWorld;
+	return Owner->OwningWorld;
 }
 

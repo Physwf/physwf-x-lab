@@ -1,5 +1,6 @@
 #pragma once
 
+#include "X5.h"
 #include "Rendering/StaticMeshVertexBuffer.h"
 #include "Rendering/PositionVertexBuffer.h"
 #include "Rendering/ColorVertexBuffer.h"
@@ -8,6 +9,9 @@
 #include "RawIndexBuffer.h"
 
 class UStaticMeshComponent;
+class FStaticMeshLODGroup
+{
+};
 
 struct FStaticMeshSection
 {
@@ -63,6 +67,10 @@ class FStaticMeshRenderData
 public:
 	std::vector<FStaticMeshLODResources*> LODResources;
 	std::vector<FStaticMeshVertexFactories*> LODVertexFactories;
+
+	void Cache(class UStaticMesh* Owner);
+
+	X5_API void AllocateLODResources(int32 NumLODs);
 };
 
 /**
@@ -150,5 +158,6 @@ protected:
 
 public:
 	float GetScreenSize(int32 LODIndex) const;
+
 };
 

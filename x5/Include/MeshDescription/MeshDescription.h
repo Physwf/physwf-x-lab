@@ -14,7 +14,7 @@ struct FMeshVertex
 	std::vector<FVertexInstanceID> VertexInstanceIDs;
 
 	/** The edges connected to this vertex */
-	std::vector<FEdgeID> ConnectedEdgeIDs;
+	std::set<FEdgeID> ConnectedEdgeIDs;
 
 
 };
@@ -205,6 +205,145 @@ public:
 		const FVertexInstanceID VertexInstanceID = VertexInstanceArray.Add();
 		CreateVertexInstance_Internal(VertexInstanceID, VertexID);
 		return VertexInstanceID;
+	}
+private:
+	void CreateEdge_Internal(const FEdgeID EdgeID, const FVertexID VertexID0, const FVertexID VertexID1, const std::vector<FPolygonID>& ConnectedPolygons)
+	{
+		FMeshEdge& Edge = EdgeArray[EdgeID];
+		Edge.VertexIDs[0] = VertexID0;
+		Edge.VertexIDs[1] = VertexID1;
+		Edge.ConnectedPolygons = ConnectedPolygons;
+		VertexArray[VertexID0].ConnectedEdgeIDs.insert(EdgeID);
+		VertexArray[VertexID1].ConnectedEdgeIDs.insert(EdgeID);
+		EdgeAttributesSet.Insert(EdgeID);
+	}
+public:
+	FEdgeID CreateEdge(const FVertexID VertexID0, const FVertexID VertexID1, const std::vector<FPolygonID>& ConnectedPolygons = std::vector<FPolygonID>())
+	{
+		const FEdgeID EdgeID = EdgeArray.Add();
+		CreateEdge_Internal(EdgeID, VertexID0, VertexID1, ConnectedPolygons);
+		return EdgeID;
+	}
+
+	struct FContourPoint
+	{
+		FVertexInstanceID VertexInstanceID;
+		FEdgeID EdgeID;
+	};
+private:
+	void CreatePolygonContour_Internal(const FPolygonID PolygonID, const std::vector<FContourPoint>& ContourPoints, FMeshPolygonContour& Contour)
+	{
+		Contour.VertexInstanceIDs.clear();
+		for (const FContourPoint ContourPoint : ContourPoints)
+		{
+			const FVertexInstanceID VertexInstanceID = ContourPoint.VertexInstanceID;
+			const FEdgeID EdgeID = ContourPoint.EdgeID;
+
+			Contour.VertexInstanceIDs.push_back(VertexInstanceID);
+			//check(!VertexInstanceArray[VertexInstanceID].ConnectedPolygons.Contains(PolygonID));
+			VertexInstanceArray[VertexInstanceID].ConnectedPolygons.push_back(PolygonID);
+
+			//check(!EdgeArray[EdgeID].ConnectedPolygons.Contains(PolygonID));
+			EdgeArray[EdgeID].ConnectedPolygons.push_back(PolygonID);
+		}
+	}
+
+	void CreatePolygon_Internal(const FPolygonID PolygonID, const FPolygonGroupID PolygonGroupID, const std::vector<FContourPoint>& Perimeter, const std::vector<std::vector<FContourPoint>>& Holes)
+	{
+		FMeshPolygon& Polygon = PolygonArray[PolygonID];
+		CreatePolygonContour_Internal(PolygonID, Perimeter, Polygon.PerimeterContour);
+		for (const std::vector<FContourPoint>& Hole : Holes)
+		{
+			Polygon.HoleContours.emplace(Polygon.HoleContours.end());
+			CreatePolygonContour_Internal(PolygonID, Hole, Polygon.HoleContours.back());
+		}
+
+		Polygon.PolygonGroupID = PolygonGroupID;
+		PolygonGroupArray[PolygonGroupID].Polygons.push_back(PolygonID);
+
+		PolygonAttributesSet.Insert(PolygonID);
+	}
+public:
+	/** Adds a new polygon to the mesh and returns its ID */
+	FPolygonID CreatePolygon(const FPolygonGroupID PolygonGroupID, const std::vector<FContourPoint>& Perimeter, const std::vector<std::vector<FContourPoint>>& Holes = std::vector<std::vector<FContourPoint>>())
+	{
+		const FPolygonID PolygonID = PolygonArray.Add();
+		CreatePolygon_Internal(PolygonID, PolygonGroupID, Perimeter, Holes);
+		return PolygonID;
+	}
+private:
+	void CreatePolygonGroup_Internal(const FPolygonGroupID PolygonGroupID)
+	{
+		PolygonGroupAttributesSet.Insert(PolygonGroupID);
+	}
+public:
+	/** Adds a new polygon group to the mesh and returns its ID */
+	FPolygonGroupID CreatePolygonGroup()
+	{
+		const FPolygonGroupID PolygonGroupID = PolygonGroupArray.Add();
+		CreatePolygonGroup_Internal(PolygonGroupID);
+		return PolygonGroupID;
+	}
+
+	const std::vector<FVertexInstanceID>& GetPolygonPerimeterVertexInstances(const FPolygonID PolygonID) const
+	{
+		return PolygonArray[PolygonID].PerimeterContour.VertexInstanceIDs;
+	}
+	const std::vector<FMeshTriangle>& GetPolygonTriangles(const FPolygonID PolygonID) const
+	{
+		return PolygonArray[PolygonID].Triangles;
+	}
+	/** Return the polygon group associated with a polygon */
+	FPolygonGroupID GetPolygonPolygonGroup(const FPolygonID PolygonID) const
+	{
+		return PolygonArray[PolygonID].PolygonGroupID;
+	}
+	/** Returns the vertex ID associated with the given vertex instance */
+	FVertexID GetVertexInstanceVertex(const FVertexInstanceID VertexInstanceID) const
+	{
+		return VertexInstanceArray[VertexInstanceID].VertexID;
+	}
+
+	FEdgeID GetVertexPairEdge(const FVertexID VertexID0, const FVertexID VertexID1) const
+	{
+		for (const FEdgeID VertexConnectedEdgeID : VertexArray[VertexID0].ConnectedEdgeIDs)
+		{
+			const FVertexID EdgeVertexID0 = EdgeArray[VertexConnectedEdgeID].VertexIDs[0];
+			const FVertexID EdgeVertexID1 = EdgeArray[VertexConnectedEdgeID].VertexIDs[1];
+			if ((EdgeVertexID0 == VertexID0 && EdgeVertexID1 == VertexID1) || (EdgeVertexID0 == VertexID1 && EdgeVertexID1 == VertexID0))
+			{
+				return VertexConnectedEdgeID;
+			}
+		}
+
+		return FEdgeID::Invalid;
+	}
+	void ComputePolygonTriangulation(const FPolygonID PolygonID, std::vector<FMeshTriangle>& OutTriangles)
+	{
+		OutTriangles.clear();
+
+		// @todo mesheditor holes: Does not support triangles with holes yet!
+		// @todo mesheditor: Perhaps should always attempt to triangulate by splitting polygons along the shortest edge, for better determinism.
+
+		//	const FMeshPolygon& Polygon = GetPolygon( PolygonID );
+		const std::vector<FVertexInstanceID>& PolygonVertexInstanceIDs = GetPolygonPerimeterVertexInstances(PolygonID);
+
+		// Polygon must have at least three vertices/edges
+		const int PolygonVertexCount = (int32)PolygonVertexInstanceIDs.size();
+		//check(PolygonVertexCount >= 3);
+
+		// If perimeter has 3 vertices, just copy content of perimeter out 
+		if (PolygonVertexCount == 3)
+		{
+			OutTriangles.emplace(OutTriangles.end());
+			FMeshTriangle& Triangle = OutTriangles.back();
+
+			Triangle.SetVertexInstanceID(0, PolygonVertexInstanceIDs[0]);
+			Triangle.SetVertexInstanceID(1, PolygonVertexInstanceIDs[1]);
+			Triangle.SetVertexInstanceID(2, PolygonVertexInstanceIDs[2]);
+
+			return;
+		}
 	}
 private:
 	FVertexArray VertexArray;

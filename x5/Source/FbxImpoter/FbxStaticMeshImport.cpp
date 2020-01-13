@@ -267,7 +267,7 @@ bool FFbxImporter::BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* Stati
 	TVertexInstanceAttributeArray<FVector4>& VertexInstanceColors = MeshDescription->VertexInstanceAttributes().GetAttributes<FVector4>(MeshAttribute::VertexInstance::Color);
 	TVertexInstanceAttributeIndicesArray<FVector2D>& VertexInstanceUVs = MeshDescription->VertexInstanceAttributes().GetAttributesSet<FVector2D>(MeshAttribute::VertexInstance::TextureCoordinate);
 
-	TEdgeAttributeArray<bool>& EdgeHardnesses = MeshDescription->EdgeAttributes().GetAttributes<bool>(MeshAttribute::Edge::IsHard);
+	TEdgeAttributeArray<int>& EdgeHardnesses = MeshDescription->EdgeAttributes().GetAttributes<int>(MeshAttribute::Edge::IsHard);
 	TEdgeAttributeArray<float>& EdgeCreaseSharpnesses = MeshDescription->EdgeAttributes().GetAttributes<float>(MeshAttribute::Edge::CreaseSharpness);
 
 	TPolygonGroupAttributeArray<std::string>& PolygonGroupImportedMaterialSlotNames = MeshDescription->PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
@@ -275,6 +275,8 @@ bool FFbxImporter::BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* Stati
 	int32 VertexOffset = MeshDescription->Vertices().Num();
 	int32 VertexInstanceOffset = MeshDescription->VertexInstances().Num();
 	int32 PolygonOffset = MeshDescription->Polygons().Num();
+
+	std::map<int32, FPolygonGroupID> PolygonGroupMapping; 
 
 	for (int32 VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 	{
@@ -375,8 +377,110 @@ bool FFbxImporter::BuildStaticMeshFromGeometry(FbxNode* Node, UStaticMesh* Stati
 				}
 			}
 		}
+
+		int32 MaterialIndex = 0;
+		if (MaterialCount > 0)
+		{
+			if (LayerElementNormal)
+			{
+				switch (MaterialMappingMode)
+				{
+				case FbxLayerElement::eAllSame:
+				{
+					MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(0);
+				}
+				break;
+				case FbxLayerElement::eByPolygon:
+				{
+					MaterialIndex = LayerElementMaterial->GetIndexArray().GetAt(PolygonIndex);
+				}
+				break;
+				}
+			}
+		}
+
+		if (MaterialIndex >= MaterialCount || MaterialIndex < 0)
+		{
+			MaterialIndex = 0;
+		}
+		int32 RealMaterialIndex = MaterialIndexOffset + MaterialIndex;
+		if (PolygonGroupMapping.find(RealMaterialIndex) == PolygonGroupMapping.end())
+		{
+			std::string ImportedMaterialSlotName = (int32)MeshMaterials.size() > RealPolygonIndex ? MeshMaterials[RealMaterialIndex].GetName() : "";
+			FPolygonGroupID ExistingPolygonGroup = FPolygonGroupID::Invalid;
+			for (const FPolygonGroupID PolygonGroupID : MeshDescription->PolygonGroups().GetElementIDs())
+			{
+				if (PolygonGroupImportedMaterialSlotNames[PolygonGroupID] == ImportedMaterialSlotName)
+				{
+					ExistingPolygonGroup = PolygonGroupID;
+					break;
+				}
+			}
+			if (ExistingPolygonGroup == FPolygonGroupID::Invalid)
+			{
+				ExistingPolygonGroup = MeshDescription->CreatePolygonGroup();
+				PolygonGroupImportedMaterialSlotNames[ExistingPolygonGroup] = ImportedMaterialSlotName;
+			}
+			PolygonGroupMapping.insert(std::make_pair(RealMaterialIndex, ExistingPolygonGroup));
+		}
+
+		std::vector<FMeshDescription::FContourPoint> Contours;
+		{
+			for (uint32 PolygonEdgeNumber = 0; PolygonEdgeNumber < (uint32)PolygonVertexCount; ++PolygonEdgeNumber)
+			{
+				Contours.push_back(FMeshDescription::FContourPoint());
+				int32 ContourPointIndex = Contours.size() - 1;
+				FMeshDescription::FContourPoint& ContourPoint = Contours[ContourPointIndex];
+				//Find the matching edge ID
+				uint32 CornerIndices[2];
+				CornerIndices[0] = (PolygonEdgeNumber + 0) % PolygonVertexCount;
+				CornerIndices[1] = (PolygonEdgeNumber + 1) % PolygonVertexCount;
+
+				FVertexID EdgeVertexIDs[2];
+				EdgeVertexIDs[0] = CornerVerticesIDs[CornerIndices[0]];
+				EdgeVertexIDs[1] = CornerVerticesIDs[CornerIndices[1]];
+
+				FEdgeID MatchEdgeId = MeshDescription->GetVertexPairEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+				if (MatchEdgeId == FEdgeID::Invalid)
+				{
+					MatchEdgeId = MeshDescription->CreateEdge(EdgeVertexIDs[0], EdgeVertexIDs[1]);
+				}
+				ContourPoint.EdgeID = MatchEdgeId;
+				ContourPoint.VertexInstanceID = CornerInstanceIDs[CornerIndices[0]];
+				//RawMesh do not have edges, so by ordering the edge with the triangle construction we can ensure back and forth conversion with RawMesh
+				//When raw mesh will be completly remove we can create the edges right after the vertex creation.
+				int32 EdgeIndex = -1;
+				{
+					EdgeIndex = Mesh->GetMeshEdgeIndexForPolygon(PolygonIndex, PolygonEdgeNumber);
+				}
+
+				EdgeCreaseSharpnesses[MatchEdgeId] = (float)Mesh->GetEdgeCreaseInfo(EdgeIndex);
+				if (!EdgeHardnesses[MatchEdgeId])
+				{
+					if (bSmoothingAvailable && SmoothingInfo)
+					{
+						if (SmoothingMappingMode == FbxLayerElement::eByEdge)
+						{
+							int32 lSmoothingIndex = (SmoothingReferenceMode == FbxLayerElement::eDirect) ? EdgeIndex : SmoothingInfo->GetIndexArray().GetAt(EdgeIndex);
+							//Set the hard edges
+							EdgeHardnesses[MatchEdgeId] = (SmoothingInfo->GetDirectArray().GetAt(lSmoothingIndex) == 0);
+						}
+					}
+					else
+					{
+						//When there is no smoothing group we set all edge to hard (faceted mesh)
+						EdgeHardnesses[MatchEdgeId] = true;
+					}
+				}
+			}
+			FPolygonGroupID PolygonGroupID = PolygonGroupMapping[RealMaterialIndex];
+			// Insert a polygon into the mesh
+			const FPolygonID NewPolygonID = MeshDescription->CreatePolygon(PolygonGroupID, Contours);
+			//Triangulate the polygon
+			FMeshPolygon& Polygon = MeshDescription->GetPolygon(NewPolygonID);
+			MeshDescription->ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
+		}
 	}
-	
 	Mesh->EndGetMeshEdgeIndexForPolygon();
 	return true;
 }

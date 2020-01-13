@@ -16,11 +16,11 @@ struct FLinearColor
 	inline FLinearColor() {}
 	inline FLinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
 
-	FLinearColor(const FColor& Color);
+	X0_API FLinearColor(const FColor& Color);
 
-	FLinearColor(const FVector& Vector);
+	X0_API FLinearColor(const FVector& Vector);
 
-	explicit FLinearColor(const FVector4& Vector);
+	X0_API explicit FLinearColor(const FVector4& Vector);
 
 	FColor ToRGBE() const;
 

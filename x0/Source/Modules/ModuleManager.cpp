@@ -19,14 +19,14 @@ FModuleManager& FModuleManager::Get()
 
 void FModuleManager::AddModule(const std::string& InModuleName)
 {
-	if (Modules.find(InModuleName) == Modules.end()) return;
+	if (Modules.find(InModuleName) != Modules.end()) return;
 
 	std::shared_ptr<FModuleInfo> ModuleInfo(new FModuleInfo());
 
 	std::map<std::string, std::string> ModulePathMap;
 	FindModulePaths(InModuleName.c_str(), ModulePathMap);
 
-	std::string ModuleFileName = ModulePathMap.begin()->first;
+	std::string ModuleFileName = ModulePathMap.begin()->second;
 	ModuleInfo->Filename = ModuleFileName;
 
 	FModuleManager::Get().AddModuleToModulesList(InModuleName, ModuleInfo);

@@ -2,6 +2,7 @@
 #include "Components/PrimitiveComponent.h"
 #include "Renderer/PrimitiveSceneInfo.h"
 #include "PrimitiveSceneProxy.h"
+#include "World.h"
 
 void FScene::AddPrimitive(UPrimitiveComponent* Primitive)
 {
@@ -24,3 +25,12 @@ void FScene::AddPrimitiveSceneInfo_RenderThread(FPrimitiveSceneInfo* PrimitiveSc
 	PrimitiveSceneInfo->AddToScene(true);
 }
 
+FScene::FScene(class UWorld* InWorld):World(InWorld)
+{
+	World->Scene = this;
+}
+
+FScene::~FScene()
+{
+
+}

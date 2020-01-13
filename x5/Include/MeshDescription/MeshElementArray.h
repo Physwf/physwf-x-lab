@@ -98,6 +98,15 @@ public:
 		return ID.GetValue() >= 0 && ID.GetValue() < MaxID && Container.find(ID.GetValue()) != Container.end();
 	}
 
+	std::vector<ElementIDType> GetElementIDs() const
+	{
+		std::vector<ElementIDType> Keys;
+		for (auto kv : Container)
+		{
+			Keys.push_back(ElementIDType(kv.first));
+		}
+		return Keys;
+	}
 private:
 	int MaxID{0};
 	std::unordered_map<int, ElementType> Container;

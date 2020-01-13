@@ -5,6 +5,7 @@
 
 class IRendererModule : public IModuleInterface
 {
+public:
 	virtual FSceneInterface* AllocateScene(class UWorld* World) = 0;
 	virtual void RemoveScene(FSceneInterface* Scene) = 0;
 };

@@ -1,16 +1,22 @@
 #pragma once
 
 class UWorld;
+class AActor;
 
 class UActorComponent
 {
 public:
+	UActorComponent(AActor* InOwner);
+
 	void RegisterComponent();
 	void UnregisterComponent();
 
-	void RegisterComponentWithWorld(/*UWorld* InWorld*/);
+	void RegisterComponentWithWorld(UWorld* InWorld);
 
 	UWorld* GetWorld() const  { return WorldPrivate; }
+
+public:
+	AActor* GetOwner() const;
 protected:
 	virtual void CreateRenderState_Concurrent();
 	virtual void DestroyRenderState_Concurrent();
@@ -19,5 +25,6 @@ private:
 	void ExecuteRegisterEvents();
 
 private:
-	class UWorld* WorldPrivate;
+	UWorld* WorldPrivate;
+	AActor* Owner;
 };

@@ -8,10 +8,13 @@
 #include "Renderer/SceneCore.h"
 
 class FPrimitiveSceneInfo;
+class UWorld;
 
 class FScene : public FSceneInterface
 {
 public:
+	UWorld* World;
+
 	virtual void AddPrimitive(UPrimitiveComponent* Primitive) override;
 	virtual void RemovePrimitive(UPrimitiveComponent* Primitive) override;
 
@@ -24,4 +27,12 @@ public:
 
 	/** The static meshes in the scene. */
 	std::vector<FStaticMesh*> StaticMeshes;
+
+
+	FScene(UWorld* InWorld);
+
+	virtual ~FScene();
 };
+
+
+

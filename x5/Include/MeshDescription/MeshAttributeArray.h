@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <tuple>
+#include <set>
 
 using AttributeTypes = std::tuple
 <
@@ -133,7 +134,7 @@ public:
 	inline AttributeType GetDefaultValue() const { return DefaultValue; }
 
 	/** Return number of indices this attribute has */
-	inline int32 GetNumIndices() const { return ArrayForIndices.Num(); }
+	inline int32 GetNumIndices() const { return (int32)ArrayForIndices.size(); }
 
 	/** Return number of elements each attribute index has */
 	inline int32 GetNumElements() const { return NumElements; }

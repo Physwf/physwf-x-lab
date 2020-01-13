@@ -28,7 +28,20 @@ public:
 	IModuleInterface& LoadModuleChecked(const std::string& InModuleName);
 
 	IModuleInterface* LoadModuleWithFailureReason(const std::string& InModuleName);
+public:
+	template<typename TModuleInterface>
+	static TModuleInterface& GetModuleChecked(const std::string& ModuleName)
+	{
+		FModuleManager& ModuleManager = FModuleManager::Get();
 
+		return (TModuleInterface&)(*ModuleManager.GetModule(ModuleName));
+	}
+	template<typename TModuleInterface>
+	static TModuleInterface& LoadModuleChecked(const std::string& InModuleName)
+	{
+		IModuleInterface& ModuleInterface = FModuleManager::Get().LoadModuleChecked(InModuleName);
+		return (TModuleInterface&)(ModuleInterface);
+	}
 protected:
 	FModuleManager();
 

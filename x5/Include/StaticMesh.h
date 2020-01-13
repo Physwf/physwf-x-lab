@@ -2,6 +2,8 @@
 
 #include "fbxsdk.h"
 
+#include "X5.h"
+
 #include <vector>
 #include <memory>
 
@@ -146,6 +148,7 @@ struct FMeshSectionInfoMap
 class UStaticMesh
 {
 	friend class FFbxImporter;
+	friend class FStaticMeshBuilder;
 public:
 	std::unique_ptr<class FStaticMeshRenderData> RenderData;
 
@@ -163,6 +166,11 @@ public:
 	FStaticMeshSourceModel& AddSourceModel();
 	void SetNumSourceModels(int32 Num);
 	void RemoveSourceModel(int32 Index);
+
+	X5_API void Build();
+
+	X5_API void CacheDerivedData();
+
 private:
 	std::vector<FStaticMeshSourceModel> SourceModels;
 	UStaticMeshDescriptions* MeshDescriptions;

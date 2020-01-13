@@ -1,5 +1,21 @@
 #include "StaticMesh.h"
 #include "Meshdescription/MeshAttributes.h"
+#include "MeshBuilder/StaticMeshBuilder.h"
+
+void FStaticMeshRenderData::Cache(class UStaticMesh* Owner)
+{
+	FStaticMeshBuilder Builder;
+	Builder.Build(*this, Owner);
+}
+
+X5_API void FStaticMeshRenderData::AllocateLODResources(int32 NumLODs)
+{
+	while ((int32)LODResources.size() < NumLODs)
+	{
+		LODResources.push_back(new FStaticMeshLODResources());
+		LODVertexFactories.push_back(new FStaticMeshVertexFactories());
+	}
+}
 
 bool FStaticMeshSourceModel::IsRawMeshEmpty() const
 {
@@ -227,6 +243,17 @@ void UStaticMesh::RemoveSourceModel(int32 Index)
 
 }
 
+X5_API void UStaticMesh::Build()
+{
+	CacheDerivedData();
+}
+
+X5_API void UStaticMesh::CacheDerivedData()
+{
+	RenderData = std::make_unique<FStaticMeshRenderData>();
+	RenderData->Cache(this);
+}
+
 void UStaticMesh::RegisterMeshAttributes(FMeshDescription& MeshDescription)
 {
 	MeshDescription.VertexAttributes().RegisterAttribute<FVector>(MeshAttribute::Vertex::Position,1,FVector::ZeroVector, EMeshAttributeFlags::Lerpable);
@@ -240,8 +267,8 @@ void UStaticMesh::RegisterMeshAttributes(FMeshDescription& MeshDescription)
 	MeshDescription.VertexInstanceAttributes().RegisterAttribute<FVector4>(MeshAttribute::VertexInstance::Color, 1, FVector4(1.0f), EMeshAttributeFlags::Lerpable);
 
 	// Add basic edge attributes
-	MeshDescription.EdgeAttributes().RegisterAttribute<bool>(MeshAttribute::Edge::IsHard, 1, false);
-	MeshDescription.EdgeAttributes().RegisterAttribute<bool>(MeshAttribute::Edge::IsUVSeam, 1, false);
+	MeshDescription.EdgeAttributes().RegisterAttribute<int>(MeshAttribute::Edge::IsHard, 1, false);
+	MeshDescription.EdgeAttributes().RegisterAttribute<int>(MeshAttribute::Edge::IsUVSeam, 1, false);
 	MeshDescription.EdgeAttributes().RegisterAttribute<float>(MeshAttribute::Edge::CreaseSharpness, 1, 0.0f, EMeshAttributeFlags::Lerpable);
 
 	// Add basic polygon attributes

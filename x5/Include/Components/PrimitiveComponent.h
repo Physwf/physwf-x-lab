@@ -3,9 +3,12 @@
 #include "ActorComponent.h"
 
 class FPrimitiveSceneProxy;
+class AActor;
 
 class UPrimitiveComponent : public UActorComponent
 {
+public:
+	UPrimitiveComponent(AActor* InOwner);
 public:
 	FPrimitiveSceneProxy* SceneProxy;
 protected:
