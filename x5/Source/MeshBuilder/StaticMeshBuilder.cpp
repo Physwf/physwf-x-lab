@@ -32,6 +32,7 @@ bool FStaticMeshBuilder::Build(class FStaticMeshRenderData& StaticMeshRenderData
 
 	for (int32 LodIndex = 0; LodIndex < (int32)StaticMesh->SourceModels.size(); ++LodIndex)
 	{
+		MeshDescriptions[LodIndex] = *StaticMesh->GetOriginalMeshDescription(LodIndex);
 		const FPolygonGroupArray& PolygonGroups = MeshDescriptions[LodIndex].PolygonGroups();
 
 		FStaticMeshLODResources& StaticMeshLOD = *StaticMeshRenderData.LODResources[LodIndex];
@@ -41,9 +42,52 @@ bool FStaticMeshBuilder::Build(class FStaticMeshRenderData& StaticMeshRenderData
 		std::vector<uint32> IndexBuffer;
 
 		StaticMeshLOD.Sections.clear();
+		std::vector<int32> RemapVerts;
+		std::vector<int32> TempWedgeMap;
 
 		std::vector<std::vector<uint32> > PerSectionIndices;
 		PerSectionIndices.resize(MeshDescriptions[LodIndex].PolygonGroups().Num());
+
+
+		BuildVertexBuffer(StaticMesh, LodIndex, MeshDescriptions[LodIndex], StaticMeshLOD, IndexBuffer, TempWedgeMap, PerSectionIndices, StaticMeshBuildVertices, 0.0f, RemapVerts);
+
+		std::vector<uint32> CombinedIndices;
+		bool bNeeds32BitIndices = false;
+		for (int32 SectionIndex = 0; SectionIndex < (int32)StaticMeshLOD.Sections.size(); SectionIndex++)
+		{
+			FStaticMeshSection& Section = StaticMeshLOD.Sections[SectionIndex];
+			std::vector<uint32> const& SectionIndices = PerSectionIndices[SectionIndex];
+			Section.FirstIndex = 0;
+			Section.NumTriangles = 0;
+			Section.MinVertexIndex = 0;
+			Section.MaxVertexIndex = 0;
+
+			if (SectionIndices.size())
+			{
+				Section.FirstIndex = (int32)CombinedIndices.size();
+				Section.NumTriangles = (int32)SectionIndices.size() / 3;
+
+				CombinedIndices.resize(SectionIndices.size());
+				uint32* DestPtr = &CombinedIndices[Section.FirstIndex];
+				uint32 const* SrcPtr = SectionIndices.data();
+
+				Section.MinVertexIndex = *SrcPtr;
+				Section.MaxVertexIndex = *SrcPtr;
+
+				for (int32 Index = 0; Index < (int32)SectionIndices.size(); Index++)
+				{
+					uint32 VertIndex = *SrcPtr++;
+
+					bNeeds32BitIndices |= (VertIndex > MAX_uint16);
+					Section.MinVertexIndex = FMath::Min<uint32>(VertIndex, Section.MinVertexIndex);
+					Section.MaxVertexIndex = FMath::Max<uint32>(VertIndex, Section.MaxVertexIndex);
+					*DestPtr++ = VertIndex;
+				}
+			}
+		}
+
+		const EIndexBufferStride::Type IndexBufferStride = bNeeds32BitIndices ? EIndexBufferStride::Force32Bit : EIndexBufferStride::Force16Bit;
+		StaticMeshLOD.IndexBuffer.SetIndices(CombinedIndices, IndexBufferStride);
 	}
 	return true;
 }
