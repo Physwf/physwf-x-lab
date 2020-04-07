@@ -15,8 +15,11 @@ public:
 	D3D12Demo(HWND hWnd) : m_hWnd(hWnd) {}
 
 	void Initialize();
+	void Draw();
+	void Render();
 private:
 	bool EnumAdapter();
+	void WaitForPreviousFrame();
 private:
 
 	ComPtr<IDXGIFactory> m_DXGIFactory;
