@@ -4,7 +4,28 @@
 #include "framework.h"
 #include "demo.h"
 #include "d3d12demo.h"
+#include "Application.h"
 
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR    lpCmdLine,
+	_In_ int       nCmdShow)
+{
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	JApplication App(hInstance);
+	App.Initialize();
+	App.ShowMainWindow(nCmdShow);
+	int nParam = 0;
+	while (true)
+	{
+		nParam = App.Loop();
+	}
+	return nParam;
+}
+
+#if 0
 #define MAX_LOADSTRING 100
 
 // 全局变量:
@@ -41,15 +62,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DEMO));
 
-    D3D12Demo Demo(GetActiveWindow());
-    Demo.Initialize();
+//     D3D12Demo Demo(GetActiveWindow());
+//     Demo.Initialize();
 
     MSG msg;
 
     // 主消息循环:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
-		Demo.Render();
+		//Demo.Render();
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             TranslateMessage(&msg);
@@ -163,7 +184,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
 // “关于”框的消息处理程序。
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -183,3 +203,4 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return (INT_PTR)FALSE;
 }
+#endif
