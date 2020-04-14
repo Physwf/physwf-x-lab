@@ -9,6 +9,8 @@
 #include "RawIndexBuffer.h"
 
 class UStaticMeshComponent;
+class UStaticMesh;
+
 class FStaticMeshLODGroup
 {
 };
@@ -55,11 +57,19 @@ struct FStaticMeshLODResources
 	FRawStaticIndexBuffer IndexBuffer;
 
 	std::vector<FStaticMeshSection> Sections;
+
+	void InitResources(UStaticMesh* Parent);
 };
 
 struct FStaticMeshVertexFactories
 {
 	FLocalVertexFactory VertexFactory;
+
+	void InitVertexFactory(const FStaticMeshLODResources& LodResources, FLocalVertexFactory& INOutVertexFactory, const UStaticMesh* InParentMesh, bool bInOverrideColorVertexBuffer);
+
+	void InitResource(const FStaticMeshLODResources& LodResources, const UStaticMesh* Parent);
+
+	void ReleaseResource();
 };
 
 class FStaticMeshRenderData
@@ -70,6 +80,9 @@ public:
 
 	void Cache(class UStaticMesh* Owner);
 
+	void InitResources(UStaticMesh* Owner);
+
+	X5_API void ReleaseResources();
 	X5_API void AllocateLODResources(int32 NumLODs);
 };
 

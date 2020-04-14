@@ -128,4 +128,12 @@ struct FMeshBatch
 		}
 		return Count;
 	}
+
+	FMeshBatch()
+		:LODIndex(-1),
+		Type(PT_TriangleList),
+		VertexFactory(NULL)
+	{
+		Elements.push_back(FMeshBatchElement());
+	}
 };

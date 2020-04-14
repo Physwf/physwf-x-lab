@@ -169,6 +169,8 @@ public:
 
 	X5_API void Build();
 
+	X5_API virtual void InitResources();
+
 	X5_API void CacheDerivedData();
 
 private:

@@ -47,3 +47,32 @@ void FRenderResource::InitResourceFromPossiblyParallelRendering()
 
 }
 
+extern X4_API void BeginInitResource(FRenderResource* Resource)
+{
+	Resource->InitResource();
+}
+
+extern X4_API void BeginUpdateResourceRHI(FRenderResource* Resource)
+{
+	Resource->UpdateRHI();
+}
+
+extern X4_API void BeginReleaseResource(FRenderResource* Resource)
+{
+
+}
+
+extern X4_API void StartBatchedRelease(FRenderResource* Resource)
+{
+
+}
+
+extern X4_API void EndBatchedRelease(FRenderResource* Resource)
+{
+
+}
+
+extern X4_API void ReleaseResourceAndFlush(FRenderResource* Resource)
+{
+
+}

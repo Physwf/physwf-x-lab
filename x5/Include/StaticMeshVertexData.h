@@ -101,7 +101,7 @@ public:
 	*/
 	uint32 GetResourceSize() const override
 	{
-		return Data.size() * sizeof(TResourceArray<VertexDataType, VERTEXBUFFER_ALIGNMENT>::size_type);
+		return Data.size() * sizeof(VertexDataType);;
 	}
 
 	/**

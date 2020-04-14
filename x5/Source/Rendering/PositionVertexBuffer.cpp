@@ -135,6 +135,11 @@ void FPositionVertexBuffer::ReleaseRHI()
 	FVertexBuffer::ReleaseRHI();
 }
 
+void FPositionVertexBuffer::BindPositionVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const
+{
+
+}
+
 void FPositionVertexBuffer::AllocateData(bool bNeedsCPUAccess /*= true*/)
 {
 	CleanUp();

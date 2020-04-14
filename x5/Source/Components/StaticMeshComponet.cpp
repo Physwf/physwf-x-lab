@@ -7,6 +7,7 @@ UStaticMeshComponent::UStaticMeshComponent(AActor* InOwner): UPrimitiveComponent
 	FFbxImporter Importer;
 	StaticMesh = Importer.ImportStaticMesh("./k526efluton4-House_15/247_House 15_fbx.FBX");
 	StaticMesh->Build();
+	StaticMesh->InitResources();
 }
 
 FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()

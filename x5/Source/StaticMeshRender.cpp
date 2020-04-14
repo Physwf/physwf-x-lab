@@ -57,7 +57,7 @@ bool FStaticMeshSceneProxy::GetMeshElement(int32 LODIndex, int32 BatchIndex, int
 void FStaticMeshSceneProxy::DrawStaticElements(FStaticPrimitiveDrawInterface* PDI)
 {
 	int32 NumLODs = (int32)RenderData->LODResources.size();
-	for (int32 LODIndex = ClampedMinLOD; LODIndex < NumLODs; LODIndex++)
+	for (int32 LODIndex = 0; LODIndex < NumLODs; LODIndex++)
 	{
 		const FStaticMeshLODResources& LODModel = *RenderData->LODResources[LODIndex];
 		float ScreenSize = GetScreenSize(LODIndex);

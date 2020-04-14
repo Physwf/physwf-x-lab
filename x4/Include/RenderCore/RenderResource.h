@@ -86,6 +86,13 @@ private:
 	bool bInitialized;
 };
 
+extern X4_API void BeginInitResource(FRenderResource* Resource);
+extern X4_API void BeginUpdateResourceRHI(FRenderResource* Resource);
+extern X4_API void BeginReleaseResource(FRenderResource* Resource);
+extern X4_API void StartBatchedRelease(FRenderResource* Resource);
+extern X4_API void EndBatchedRelease(FRenderResource* Resource);
+extern X4_API void ReleaseResourceAndFlush(FRenderResource* Resource);
+
 #define SafeRelase(Resource)			if(Resource) { Resource->Release(); Resource = nullptr; }
 /** A textures resource. */
 class FTexture : public FRenderResource

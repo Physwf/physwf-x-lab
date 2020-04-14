@@ -85,7 +85,7 @@ public:
 	virtual void ReleaseRHI() override;
 	virtual std::string GetFriendlyName() const override { return ("PositionOnly Static-mesh vertices"); }
 
-	//void BindPositionVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const;
+	void BindPositionVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const;
 
 	void* GetVertexData()
 	{

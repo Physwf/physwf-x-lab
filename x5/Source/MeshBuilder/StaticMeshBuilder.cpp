@@ -67,7 +67,7 @@ bool FStaticMeshBuilder::Build(class FStaticMeshRenderData& StaticMeshRenderData
 				Section.FirstIndex = (int32)CombinedIndices.size();
 				Section.NumTriangles = (int32)SectionIndices.size() / 3;
 
-				CombinedIndices.resize(SectionIndices.size());
+				CombinedIndices.resize(CombinedIndices.size() + SectionIndices.size());
 				uint32* DestPtr = &CombinedIndices[Section.FirstIndex];
 				uint32 const* SrcPtr = SectionIndices.data();
 

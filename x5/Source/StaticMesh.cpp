@@ -1,11 +1,60 @@
 #include "StaticMesh.h"
 #include "Meshdescription/MeshAttributes.h"
 #include "MeshBuilder/StaticMeshBuilder.h"
+#include "StaticMeshResources.h"
+
+
+void FStaticMeshVertexFactories::InitVertexFactory(const FStaticMeshLODResources& LodResources, FLocalVertexFactory& INOutVertexFactory, const UStaticMesh* InParentMesh, bool bInOverrideColorVertexBuffer)
+{
+	FLocalVertexFactory::FDataType Data;
+
+	LodResources.VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
+}
+
+
+void FStaticMeshVertexFactories::InitResource(const FStaticMeshLODResources& LodResources, const UStaticMesh* Parent)
+{
+	InitVertexFactory(LodResources, VertexFactory, Parent, false);
+	BeginInitResource(&VertexFactory);
+
+}
+
+void FStaticMeshVertexFactories::ReleaseResource()
+{
+
+}
+void FStaticMeshLODResources::InitResources(UStaticMesh* Parent)
+{
+	BeginInitResource(&IndexBuffer);
+	BeginInitResource(&VertexBuffers.StaticMeshVertexBuffer);
+	BeginInitResource(&VertexBuffers.PositionVertexBuffer);
+	if (VertexBuffers.ColorVertexBuffer.GetNumVertices() > 0)
+	{
+		BeginInitResource(&VertexBuffers.ColorVertexBuffer);
+	}
+}
 
 void FStaticMeshRenderData::Cache(class UStaticMesh* Owner)
 {
 	FStaticMeshBuilder Builder;
 	Builder.Build(*this, Owner);
+}
+
+void FStaticMeshRenderData::InitResources(UStaticMesh* Owner)
+{
+	for (int32 LODIndex = 0; LODIndex < (int32)LODResources.size(); ++LODIndex)
+	{
+		if (LODResources[LODIndex]->VertexBuffers.StaticMeshVertexBuffer.GetNumVertices() > 0)
+		{
+			LODResources[LODIndex]->InitResources(Owner);
+			LODVertexFactories[LODIndex]->InitResource(*LODResources[LODIndex], Owner);
+		}
+	}
+}
+
+
+X5_API void FStaticMeshRenderData::ReleaseResources()
+{
 }
 
 X5_API void FStaticMeshRenderData::AllocateLODResources(int32 NumLODs)
@@ -246,6 +295,14 @@ void UStaticMesh::RemoveSourceModel(int32 Index)
 X5_API void UStaticMesh::Build()
 {
 	CacheDerivedData();
+}
+
+X5_API void UStaticMesh::InitResources()
+{
+	if (RenderData)
+	{
+		RenderData->InitResources(this);
+	}
 }
 
 X5_API void UStaticMesh::CacheDerivedData()

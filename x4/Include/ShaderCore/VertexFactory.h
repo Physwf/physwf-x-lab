@@ -70,5 +70,18 @@ class FVertexFactoryType
 
 class FVertexFactory : public FRenderResource
 {
+public:
+
+	FVertexFactory()
+	{
+
+	}
+
+	virtual FVertexFactoryType* GetType() const { return NULL; }
+	
+	//void SetStreams() const;
+
+	bool bSupportsManualVertexFetch = false;
+private:
 
 };
