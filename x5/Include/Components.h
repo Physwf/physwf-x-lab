@@ -3,6 +3,8 @@
 #include "Math/Vector.h"
 #include "ShaderCore/VertexFactory.h"
 
+#include <vector>
+
 // Constants.
 enum { MAX_TEXCOORDS = 4, MAX_STATIC_TEXCOORDS = 8 };
 
@@ -30,4 +32,8 @@ struct FStaticMeshDataType
 	ID3D11ShaderResourceView* TangentsSRV;
 	ID3D11ShaderResourceView* TextureCoordinatesSRV;
 	ID3D11ShaderResourceView* ColorComponentSRV;
+
+	int LightMapCoordinateIndex = -1;
+	int NumTexCoords = -1;
+	uint32 ColorIndexMask = ~0u;
 };

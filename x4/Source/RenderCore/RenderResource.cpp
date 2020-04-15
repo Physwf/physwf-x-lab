@@ -76,3 +76,5 @@ extern X4_API void ReleaseResourceAndFlush(FRenderResource* Resource)
 {
 
 }
+
+TGlobalResource<FNullColorVertexBuffer> GNullColorVertexBuffer;

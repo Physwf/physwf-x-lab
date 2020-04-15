@@ -327,6 +327,11 @@ public:
 	virtual void ReleaseResource() override;
 	virtual std::string GetFriendlyName() const override { return ("Static-mesh vertices"); }
 
+	void BindTangentVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const;
+	void BindTexCoordVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data, int ClampedNumTexCoords = -1) const;
+	//void BindPackedTexCoordVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const;
+	//void BindLightMapVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const;
+
 	inline void* GetTangentData()
 	{
 		return TangentsDataPtr;

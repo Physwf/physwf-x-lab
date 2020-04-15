@@ -9,6 +9,19 @@ void FStaticMeshVertexFactories::InitVertexFactory(const FStaticMeshLODResources
 	FLocalVertexFactory::FDataType Data;
 
 	LodResources.VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
+	LodResources.VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(&VertexFactory, Data);
+
+	if (bInOverrideColorVertexBuffer)
+	{
+		FColorVertexBuffer::BindDefaultColorVertexBuffer(&VertexFactory, Data, FColorVertexBuffer::NullBindStride::FColorSizeForComponentOverride);
+	}
+	else
+	{
+		LodResources.VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(&VertexFactory, Data);
+	}
+
+	VertexFactory.SetData(Data);
+	VertexFactory.InitResource();
 }
 
 

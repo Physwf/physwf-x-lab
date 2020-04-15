@@ -188,6 +188,53 @@ void FStaticMeshVertexBuffer::ReleaseResource()
 	TexCoordVertexBuffer.ReleaseResource();
 }
 
+void FStaticMeshVertexBuffer::BindTangentVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const
+{
+	Data.TangentsSRV = TangentsSRV;
+
+	uint32 TangentSizeInBytes = 0;
+	uint32 TangentXOffset = 0;
+	uint32 TangentZOffset = 0;
+	EVertexElementType TangentElemType = VET_None;
+	if (GetUseHighPrecisionTangentBasis())
+	{
+		typedef TStaticMeshVertexTangentDatum<typename TStaticMeshVertexTangentTypeSelector<EStaticMeshVertexTangentBasisType::HighPrecision>::TangentTypeT> TangentType;
+		TangentElemType = TStaticMeshVertexTangentTypeSelector<EStaticMeshVertexTangentBasisType::HighPrecision>::VertexElementType;
+		TangentXOffset = offsetof(TangentType, TangentX);
+		TangentZOffset = offsetof(TangentType, TangentZ);
+		TangentSizeInBytes = sizeof(TangentType);
+	}
+	else
+	{
+		typedef TStaticMeshVertexTangentDatum<typename TStaticMeshVertexTangentTypeSelector<EStaticMeshVertexTangentBasisType::Default>::TangentTypeT> TangentType;
+		TangentElemType = TStaticMeshVertexTangentTypeSelector<EStaticMeshVertexTangentBasisType::Default>::VertexElementType;
+		TangentXOffset = offsetof(TangentType, TangentX);
+		TangentZOffset = offsetof(TangentType, TangentZ);
+		TangentSizeInBytes = sizeof(TangentType);
+	}
+
+	Data.TangentBasisComponent[0] = FVertexStreamComponent(
+		&TangentsVertexBuffer,
+		TangentXOffset,
+		TangentSizeInBytes,
+		TangentElemType,
+		EVertexStreamUsage::ManualFetch
+	);
+
+	Data.TangentBasisComponent[1] = FVertexStreamComponent(
+		&TangentsVertexBuffer,
+		TangentZOffset,
+		TangentSizeInBytes,
+		TangentElemType,
+		EVertexStreamUsage::ManualFetch
+	);
+}
+
+void FStaticMeshVertexBuffer::BindTexCoordVertexBuffer(const FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data, int ClampedNumTexCoords /*= -1*/) const
+{
+
+}
+
 void FStaticMeshVertexBuffer::AllocateData(bool bNeedsCPUAccess /*= true*/)
 {
 	// Clear any old VertexData before allocating.

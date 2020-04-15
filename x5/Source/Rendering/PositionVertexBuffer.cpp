@@ -137,6 +137,12 @@ void FPositionVertexBuffer::ReleaseRHI()
 
 void FPositionVertexBuffer::BindPositionVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& Data) const
 {
+	Data.PositionComponent = FVertexStreamComponent(
+		this,
+		offsetof(FPositionVertex,Position),
+		GetStride(),
+		VET_Float3
+	);
 
 }
 

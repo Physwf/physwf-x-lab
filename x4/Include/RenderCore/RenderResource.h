@@ -94,6 +94,56 @@ extern X4_API void EndBatchedRelease(FRenderResource* Resource);
 extern X4_API void ReleaseResourceAndFlush(FRenderResource* Resource);
 
 #define SafeRelase(Resource)			if(Resource) { Resource->Release(); Resource = nullptr; }
+
+template<class ResourceType>
+class TGlobalResource : public ResourceType
+{
+public:
+	TGlobalResource()
+	{
+		InitGlobalResource();
+	}
+
+	template<typename T1>
+	explicit TGlobalResource(T1 Param1)
+		:ResourceType(Param1)
+	{
+		InitGlobalResource();
+	}
+
+	/** Initialization constructor: 2 parameters. */
+	template<typename T1, typename T2>
+	explicit TGlobalResource(T1 Param1, T2 Param2)
+		: ResourceType(Param1, Param2)
+	{
+		InitGlobalResource();
+	}
+
+	/** Initialization constructor: 3 parameters. */
+	template<typename T1, typename T2, typename T3>
+	explicit TGlobalResource(T1 Param1, T2 Param2, T3 Param3)
+		: ResourceType(Param1, Param2, Param3)
+	{
+		InitGlobalResource();
+	}
+
+	/** Destructor. */
+	virtual ~TGlobalResource()
+	{
+		ReleaseGlobalResource();
+	}
+
+private:
+	void InitGlobalResource()
+	{
+		BeginInitResource((ResourceType*)this);
+	}
+
+	void ReleaseGlobalResource()
+	{
+		((ResourceType*)this)->ReleaseResource();
+	}
+};
 /** A textures resource. */
 class FTexture : public FRenderResource
 {
@@ -122,6 +172,26 @@ public:
 	}
 	virtual std::string GetFriendlyName() const override { return ("FVertexBuffer"); }
 };
+
+class FNullColorVertexBuffer : public FVertexBuffer
+{
+public:
+
+	virtual void InitRHI() override
+	{
+		//FRHICreate
+	}
+
+	virtual void ReleaseRHI() override
+	{
+		SafeRelase(VertexBufferSRV);
+		FVertexBuffer::ReleaseRHI();
+	}
+
+	ID3D11ShaderResourceView* VertexBufferSRV;
+};
+
+extern X4_API TGlobalResource<FNullColorVertexBuffer> GNullColorVertexBuffer;
 
 /** An index buffer resource. */
 class FIndexBuffer : public FRenderResource

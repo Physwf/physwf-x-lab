@@ -120,8 +120,8 @@ public:
 	virtual void ReleaseRHI() override;
 	virtual std::string GetFriendlyName() const override { return ("ColorOnly Mesh Vertices"); }
 
-	//void BindColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData) const;
-	//static void BindDefaultColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData, NullBindStride BindStride);
+	void BindColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData) const;
+	static void BindDefaultColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData, NullBindStride BindStride);
 
 	inline const ID3D11ShaderResourceView* GetColorComponentsSRV() const
 	{

@@ -237,6 +237,45 @@ void FColorVertexBuffer::ReleaseRHI()
 	FVertexBuffer::ReleaseRHI();
 }
 
+void FColorVertexBuffer::BindColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData) const
+{
+	if (GetNumVertices() == 0)
+	{
+		BindDefaultColorVertexBuffer(VertexFactory, StaticMeshData, NullBindStride::ZeroForDefaultBufferBind);
+		return;
+	}
+
+	StaticMeshData.ColorComponentSRV = ColorComponentsSRV;
+	StaticMeshData.ColorIndexMask = ~0u;
+
+	{
+		StaticMeshData.ColorComponent = FVertexStreamComponent(
+			this,
+			0,
+			GetStride(),
+			VET_Color,
+			EVertexStreamUsage::ManualFetch
+		);
+	}
+}
+
+void FColorVertexBuffer::BindDefaultColorVertexBuffer(const class FVertexFactory* VertexFactory, struct FStaticMeshDataType& StaticMeshData, NullBindStride BindStride)
+{
+	StaticMeshData.ColorComponentSRV = GNullColorVertexBuffer.VertexBufferSRV;
+	StaticMeshData.ColorIndexMask = 0;
+
+	{
+		const bool bBindForDrawOverride = BindStride == NullBindStride::FColorSizeForComponentOverride;
+
+		StaticMeshData.ColorComponent = FVertexStreamComponent(
+			&GNullColorVertexBuffer,
+			0,
+			bBindForDrawOverride ? sizeof(FColor) : 0,
+			VET_Color,
+			bBindForDrawOverride ? (EVertexStreamUsage::ManualFetch | EVertexStreamUsage::Overridden) : (EVertexStreamUsage::ManualFetch));
+	}
+}
+
 void FColorVertexBuffer::AllocateData(bool bNeedsCPUAccess /*= true*/)
 {
 	CleanUp();
