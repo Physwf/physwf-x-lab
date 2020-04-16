@@ -1,5 +1,5 @@
+#include <Windows/WindowsHWrapper.h>
 #include "Modules/ModuleManager.h"
-#include <Windows.h>
 
 FModuleManager::~FModuleManager()
 {
@@ -17,22 +17,22 @@ FModuleManager& FModuleManager::Get()
 	return *ModuleManager;
 }
 
-void FModuleManager::AddModule(const std::string& InModuleName)
+void FModuleManager::AddModule(const std::wstring& InModuleName)
 {
 	if (Modules.find(InModuleName) != Modules.end()) return;
 
 	std::shared_ptr<FModuleInfo> ModuleInfo(new FModuleInfo());
 
-	std::map<std::string, std::string> ModulePathMap;
+	std::map<std::wstring, std::wstring> ModulePathMap;
 	FindModulePaths(InModuleName.c_str(), ModulePathMap);
 
-	std::string ModuleFileName = ModulePathMap.begin()->second;
+	std::wstring ModuleFileName = ModulePathMap.begin()->second;
 	ModuleInfo->Filename = ModuleFileName;
 
 	FModuleManager::Get().AddModuleToModulesList(InModuleName, ModuleInfo);
 }
 
-IModuleInterface* FModuleManager::GetModule(const std::string& InModuleName)
+IModuleInterface* FModuleManager::GetModule(const std::wstring& InModuleName)
 {
 	std::shared_ptr<FModuleInfo> ModuleInfo = FindModule(InModuleName);
 
@@ -44,7 +44,7 @@ IModuleInterface* FModuleManager::GetModule(const std::string& InModuleName)
 	return ModuleInfo->Module.get();
 }
 
-bool FModuleManager::IsModuleLoaded(const std::string& InModuleName) const
+bool FModuleManager::IsModuleLoaded(const std::wstring& InModuleName) const
 {
 	std::shared_ptr<FModuleInfo> ModuleInfo = FindModule(InModuleName);
 	if (ModuleInfo)
@@ -57,19 +57,19 @@ bool FModuleManager::IsModuleLoaded(const std::string& InModuleName) const
 	return false;
 }
 
-IModuleInterface* FModuleManager::LoadModule(const std::string& InModuleName)
+IModuleInterface* FModuleManager::LoadModule(const std::wstring& InModuleName)
 {
 	IModuleInterface* Result = LoadModuleWithFailureReason(InModuleName);
 	return Result;
 }
 
-IModuleInterface& FModuleManager::LoadModuleChecked(const std::string& InModuleName)
+IModuleInterface& FModuleManager::LoadModuleChecked(const std::wstring& InModuleName)
 {
 	IModuleInterface* Module = LoadModule(InModuleName);
 	return *Module;
 }
 
-IModuleInterface* FModuleManager::LoadModuleWithFailureReason(const std::string& InModuleName)
+IModuleInterface* FModuleManager::LoadModuleWithFailureReason(const std::wstring& InModuleName)
 {
 	IModuleInterface* LoadedModule = nullptr;
 
@@ -96,12 +96,12 @@ FModuleManager::FModuleManager()
 
 }
 
-void FModuleManager::AddModuleToModulesList(const std::string& InModuleName, std::shared_ptr<FModuleInfo>& ModuleInfo)
+void FModuleManager::AddModuleToModulesList(const std::wstring& InModuleName, std::shared_ptr<FModuleInfo>& ModuleInfo)
 {
 	Modules.insert(std::make_pair(InModuleName, ModuleInfo));
 }
 
-std::shared_ptr<FModuleManager::FModuleInfo> FModuleManager::FindModule(const std::string& InModuleName)
+std::shared_ptr<FModuleManager::FModuleInfo> FModuleManager::FindModule(const std::wstring& InModuleName)
 {
 	std::shared_ptr<FModuleInfo> Result = nullptr;
 
@@ -112,7 +112,7 @@ std::shared_ptr<FModuleManager::FModuleInfo> FModuleManager::FindModule(const st
 	return Result;
 }
 
-void FModuleManager::FindModulePaths(const char *NamePattern, std::map<std::string, std::string> &OutModulePaths, bool bCanUseCache /*= true*/) const
+void FModuleManager::FindModulePaths(const wchar_t *NamePattern, std::map<std::wstring, std::wstring> &OutModulePaths, bool bCanUseCache /*= true*/) const
 {
 	if (bCanUseCache)
 	{
@@ -124,9 +124,9 @@ void FModuleManager::FindModulePaths(const char *NamePattern, std::map<std::stri
 		}
 	}
 
-	ModulePathsCache.insert(std::make_pair(std::string("Core"), std::string("libx0.dll")));
-	ModulePathsCache.insert(std::make_pair(std::string("Renderer"), std::string("libx4.dll")));
-	ModulePathsCache.insert(std::make_pair(std::string("Engine"), std::string("libx5.dll")));
+	ModulePathsCache.insert(std::make_pair(std::wstring(L"Core"), std::wstring(L"libx0.dll")));
+	ModulePathsCache.insert(std::make_pair(std::wstring(L"Renderer"), std::wstring(L"libx4.dll")));
+	ModulePathsCache.insert(std::make_pair(std::wstring(L"Engine"), std::wstring(L"libx5.dll")));
 
 	FindModulePaths(NamePattern, OutModulePaths);
 }

@@ -7,7 +7,7 @@ X5_API IRendererModule& GetRendererModule()
 {
 	if (!CachedRendererModule)
 	{
-		CachedRendererModule = &FModuleManager::LoadModuleChecked<IRendererModule>("Renderer");
+		CachedRendererModule = &FModuleManager::LoadModuleChecked<IRendererModule>(L"Renderer");
 	}
 	return *CachedRendererModule;
 }

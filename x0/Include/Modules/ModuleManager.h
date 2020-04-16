@@ -17,27 +17,27 @@ public:
 
 	static FModuleManager& Get();
 
-	void AddModule(const std::string& InModuleName);
+	void AddModule(const std::wstring& InModuleName);
 
-	IModuleInterface* GetModule(const std::string& InModuleName);
+	IModuleInterface* GetModule(const std::wstring& InModuleName);
 
-	bool IsModuleLoaded(const std::string&  InModuleName) const;
+	bool IsModuleLoaded(const std::wstring&  InModuleName) const;
 
-	IModuleInterface* LoadModule(const std::string& InModuleName);
+	IModuleInterface* LoadModule(const std::wstring& InModuleName);
 
-	IModuleInterface& LoadModuleChecked(const std::string& InModuleName);
+	IModuleInterface& LoadModuleChecked(const std::wstring& InModuleName);
 
-	IModuleInterface* LoadModuleWithFailureReason(const std::string& InModuleName);
+	IModuleInterface* LoadModuleWithFailureReason(const std::wstring& InModuleName);
 public:
 	template<typename TModuleInterface>
-	static TModuleInterface& GetModuleChecked(const std::string& ModuleName)
+	static TModuleInterface& GetModuleChecked(const std::wstring& ModuleName)
 	{
 		FModuleManager& ModuleManager = FModuleManager::Get();
 
 		return (TModuleInterface&)(*ModuleManager.GetModule(ModuleName));
 	}
 	template<typename TModuleInterface>
-	static TModuleInterface& LoadModuleChecked(const std::string& InModuleName)
+	static TModuleInterface& LoadModuleChecked(const std::wstring& InModuleName)
 	{
 		IModuleInterface& ModuleInterface = FModuleManager::Get().LoadModuleChecked(InModuleName);
 		return (TModuleInterface&)(ModuleInterface);
@@ -57,10 +57,10 @@ protected:
 	public:
 
 		/** The original file name of the module, without any suffixes added */
-		std::string OriginalFilename;
+		std::wstring OriginalFilename;
 
 		/** File name of this module (.dll file name) */
-		std::string Filename;
+		std::wstring Filename;
 
 		/** Handle to this module (DLL handle), if it's currently loaded */
 		void* Handle;
@@ -91,19 +91,19 @@ protected:
 		}
 	};
 
-	std::map<std::string, std::shared_ptr<FModuleInfo>> Modules;
+	std::map<std::wstring, std::shared_ptr<FModuleInfo>> Modules;
 public:
-	void AddModuleToModulesList(const std::string& InModuleName, std::shared_ptr<FModuleInfo>& ModuleInfo);
+	void AddModuleToModulesList(const std::wstring& InModuleName, std::shared_ptr<FModuleInfo>& ModuleInfo);
 private:
 
-	std::shared_ptr<FModuleInfo> FindModule(const std::string& InModuleName);
-	inline std::shared_ptr<FModuleInfo> FindModule(const std::string& InModuleName) const
+	std::shared_ptr<FModuleInfo> FindModule(const std::wstring& InModuleName);
+	inline std::shared_ptr<FModuleInfo> FindModule(const std::wstring& InModuleName) const
 	{
 		return const_cast<FModuleManager*>(this)->FindModule(InModuleName);
 	}
-	void FindModulePaths(const char *NamePattern, std::map<std::string, std::string> &OutModulePaths, bool bCanUseCache = true) const;
+	void FindModulePaths(const wchar_t *NamePattern, std::map<std::wstring, std::wstring> &OutModulePaths, bool bCanUseCache = true) const;
 
-	mutable std::map<std::string, std::string> ModulePathsCache;
+	mutable std::map<std::wstring, std::wstring> ModulePathsCache;
 };
 
 typedef IModuleInterface* (*FInitializeModuleFunctionPtr)(void);

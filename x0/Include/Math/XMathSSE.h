@@ -9,6 +9,8 @@ struct FMath;
 #include "Math/XMathFPU.h"
 #else
 
+#include <memory>
+
 // We require SSE2
 #include <emmintrin.h>
 

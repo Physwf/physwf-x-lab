@@ -1,6 +1,6 @@
 
 #include "CoreTypes.h"
-#include <windows.h>
+#include "Windows/MinWindows.h"
 
 extern int32 GuardedMain(const TCHAR* CmdLine, HINSTANCE hInInstance, HINSTANCE hPrevInstance, int32 nCmdShow);
 extern int32 GuardedMain();
