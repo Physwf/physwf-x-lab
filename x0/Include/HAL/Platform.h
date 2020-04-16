@@ -4,6 +4,11 @@
 #define PLATFORM_WINDOWS 0
 #endif
 
+// Generic compiler pre-setup.
+#include "GenericPlatform/GenericPlatformCompilerPreSetup.h"
+
+#include "GenericPlatform/GenericPlatform.h"
+
 #if PLATFORM_WINDOWS
 #include "Windows/WIndowsPlatform.h"
 #else
@@ -14,6 +19,10 @@
 #ifndef PLATFORM_ENABLE_VECTORINTRINSICS
 #define PLATFORM_ENABLE_VECTORINTRINSICS	0
 #endif
+
+
+
+#define PLATFORM_32BITS					(!PLATFORM_64BITS)
 
 //------------------------------------------------------------------
 // Transfer the platform types to global types
@@ -68,3 +77,94 @@ typedef FPlatformTypes::SSIZE_T SSIZE_T;
 typedef FPlatformTypes::TYPE_OF_NULL	TYPE_OF_NULL;
 /// The type of the C++ nullptr keyword.
 typedef FPlatformTypes::TYPE_OF_NULLPTR	TYPE_OF_NULLPTR;
+
+//------------------------------------------------------------------
+// Test the global types
+//------------------------------------------------------------------
+namespace TypeTests
+{
+	template <typename A, typename B>
+	struct TAreTypesEqual
+	{
+		enum { Value = false };
+	};
+
+	template <typename T>
+	struct TAreTypesEqual<T, T>
+	{
+		enum { Value = true };
+	};
+
+	static_assert(!PLATFORM_TCHAR_IS_4_BYTES || sizeof(TCHAR) == 4, "TCHAR size must be 4 bytes.");
+	static_assert(PLATFORM_TCHAR_IS_4_BYTES || sizeof(TCHAR) == 2, "TCHAR size must be 2 bytes.");
+
+	static_assert(PLATFORM_32BITS || PLATFORM_64BITS, "Type tests pointer size failed.");
+	static_assert(PLATFORM_32BITS != PLATFORM_64BITS, "Type tests pointer exclusive failed.");
+	static_assert(!PLATFORM_64BITS || sizeof(void*) == 8, "Pointer size is 64bit, but pointers are short.");
+	static_assert(PLATFORM_64BITS || sizeof(void*) == 4, "Pointer size is 32bit, but pointers are long.");
+
+	static_assert(char(-1) < char(0), "Unsigned char type test failed.");
+
+	static_assert((!TAreTypesEqual<ANSICHAR, WIDECHAR>::Value), "ANSICHAR and WIDECHAR should be different types.");
+	static_assert((!TAreTypesEqual<ANSICHAR, UCS2CHAR>::Value), "ANSICHAR and CHAR16 should be different types.");
+	static_assert((!TAreTypesEqual<WIDECHAR, UCS2CHAR>::Value), "WIDECHAR and CHAR16 should be different types.");
+	static_assert((TAreTypesEqual<TCHAR, ANSICHAR>::Value || TAreTypesEqual<TCHAR, WIDECHAR>::Value), "TCHAR should either be ANSICHAR or WIDECHAR.");
+
+	static_assert(sizeof(uint8) == 1, "BYTE type size test failed.");
+	static_assert(int32(uint8(-1)) == 0xFF, "BYTE type sign test failed.");
+
+	static_assert(sizeof(uint16) == 2, "WORD type size test failed.");
+	static_assert(int32(uint16(-1)) == 0xFFFF, "WORD type sign test failed.");
+
+	static_assert(sizeof(uint32) == 4, "DWORD type size test failed.");
+	static_assert(int64(uint32(-1)) == int64(0xFFFFFFFF), "DWORD type sign test failed.");
+
+	static_assert(sizeof(uint64) == 8, "QWORD type size test failed.");
+	static_assert(uint64(-1) > uint64(0), "QWORD type sign test failed.");
+
+
+	static_assert(sizeof(int8) == 1, "SBYTE type size test failed.");
+	static_assert(int32(int8(-1)) == -1, "SBYTE type sign test failed.");
+
+	static_assert(sizeof(int16) == 2, "SWORD type size test failed.");
+	static_assert(int32(int16(-1)) == -1, "SWORD type sign test failed.");
+
+	static_assert(sizeof(int32) == 4, "INT type size test failed.");
+	static_assert(int64(int32(-1)) == int64(-1), "INT type sign test failed.");
+
+	static_assert(sizeof(int64) == 8, "SQWORD type size test failed.");
+	static_assert(int64(-1) < int64(0), "SQWORD type sign test failed.");
+
+	static_assert(sizeof(ANSICHAR) == 1, "ANSICHAR type size test failed.");
+	static_assert(int32(ANSICHAR(-1)) == -1, "ANSICHAR type sign test failed.");
+
+	static_assert(sizeof(WIDECHAR) == 2 || sizeof(WIDECHAR) == 4, "WIDECHAR type size test failed.");
+
+	static_assert(sizeof(UCS2CHAR) == 2, "UCS2CHAR type size test failed.");
+
+	static_assert(sizeof(uint32) == 4, "BITFIELD type size test failed.");
+	static_assert(int64(uint32(-1)) == int64(0xFFFFFFFF), "BITFIELD type sign test failed.");
+
+	static_assert(sizeof(PTRINT) == sizeof(void *), "PTRINT type size test failed.");
+	static_assert(PTRINT(-1) < PTRINT(0), "PTRINT type sign test failed.");
+
+	static_assert(sizeof(UPTRINT) == sizeof(void *), "UPTRINT type size test failed.");
+	static_assert(UPTRINT(-1) > UPTRINT(0), "UPTRINT type sign test failed.");
+
+	static_assert(sizeof(SIZE_T) == sizeof(void *), "SIZE_T type size test failed.");
+	static_assert(SIZE_T(-1) > SIZE_T(0), "SIZE_T type sign test failed.");
+}
+
+#if PLATFORM_WINDOWS
+#include "Windows/WindowsPlatformCompilerSetup.h"
+#endif
+
+// If we don't have a platform-specific define for the TEXT macro, define it now.
+#if !defined(TEXT) && !UE_BUILD_DOCS
+#if PLATFORM_TCHAR_IS_CHAR16
+#define TEXT_PASTE(x) u ## x
+#else
+#define TEXT_PASTE(x) L ## x
+#endif
+#define TEXT(x) TEXT_PASTE(x)
+#endif

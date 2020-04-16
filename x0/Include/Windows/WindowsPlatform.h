@@ -16,6 +16,13 @@ struct FWindowsPlatformTypes : public FGenericPlatformTypes
 
 typedef FWindowsPlatformTypes FPlatformTypes;
 
+#define PLATFORM_DESKTOP					1
+#if defined( _WIN64 )
+#define PLATFORM_64BITS					1
+#else
+#define PLATFORM_64BITS					0
+#endif
+
 #define PLATFORM_LITTLE_ENDIAN								1
 
 #define PLATFORM_ENABLE_VECTORINTRINSICS					1
