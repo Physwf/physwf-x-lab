@@ -355,3 +355,6 @@ protected:
 	 */
 	static void HandleAtomicsFailure(const TCHAR* InFormat, ...);
 };
+
+
+typedef FWindowsPlatformAtomics FPlatformAtomics;

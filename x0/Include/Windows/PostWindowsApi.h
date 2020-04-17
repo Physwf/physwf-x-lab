@@ -1,5 +1,5 @@
 // Re-enable warnings
-//THIRD_PARTY_INCLUDES_END
+THIRD_PARTY_INCLUDES_END
 
 // Undo any Windows defines.
 #undef uint8

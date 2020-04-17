@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include "CoreTypes.h"
 #include "MeshBatch.h"
 
 class FStaticPrimitiveDrawInterface;

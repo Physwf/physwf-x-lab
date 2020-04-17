@@ -19,7 +19,9 @@
 #ifndef PLATFORM_ENABLE_VECTORINTRINSICS
 #define PLATFORM_ENABLE_VECTORINTRINSICS	0
 #endif
-
+#ifndef PLATFORM_TCHAR_IS_4_BYTES
+#define PLATFORM_TCHAR_IS_4_BYTES			0
+#endif
 
 
 #define PLATFORM_32BITS					(!PLATFORM_64BITS)
@@ -160,7 +162,7 @@ namespace TypeTests
 #endif
 
 // If we don't have a platform-specific define for the TEXT macro, define it now.
-#if !defined(TEXT) && !UE_BUILD_DOCS
+#if !defined(TEXT)
 #if PLATFORM_TCHAR_IS_CHAR16
 #define TEXT_PASTE(x) u ## x
 #else
