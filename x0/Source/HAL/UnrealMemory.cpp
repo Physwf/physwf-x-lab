@@ -21,3 +21,24 @@ Memory functions.
 //#include "HAL/MallocLeakDetectionProxy.h"
 //#include "HAL/PlatformMallocCrash.h"
 //#include "HAL/MallocPoisonProxy.h"
+
+
+void* FUseSystemMallocForNew::operator new(size_t Size)
+{
+	return FMemory::SystemMalloc(Size);
+}
+
+void FUseSystemMallocForNew::operator delete(void* Ptr)
+{
+	FMemory::SystemFree(Ptr);
+}
+
+void* FUseSystemMallocForNew::operator new[](size_t Size)
+{
+	return FMemory::SystemMalloc(Size);
+}
+
+void FUseSystemMallocForNew::operator delete[](void* Ptr)
+{
+	FMemory::SystemFree(Ptr);
+}

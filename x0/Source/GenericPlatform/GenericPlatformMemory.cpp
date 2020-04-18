@@ -14,9 +14,43 @@
 //#include "GenericPlatform/GenericPlatformMemoryPoolStats.h"
 #include "HAL/MemoryMisc.h"
 
+FGenericPlatformMemoryStats::FGenericPlatformMemoryStats()
+	: FGenericPlatformMemoryConstants(FPlatformMemory::GetConstants())
+	, AvailablePhysical(0)
+	, AvailableVirtual(0)
+	, UsedPhysical(0)
+	, PeakUsedPhysical(0)
+	, UsedVirtual(0)
+	, PeakUsedVirtual(0)
+{}
+
+bool FGenericPlatformMemory::bIsOOM = false;
+uint64 FGenericPlatformMemory::OOMAllocationSize = 0;
+uint32 FGenericPlatformMemory::OOMAllocationAlignment = 0;
+FGenericPlatformMemory::EMemoryAllocatorToUse FGenericPlatformMemory::AllocatorToUse = Platform;
+void* FGenericPlatformMemory::BackupOOMMemoryPool = nullptr;
+
+void FGenericPlatformMemory::Init()
+{
+	SetupMemoryPools();
+}
+
 /*CA_NO_RETURN*/ void FGenericPlatformMemory::OnOutOfMemory(uint64 Size, uint32 Alignment)
 {
 
+}
+
+void FGenericPlatformMemory::SetupMemoryPools()
+{
+	if (FPlatformMemory::GetBackMemoryPoolSize() > 0)
+	{
+		//LLM_PLATFORM_SCOPE(ELLMTag::BackupOOMMemoryPoolPlatform);
+		//LLM_SCOPE(ELLMTag::BackupOOMMemoryPool);
+
+		BackupOOMMemoryPool = FPlatformMemory::BinnedAllocFromOS(FPlatformMemory::GetBackMemoryPoolSize());
+
+		//LLM(FLowLevelMemTracker::Get().OnLowLevelAlloc(ELLMTracker::Default, BackupOOMMemoryPool, FPlatformMemory::GetBackMemoryPoolSize()));
+	}
 }
 
 //#include "Misc/CoreDelegates.h"

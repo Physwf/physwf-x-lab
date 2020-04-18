@@ -5,4 +5,6 @@
 
 #if PLATFORM_WINDOWS
 #include "Windows/WindowsPlatformMemory.h"
+#else
+#error Unknown Platform
 #endif
