@@ -34,7 +34,7 @@ enum class EPlatformMemorySizeBucket
  * Struct used to hold common memory constants for all platforms.
  * These values don't change over the entire life of the executable.
  */
-struct FGenericPlatformMemoryConstants
+struct X0_API FGenericPlatformMemoryConstants
 {
 	/** The amount of actual physical memory, in bytes (needs to handle >4GB for 64-bit devices running 32-bit code). */
 	uint64 TotalPhysical;
