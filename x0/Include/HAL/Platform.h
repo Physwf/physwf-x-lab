@@ -26,6 +26,8 @@
 
 #define PLATFORM_32BITS					(!PLATFORM_64BITS)
 
+// not supported by the platform system yet or maybe ever
+#define PLATFORM_VTABLE_AT_END_OF_CLASS 0
 //------------------------------------------------------------------
 // Transfer the platform types to global types
 //------------------------------------------------------------------

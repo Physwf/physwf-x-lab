@@ -98,3 +98,5 @@ protected:
 	static void InternalUpdateStats(const FPlatformMemoryStats& MemoryStats);
 	//~ End FGenericPlatformMemory Interface
 };
+
+typedef FWindowsPlatformMemory FPlatformMemory;
