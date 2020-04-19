@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdlib.h>
-#include <math.h>
 #include "CoreTypes.h"
+#include "Containers/ContainersFwd.h"
+#include "HAL/PlatformCrt.h"
 
 struct FGenericPlatformMath
 {

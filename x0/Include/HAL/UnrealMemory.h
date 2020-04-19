@@ -218,3 +218,5 @@ private:
 	static SIZE_T GetAllocSizeExternal(void* Original);
 	static SIZE_T QuantizeSizeExternal(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT);
 };
+
+#define INLINE_FMEMORY_OPERATION (0) // untested, but should work. Inlines FMemory::Malloc, etc

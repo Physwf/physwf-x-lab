@@ -195,4 +195,42 @@ struct FMath : public FPlatformMath
 		float p = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.0f;
 		*ScalarCos = sign * p;
 	}
+
+	/** Divides two integers and rounds up */
+	template <class T>
+	static FORCEINLINE T DivideAndRoundUp(T Dividend, T Divisor)
+	{
+		return (Dividend + Divisor - 1) / Divisor;
+	}
+
+	/** Divides two integers and rounds down */
+	template <class T>
+	static FORCEINLINE T DivideAndRoundDown(T Dividend, T Divisor)
+	{
+		return Dividend / Divisor;
+	}
+
+	/** Divides two integers and rounds to nearest */
+	template <class T>
+	static FORCEINLINE T DivideAndRoundNearest(T Dividend, T Divisor)
+	{
+		return (Dividend >= 0)
+			? (Dividend + Divisor / 2) / Divisor
+			: (Dividend - Divisor / 2 + 1) / Divisor;
+	}
+
+	/**
+	* Converts a floating point number to an integer which is closer to zero, "smaller" in absolute value: 0.1 becomes 0, -0.1 becomes 0
+	* @param F		Floating point value to convert
+	* @return		The rounded integer
+	*/
+	static FORCEINLINE float RoundToZero(float F)
+	{
+		return (F < 0.0f) ? CeilToFloat(F) : FloorToFloat(F);
+	}
+
+	static FORCEINLINE double RoundToZero(double F)
+	{
+		return (F < 0.0) ? CeilToDouble(F) : FloorToDouble(F);
+	}
 };
