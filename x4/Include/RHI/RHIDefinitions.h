@@ -648,6 +648,19 @@ enum class ERenderTargetLoadAction : uint8
 static_assert((uint32)ERenderTargetLoadAction::Num <= (1 << (uint32)ERenderTargetLoadAction::NumBits), "ERenderTargetLoadAction::Num will not fit on ERenderTargetLoadAction::NumBits");
 
 /**
+ * Action to take when a rendertarget is unset or at the end of a pass.
+ */
+enum class ERenderTargetStoreAction : uint8
+{
+	ENoAction,
+	EStore,
+	EMultisampleResolve,
+
+	Num,
+	NumBits = 2,
+};
+static_assert((uint32)ERenderTargetStoreAction::Num <= (1 << (uint32)ERenderTargetStoreAction::NumBits), "ERenderTargetStoreAction::Num will not fit on ERenderTargetStoreAction::NumBits");
+/**
  * Common render target use cases
  */
 enum class ESimpleRenderTargetMode

@@ -4,6 +4,7 @@
 
 #include "CoreTypes.h"
 #include "Math/XMathUtility.h"
+#include "Containers/UnrealString.h"
 
 struct FVector2D
 {
@@ -191,4 +192,16 @@ public:
 		X = 0.0f;
 		Y = 0.0f;
 	}
+
+	/**
+	 * Get a textual representation of the vector.
+	 *
+	 * @return Text describing the vector.
+	 */
+	FString ToString() const;
 };
+
+FORCEINLINE FString FVector2D::ToString() const
+{
+	return FString::Printf(TEXT("X=%3.3f Y=%3.3f"), X, Y);
+}
