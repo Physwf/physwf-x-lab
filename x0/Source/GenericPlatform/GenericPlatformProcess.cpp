@@ -1,6 +1,6 @@
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/Timespan.h"
-//#include "HAL/PlatformProperties.h"
+#include "HAL/PlatformProperties.h"
 #include "HAL/PlatformProcess.h"
 //#include "GenericPlatform/GenericPlatformCriticalSection.h"
 #include "Logging/LogMacros.h"
@@ -15,8 +15,11 @@
 //#include "Misc/EventPool.h"
 //#include "Misc/EngineVersion.h"
 
+#include "Containers/Map.h"
+
 static TMap<FString, FString> GShaderSourceDirectoryMappings;
 
+#if 0
 void* FGenericPlatformProcess::GetDllHandle(const TCHAR* Filename)
 {
 	UE_LOG(LogHAL, Fatal, TEXT("FPlatformProcess::GetDllHandle not implemented on this platform"));
@@ -55,14 +58,14 @@ const TCHAR* FGenericPlatformProcess::UserDir()
 {
 	// default to the root directory
 	return nullptr;
-	//return FPlatformMisc::RootDir();
+	return FPlatformMisc::RootDir();
 }
 
 const TCHAR *FGenericPlatformProcess::UserSettingsDir()
 {
 	// default to the root directory
 	return nullptr;
-	//return FPlatformMisc::RootDir();
+	return FPlatformMisc::RootDir();
 }
 
 const TCHAR *FGenericPlatformProcess::UserTempDir()
@@ -600,3 +603,4 @@ FSystemWideCriticalSectionNotImplemented::FSystemWideCriticalSectionNotImplement
 {
 	UE_LOG(LogHAL, Fatal, TEXT("FSystemWideCriticalSection not implemented on this platform"));
 }
+#endif

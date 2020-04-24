@@ -255,7 +255,7 @@ struct X0_API FGenericPlatformProcess
 	 * @param BuildConfiguration The build configuration of the game.
 	 * @return The generated application path.
 	 */
-	static FString GenerateApplicationPath(const FString& AppName, EBuildConfigurations::Type BuildConfiguration);
+	//static FString GenerateApplicationPath(const FString& AppName, EBuildConfigurations::Type BuildConfiguration);
 
 	/**
 	 * Return the prefix of dynamic library (e.g. lib)
