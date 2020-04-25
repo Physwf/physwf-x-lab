@@ -10,4 +10,8 @@
 	DP Float			64					64				64
 */
 
+//#include "Misc/Build.h"
 #include "HAL/Platform.h"
+//#include "ProfilingDebugging/UMemoryDefines.h"
+#include "Misc/CoreMiscDefines.h"
+//#include "Misc/CoreDefines.h"

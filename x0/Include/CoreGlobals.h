@@ -22,3 +22,5 @@ FORCEINLINE bool IsInGameThread()
 
 	return true;
 }
+
+extern X0_API bool GIsRequestingExit;

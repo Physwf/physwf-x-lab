@@ -14,7 +14,8 @@ public:
 };
 
 template<class T>
-class TTlsAutoCleanup
+class TTlsAutoCleanupValue
+	: public FTlsAutoCleanup
 {
 public:
 	/** Constructor. */

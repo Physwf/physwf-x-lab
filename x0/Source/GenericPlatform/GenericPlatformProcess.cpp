@@ -12,7 +12,7 @@
 //#include "Misc/Paths.h"
 //#include "Stats/Stats.h"
 //#include "Misc/CoreStats.h"
-//#include "Misc/EventPool.h"
+#include "Misc/EventPool.h"
 //#include "Misc/EngineVersion.h"
 
 #include "Containers/Map.h"
@@ -481,14 +481,13 @@ FEvent* FGenericPlatformProcess::CreateSynchEvent(bool bIsManualReset)
 #endif
 }
 
-
+#endif
 FEvent* FGenericPlatformProcess::GetSynchEventFromPool(bool bIsManualReset)
 {
 	return bIsManualReset
 		? FEventPool<EEventPoolTypes::ManualReset>::Get().GetEventFromPool()
 		: FEventPool<EEventPoolTypes::AutoReset>::Get().GetEventFromPool();
 }
-
 
 void FGenericPlatformProcess::ReturnSynchEventToPool(FEvent* Event)
 {
@@ -507,6 +506,7 @@ void FGenericPlatformProcess::ReturnSynchEventToPool(FEvent* Event)
 	}
 }
 
+#if 0
 
 #if PLATFORM_USE_PTHREADS
 #include "HAL/PThreadRunnableThread.h"
@@ -556,17 +556,18 @@ bool FGenericPlatformProcess::WritePipe(void* WritePipe, const uint8* Data, cons
 	UE_LOG(LogHAL, Fatal, TEXT("FGenericPlatformProcess::WriteToPipe not implemented on this platform"));
 	return false;
 }
-
+#endif
 bool FGenericPlatformProcess::SupportsMultithreading()
 {
-#if DEFAULT_NO_THREADING
-	static bool bSupportsMultithreading = FParse::Param(FCommandLine::Get(), TEXT("threading"));
-#else
-	static bool bSupportsMultithreading = !FParse::Param(FCommandLine::Get(), TEXT("nothreading"));
-#endif
-	return bSupportsMultithreading;
+// #if DEFAULT_NO_THREADING
+// 	static bool bSupportsMultithreading = FParse::Param(FCommandLine::Get(), TEXT("threading"));
+// #else
+// 	static bool bSupportsMultithreading = !FParse::Param(FCommandLine::Get(), TEXT("nothreading"));
+// #endif
+// 	return bSupportsMultithreading;
+	return false;
 }
-
+#if 0
 FGenericPlatformProcess::FSemaphore::FSemaphore(const FString& InName)
 {
 	FCString::Strcpy(Name, sizeof(Name) - 1, *InName);
