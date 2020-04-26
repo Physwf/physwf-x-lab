@@ -233,4 +233,51 @@ struct FMath : public FPlatformMath
 	{
 		return (F < 0.0) ? CeilToDouble(F) : FloorToDouble(F);
 	}
+
+	/**
+	 *	Checks if two floating point numbers are nearly equal.
+	 *	@param A				First number to compare
+	 *	@param B				Second number to compare
+	 *	@param ErrorTolerance	Maximum allowed difference for considering them as 'nearly equal'
+	 *	@return					true if A and B are nearly equal
+	 */
+	static FORCEINLINE bool IsNearlyEqual(float A, float B, float ErrorTolerance = SMALL_NUMBER)
+	{
+		return Abs<float>(A - B) <= ErrorTolerance;
+	}
+
+	/**
+	 *	Checks if two floating point numbers are nearly equal.
+	 *	@param A				First number to compare
+	 *	@param B				Second number to compare
+	 *	@param ErrorTolerance	Maximum allowed difference for considering them as 'nearly equal'
+	 *	@return					true if A and B are nearly equal
+	 */
+	static FORCEINLINE bool IsNearlyEqual(double A, double B, double ErrorTolerance = SMALL_NUMBER)
+	{
+		return Abs<double>(A - B) <= ErrorTolerance;
+	}
+
+	/**
+	 *	Checks if a floating point number is nearly zero.
+	 *	@param Value			Number to compare
+	 *	@param ErrorTolerance	Maximum allowed difference for considering Value as 'nearly zero'
+	 *	@return					true if Value is nearly zero
+	 */
+	static FORCEINLINE bool IsNearlyZero(float Value, float ErrorTolerance = SMALL_NUMBER)
+	{
+		return Abs<float>(Value) <= ErrorTolerance;
+	}
+
+	/**
+	 *	Checks if a floating point number is nearly zero.
+	 *	@param Value			Number to compare
+	 *	@param ErrorTolerance	Maximum allowed difference for considering Value as 'nearly zero'
+	 *	@return					true if Value is nearly zero
+	 */
+	static FORCEINLINE bool IsNearlyZero(double Value, double ErrorTolerance = SMALL_NUMBER)
+	{
+		return Abs<double>(Value) <= ErrorTolerance;
+	}
+
 };

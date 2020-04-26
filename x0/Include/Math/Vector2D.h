@@ -59,7 +59,6 @@ public:
 	{
 		return FVector2D(X * V.X, Y * V.Y);
 	}
-
 	FVector2D operator/(const FVector2D& V) const
 	{
 		return FVector2D(X / V.X, Y / V.Y);
@@ -204,4 +203,9 @@ public:
 FORCEINLINE FString FVector2D::ToString() const
 {
 	return FString::Printf(TEXT("X=%3.3f Y=%3.3f"), X, Y);
+}
+
+FORCEINLINE FVector2D operator*(float Scale, const FVector2D& V)
+{
+	return V.operator*(Scale);
 }

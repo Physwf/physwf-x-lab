@@ -3,9 +3,21 @@
 #include "X0.h"
 
 #include "CoreTypes.h"
+#include "Misc/AssertionMacros.h"
+#include "Math/NumericLimits.h"
+#include "Misc/Crc.h"
 #include "Math/XMathUtility.h"
+#include "Containers/UnrealString.h"
+//#include "Misc/Parse.h"
 #include "Math/Color.h"
+#include "Math/IntPoint.h"
+#include "Logging/LogMacros.h"
 #include "Math/Vector2D.h"
+#include "Misc/ByteSwap.h"
+//#include "Internationalization/Text.h"
+//#include "Internationalization/Internationalization.h"
+#include "Math/IntVector.h"
+#include "Math/Axis.h"
 
 struct FVector
 {
@@ -215,6 +227,15 @@ public:
 		return FMath::Sqrt(FVector::DistSquared(V1, V2));
 	}
 
+	/**
+	 * Rotates around Axis (assumes Axis.Size() == 1).
+	 *
+	 * @param Angle Angle to rotate (in degrees).
+	 * @param Axis Axis to rotate around.
+	 * @return Rotated Vector.
+	 */
+	FVector RotateAngleAxis(const float AngleDeg, const FVector& Axis) const;
+
 	FVector GetSafeNormal(float Tolerance = SMALL_NUMBER) const
 	{
 		const float SquareSum = X * X + Y * Y + Z * Z;
@@ -231,6 +252,13 @@ public:
 		const float Scale = FMath::InvSqrt(SquareSum);
 		return FVector(X*Scale, Y*Scale, Z*Scale);
 	}
+	/**
+	 * Calculates normalized version of vector without checking for zero length.
+	 *
+	 * @return Normalized version of vector.
+	 * @see GetSafeNormal()
+	 */
+	FORCEINLINE FVector GetUnsafeNormal() const;
 
 	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
 	{
@@ -239,6 +267,16 @@ public:
 			&& FMath::Abs(Y) <= Tolerance
 			&& FMath::Abs(Z) <= Tolerance;
 	}
+
+	X0_API FRotator Rotation() const;
+	/**
+	 * Return the FRotator orientation corresponding to the direction in which the vector points.
+	 * Sets Yaw and Pitch to the proper numbers, and sets Roll to zero because the roll can't be determined from a vector.
+	 *
+	 * @return FRotator from the Vector's direction, without any roll.
+	 * @see ToOrientationQuat()
+	 */
+	X0_API FRotator ToOrientationRotator() const;
 };
 
 inline FVector2D::FVector2D(const FVector& V)
@@ -249,4 +287,37 @@ inline FVector2D::FVector2D(const FVector& V)
 inline FVector operator*(float Scale, const FVector& V)
 {
 	return V.operator*(Scale);
+}
+
+
+inline FVector FVector::RotateAngleAxis(const float AngleDeg, const FVector& Axis) const
+{
+	float S, C;
+	FMath::SinCos(&S, &C, FMath::DegreesToRadians(AngleDeg));
+
+	const float XX = Axis.X * Axis.X;
+	const float YY = Axis.Y * Axis.Y;
+	const float ZZ = Axis.Z * Axis.Z;
+
+	const float XY = Axis.X * Axis.Y;
+	const float YZ = Axis.Y * Axis.Z;
+	const float ZX = Axis.Z * Axis.X;
+
+	const float XS = Axis.X * S;
+	const float YS = Axis.Y * S;
+	const float ZS = Axis.Z * S;
+
+	const float OMC = 1.f - C;
+
+	return FVector(
+		(OMC * XX + C) * X + (OMC * XY - ZS) * Y + (OMC * ZX + YS) * Z,
+		(OMC * XY + ZS) * X + (OMC * YY + C) * Y + (OMC * YZ - XS) * Z,
+		(OMC * ZX - YS) * X + (OMC * YZ + XS) * Y + (OMC * ZZ + C) * Z
+	);
+}
+
+FORCEINLINE FVector FVector::GetUnsafeNormal() const
+{
+	const float Scale = FMath::InvSqrt(X*X + Y * Y + Z * Z);
+	return FVector(X*Scale, Y*Scale, Z*Scale);
 }

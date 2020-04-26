@@ -17,6 +17,23 @@ struct FGuid;
 struct FVector2D;
 class IPlatformChunkInstall;
 
+
+/** Helper struct used to get the string version of the Windows version. */
+struct X0_API FWindowsOSVersionHelper
+{
+	enum ErrorCodes
+	{
+		SUCCEEDED = 0,
+		ERROR_UNKNOWNVERSION = 1,
+		ERROR_GETPRODUCTINFO_FAILED = 2,
+		ERROR_GETVERSIONEX_FAILED = 4,
+		ERROR_GETWINDOWSGT62VERSIONS_FAILED = 8,
+	};
+
+	static int32 GetOSVersions(FString& out_OSVersion, FString& out_OSSubVersion);
+	static FString GetOSVersion();
+};
+
 /**
 * Windows implementation of the misc OS functions
 **/

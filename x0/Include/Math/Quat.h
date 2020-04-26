@@ -58,6 +58,50 @@ public:
 	float operator|(const FQuat& Q) const;
 
 public:
+	/**
+	 * Convert a vector of floating-point Euler angles (in degrees) into a Quaternion.
+	 *
+	 * @param Euler the Euler angles
+	 * @return constructed FQuat
+	 */
+	static X0_API FQuat MakeFromEuler(const FVector& Euler);
+
+	/** Convert a Quaternion into floating-point Euler angles (in degrees). */
+	X0_API FVector Euler() const;
+
+	/**
+	 * Normalize this quaternion if it is large enough.
+	 * If it is too small, returns an identity quaternion.
+	 *
+	 * @param Tolerance Minimum squared length of quaternion for normalization.
+	 */
+	FORCEINLINE void Normalize(float Tolerance = SMALL_NUMBER);
+
+	/**
+	 * Get a normalized copy of this quaternion.
+	 * If it is too small, returns an identity quaternion.
+	 *
+	 * @param Tolerance Minimum squared length of quaternion for normalization.
+	 */
+	FORCEINLINE FQuat GetNormalized(float Tolerance = SMALL_NUMBER) const;
+
+	// Return true if this quaternion is normalized
+	bool IsNormalized() const;
+
+	/**
+	 * Get the length of this quaternion.
+	 *
+	 * @return The length of this quaternion.
+	 */
+	FORCEINLINE float Size() const;
+
+	/**
+	 * Get the length squared of this quaternion.
+	 *
+	 * @return The length of this quaternion.
+	 */
+	FORCEINLINE float SizeSquared() const;
+
 	FVector RotateVector(FVector V) const;
 
 	inline FQuat Inverse() const;
@@ -212,6 +256,60 @@ inline FQuat FQuat::operator/(const float Scale) const
 inline float FQuat::operator|(const FQuat& Q) const
 {
 	return X * Q.X + Y * Q.Y + Z * Q.Z + W * Q.W;
+}
+
+FORCEINLINE void FQuat::Normalize(float Tolerance)
+{
+#if PLATFORM_ENABLE_VECTORINTRINSICS
+	const VectorRegister Vector = VectorLoadAligned(this);
+
+	const VectorRegister SquareSum = VectorDot4(Vector, Vector);
+	const VectorRegister NonZeroMask = VectorCompareGE(SquareSum, VectorLoadFloat1(&Tolerance));
+	const VectorRegister InvLength = VectorReciprocalSqrtAccurate(SquareSum);
+	const VectorRegister NormalizedVector = VectorMultiply(InvLength, Vector);
+	VectorRegister Result = VectorSelect(NonZeroMask, NormalizedVector, GlobalVectorConstants::Float0001);
+
+	VectorStoreAligned(Result, this);
+#else
+	const float SquareSum = X * X + Y * Y + Z * Z + W * W;
+
+	if (SquareSum >= Tolerance)
+	{
+		const float Scale = FMath::InvSqrt(SquareSum);
+
+		X *= Scale;
+		Y *= Scale;
+		Z *= Scale;
+		W *= Scale;
+	}
+	else
+	{
+		*this = FQuat::Identity;
+	}
+#endif // PLATFORM_ENABLE_VECTORINTRINSICS
+}
+
+FORCEINLINE FQuat FQuat::GetNormalized(float Tolerance) const
+{
+	FQuat Result(*this);
+	Result.Normalize(Tolerance);
+	return Result;
+}
+
+FORCEINLINE bool FQuat::IsNormalized() const
+{
+	return (FMath::Abs(1.f - SizeSquared()) < THRESH_QUAT_NORMALIZED);
+}
+
+FORCEINLINE float FQuat::Size() const
+{
+	return FMath::Sqrt(X * X + Y * Y + Z * Z + W * W);
+}
+
+
+FORCEINLINE float FQuat::SizeSquared() const
+{
+	return (X * X + Y * Y + Z * Z + W * W);
 }
 
 inline FVector FQuat::RotateVector(FVector V) const

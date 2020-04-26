@@ -37,6 +37,11 @@ THIRD_PARTY_INCLUDES_START
 THIRD_PARTY_INCLUDES_END
 #endif
 
+FString FGenericPlatformMisc::GetPrimaryGPUBrand()
+{
+	return FString(TEXT("GenericGPUBrand"));
+}
+
 #if !UE_BUILD_SHIPPING
 bool FGenericPlatformMisc::bShouldPromptForRemoteDebugging = false;
 bool FGenericPlatformMisc::bPromptForRemoteDebugOnEnsure = false;
