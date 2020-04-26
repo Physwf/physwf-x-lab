@@ -13,12 +13,12 @@
 #include "Math/ScaleMatrix.h"
 #include "Math/Float16Color.h"
 #include "HAL/ThreadSafeCounter.h"
-//#include "GenericPlatform/GenericPlatformProcess.h"
-//#include "Misc/MemStack.h"
+#include "GenericPlatform/GenericPlatformProcess.h"
+#include "Misc/MemStack.h"
 //#include "Misc/App.h"
 //#include "Stats/Stats.h"
 //#include "HAL/IConsoleManager.h"
-//#include "Async/TaskGraphInterfaces.h"
+#include "Async/TaskGraphInterfaces.h"
 //#include "HAL/LowLevelMemTracker.h"
 
 
@@ -295,6 +295,151 @@ extern X4_API FRHICommandListFenceAllocator GRHIFenceAllocator;
 class X4_API FRHICommandListBase : public FNoncopyable
 {
 public:
+	FRHICommandListBase(/*FRHIGPUMask InGPUMask*/);
+	~FRHICommandListBase();
+
+	/** Custom new/delete with recycling */
+	void* operator new(size_t Size);
+	void operator delete(void *RawMemory);
+
+	inline void Flush();
+	inline bool IsImmediate();
+	inline bool IsImmediateAsyncCompute();
+
+	const int32 GetUsedMemory() const;
+	void QueueAsyncCommandListSubmit(FGraphEventRef& AnyThreadCompletionEvent, class FRHICommandList* CmdList);
+	void QueueParallelAsyncCommandListSubmit(FGraphEventRef* AnyThreadCompletionEvents, bool bIsPrepass, class FRHICommandList** CmdLists, int32* NumDrawsIfKnown, int32 Num, int32 MinDrawsPerTranslate, bool bSpewMerge);
+	void QueueRenderThreadCommandListSubmit(FGraphEventRef& RenderThreadCompletionEvent, class FRHICommandList* CmdList);
+	void QueueAsyncPipelineStateCompile(FGraphEventRef& AsyncCompileCompletionEvent);
+	void QueueCommandListSubmit(class FRHICommandList* CmdList);
+	void WaitForTasks(bool bKnownToBeComplete = false);
+	void WaitForDispatch();
+	void WaitForRHIThreadTasks();
+	void HandleRTThreadTaskCompletion(const FGraphEventRef& MyCompletionGraphEvent);
+
+	FORCEINLINE_DEBUGGABLE void* Alloc(int32 AllocSize, int32 Alignment)
+	{
+		return MemManager.Alloc(AllocSize, Alignment);
+	}
+
+	template <typename T>
+	FORCEINLINE_DEBUGGABLE void* Alloc()
+	{
+		return Alloc(sizeof(T), alignof(T));
+	}
+
+	FORCEINLINE_DEBUGGABLE TCHAR* AllocString(const TCHAR* Name)
+	{
+		int32 Len = FCString::Strlen(Name) + 1;
+		TCHAR* NameCopy = (TCHAR*)Alloc(Len * (int32)sizeof(TCHAR), (int32)sizeof(TCHAR));
+		FCString::Strcpy(NameCopy, Len, Name);
+		return NameCopy;
+	}
+
+	template <typename TCmd>
+	FORCEINLINE_DEBUGGABLE void* AllocCommand()
+	{
+		checkSlow(!IsExecuting());
+		TCmd* Result = (TCmd*)Alloc<TCmd>();
+		++NumCommands;
+		*CommandLink = Result;
+		CommandLink = &Result->Next;
+		return Result;
+	}
+
+	FORCEINLINE uint32 GetUID()
+	{
+		return UID;
+	}
+	FORCEINLINE bool HasCommands() const
+	{
+		return (NumCommands > 0);
+	}
+	FORCEINLINE bool IsExecuting() const
+	{
+		return bExecuting;
+	}
+
+	bool Bypass();
+
+	FORCEINLINE void ExchangeCmdList(FRHICommandListBase& Other)
+	{
+		check(!RTTasks.Num() && !Other.RTTasks.Num());
+		FMemory::Memswap(this, &Other, sizeof(FRHICommandListBase));
+		if (CommandLink == &Other.Root)
+		{
+			CommandLink = &Root;
+		}
+		if (Other.CommandLink == &Root)
+		{
+			Other.CommandLink = &Other.Root;
+		}
+	}
+
+	void SetContext(IRHICommandContext* InContext)
+	{
+		check(InContext);
+		Context = InContext;
+	}
+
+	FORCEINLINE IRHICommandContext& GetContext()
+	{
+		checkSlow(Context);
+		return *Context;
+	}
+
+	void SetComputeContext(IRHIComputeContext* InContext)
+	{
+		check(InContext);
+		ComputeContext = InContext;
+	}
+
+	IRHIComputeContext& GetComputeContext()
+	{
+		checkSlow(ComputeContext);
+		return *ComputeContext;
+	}
+
+	void CopyContext(FRHICommandListBase& ParentCommandList)
+	{
+		check(Context);
+		//ensure(GPUMask == ParentCommandList.GPUMask);
+		Context = ParentCommandList.Context;
+		ComputeContext = ParentCommandList.ComputeContext;
+	}
+
+	void MaybeDispatchToRHIThread()
+	{
+		if (IsImmediate() && HasCommands() && GRHIThreadNeedsKicking && IsRunningRHIInSeparateThread())
+		{
+			MaybeDispatchToRHIThreadInner();
+		}
+	}
+	void MaybeDispatchToRHIThreadInner();
+
+	struct FDrawUpData
+	{
+
+		uint32 PrimitiveType;
+		uint32 NumPrimitives;
+		uint32 NumVertices;
+		uint32 VertexDataStride;
+		void* OutVertexData;
+		uint32 MinVertexIndex;
+		uint32 NumIndices;
+		uint32 IndexDataStride;
+		void* OutIndexData;
+
+		FDrawUpData()
+			: PrimitiveType(PT_Num)
+			, OutVertexData(nullptr)
+			, OutIndexData(nullptr)
+		{
+		}
+	};
+
+	//FORCEINLINE const FRHIGPUMask& GetGPUMask() const { return GPUMask; }
+
 private:
 	FRHICommandBase* Root;
 	FRHICommandBase** CommandLink;
@@ -303,5 +448,45 @@ private:
 	uint32 UID;
 	IRHICommandContext* Context;
 	IRHIComputeContext* ComputeContext;
+	FMemStackBase MemManager;
+	FGraphEventArray RTTasks;
 
+	friend class FRHICommandListExecutor;
+	friend class FRHICommandListIterator;
+
+protected:
+	//FRHIGPUMask GPUMask;
+	void Reset();
+public:
+	//TStatId	ExecuteStat;
+	enum class ERenderThreadContext
+	{
+		SceneRenderTargets,
+		Num
+	};
+	void *RenderThreadContexts[(int32)ERenderThreadContext::Num];
+protected:
+	//the values of this struct must be copied when the commandlist is split 
+	struct FPSOContext
+	{
+		uint32 CachedNumSimultanousRenderTargets = 0;
+		TStaticArray<FRHIRenderTargetView, MaxSimultaneousRenderTargets> CachedRenderTargets;
+		FRHIDepthRenderTargetView CachedDepthStencilTarget;
+	} PSOContext;
+};
+
+template<typename TCmd>
+struct FRHICommand : public FRHICommandBase
+{
+	void ExecuteAndDestruct(FRHICommandListBase& CmdList, FRHICommandListDebugContext& Context) override final
+	{
+		TCmd *ThisCmd = static_cast<TCmd*>(this);
+#if RHI_COMMAND_LIST_DEBUG_TRACES
+		ThisCmd->StoreDebugInfo(Context);
+#endif
+		ThisCmd->Execute(CmdList);
+		ThisCmd->~TCmd();
+	}
+
+	virtual void StoreDebugInfo(FRHICommandListDebugContext& Context) {};
 };
