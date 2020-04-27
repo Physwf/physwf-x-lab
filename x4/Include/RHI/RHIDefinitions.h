@@ -17,6 +17,49 @@ enum EShaderFrequency
 };
 static_assert(SF_NumFrequencies <= (1 << SF_NumBits), "SF_NumFrequencies will not fit on SF_NumBits");
 
+/** @warning: update *LegacyShaderPlatform* when the below changes */
+enum EShaderPlatform
+{
+	SP_PCD3D_SM5 = 0,
+	SP_OPENGL_SM4 = 1,
+	SP_PS4 = 2,
+	/** Used when running in Feature Level ES2 in OpenGL. */
+	SP_OPENGL_PCES2 = 3,
+	SP_XBOXONE_D3D12 = 4,
+	SP_PCD3D_SM4 = 5,
+	SP_OPENGL_SM5 = 6,
+	/** Used when running in Feature Level ES2 in D3D11. */
+	SP_PCD3D_ES2 = 7,
+	SP_OPENGL_ES2_ANDROID = 8,
+	SP_OPENGL_ES2_WEBGL = 9,
+	SP_OPENGL_ES2_IOS = 10,
+	SP_METAL = 11,
+	SP_METAL_MRT = 12,
+	SP_OPENGL_ES31_EXT = 13,
+	/** Used when running in Feature Level ES3_1 in D3D11. */
+	SP_PCD3D_ES3_1 = 14,
+	/** Used when running in Feature Level ES3_1 in OpenGL. */
+	SP_OPENGL_PCES3_1 = 15,
+	SP_METAL_SM5 = 16,
+	SP_VULKAN_PCES3_1 = 17,
+	SP_METAL_SM5_NOTESS = 18,
+	SP_VULKAN_SM4 = 19,
+	SP_VULKAN_SM5 = 20,
+	SP_VULKAN_ES3_1_ANDROID = 21,
+	SP_METAL_MACES3_1 = 22,
+	SP_METAL_MACES2 = 23,
+	SP_OPENGL_ES3_1_ANDROID = 24,
+	SP_SWITCH = 25,
+	SP_SWITCH_FORWARD = 26,
+	SP_METAL_MRT_MAC = 27,
+	SP_VULKAN_SM5_LUMIN = 28,
+	SP_VULKAN_ES3_1_LUMIN = 29,
+
+	SP_NumPlatforms = 30,
+	SP_NumBits = 5,
+};
+static_assert(SP_NumPlatforms <= (1 << SP_NumBits), "SP_NumPlatforms will not fit on SP_NumBits");
+
 enum ERenderQueryType
 {
 	// e.g. WaitForFrameEventCompletion()
@@ -61,6 +104,38 @@ enum class ERHIZBuffer
 
 	// 'bool' for knowing if the API is using Inverted Z buffer
 	IsInverted = (int32)((int32)ERHIZBuffer::FarPlane < (int32)ERHIZBuffer::NearPlane),
+};
+
+namespace ERHIFeatureLevel
+{
+	enum Type
+	{
+		/** Feature level defined by the core capabilities of OpenGL ES2. */
+		ES2,
+
+		/** Feature level defined by the core capabilities of OpenGL ES3.1 & Metal/Vulkan. */
+		ES3_1,
+
+		/**
+		 * Feature level defined by the capabilities of DX10 Shader Model 4.
+		 *    Shaders can reference 128 unique textures, 16 texture samplers, 14 constant buffers
+		 *    Rendering to cubemaps and volume textures
+		 * Geometry shaders are not required for Feature Level SM4, as long as vertex shader render target selection is supported
+		 */
+		SM4,
+
+		/**
+		 * Feature level defined by the capabilities of DX11 Shader Model 5.
+		 *   Compute shaders with shared memory, group sync, UAV writes, integer atomics
+		 *   Indirect drawing
+		 *   Pixel shaders with UAV writes
+		 *   Cubemap arrays
+		 *   Read-only depth or stencil views (eg read depth buffer as SRV while depth test and stencil write)
+		 * Tessellation is not considered part of Feature Level SM5 and has a separate capability flag.
+		 */
+		SM5,
+		Num
+	};
 };
 
 enum ESamplerFilter
@@ -623,15 +698,6 @@ enum ETextureReallocationStatus
 	TexRealloc_Failed,
 	TexRealloc_InProgress,
 };
-enum EUniformBufferUsage
-{
-	// the uniform buffer is temporary, used for a single draw call then discarded
-	UniformBuffer_SingleDraw = 0,
-	// the uniform buffer is used for multiple draw calls but only for the current frame
-	UniformBuffer_SingleFrame,
-	// the uniform buffer is used for multiple draw calls, possibly across multiple frames
-	UniformBuffer_MultiFrame,
-};
 
 /**
  * Action to take when a rendertarget is set.
@@ -696,3 +762,196 @@ enum class EAsyncComputeBudget
 	EComputeHeavy_3,	//Async compute can use most of the GPU
 	EAll_4,				//Async compute can use the entire GPU.
 };
+
+inline bool IsPCPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_PCD3D_SM5 || Platform == SP_PCD3D_SM4 || Platform == SP_PCD3D_ES2 || Platform == SP_PCD3D_ES3_1 ||
+		Platform == SP_OPENGL_SM4 || Platform == SP_OPENGL_SM5 || Platform == SP_OPENGL_PCES2 || Platform == SP_OPENGL_PCES3_1 ||
+		Platform == SP_METAL_SM5_NOTESS || Platform == SP_METAL_SM5 ||
+		Platform == SP_VULKAN_PCES3_1 || Platform == SP_VULKAN_SM4 || Platform == SP_VULKAN_SM5 || Platform == SP_METAL_MACES3_1 || Platform == SP_METAL_MACES2 || Platform == SP_METAL_MRT_MAC;
+}
+
+/** Whether the shader platform corresponds to the ES2 feature level. */
+inline bool IsES2Platform(const EShaderPlatform Platform)
+{
+	return Platform == SP_PCD3D_ES2 || Platform == SP_OPENGL_PCES2 || Platform == SP_OPENGL_ES2_ANDROID || Platform == SP_OPENGL_ES2_WEBGL || Platform == SP_OPENGL_ES2_IOS || Platform == SP_METAL_MACES2;
+}
+
+/** Whether the shader platform is OpenGL and corresponds to the ES2/ES3.1 feature level. */
+inline bool IsMobileOpenGlPlatform(const EShaderPlatform Platform)
+{
+	return IsES2Platform(Platform)
+		|| Platform == SP_PCD3D_ES3_1 || Platform == SP_OPENGL_PCES3_1 || Platform == SP_VULKAN_ES3_1_ANDROID
+		|| Platform == SP_VULKAN_PCES3_1 || Platform == SP_METAL || Platform == SP_METAL_MACES3_1 || Platform == SP_OPENGL_ES3_1_ANDROID;
+}
+
+/** Whether the shader platform corresponds to the ES2/ES3.1 feature level. */
+inline bool IsMobilePlatform(const EShaderPlatform Platform)
+{
+	return IsES2Platform(Platform)
+		|| Platform == SP_METAL || Platform == SP_METAL_MACES3_1
+		|| Platform == SP_PCD3D_ES3_1
+		|| Platform == SP_OPENGL_PCES3_1 || Platform == SP_OPENGL_ES3_1_ANDROID
+		|| Platform == SP_VULKAN_ES3_1_ANDROID || Platform == SP_VULKAN_PCES3_1 || Platform == SP_VULKAN_ES3_1_LUMIN
+		|| Platform == SP_SWITCH_FORWARD;
+}
+
+inline bool IsOpenGLPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_OPENGL_SM4 || Platform == SP_OPENGL_SM5 || Platform == SP_OPENGL_PCES2 || Platform == SP_OPENGL_PCES3_1
+		|| Platform == SP_OPENGL_ES2_ANDROID || Platform == SP_OPENGL_ES2_WEBGL || Platform == SP_OPENGL_ES2_IOS || Platform == SP_OPENGL_ES31_EXT
+		|| Platform == SP_OPENGL_ES3_1_ANDROID || Platform == SP_SWITCH || Platform == SP_SWITCH_FORWARD;
+}
+
+inline bool IsMetalPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_METAL || Platform == SP_METAL_MRT || Platform == SP_METAL_SM5_NOTESS || Platform == SP_METAL_SM5 || Platform == SP_METAL_MACES3_1 || Platform == SP_METAL_MACES2 || Platform == SP_METAL_MRT_MAC;
+}
+
+inline bool IsConsolePlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_PS4 || Platform == SP_XBOXONE_D3D12;
+}
+
+inline bool IsSwitchPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_SWITCH || Platform == SP_SWITCH_FORWARD;
+}
+
+inline bool IsPS4Platform(const EShaderPlatform Platform)
+{
+	return Platform == SP_PS4;
+}
+
+inline bool IsVulkanPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_VULKAN_SM5 || Platform == SP_VULKAN_SM5_LUMIN || Platform == SP_VULKAN_SM4 || Platform == SP_VULKAN_PCES3_1 || Platform == SP_VULKAN_ES3_1_ANDROID || Platform == SP_VULKAN_ES3_1_LUMIN;
+}
+
+inline bool IsVulkanSM5Platform(const EShaderPlatform Platform)
+{
+	return Platform == SP_VULKAN_SM5 || Platform == SP_VULKAN_SM5_LUMIN;
+}
+
+inline bool IsAndroidOpenGLESPlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_OPENGL_ES2_ANDROID || Platform == SP_OPENGL_ES3_1_ANDROID;
+}
+
+inline bool IsVulkanMobilePlatform(const EShaderPlatform Platform)
+{
+	return Platform == SP_VULKAN_PCES3_1 || Platform == SP_VULKAN_ES3_1_ANDROID || Platform == SP_VULKAN_ES3_1_LUMIN;
+}
+
+inline bool IsD3DPlatform(const EShaderPlatform Platform, bool bIncludeXboxOne)
+{
+	switch (Platform)
+	{
+	case SP_PCD3D_SM5:
+	case SP_PCD3D_SM4:
+	case SP_PCD3D_ES3_1:
+	case SP_PCD3D_ES2:
+		return true;
+	case SP_XBOXONE_D3D12:
+		return bIncludeXboxOne;
+	default:
+		break;
+	}
+
+	return false;
+}
+
+inline bool IsHlslccShaderPlatform(const EShaderPlatform Platform)
+{
+	return IsMetalPlatform(Platform) || IsVulkanPlatform(Platform) || IsSwitchPlatform(Platform) || IsOpenGLPlatform(Platform);
+}
+
+inline ERHIFeatureLevel::Type GetMaxSupportedFeatureLevel(EShaderPlatform InShaderPlatform)
+{
+	switch (InShaderPlatform)
+	{
+	case SP_PCD3D_SM5:
+	case SP_OPENGL_SM5:
+	case SP_PS4:
+	case SP_XBOXONE_D3D12:
+	case SP_OPENGL_ES31_EXT:
+	case SP_METAL_SM5:
+	case SP_METAL_MRT:
+	case SP_METAL_MRT_MAC:
+	case SP_METAL_SM5_NOTESS:
+	case SP_VULKAN_SM5:
+	case SP_VULKAN_SM5_LUMIN:
+	case SP_SWITCH:
+		return ERHIFeatureLevel::SM5;
+	case SP_VULKAN_SM4:
+	case SP_PCD3D_SM4:
+	case SP_OPENGL_SM4:
+		return ERHIFeatureLevel::SM4;
+	case SP_PCD3D_ES2:
+	case SP_OPENGL_PCES2:
+	case SP_OPENGL_ES2_ANDROID:
+	case SP_OPENGL_ES2_WEBGL:
+	case SP_OPENGL_ES2_IOS:
+	case SP_METAL_MACES2:
+		return ERHIFeatureLevel::ES2;
+	case SP_METAL:
+	case SP_METAL_MACES3_1:
+	case SP_PCD3D_ES3_1:
+	case SP_OPENGL_PCES3_1:
+	case SP_VULKAN_PCES3_1:
+	case SP_VULKAN_ES3_1_ANDROID:
+	case SP_VULKAN_ES3_1_LUMIN:
+	case SP_OPENGL_ES3_1_ANDROID:
+	case SP_SWITCH_FORWARD:
+		return ERHIFeatureLevel::ES3_1;
+	default:
+		checkf(0, TEXT("Unknown ShaderPlatform %d"), (int32)InShaderPlatform);
+		return ERHIFeatureLevel::Num;
+	}
+}
+
+inline bool IsSimulatedPlatform(EShaderPlatform Platform)
+{
+	switch (Platform)
+	{
+	case SP_OPENGL_PCES2:
+	case SP_PCD3D_ES2:
+	case SP_PCD3D_ES3_1:
+	case SP_OPENGL_PCES3_1:
+		return true;
+		break;
+
+	default:
+		return false;
+		break;
+	}
+
+	return false;
+}
+
+inline EShaderPlatform GetSimulatedPlatform(EShaderPlatform Platform)
+{
+	switch (Platform)
+	{
+	case SP_OPENGL_PCES2:
+	case SP_PCD3D_ES2:
+		return SP_OPENGL_ES2_ANDROID;
+		break;
+	case SP_PCD3D_ES3_1:
+	case SP_OPENGL_PCES3_1:
+		return SP_OPENGL_ES3_1_ANDROID;
+		break;
+
+	default:
+		return Platform;
+		break;
+	}
+
+	return Platform;
+}
+
+/** Returns true if the feature level is supported by the shader platform. */
+inline bool IsFeatureLevelSupported(EShaderPlatform InShaderPlatform, ERHIFeatureLevel::Type InFeatureLevel)
+{
+	return InFeatureLevel <= GetMaxSupportedFeatureLevel(InShaderPlatform);
+}

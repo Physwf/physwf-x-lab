@@ -1,17 +1,22 @@
 #pragma once
 
-#include "X4.h"
-
 #include "CoreTypes.h"
 #include "Misc/AssertionMacros.h"
 #include "HAL/UnrealMemory.h"
 #include "Containers/Array.h"
 #include "Misc/Crc.h"
 #include "Containers/UnrealString.h"
+//#include "UObject/NameTypes.h"
+#include "Math/Color.h"
+#include "Containers/StaticArray.h"
 #include "HAL/ThreadSafeCounter.h"
 #include "RHIDefinitions.h"
 #include "Templates/RefCounting.h"
 #include "PixelFormat.h"
+#include "Containers/LockFreeList.h"
+#include "Misc/SecureHash.h"
+
+#include "X4.h"
 
 class FRHIResource
 {
@@ -109,6 +114,7 @@ class FRHIHullShader : public FRHIShader {};
 class FRHIDomainShader : public FRHIShader {};
 class FRHIPixelShader : public FRHIShader {};
 class FRHIGeometryShader : public FRHIShader {};
+
 class X4_API FRHIComputeShader : public FRHIShader
 {
 public:
@@ -1596,6 +1602,9 @@ protected:
 	uint32 LibraryId;
 };
 
+typedef FRHIShaderLibrary*				FRHIShaderLibraryParamRef;
+typedef TRefCountPtr<FRHIShaderLibrary>	FRHIShaderLibraryRef;
+
 class FRHIPipelineBinaryLibrary : public FRHIResource
 {
 public:
@@ -1686,7 +1695,7 @@ inline ERenderTargetActions GetStencilActions(EDepthStencilTargetActions Action)
 	return (ERenderTargetActions)((uint8)Action & ((1 << (uint8)EDepthStencilTargetActions::DepthMask) - 1));
 }
 
-class FRHIRenderPassInfo
+struct FRHIRenderPassInfo
 {
 	struct FColorEntry
 	{

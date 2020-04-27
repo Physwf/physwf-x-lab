@@ -28,7 +28,7 @@
 //#include "Misc/CoreDelegates.h"
 //#include "Misc/App.h"
 //#include "HAL/ExceptionHandling.h"
-//#include "Misc/SecureHash.h"
+#include "Misc/SecureHash.h"
 //#include "HAL/IConsoleManager.h"
 //#include "Misc/EngineVersion.h"
 //#include "GenericPlatform/GenericPlatformCrashContext.h"
@@ -952,6 +952,11 @@ bool FWindowsPlatformMisc::QueryRegKey(const Windows::HKEY InKey, const TCHAR* I
 int32 FWindowsPlatformMisc::GetCacheLineSize()
 {
 	return FCPUIDQueriedData::GetCacheLineSize();
+}
+
+void FWindowsPlatformMisc::CreateGuid(struct FGuid& Result)
+{
+	verify(CoCreateGuid((GUID*)&Result) == S_OK);
 }
 
 bool FWindowsPlatformMisc::Is64bitOperatingSystem()

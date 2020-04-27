@@ -9,6 +9,8 @@
 class FResourceArrayInterface;
 class FResourceBulkDataInterface;
 
+/** Uniform buffer structs must be aligned to 16-byte boundaries. */
+#define UNIFORM_BUFFER_STRUCT_ALIGNMENT 16
 /**
  * RHI globals.
  */
@@ -35,6 +37,11 @@ extern X4_API bool GSupportsRenderDepthTargetableShaderResources;
 /** true if the RHI supports binding depth as a texture when testing against depth */
 extern X4_API bool GSupportsDepthFetchDuringDepthTest;
 
+// The maximum feature level and shader platform available on this system
+// GRHIFeatureLevel and GRHIShaderPlatform have been deprecated. There is no longer a current featurelevel/shaderplatform that
+// should be used for all rendering, rather a specific set for each view.
+extern X4_API ERHIFeatureLevel::Type GMaxRHIFeatureLevel;
+extern X4_API EShaderPlatform GMaxRHIShaderPlatform;
 
 /** true if the RHI supports SRVs */
 extern X4_API bool GSupportsResourceView;
@@ -921,10 +928,10 @@ enum class EResourceTransitionAccess
 	EMaxAccess,
 };
 
-enum class EResourceAliasablity
+enum class EResourceAliasability
 {
-	EAliasable,
-	EUnabliable,
+	EAliasable, // Make the resource aliasable with other resources
+	EUnaliasable, // Make the resource unaliasable with any other resources
 };
 
 class X4_API FResourceTransitionUtility

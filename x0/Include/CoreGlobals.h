@@ -24,3 +24,9 @@ FORCEINLINE bool IsInGameThread()
 }
 
 extern X0_API bool GIsRequestingExit;
+
+/** Steadily increasing frame counter. */
+extern X0_API TSAN_ATOMIC(uint64) GFrameCounter;
+
+/** Incremented once per frame before the scene is being rendered. In split screen mode this is incremented once for all views (not for each view). */
+extern X0_API uint32 GFrameNumber;
