@@ -1,6 +1,6 @@
 #include "Windows/MinimalWindowsApi.h"
 #include "Windows/WindowsHWrapper.h"
-#include "Misc/CoreMiscDefines.h"
+//#include "Misc/CoreMiscDefines.h"
 
 // Check that constants are what we expect them to be
 static_assert(WINDOWS_MAX_PATH == MAX_PATH, "Value of WINDOWSAPI_MAX_PATH is not correct");

@@ -729,7 +729,7 @@ namespace TypeTests
 }
 
 #if PLATFORM_WINDOWS
-#include "Windows/WindowsPlatformCompilerSetup.h"
+#include "Windows/WindowsPlatformCompilerPreSetup.h"
 #endif
 
 // If we don't have a platform-specific define for the TEXT macro, define it now.

@@ -112,62 +112,62 @@ namespace Windows
 	struct OVERLAPPED { void *Opaque[3]; unsigned long Opaque2[2]; };
 	union LARGE_INTEGER { struct { DWORD LowPart; LONG HighPart; }; LONGLONG QuadPart; };
 
-	inline BOOL WINAPI ConnectNamedPipe(HANDLE hNamedPipe, OVERLAPPED* lpOverlapped)
+	FORCEINLINE BOOL WINAPI ConnectNamedPipe(HANDLE hNamedPipe, OVERLAPPED* lpOverlapped)
 	{
 		return ConnectNamedPipe(hNamedPipe, (LPOVERLAPPED)lpOverlapped);
 	}
 
-	inline BOOL WINAPI GetOverlappedResult(HANDLE hFile, OVERLAPPED* lpOverlapped, LPDWORD lpNumberOfBytesTransferred, BOOL bWait)
+	FORCEINLINE BOOL WINAPI GetOverlappedResult(HANDLE hFile, OVERLAPPED* lpOverlapped, LPDWORD lpNumberOfBytesTransferred, BOOL bWait)
 	{
 		return GetOverlappedResult(hFile, (LPOVERLAPPED)lpOverlapped, lpNumberOfBytesTransferred, bWait);
 	}
 
-	inline BOOL WINAPI WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, OVERLAPPED* lpOverlapped)
+	FORCEINLINE BOOL WINAPI WriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, OVERLAPPED* lpOverlapped)
 	{
 		return WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, (LPOVERLAPPED)lpOverlapped);
 	}
 
-	inline BOOL WINAPI ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, OVERLAPPED* lpOverlapped)
+	FORCEINLINE BOOL WINAPI ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, OVERLAPPED* lpOverlapped)
 	{
 		return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, (LPOVERLAPPED)lpOverlapped);
 	}
 
-	inline void WINAPI InitializeCriticalSection(CRITICAL_SECTION* lpCriticalSection)
+	FORCEINLINE void WINAPI InitializeCriticalSection(CRITICAL_SECTION* lpCriticalSection)
 	{
 		InitializeCriticalSection((LPCRITICAL_SECTION)lpCriticalSection);
 	}
 
-	inline BOOL WINAPI InitializeCriticalSectionAndSpinCount(CRITICAL_SECTION* lpCriticalSection, DWORD dwSpinCount)
+	FORCEINLINE BOOL WINAPI InitializeCriticalSectionAndSpinCount(CRITICAL_SECTION* lpCriticalSection, DWORD dwSpinCount)
 	{
 		return InitializeCriticalSectionAndSpinCount((LPCRITICAL_SECTION)lpCriticalSection, dwSpinCount);
 	}
 
-	inline DWORD WINAPI SetCriticalSectionSpinCount(CRITICAL_SECTION* lpCriticalSection, DWORD dwSpinCount)
+	FORCEINLINE DWORD WINAPI SetCriticalSectionSpinCount(CRITICAL_SECTION* lpCriticalSection, DWORD dwSpinCount)
 	{
 		return SetCriticalSectionSpinCount((LPCRITICAL_SECTION)lpCriticalSection, dwSpinCount);
 	}
 
-	inline BOOL WINAPI TryEnterCriticalSection(CRITICAL_SECTION* lpCriticalSection)
+	FORCEINLINE BOOL WINAPI TryEnterCriticalSection(CRITICAL_SECTION* lpCriticalSection)
 	{
 		return TryEnterCriticalSection((LPCRITICAL_SECTION)lpCriticalSection);
 	}
 
-	inline void WINAPI EnterCriticalSection(CRITICAL_SECTION* lpCriticalSection)
+	FORCEINLINE void WINAPI EnterCriticalSection(CRITICAL_SECTION* lpCriticalSection)
 	{
 		EnterCriticalSection((LPCRITICAL_SECTION)lpCriticalSection);
 	}
 
-	inline void WINAPI LeaveCriticalSection(CRITICAL_SECTION* lpCriticalSection)
+	FORCEINLINE void WINAPI LeaveCriticalSection(CRITICAL_SECTION* lpCriticalSection)
 	{
 		LeaveCriticalSection((LPCRITICAL_SECTION)lpCriticalSection);
 	}
 
-	inline void WINAPI DeleteCriticalSection(CRITICAL_SECTION* lpCriticalSection)
+	FORCEINLINE void WINAPI DeleteCriticalSection(CRITICAL_SECTION* lpCriticalSection)
 	{
 		DeleteCriticalSection((LPCRITICAL_SECTION)lpCriticalSection);
 	}
 
-	inline BOOL WINAPI QueryPerformanceCounter(LARGE_INTEGER* Cycles)
+	FORCEINLINE BOOL WINAPI QueryPerformanceCounter(LARGE_INTEGER* Cycles)
 	{
 		return QueryPerformanceCounter((LPLARGE_INTEGER)Cycles);
 	}

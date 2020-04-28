@@ -118,7 +118,7 @@ struct alignas(16) FVector4
 		);
 	}
 
-	inline FVector4 FVector4::GetSafeNormal(float Tolerance = SMALL_NUMBER) const
+	FORCEINLINE FVector4 GetSafeNormal(float Tolerance = SMALL_NUMBER) const
 	{
 		const float SquareSum = X * X + Y * Y + Z * Z;
 		if (SquareSum > Tolerance)
@@ -130,7 +130,7 @@ struct alignas(16) FVector4
 	}
 
 
-	inline FVector4 FVector4::GetUnsafeNormal3() const
+	inline FVector4 GetUnsafeNormal3() const
 	{
 		const float Scale = FMath::InvSqrt(X*X + Y * Y + Z * Z);
 		return FVector4(X*Scale, Y*Scale, Z*Scale, 0.0f);

@@ -35,29 +35,6 @@ namespace UE4SharedPointer_Private
 }
 
 /**
- * Casts a shared reference of one type to another type. (static_cast)  Useful for down-casting.
- *
- * @param  InSharedRef  The shared reference to cast
- */
-template< class CastToType, class CastFromType, ESPMode Mode >
-FORCEINLINE TSharedRef< CastToType, Mode > StaticCastSharedRef(TSharedRef< CastFromType, Mode > const& InSharedRef)
-{
-	return TSharedRef< CastToType, Mode >(InSharedRef, SharedPointerInternals::FStaticCastTag());
-}
-
-
-namespace UE4SharedPointer_Private
-{
-	// Needed to work around an Android compiler bug - we need to construct a TSharedRef
-	// from MakeShared without making MakeShared a friend in order to access the private constructor.
-	template <typename ObjectType, ESPMode Mode>
-	FORCEINLINE TSharedRef<ObjectType, Mode> MakeSharedRef(ObjectType* InObject, SharedPointerInternals::FReferenceControllerBase* InSharedReferenceCount)
-	{
-		return TSharedRef<ObjectType, Mode>(InObject, InSharedReferenceCount);
-	}
-}
-
-/**
  * TSharedRef is a non-nullable, non-intrusive reference-counted authoritative object reference.
  *
  * This shared reference will be conditionally thread-safe when the optional Mode template argument is set to ThreadSafe.

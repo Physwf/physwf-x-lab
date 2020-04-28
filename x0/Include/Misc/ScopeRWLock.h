@@ -69,3 +69,4 @@ private:
 private:
 	FRWLock& LockObject;
 	FRWScopeLockType LockType;
+};
