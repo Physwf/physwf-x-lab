@@ -1,5 +1,11 @@
 #pragma once
 
+#include "CoreMinimal.h"
+
+#if defined(PF_MAX)
+#undef PF_MAX
+#endif
+
 enum EPixelFormat
 {
 	PF_Unknown = 0,

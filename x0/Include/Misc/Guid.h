@@ -209,7 +209,7 @@ public:
 
 	friend void LexFromString(FGuid& Result, const TCHAR* String)
 	{
-		FGuid::Parse(String, Result);
+		//FGuid::Parse(String, Result);
 	}
 
 public:
@@ -310,7 +310,7 @@ public:
 	 * @return true if the string was converted successfully, false otherwise.
 	 * @see ParseExact, ToString
 	 */
-	//static X0_API bool Parse(const FString& GuidString, FGuid& OutGuid);
+	static X0_API bool Parse(const FString& GuidString, FGuid& OutGuid);
 
 	/**
 	 * Converts a string with the specified format to a GUID.

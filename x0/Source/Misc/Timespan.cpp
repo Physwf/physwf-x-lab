@@ -6,38 +6,38 @@
 /* FTimespan interface
 *****************************************************************************/
 
-bool FTimespan::ExportTextItem(FString& ValueStr, FTimespan const& DefaultValue, UObject* Parent, int32 PortFlags, UObject* ExportRootScope) const
-{
-// 	if ((PortFlags & EPropertyPortFlags::PPF_ExportCpp) != 0)
+// bool FTimespan::ExportTextItem(FString& ValueStr, FTimespan const& DefaultValue, UObject* Parent, int32 PortFlags, UObject* ExportRootScope) const
+// {
+// // 	if ((PortFlags & EPropertyPortFlags::PPF_ExportCpp) != 0)
+// // 	{
+// // 		ValueStr += FString::Printf(TEXT("FTimespan(0x%016X)"), Ticks);
+// // 		return true;
+// // 	}
+// 
+// 	ValueStr += ToString(TEXT("%D.%h:%m:%s.%n"));
+// 
+// 	return true;
+// }
+
+
+// bool FTimespan::ImportTextItem(const TCHAR*& Buffer, int32 PortFlags, UObject* Parent, FOutputDevice* ErrorText)
+// {
+// 	const int32 ExportTimespanLen = 27;
+// 
+// 	if (FPlatformString::Strlen(Buffer) < ExportTimespanLen)
 // 	{
-// 		ValueStr += FString::Printf(TEXT("FTimespan(0x%016X)"), Ticks);
-// 		return true;
+// 		return false;
 // 	}
-
-	ValueStr += ToString(TEXT("%D.%h:%m:%s.%n"));
-
-	return true;
-}
-
-
-bool FTimespan::ImportTextItem(const TCHAR*& Buffer, int32 PortFlags, UObject* Parent, FOutputDevice* ErrorText)
-{
-	const int32 ExportTimespanLen = 27;
-
-	if (FPlatformString::Strlen(Buffer) < ExportTimespanLen)
-	{
-		return false;
-	}
-
-	if (!Parse(FString(Buffer).Left(ExportTimespanLen), *this))
-	{
-		return false;
-	}
-
-	Buffer += ExportTimespanLen;
-
-	return true;
-}
+// 
+// 	if (!Parse(FString(Buffer).Left(ExportTimespanLen), *this))
+// 	{
+// 		return false;
+// 	}
+// 
+// 	Buffer += ExportTimespanLen;
+// 
+// 	return true;
+// }
 
 
 // bool FTimespan::Serialize(FArchive& Ar)

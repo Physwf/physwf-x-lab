@@ -23,6 +23,12 @@ FORCEINLINE bool IsInGameThread()
 	return true;
 }
 
+/** @return True if called from the rendering thread, or if called from ANY thread during single threaded rendering */
+extern X0_API bool IsInRenderingThread();
+
+/** @return True if called from the rendering thread, or if called from ANY thread that isn't the game thread, except that during single threaded rendering the game thread is ok too.*/
+extern X0_API bool IsInParallelRenderingThread();
+
 extern X0_API bool GIsRequestingExit;
 
 /** Steadily increasing frame counter. */
