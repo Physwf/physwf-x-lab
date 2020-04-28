@@ -19,6 +19,7 @@ set_target_properties(libx4 PROPERTIES FOLDER "Libraries")
 target_include_directories(libx4 PRIVATE "./Include")
 target_include_directories(libx4 PRIVATE "./Source")
 target_include_directories(libx4 PRIVATE "../x5/Include")
+target_link_libraries(libx4 libx0)
 
 SET(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 

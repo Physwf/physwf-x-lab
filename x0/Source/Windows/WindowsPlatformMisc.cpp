@@ -954,6 +954,13 @@ int32 FWindowsPlatformMisc::GetCacheLineSize()
 	return FCPUIDQueriedData::GetCacheLineSize();
 }
 
+#if !UE_BUILD_SHIPPING
+bool FWindowsPlatformMisc::IsDebuggerPresent()
+{
+	return /*!GIgnoreDebugger &&*/ !!::IsDebuggerPresent();
+}
+
+#endif
 void FWindowsPlatformMisc::CreateGuid(struct FGuid& Result)
 {
 	verify(CoCreateGuid((GUID*)&Result) == S_OK);

@@ -45,6 +45,9 @@ class X0_API FMalloc :
 	//public FExec
 {
 public:
+
+	virtual ~FMalloc() {}
+
 	virtual void* Malloc(SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT) = 0;
 
 	virtual void* Realloc(void* Original, SIZE_T Count, uint32 Alignment = DEFAULT_ALIGNMENT) = 0;

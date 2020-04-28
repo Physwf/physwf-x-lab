@@ -5,6 +5,21 @@
 #include "Misc/EventPool.h"
 #include "Templates/Atomic.h"
 
+#include "X0.h"
+
+X0_API TAtomic<int32> GIsRenderingThreadSuspended(0);
+
+X0_API FRunnableThread* GRenderingThread = nullptr;
+
+X0_API bool IsInActualRenderingThread()
+{
+	return GRenderingThread && FPlatformTLS::GetCurrentThreadId() == GRenderingThread->GetThreadID();
+}
+
+X0_API bool IsInRenderingThread()
+{
+	return !GRenderingThread || GIsRenderingThreadSuspended.Load(EMemoryOrder::Relaxed) || (FPlatformTLS::GetCurrentThreadId() == GRenderingThread->GetThreadID());
+}
 /**
 * Fake thread created when multi-threading is disabled.
 */
