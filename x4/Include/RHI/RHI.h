@@ -1094,7 +1094,7 @@ struct FTextureMemoryStats
 	}
 };
 
-#include "RHIResource.h"
+#include "RHIResources.h"
 #include "DynamicRHI.h"
 
 extern X4_API void RHIInit(bool bHasEditorToken);

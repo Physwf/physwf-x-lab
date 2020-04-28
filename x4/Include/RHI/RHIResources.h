@@ -50,7 +50,22 @@ public:
 		checkSlow(CurrentValue >= 0);
 		return uint32(CurrentValue);
 	}
+	void DoNoDeferDelete()
+	{
+		check(!MarkedForDelete);
+		bDoNotDeferDelete = true;
+		FPlatformMisc::MemoryBarrier();
+		check(!MarkedForDelete);
+	}
 
+	static void FlushPendingDeletes(bool bFlushDeferredDeletes = false);
+
+	FORCEINLINE static bool PlatformNeedsExtraDeletionLatency()
+	{
+		return GRHINeedsExtraDeletionLatency && GIsRHIInitialized;
+	}
+
+	static bool Bypass();
 	// Transient resource tracking
 	// We do this at a high level so we can catch errors even when transient resources are not supported
 	void SetCommitted(bool bInCommitted)
@@ -71,6 +86,7 @@ private:
 
 
 };
+
 
 class FRHISamplerState : public FRHIResource {};
 class FRHIRasterizerState : public FRHIResource
@@ -1548,7 +1564,7 @@ protected:
 class FRHIShaderLibrary : public FRHIResource
 {
 public:
-	FRHIShaderLibrary(/*EShaderPlatform InPlatform,*/ FString const& InName) :/* Platform(InPlatform)*/, LibraryName(InName), LibraryId(GetTypeHash(InName)) {}
+	FRHIShaderLibrary(EShaderPlatform InPlatform, FString const& InName) : Platform(InPlatform), LibraryName(InName), LibraryId(GetTypeHash(InName)) {}
 	virtual ~FRHIShaderLibrary() {}
 
 	//FORCEINLINE EShaderPlatform GetPlatform(void) const { return Platform; }
@@ -1560,13 +1576,13 @@ public:
 	//Library iteration
 	struct FShaderLibraryEntry
 	{
-		FShaderLibraryEntry() : Frequency(SF_NumFrequencies),/* Platform(SP_NumPlatforms)*/ {}
+		FShaderLibraryEntry() : Frequency(SF_NumFrequencies), Platform(SP_NumPlatforms) {}
 
 		FSHAHash Hash;
 		EShaderFrequency Frequency;
-		/*EShaderPlatform Platform;*/
+		EShaderPlatform Platform;
 
-		bool IsValid() const { return (Frequency < SF_NumFrequencies) /*&& (Platform < SP_NumPlatforms)*/; }
+		bool IsValid() const { return (Frequency < SF_NumFrequencies) && (Platform < SP_NumPlatforms); }
 	};
 
 	class FShaderLibraryIterator : public FRHIResource
@@ -1597,7 +1613,7 @@ public:
 	virtual bool ContainsEntry(const FSHAHash& Hash) = 0;
 	virtual uint32 GetShaderCount(void) const = 0;
 protected:
-	//EShaderPlatform Platform;
+	EShaderPlatform Platform;
 	FString LibraryName;
 	uint32 LibraryId;
 };

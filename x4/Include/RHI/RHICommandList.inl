@@ -56,7 +56,7 @@ FORCEINLINE_DEBUGGABLE FScopedRHIThreadStaller::~FScopedRHIThreadStaller()
 namespace PipelineStateCache
 {
 	/* Evicts unused state entries based on r.pso.evictiontime time. Called in RHICommandList::BeginFrame */
-	extern RHI_API void FlushResources();
+	extern X4_API void FlushResources();
 }
 
 FORCEINLINE_DEBUGGABLE void FRHICommandListImmediate::ImmediateFlush(EImmediateFlushType::Type FlushType)

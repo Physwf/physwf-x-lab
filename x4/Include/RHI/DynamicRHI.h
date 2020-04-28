@@ -185,12 +185,12 @@ public:
 	* @return The new Fence.
 	*/
 	// FlushType: Thread safe, but varies depending on the RHI	
-	virtual FComputeFenceRHIRef RHICreateComputeFence(const FName& Name)
+	virtual FComputeFenceRHIRef RHICreateComputeFence(const FString& Name)
 	{
 		return new FRHIComputeFence(Name);
 	}
 
-	virtual FGPUFenceRHIRef RHICreateGPUFence(const FName &Name)
+	virtual FGPUFenceRHIRef RHICreateGPUFence(const FString &Name)
 	{
 		return new FRHIGPUFence(Name);
 	}
@@ -869,9 +869,9 @@ public:
 	virtual IRHIComputeContext* RHIGetDefaultAsyncComputeContext(FRHIGPUMask GPUMask) { ensure(GPUMask == FRHIGPUMask::GPU0()); return RHIGetDefaultAsyncComputeContext(); }
 	virtual IRHICommandContextContainer* RHIGetCommandContextContainer(int32 Index, int32 Num, FRHIGPUMask GPUMask) { ensure(GPUMask == FRHIGPUMask::GPU0()); return RHIGetCommandContextContainer(Index, Num); }
 #else
-	FORCEINLINE IRHICommandContext* RHIGetDefaultContext(/*FRHIGPUMask GPUMask*/) { return RHIGetDefaultContext(); }
-	FORCEINLINE IRHIComputeContext* RHIGetDefaultAsyncComputeContext(/*FRHIGPUMask GPUMask*/) { return RHIGetDefaultAsyncComputeContext(); }
-	FORCEINLINE IRHICommandContextContainer* RHIGetCommandContextContainer(int32 Index, int32 Num/*, FRHIGPUMask GPUMask*/) { return RHIGetCommandContextContainer(Index, Num); }
+	FORCEINLINE IRHICommandContext* RHIGetDefaultContext(int32/*FRHIGPUMask GPUMask*/) { return RHIGetDefaultContext(); }
+	FORCEINLINE IRHIComputeContext* RHIGetDefaultAsyncComputeContext(int32/*FRHIGPUMask GPUMask*/) { return RHIGetDefaultAsyncComputeContext(); }
+	FORCEINLINE IRHICommandContextContainer* RHIGetCommandContextContainer(int32 Index, int32 Num/*, FRHIGPUMask GPUMask*/,int) { return RHIGetCommandContextContainer(Index, Num); }
 #endif
 
 	///////// Pass through functions that allow RHIs to optimize certain calls.
@@ -1123,17 +1123,17 @@ FORCEINLINE void RHIGetSupportedResolution(uint32& Width, uint32& Height)
 
 FORCEINLINE class IRHICommandContext* RHIGetDefaultContext(/*FRHIGPUMask GPUMask = FRHIGPUMask::All()*/)
 {
-	return GDynamicRHI->RHIGetDefaultContext(/*GPUMask*/);
+	return GDynamicRHI->RHIGetDefaultContext(/*GPUMask*/0);
 }
 
 FORCEINLINE class IRHIComputeContext* RHIGetDefaultAsyncComputeContext(/*FRHIGPUMask GPUMask = FRHIGPUMask::All()*/)
 {
-	return GDynamicRHI->RHIGetDefaultAsyncComputeContext(/*GPUMask*/);
+	return GDynamicRHI->RHIGetDefaultAsyncComputeContext(/*GPUMask*/0);
 }
 
 FORCEINLINE class IRHICommandContextContainer* RHIGetCommandContextContainer(int32 Index, int32 Num/*, FRHIGPUMask GPUMask*/)
 {
-	return GDynamicRHI->RHIGetCommandContextContainer(Index, Num, /*GPUMask*/);
+	return GDynamicRHI->RHIGetCommandContextContainer(Index, Num/*, GPUMask*/,0);
 }
 
 /**

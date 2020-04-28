@@ -3186,12 +3186,12 @@ public:
 		return GDynamicRHI->CreateComputeShader_RenderThread(*this, Library, Hash);
 	}
 
-	FORCEINLINE FComputeFenceRHIRef CreateComputeFence(const FName& Name)
+	FORCEINLINE FComputeFenceRHIRef CreateComputeFence(const FString& Name)
 	{
 		return GDynamicRHI->RHICreateComputeFence(Name);
 	}
 
-	FORCEINLINE FGPUFenceRHIRef CreateGPUFence(const FName& Name)
+	FORCEINLINE FGPUFenceRHIRef CreateGPUFence(const FString& Name)
 	{
 		return GDynamicRHI->RHICreateGPUFence(Name);
 	}
@@ -4057,12 +4057,12 @@ FORCEINLINE FComputeShaderRHIRef RHICreateComputeShader(FRHIShaderLibraryParamRe
 	return FRHICommandListExecutor::GetImmediateCommandList().CreateComputeShader(Library, Hash);
 }
 
-FORCEINLINE FComputeFenceRHIRef RHICreateComputeFence(const FName& Name)
+FORCEINLINE FComputeFenceRHIRef RHICreateComputeFence(const FString& Name)
 {
 	return FRHICommandListExecutor::GetImmediateCommandList().CreateComputeFence(Name);
 }
 
-FORCEINLINE FGPUFenceRHIRef RHICreateGPUFence(const FName& Name)
+FORCEINLINE FGPUFenceRHIRef RHICreateGPUFence(const FString& Name)
 {
 	return FRHICommandListExecutor::GetImmediateCommandList().CreateGPUFence(Name);
 }

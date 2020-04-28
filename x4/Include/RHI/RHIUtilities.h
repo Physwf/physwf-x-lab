@@ -122,32 +122,6 @@ struct FReadBuffer
 	}
 };
 
-/** Encapsulates a GPU read buffer with its SRV. */
-struct FReadBuffer
-{
-	FVertexBufferRHIRef Buffer;
-	FShaderResourceViewRHIRef SRV;
-	uint32 NumBytes;
-
-	FReadBuffer() : NumBytes(0) {}
-
-	void Initialize(uint32 BytesPerElement, uint32 NumElements, EPixelFormat Format, uint32 AdditionalUsage = 0)
-	{
-		check(GSupportsResourceView);
-		NumBytes = BytesPerElement * NumElements;
-		FRHIResourceCreateInfo CreateInfo;
-		Buffer = RHICreateVertexBuffer(NumBytes, BUF_ShaderResource | AdditionalUsage, CreateInfo);
-		SRV = RHICreateShaderResourceView(Buffer, BytesPerElement, Format);
-	}
-
-	void Release()
-	{
-		NumBytes = 0;
-		Buffer.SafeRelease();
-		SRV.SafeRelease();
-	}
-};
-
 /** Encapsulates a GPU read/write structured buffer with its UAV and SRV. */
 struct FRWBufferStructured
 {
