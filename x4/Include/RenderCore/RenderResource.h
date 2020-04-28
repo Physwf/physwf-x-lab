@@ -1,16 +1,18 @@
 #pragma once
 
+#include "CoreMinimal.h"
+#include "Containers/List.h"
+#include "RHI/RHI.h"
+//#include "RenderCore/RenderCore.h"
+
 #include "X4.h"
-#include <list>
-#include <string>
-#include <d3d11.h>
 
 class X4_API FRenderResource
 {
 public:
 
 	/** @return The global initialized resource list. */
-	static std::list<FRenderResource*>*& GetResourceList();
+	static TLinkedList<FRenderResource*>*& GetResourceList();
 
 	/** Default constructor. */
 	FRenderResource():
@@ -72,7 +74,7 @@ public:
 	void InitResourceFromPossiblyParallelRendering();
 
 	/** @return The resource's friendly name.  Typically a UObject name. */
-	virtual std::string GetFriendlyName() const { return "undefined"; }
+	virtual FString GetFriendlyName() const { return TEXT("undefined"); }
 
 	// Accessors.
 	inline bool IsInitialized() const { return bInitialized; }
@@ -160,7 +162,7 @@ public:
 class X4_API FVertexBuffer : public FRenderResource
 {
 public:
-	ID3D11Buffer* VertexBufferRHI;
+	FVertexBufferRHIRef VertexBufferRHI;
 
 	/** Destructor. */
 	virtual ~FVertexBuffer() {}
@@ -168,9 +170,9 @@ public:
 	// FRenderResource interface.
 	virtual void ReleaseRHI() override
 	{
-		SafeRelase(VertexBufferRHI);
+		VertexBufferRHI.SafeRelease();
 	}
-	virtual std::string GetFriendlyName() const override { return ("FVertexBuffer"); }
+	virtual FString GetFriendlyName() const override { return TEXT("FVertexBuffer"); }
 };
 
 class FNullColorVertexBuffer : public FVertexBuffer
@@ -184,11 +186,11 @@ public:
 
 	virtual void ReleaseRHI() override
 	{
-		SafeRelase(VertexBufferSRV);
+		VertexBufferSRV.SafeRelease();
 		FVertexBuffer::ReleaseRHI();
 	}
 
-	ID3D11ShaderResourceView* VertexBufferSRV;
+	FShaderResourceViewRHIRef VertexBufferSRV;
 };
 
 extern X4_API TGlobalResource<FNullColorVertexBuffer> GNullColorVertexBuffer;
@@ -197,7 +199,7 @@ extern X4_API TGlobalResource<FNullColorVertexBuffer> GNullColorVertexBuffer;
 class FIndexBuffer : public FRenderResource
 {
 public:
-	ID3D11Buffer* IndexBufferRHI;
+	FIndexBufferRHIRef IndexBufferRHI;
 
 	/** Destructor. */
 	virtual ~FIndexBuffer() {}
@@ -207,5 +209,5 @@ public:
 	{
 		SafeRelase(IndexBufferRHI);
 	}
-	virtual std::string GetFriendlyName() const override { return ("FIndexBuffer"); }
+	virtual  FString GetFriendlyName() const override { return TEXT("FIndexBuffer"); }
 };

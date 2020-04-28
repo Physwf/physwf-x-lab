@@ -1,8 +1,8 @@
 #include "RenderCore/RenderResource.h"
 
-std::list<FRenderResource*>*& FRenderResource::GetResourceList()
+TLinkedList<FRenderResource*>*& FRenderResource::GetResourceList()
 {
-	static std::list<FRenderResource*>* FirstResourceLink = NULL;
+	static TLinkedList<FRenderResource*>* FirstResourceLink = NULL;
 	return FirstResourceLink;
 }
 

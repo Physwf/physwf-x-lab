@@ -171,22 +171,22 @@ struct X4_API FPipelineCacheFileFormatPSO
 struct X4_API FPipelineCacheFileFormatPSORead
 {
 	FPipelineCacheFileFormatPSORead()
-		: Ar(nullptr)
-		, Hash(0)
+		/*: Ar(nullptr)*/
+		: Hash(0)
 		, bReadCompleted(false)
 		, bValid(false)
 	{}
 
 	~FPipelineCacheFileFormatPSORead()
 	{
-		if (Ar)
-		{
-			delete Ar;
-		}
+// 		if (Ar)
+// 		{
+// 			delete Ar;
+// 		}
 	}
 
 	TArray<uint8> Data;
-	FArchive* Ar;
+	//FArchive* Ar;
 	uint32 Hash;
 	bool bReadCompleted;
 	bool bValid;

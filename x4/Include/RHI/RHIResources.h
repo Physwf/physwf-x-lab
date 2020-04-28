@@ -27,6 +27,10 @@ public:
 		, bCommitted(true)
 	{
 	}
+	virtual ~FRHIResource()
+	{
+		//check(PlatformNeedsExtraDeletionLatency() || (NumRefs.GetValue() == 0 && (CurrentlyDeleting == this || bDoNotDeferDelete || Bypass()))); // this should not have any outstanding refs
+	}
 
 	FORCEINLINE_DEBUGGABLE uint32 AddRef() const
 	{
