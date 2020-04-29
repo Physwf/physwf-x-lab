@@ -961,6 +961,40 @@ bool FWindowsPlatformMisc::IsDebuggerPresent()
 }
 
 #endif
+
+void FWindowsPlatformMisc::RequestExit(bool Force)
+{
+	UE_LOG(LogWindows, Log, TEXT("FPlatformMisc::RequestExit(%i)"), Force);
+
+	//FCoreDelegates::ApplicationWillTerminateDelegate.Broadcast();
+
+	if (Force)
+	{
+		// Force immediate exit. In case of an error set the exit code to 3.
+		// Dangerous because config code isn't flushed, global destructors aren't called, etc.
+		// Suppress abort message and MS reports.
+		//_set_abort_behavior( 0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT );
+		//abort();
+
+		// Make sure the log is flushed.
+// 		if (GLog)
+// 		{
+// 			// This may be called from other thread, so set this thread as the master.
+// 			GLog->SetCurrentThreadAsMasterThread();
+// 			GLog->TearDown();
+// 		}
+
+		//TerminateProcess(GetCurrentProcess(), GIsCriticalError ? 3 : 0);
+		TerminateProcess(GetCurrentProcess(), 0);
+	}
+	else
+	{
+		// Tell the platform specific code we want to exit cleanly from the main loop.
+		PostQuitMessage(0);
+		GIsRequestingExit = 1;
+	}
+}
+
 void FWindowsPlatformMisc::CreateGuid(struct FGuid& Result)
 {
 	verify(CoCreateGuid((GUID*)&Result) == S_OK);

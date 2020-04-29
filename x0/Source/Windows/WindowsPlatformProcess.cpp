@@ -20,6 +20,24 @@
 //#include "Misc/CoreStats.h"
 #include "Windows/WindowsHWrapper.h"
 
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include <shellapi.h>
+#include <ShlObj.h>
+#include <LM.h>
+#include <Psapi.h>
+#include <TlHelp32.h>
+
+namespace ProcessConstants
+{
+	uint32 WIN_STD_INPUT_HANDLE = STD_INPUT_HANDLE;
+	uint32 WIN_STD_OUTPUT_HANDLE = STD_OUTPUT_HANDLE;
+	uint32 WIN_ATTACH_PARENT_PROCESS = ATTACH_PARENT_PROCESS;
+	uint32 WIN_STILL_ACTIVE = STILL_ACTIVE;
+}
+
+#include "Windows/HideWindowsPlatformTypes.h"
+#include "Windows/WindowsPlatformMisc.h"
+
 uint32 FWindowsPlatformProcess::GetCurrentProcessId()
 {
 	return ::GetCurrentProcessId();
@@ -31,6 +49,59 @@ void FWindowsPlatformProcess::SetThreadAffinityMask(uint64 AffinityMask)
 	{
 		::SetThreadAffinityMask(::GetCurrentThread(), (DWORD_PTR)AffinityMask);
 	}
+}
+
+bool FWindowsPlatformProcess::IsApplicationRunning(const TCHAR* ProcName)
+{
+	// append the extension
+
+	FString ProcNameWithExtension = ProcName;
+	if (ProcNameWithExtension.Find(TEXT(".exe"), ESearchCase::IgnoreCase, ESearchDir::FromEnd) == INDEX_NONE)
+	{
+		ProcNameWithExtension += TEXT(".exe");
+	}
+
+	HANDLE SnapShot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (SnapShot != INVALID_HANDLE_VALUE)
+	{
+		PROCESSENTRY32 Entry;
+		Entry.dwSize = sizeof(PROCESSENTRY32);
+
+		if (::Process32First(SnapShot, &Entry))
+		{
+			do
+			{
+				if (FCString::Stricmp(*ProcNameWithExtension, Entry.szExeFile) == 0)
+				{
+					::CloseHandle(SnapShot);
+					return true;
+				}
+			} while (::Process32Next(SnapShot, &Entry));
+		}
+	}
+
+	::CloseHandle(SnapShot);
+	return false;
+}
+
+bool FWindowsPlatformProcess::IsApplicationRunning(uint32 ProcessId)
+{
+	bool bApplicationRunning = true;
+	HANDLE ProcessHandle = ::OpenProcess(SYNCHRONIZE, false, ProcessId);
+	if (ProcessHandle == NULL)
+	{
+		bApplicationRunning = false;
+	}
+	else
+	{
+		uint32 WaitResult = WaitForSingleObject(ProcessHandle, 0);
+		if (WaitResult != WAIT_TIMEOUT)
+		{
+			bApplicationRunning = false;
+		}
+		::CloseHandle(ProcessHandle);
+	}
+	return bApplicationRunning;
 }
 
 void FWindowsPlatformProcess::Sleep(float Seconds)
