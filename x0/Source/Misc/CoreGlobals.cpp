@@ -12,3 +12,16 @@
 X0_API FMalloc*			GMalloc = nullptr;		/* Memory allocator */
 
 bool					GIsRequestingExit = false;					/* Indicates that MainLoop() should be exited at the end of the current iteration */
+
+/** Has GGameThreadId been set yet?																			*/
+bool					GIsGameThreadIdInitialized = false;
+
+/** Thread ID of the main/game thread																		*/
+uint32					GGameThreadId = 0;
+uint32					GRenderThreadId = 0;
+
+/** NEED TO RENAME, for RT version of GFrameTime use View.ViewFamily->FrameNumber or pass down from RT from GFrameTime). */
+uint32					GFrameNumberRenderThread = 1;
+
+/** Steadily increasing frame counter.																		*/
+TSAN_ATOMIC(uint64)		GFrameCounter(0);

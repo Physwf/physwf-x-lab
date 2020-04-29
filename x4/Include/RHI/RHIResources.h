@@ -101,12 +101,12 @@ public:
 class FRHIDepthStencilState : public FRHIResource
 {
 public:
-	virtual bool GetInitializer(struct FRasterizerStateInitializerRHI& Init) { return false; }
+	virtual bool GetInitializer(struct FDepthStencilStateInitializerRHI& Init) { return false; }
 };
 class FRHIBlendState : public FRHIResource
 {
 public:
-	virtual bool GetInitializer(struct FRasterizerStateInitializerRHI& Init) { return false; }
+	virtual bool GetInitializer(class FBlendStateInitializerRHI& Init) { return false; }
 };
 
 typedef TArray<struct FVertexElement, TFixedAllocator<MaxVertexElementCount> > FVertexDeclarationElementList;
@@ -121,12 +121,12 @@ class FRHIBoundShaderState : public FRHIResource {};
 
 class FRHIShader : public FRHIResource
 {
-// public:
-// 	void SetHash(FSHAHash InHash) { Hash = InHash; }
-// 	FSHAHash GetHash() const { return Hash; }
-// 
-// private:
-// 	FSHAHash Hash;
+public:
+	void SetHash(FSHAHash InHash) { Hash = InHash; }
+	FSHAHash GetHash() const { return Hash; }
+
+private:
+	FSHAHash Hash;
 };
 
 class FRHIVertexShader : public FRHIShader {};

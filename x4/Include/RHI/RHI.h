@@ -60,6 +60,11 @@ extern X4_API uint32 GRHIDeviceRevision;
 // 0 means not defined yet, use functions like IsRHIDeviceAMD() to access
 extern X4_API uint32 GRHIVendorId;
 
+/** Whether or not the RHI supports parallel RHIThread executes / translates
+Requirements:
+* RHICreateBoundShaderState & RHICreateGraphicsPipelineState is threadsafe and GetCachedBoundShaderState must not be used. GetCachedBoundShaderState_Threadsafe has a slightly different protocol.
+***/
+extern X4_API bool GRHISupportsParallelRHIExecute;
 
 // to trigger GPU specific optimizations and fallbacks
 X4_API bool IsRHIDeviceAMD();
@@ -570,6 +575,9 @@ struct FDepthStencilStateInitializerRHI
 		, StencilReadMask(InStencilReadMask)
 		, StencilWriteMask(InStencilWriteMask)
 	{}
+
+	X4_API FString ToString() const;
+	X4_API void FromString(const FString& Src);
 };
 
 class FBlendStateInitializerRHI
@@ -607,6 +615,10 @@ public:
 			, AlphaDestBlend(InAlphaDestBlend)
 			, ColorWriteMask(InColorWriteMask)
 		{}
+
+		X4_API FString ToString() const;
+		X4_API void FromString(const TArray<FString>& Parts, int32 Index);
+
 	};
 
 	FBlendStateInitializerRHI() {}

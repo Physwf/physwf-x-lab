@@ -52,6 +52,13 @@ enum class EResourceTransitionPipeline;
 class FComputePipelineState;
 class FGraphicsPipelineState;
 
+#if RHI_STATS
+DECLARE_STATS_GROUP(TEXT("RHICommands"), STATGROUP_RHI_COMMANDS, STATCAT_Advanced);
+#define RHISTAT(Method)	DECLARE_SCOPE_CYCLE_COUNTER(TEXT(#Method), STAT_RHI##Method, STATGROUP_RHI_COMMANDS)
+#else
+#define RHISTAT(Method)
+#endif
+
 extern X4_API bool GUseRHIThread_InternalUseOnly;
 extern X4_API bool GUseRHITaskThreads_InternalUseOnly;
 extern X4_API bool GIsRunningRHIInSeparateThread_InternalUseOnly;

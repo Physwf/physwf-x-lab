@@ -20,6 +20,21 @@ X0_API bool IsInRenderingThread()
 {
 	return !GRenderingThread || GIsRenderingThreadSuspended.Load(EMemoryOrder::Relaxed) || (FPlatformTLS::GetCurrentThreadId() == GRenderingThread->GetThreadID());
 }
+
+X0_API bool IsInParallelRenderingThread()
+{
+	return !GRenderingThread || GIsRenderingThreadSuspended.Load(EMemoryOrder::Relaxed) || (FPlatformTLS::GetCurrentThreadId() != GGameThreadId);
+}
+
+
+X0_API uint32 GRHIThreadId = 0;
+X0_API FRunnableThread* GRHIThread_InternalUseOnly = nullptr;
+
+X0_API bool IsInRHIThread()
+{
+	return GRHIThreadId && FPlatformTLS::GetCurrentThreadId() == GRHIThreadId;
+}
+
 /**
 * Fake thread created when multi-threading is disabled.
 */
