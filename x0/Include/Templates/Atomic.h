@@ -48,7 +48,7 @@ namespace UE4Atomic_Private
 	template <>           struct TIsVoidPointer<const volatile void*> { static constexpr bool Value = true; };
 
 	template <typename T>
-	inline T LoadRelaxed(const volatile T* Element)
+	FORCEINLINE T LoadRelaxed(const volatile T* Element)
 	{
 #ifdef __clang__
 		TUnderlyingIntegerType_T<T> Result;
@@ -60,14 +60,14 @@ namespace UE4Atomic_Private
 	}
 
 	template <typename T>
-	inline T Load(const volatile T* Element)
+	FORCEINLINE T Load(const volatile T* Element)
 	{
 		auto Result = FPlatformAtomics::AtomicRead((volatile TUnderlyingIntegerType_T<T>*)Element);
 		return *(const T*)&Result;
 	}
 
 	template <typename T>
-	inline void StoreRelaxed(const volatile T* Element, T Value)
+	FORCEINLINE void StoreRelaxed(const volatile T* Element, T Value)
 	{
 #ifdef __clang__
 		__atomic_store((volatile TUnderlyingIntegerType_T<T>*)Element, (TUnderlyingIntegerType_T<T>*)&Value, __ATOMIC_RELAXED);
@@ -77,76 +77,76 @@ namespace UE4Atomic_Private
 	}
 
 	template <typename T>
-	inline void Store(const volatile T* Element, T Value)
+	FORCEINLINE void Store(const volatile T* Element, T Value)
 	{
 		FPlatformAtomics::InterlockedExchange((volatile TUnderlyingIntegerType_T<T>*)Element, *(const TUnderlyingIntegerType_T<T>*)&Value);
 	}
 
 	template <typename T>
-	inline T Exchange(volatile T* Element, T Value)
+	FORCEINLINE T Exchange(volatile T* Element, T Value)
 	{
 		auto Result = FPlatformAtomics::InterlockedExchange((volatile TUnderlyingIntegerType_T<T>*)Element, *(const TUnderlyingIntegerType_T<T>*)&Value);
 		return *(const T*)&Result;
 	}
 
 	template <typename T>
-	inline T IncrementExchange(volatile T* Element)
+	FORCEINLINE T IncrementExchange(volatile T* Element)
 	{
 		auto Result = FPlatformAtomics::InterlockedIncrement((volatile TUnderlyingIntegerType_T<T>*)Element) - 1;
 		return *(const T*)&Result;
 	}
 
 	template <typename T>
-	inline T* IncrementExchange(T* volatile* Element)
+	FORCEINLINE T* IncrementExchange(T* volatile* Element)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T*>*)Element, sizeof(T));
 		return *(T* const*)&Result;
 	}
 
 	template <typename T, typename DiffType>
-	inline T AddExchange(volatile T* Element, DiffType Diff)
+	FORCEINLINE T AddExchange(volatile T* Element, DiffType Diff)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T>*)Element, (TUnderlyingIntegerType_T<T>)Diff);
 		return *(const T*)&Result;
 	}
 
 	template <typename T, typename DiffType>
-	inline T* AddExchange(T* volatile* Element, DiffType Diff)
+	FORCEINLINE T* AddExchange(T* volatile* Element, DiffType Diff)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T*>*)Element, (TUnderlyingIntegerType_T<T*>)(Diff * sizeof(T)));
 		return *(T* const*)&Result;
 	}
 
 	template <typename T>
-	inline T DecrementExchange(volatile T* Element)
+	FORCEINLINE T DecrementExchange(volatile T* Element)
 	{
 		auto Result = FPlatformAtomics::InterlockedDecrement((volatile TUnderlyingIntegerType_T<T>*)Element) + 1;
 		return *(const T*)&Result;
 	}
 
 	template <typename T>
-	inline T* DecrementExchange(T* volatile* Element)
+	FORCEINLINE T* DecrementExchange(T* volatile* Element)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T*>*)Element, -(TUnderlyingIntegerType_T<T*>)sizeof(T));
 		return *(T* const*)&Result;
 	}
 
 	template <typename T, typename DiffType>
-	inline T SubExchange(volatile T* Element, DiffType Diff)
+	FORCEINLINE T SubExchange(volatile T* Element, DiffType Diff)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T>*)Element, -(TUnderlyingIntegerType_T<T>)Diff);
 		return *(const T*)&Result;
 	}
 
 	template <typename T, typename DiffType>
-	inline T* SubExchange(T* volatile* Element, DiffType Diff)
+	FORCEINLINE T* SubExchange(T* volatile* Element, DiffType Diff)
 	{
 		auto Result = FPlatformAtomics::InterlockedAdd((volatile TUnderlyingIntegerType_T<T*>*)Element, -(TUnderlyingIntegerType_T<T*>)(Diff * sizeof(T)));
 		return *(T* const*)&Result;
 	}
 
 	template <typename T>
-	inline T CompareExchange(volatile T* Element, T ExpectedValue, T NewValue)
+	FORCEINLINE T CompareExchange(volatile T* Element, T ExpectedValue, T NewValue)
 	{
 		auto Result = FPlatformAtomics::InterlockedCompareExchange((volatile TUnderlyingIntegerType_T<T>*)Element, *(const TUnderlyingIntegerType_T<T>*)&NewValue, *(const TUnderlyingIntegerType_T<T>*)&ExpectedValue);
 		return *(const T*)&Result;
@@ -184,7 +184,7 @@ namespace UE4Atomic_Private
 template <typename T>
 struct alignas(UE4Atomic_Private::TIsSupportedSize<sizeof(T)>::Value ? alignof(UE4Atomic_Private::TUnderlyingIntegerType_T<T>) : alignof(T)) TAtomicBase_Basic
 {
-	inline T Load(EMemoryOrder Order = EMemoryOrder::SequentiallyConsistent) const
+	FORCEINLINE T Load(EMemoryOrder Order = EMemoryOrder::SequentiallyConsistent) const
 	{
 		switch (Order)
 		{
@@ -195,7 +195,7 @@ struct alignas(UE4Atomic_Private::TIsSupportedSize<sizeof(T)>::Value ? alignof(U
 		return UE4Atomic_Private::Load(&Element);
 	}
 
-	inline void Store(T Value, EMemoryOrder Order = EMemoryOrder::SequentiallyConsistent)
+	FORCEINLINE void Store(T Value, EMemoryOrder Order = EMemoryOrder::SequentiallyConsistent)
 	{
 		switch (Order)
 		{
@@ -206,12 +206,12 @@ struct alignas(UE4Atomic_Private::TIsSupportedSize<sizeof(T)>::Value ? alignof(U
 		return UE4Atomic_Private::Store(&Element, Value);
 	}
 
-	inline T Exchange(T Value)
+	FORCEINLINE T Exchange(T Value)
 	{
 		return UE4Atomic_Private::Exchange(&Element, Value);
 	}
 
-	inline bool CompareExchange(T& Expected, T Value)
+	FORCEINLINE bool CompareExchange(T& Expected, T Value)
 	{
 		T PrevValue = UE4Atomic_Private::CompareExchange(&this->Element, Expected, Value);
 		bool bResult = PrevValue == Expected;
@@ -237,32 +237,32 @@ template <typename T, typename DiffType>
 struct TAtomicBase_Arithmetic : public TAtomicBase_Basic<T>
 {
 public:
-	inline T operator++()
+	FORCEINLINE T operator++()
 	{
 		return UE4Atomic_Private::IncrementExchange(&this->Element) + 1;
 	}
 
-	inline T operator++(int)
+	FORCEINLINE T operator++(int)
 	{
 		return UE4Atomic_Private::IncrementExchange(&this->Element);
 	}
 
-	inline T operator+=(DiffType Value)
+	FORCEINLINE T operator+=(DiffType Value)
 	{
 		return UE4Atomic_Private::AddExchange(&this->Element, Value) + Value;
 	}
 
-	inline T operator--()
+	FORCEINLINE T operator--()
 	{
 		return UE4Atomic_Private::DecrementExchange(&this->Element) - 1;
 	}
 
-	inline T operator--(int)
+	FORCEINLINE T operator--(int)
 	{
 		return UE4Atomic_Private::DecrementExchange(&this->Element);
 	}
 
-	inline T operator-=(DiffType Value)
+	FORCEINLINE T operator-=(DiffType Value)
 	{
 		return UE4Atomic_Private::SubExchange(&this->Element, Value) - Value;
 	}
@@ -304,23 +304,23 @@ protected:
 };
 
 template <typename T>
-class X0_API TAtomic final : public UE4Atomic_Private::TAtomicBaseType_T<T>
+class TAtomic final : public UE4Atomic_Private::TAtomicBaseType_T<T>
 {
 	static_assert(TIsTrivial<T>::Value, "TAtomic is only usable with trivial types");
 public:
-	inline TAtomic() = default;
+	FORCEINLINE TAtomic() = default;
 
 	constexpr TAtomic(T Arg)
 		: UE4Atomic_Private::TAtomicBaseType_T<T>(Arg)
 	{
 	}
 
-	inline operator T() const
+	FORCEINLINE operator T() const
 	{
 		return this->Load();
 	}
 
-	inline T operator=(T Value)
+	FORCEINLINE T operator=(T Value)
 	{
 		this->Exchange(Value);
 		return Value;

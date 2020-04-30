@@ -9,6 +9,8 @@
 
 #include "X0.h"
 
+extern X0_API bool GIsCriticalError;
+
 /** Has GGameThreadId been set yet? */
 extern X0_API bool GIsGameThreadIdInitialized;
 /** NEED TO RENAME, for RT version of GFrameTime use View.ViewFamily->FrameNumber or pass down from RT from GFrameTime). */

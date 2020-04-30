@@ -1,20 +1,11 @@
 #pragma once
 
-#include <vector>
-
+#include "CoreTypes.h"
+#include "Templates/UnrealTypeTraits.h"
+#include "Containers/ContainerAllocationPolicies.h"
+#include "Containers/Array.h"
+#include "CoreGlobals.h"
 #include "Containers/ResourceArray.h"
-
-enum
-{
-	// Default allocator alignment. If the default is specified, the allocator applies to engine rules.
-	// Blocks >= 16 bytes will be 16-byte-aligned, Blocks < 16 will be 8-byte aligned. If the allocator does
-	// not support allocation alignment, the alignment will be ignored.
-	DEFAULT_ALIGNMENT = 0,
-
-	// Minimum allocator alignment
-	MIN_ALIGNMENT = 8,
-};
-
 
 /** alignment for supported resource types */
 enum EResourceAlignment
@@ -26,10 +17,10 @@ enum EResourceAlignment
 template< typename ElementType, uint32 Alignment = DEFAULT_ALIGNMENT >
 class TResourceArray
 	: public FResourceArrayInterface
-	, public std::vector<ElementType>
+	, public TArray<ElementType, TAlignedHeapAllocator<Alignment> >
 {
 public:
-	typedef std::vector<ElementType> Super;
+	typedef TArray<ElementType, TAlignedHeapAllocator<Alignment> > Super;
 
 	TResourceArray(bool InNeedsCPUAccess = false)
 		: Super()
@@ -60,7 +51,7 @@ public:
 	*/
 	virtual uint32 GetResourceDataSize() const
 	{
-		return this->size() * sizeof(ElementType);
+		return this->Num() * sizeof(ElementType);
 	}
 
 	/**
@@ -72,7 +63,7 @@ public:
 	{
 		if (!bNeedsCPUAccess/* && FPlatformProperties::RequiresCookedData() && !IsRunningCommandlet()*/)
 		{
-			this->clear();
+			this->Empty();
 		}
 	}
 

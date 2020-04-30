@@ -25,3 +25,5 @@ uint32					GFrameNumberRenderThread = 1;
 
 /** Steadily increasing frame counter.																		*/
 TSAN_ATOMIC(uint64)		GFrameCounter(0);
+
+bool					GIsCriticalError = false;					/* An appError() has occured */

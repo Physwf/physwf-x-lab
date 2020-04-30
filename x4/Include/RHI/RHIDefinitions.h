@@ -955,3 +955,126 @@ inline bool IsFeatureLevelSupported(EShaderPlatform InShaderPlatform, ERHIFeatur
 {
 	return InFeatureLevel <= GetMaxSupportedFeatureLevel(InShaderPlatform);
 }
+
+inline bool RHINeedsToSwitchVerticalAxis(EShaderPlatform Platform)
+{
+#if WITH_EDITOR
+	static const auto CVar = IConsoleManager::Get().FindTConsoleVariableDataInt(TEXT("r.Mobile.ForceRHISwitchVerticalAxis"));
+	if (CVar->GetValueOnAnyThread())
+	{
+		return true;
+	}
+#endif
+
+	// ES2 & ES3.1 need to flip when rendering to an RT that will be post processed
+	return IsOpenGLPlatform(Platform) && IsMobilePlatform(Platform) && !IsPCPlatform(Platform) && Platform != SP_METAL && !IsVulkanPlatform(Platform)
+		&& Platform != SP_SWITCH && Platform != SP_SWITCH_FORWARD;
+}
+
+inline bool RHISupportsSeparateMSAAAndResolveTextures(const EShaderPlatform Platform)
+{
+	// Metal mobile devices, Vulkan and Android ES2/3.1 need to handle MSAA and resolve textures internally (unless RHICreateTexture2D was changed to take an optional resolve target)
+	const bool bMobileMetalDevice = (Platform == SP_METAL || Platform == SP_METAL_MRT);
+	return !bMobileMetalDevice && !IsVulkanPlatform(Platform) && !IsAndroidOpenGLESPlatform(Platform);
+}
+
+inline bool RHISupportsComputeShaders(const EShaderPlatform Platform)
+{
+	//@todo-rco: Add Metal & ES3.1 support
+	return IsFeatureLevelSupported(Platform, ERHIFeatureLevel::SM5);
+}
+
+inline bool RHISupportsGeometryShaders(const EShaderPlatform Platform)
+{
+	return IsFeatureLevelSupported(Platform, ERHIFeatureLevel::SM4) && !IsMetalPlatform(Platform) && !IsVulkanMobilePlatform(Platform);
+}
+
+inline bool RHISupportsShaderCompression(const EShaderPlatform Platform)
+{
+	return true;
+}
+
+inline bool RHIHasTiledGPU(const EShaderPlatform Platform)
+{
+	// @todo MetalMRT Technically we should include (Platform == SP_METAL_MRT) but this would disable depth-pre-pass which is currently required.
+	return Platform == SP_METAL || Platform == SP_OPENGL_ES2_IOS || Platform == SP_OPENGL_ES2_ANDROID || Platform == SP_OPENGL_ES3_1_ANDROID;
+}
+
+inline bool RHISupportsVertexShaderLayer(const EShaderPlatform Platform)
+{
+	return IsFeatureLevelSupported(Platform, ERHIFeatureLevel::SM4) && IsPCPlatform(Platform) && IsMetalPlatform(Platform);
+}
+
+inline bool RHISupportsMobileMultiView(const EShaderPlatform Platform)
+{
+	return (Platform == EShaderPlatform::SP_OPENGL_ES3_1_ANDROID || Platform == EShaderPlatform::SP_OPENGL_ES2_ANDROID);
+}
+
+inline bool RHISupportsDrawIndirect(const EShaderPlatform Platform)
+{
+	return (Platform == EShaderPlatform::SP_METAL_SM5 || Platform == EShaderPlatform::SP_PCD3D_SM5 || IsVulkanSM5Platform(Platform) || Platform == EShaderPlatform::SP_PS4);
+}
+
+inline bool RHISupportsNativeShaderLibraries(const EShaderPlatform Platform)
+{
+	return IsMetalPlatform(Platform);
+}
+
+// Return what the expected number of samplers will be supported by a feature level
+// Note that since the Feature Level is pretty orthogonal to the RHI/HW, this is not going to be perfect
+// If should only be used for a guess at the limit, the real limit will not be known until runtime
+inline uint32 GetExpectedFeatureLevelMaxTextureSamplers(ERHIFeatureLevel::Type FeatureLevel)
+{
+	if (FeatureLevel == ERHIFeatureLevel::ES2)
+	{
+		return 8;
+	}
+	else
+	{
+		return 16;
+	}
+}
+
+inline int32 GetFeatureLevelMaxNumberOfBones(ERHIFeatureLevel::Type FeatureLevel)
+{
+	switch (FeatureLevel)
+	{
+	case ERHIFeatureLevel::ES2:
+		return 75;
+	case ERHIFeatureLevel::ES3_1:
+	case ERHIFeatureLevel::SM4:
+	case ERHIFeatureLevel::SM5:
+		return 256;
+	default:
+		checkf(0, TEXT("Unknown FeatureLevel %d"), (int32)FeatureLevel);
+	}
+
+	return 0;
+}
+
+inline bool IsUniformBufferResourceType(EUniformBufferBaseType BaseType)
+{
+	return BaseType == UBMT_SRV || BaseType == UBMT_UAV || BaseType == UBMT_SAMPLER || BaseType == UBMT_TEXTURE;
+}
+
+inline const TCHAR* GetShaderFrequencyString(EShaderFrequency Frequency, bool bIncludePrefix = true)
+{
+	const TCHAR* String = TEXT("SF_NumFrequencies");
+	switch (Frequency)
+	{
+	case SF_Vertex:			String = TEXT("SF_Vertex"); break;
+	case SF_Hull:			String = TEXT("SF_Hull"); break;
+	case SF_Domain:			String = TEXT("SF_Domain"); break;
+	case SF_Geometry:		String = TEXT("SF_Geometry"); break;
+	case SF_Pixel:			String = TEXT("SF_Pixel"); break;
+	case SF_Compute:		String = TEXT("SF_Compute"); break;
+	default:
+		checkf(0, TEXT("Unknown ShaderFrequency %d"), (int32)Frequency);
+		break;
+	}
+
+	// Skip SF_
+	int32 Index = bIncludePrefix ? 0 : 3;
+	String += Index;
+	return String;
+};

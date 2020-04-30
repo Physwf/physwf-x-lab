@@ -1032,3 +1032,70 @@ private:
 	FEvent* Event;
 };
 
+/**
+ * List of tasks that can be "joined" into one task which can be waited on or used as a prerequisite.
+ * Note, these are FGraphEventRef's, but we manually manage the reference count instead of using a smart pointer
+**/
+class FCompletionList
+{
+	TLockFreePointerListUnordered<FGraphEvent, 0>	Prerequisites;
+public:
+	/**
+	 * Adds a task to the completion list, can be called from any thread
+	 * @param TaskToAdd, task to add
+	 */
+	void Add(const FGraphEventRef& TaskToAdd)
+	{
+		FGraphEvent* Task = TaskToAdd.GetReference();
+		checkSlow(Task);
+		Task->AddRef(); // manually increasing the ref count
+		Prerequisites.Push(Task);
+	}
+	/**
+	  * Task function that waits until any newly added pending commands complete before it completes, forming a chain
+	**/
+	void ChainWaitForPrerequisites(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)
+	{
+		// this is tricky...
+		// we have waited for a set of pending tasks to execute. However, they may have added more pending tasks that also need to be waited for.
+		FGraphEventRef PendingComplete = CreatePrerequisiteCompletionHandle(CurrentThread);
+		if (PendingComplete.GetReference())
+		{
+			MyCompletionGraphEvent->DontCompleteUntil(PendingComplete);
+		}
+	}
+	/**
+	 * Create a completion handle that represents the completion of all pending tasks
+	 * This is complicated by the fact that some of the tasks we are waiting for might also add tasks
+	 * So it is recursive and the task we call here uses DontCompleteUntil to build the chain
+	 * this should always be called from the same thread.
+	 * @return The task that when completed, indicates all tasks in the list are completed, including any tasks they added recursively. Will be a NULL reference if there are no tasks
+	 */
+	FGraphEventRef CreatePrerequisiteCompletionHandle(ENamedThreads::Type CurrentThread)
+	{
+		FGraphEventRef CompleteHandle;
+		TArray<FGraphEvent*> Pending;
+		// grab all pending command completion handles
+		Prerequisites.PopAll(Pending);
+		if (Pending.Num())
+		{
+			FGraphEventArray PendingHandles;
+			// convert the pointer list to a list of handles
+			for (int32 Index = 0; Index < Pending.Num(); Index++)
+			{
+				new (PendingHandles) FGraphEventRef(Pending[Index]);
+				Pending[Index]->Release(); // remove the ref count we added when we added it to the lock free list
+			}
+			// start a new task that won't complete until all of these tasks have executed, plus any tasks that they create when they run
+// 			DECLARE_CYCLE_STAT(TEXT("FDelegateGraphTask.WaitOnCompletionList"),
+// 			STAT_FDelegateGraphTask_WaitOnCompletionList,
+// 				STATGROUP_TaskGraphTasks);
+
+// 			CompleteHandle = FDelegateGraphTask::CreateAndDispatchWhenReady(
+// 				FDelegateGraphTask::FDelegate::CreateRaw(this, &FCompletionList::ChainWaitForPrerequisites),
+// 				GET_STATID(STAT_FDelegateGraphTask_WaitOnCompletionList), &PendingHandles, CurrentThread, ENamedThreads::AnyHiPriThreadHiPriTask
+// 			);
+		}
+		return CompleteHandle;
+	}
+};

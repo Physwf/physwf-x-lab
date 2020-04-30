@@ -10,6 +10,16 @@
 #include "Misc/EnumClassFlags.h"
 #include "UniformBuffer.h"
 
+class FCanvas;
+class FMaterial;
+class FSceneInterface;
+class FSceneRenderTargets;
+class FSceneView;
+class FSceneViewFamily;
+class FSceneTexturesUniformParameters;
+struct FMeshBatch;
+struct FSynthBenchmarkResults;
+
 enum class EShowMaterialDrawEventTypes
 {
 	None						= 0 << 0,  //0
