@@ -105,9 +105,10 @@ FSuspendRenderingThread::FSuspendRenderingThread(bool bInRecreateThread)
 
 				ENamedThreads::Type RenderThread = ENamedThreads::GetRenderThread();
 
-// 				FGraphEventRef CompleteHandle = FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
-// 					FSimpleDelegateGraphTask::FDelegate::CreateStatic(&SuspendRendering),
-// 					GET_STATID(STAT_FSimpleDelegateGraphTask_SuspendRendering), NULL, RenderThread);
+				FGraphEventRef CompleteHandle = FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
+					//FSimpleDelegateGraphTask::FDelegate::CreateStatic(&SuspendRendering),
+					FSimpleDelegateGraphTask::FDelegate(&SuspendRendering),
+					/*GET_STATID(STAT_FSimpleDelegateGraphTask_SuspendRendering),*/ NULL, RenderThread);
 
 				// Busy wait while Kismet debugging, to avoid opportunistic execution of game thread tasks
 				// If the game thread is already executing tasks, then we have no choice but to spin

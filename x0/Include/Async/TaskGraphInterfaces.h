@@ -1032,6 +1032,201 @@ private:
 	FEvent* Event;
 };
 
+#include <functional>
+/** Task class for simple delegate based tasks. This is less efficient than a custom task, doesn't provide the task arguments, doesn't allow specification of the current thread, etc. **/
+class FSimpleDelegateGraphTask /*: public FCustomStatIDGraphTaskBase*/
+{
+public:
+	//DECLARE_DELEGATE(FDelegate);
+	typedef std::function<void()> FDelegate;
+
+	/** Delegate to fire when task runs **/
+	FDelegate							TaskDelegate;
+	/** Thread to run delegate on **/
+	const ENamedThreads::Type			DesiredThread;
+public:
+	ENamedThreads::Type GetDesiredThread()
+	{
+		return DesiredThread;
+	}
+	static ESubsequentsMode::Type GetSubsequentsMode() { return ESubsequentsMode::TrackSubsequents; }
+
+	void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)
+	{
+		/*TaskDelegate.ExecuteIfBound();*/
+		TaskDelegate();
+	}
+	/**
+	  * Task constructor
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  *	@param StatId The stat id for this task.
+	  * @param InDesiredThread - Thread to run on
+	**/
+	FSimpleDelegateGraphTask(const FDelegate& InTaskDeletegate, /*const TStatId StatId,*/ ENamedThreads::Type InDesiredThread)
+		: /*FCustomStatIDGraphTaskBase(StatId)*/
+		/*,*/ TaskDelegate(InTaskDeletegate)
+		, DesiredThread(InDesiredThread)
+	{
+	}
+
+	/**
+	  * Create a task and dispatch it when the prerequisites are complete
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  * @param InStatId - StatId of task for debugging or analysis tools
+	  * @param InPrerequisites - Handles for prerequisites for this task, can be NULL if there are no prerequisites
+	  * @param InDesiredThread - Thread to run on
+	  * @return completion handle for the new task
+	**/
+	static FGraphEventRef CreateAndDispatchWhenReady(const FDelegate& InTaskDeletegate, /*const TStatId InStatId,*/ const FGraphEventArray* InPrerequisites = NULL, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		return TGraphTask<FSimpleDelegateGraphTask>::CreateTask(InPrerequisites).ConstructAndDispatchWhenReady<const FDelegate&>(InTaskDeletegate, /*InStatId,*/ InDesiredThread);
+	}
+	/**
+	  * Create a task and dispatch it when the prerequisites are complete
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  * @param InStatId - StatId of task for debugging or analysis tools
+	  * @param InPrerequisite - Handle for a single prerequisite for this task
+	  * @param InDesiredThread - Thread to run on
+	  * @return completion handle for the new task
+	**/
+	static FGraphEventRef CreateAndDispatchWhenReady(const FDelegate& InTaskDeletegate, /*const TStatId&& InStatId,*/ const FGraphEventRef& InPrerequisite, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		FGraphEventArray Prerequisites;
+		check(InPrerequisite.GetReference());
+		Prerequisites.Add(InPrerequisite);
+		return CreateAndDispatchWhenReady(InTaskDeletegate, /*InStatId,*/ &Prerequisites, InDesiredThread);
+	}
+};
+/** Task class for more full featured delegate based tasks. Still less efficient than a custom task, but provides all of the args **/
+class FDelegateGraphTask /*: public FCustomStatIDGraphTaskBase*/
+{
+public:
+	//DECLARE_DELEGATE_TwoParams(FDelegate, ENamedThreads::Type, const  FGraphEventRef&);
+	typedef TFunction<void(ENamedThreads::Type, const  FGraphEventRef&)> FDelegate;
+	/** Delegate to fire when task runs **/
+	FDelegate							TaskDelegate;
+	/** Thread to run delegate on **/
+	const ENamedThreads::Type			DesiredThread;
+public:
+	ENamedThreads::Type GetDesiredThread()
+	{
+		return DesiredThread;
+	}
+	static ESubsequentsMode::Type GetSubsequentsMode()
+	{
+		return ESubsequentsMode::TrackSubsequents;
+	}
+	void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)
+	{
+		//TaskDelegate.ExecuteIfBound(CurrentThread, MyCompletionGraphEvent);
+		TaskDelegate(CurrentThread, MyCompletionGraphEvent);
+	}
+	/**
+	  * Task constructor
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  *	@param InStatId - The stat id for this task.
+	  * @param InDesiredThread - Thread to run on
+	**/
+	FDelegateGraphTask(const FDelegate& InTaskDeletegate, /*const TStatId InStatId,*/ ENamedThreads::Type InDesiredThread)
+		: /*FCustomStatIDGraphTaskBase(InStatId)*/
+		/*,*/ TaskDelegate(InTaskDeletegate)
+		, DesiredThread(InDesiredThread)
+	{
+	}
+
+	/**
+	  * Create a task and dispatch it when the prerequisites are complete
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  *	@param InStatId - The stat id for this task.
+	  * @param InPrerequisites - Handles for prerequisites for this task, can be NULL if there are no prerequisites
+	  * @param InCurrentThreadIfKnown - This thread, if known
+	  * @param InDesiredThread - Thread to run on
+	  * @return completion handle for the new task
+	**/
+	static FGraphEventRef CreateAndDispatchWhenReady(const FDelegate& InTaskDeletegate, /*const TStatId InStatId,*/ const FGraphEventArray* InPrerequisites = NULL, ENamedThreads::Type InCurrentThreadIfKnown = ENamedThreads::AnyThread, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		return TGraphTask<FDelegateGraphTask>::CreateTask(InPrerequisites, InCurrentThreadIfKnown).ConstructAndDispatchWhenReady<const FDelegate&>(InTaskDeletegate, /*InStatId,*/ InDesiredThread);
+	}
+	/**
+	  * Create a task and dispatch it when the prerequisites are complete
+	  * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	  *	@param InStatId - The stat id for this task.
+	  * @param InPrerequisite - Handle for a single prerequisite for this task
+	  * @param InCurrentThreadIfKnown - This thread, if known
+	  * @param InDesiredThread - Thread to run on
+	  * @return completion handle for the new task
+	**/
+	static FGraphEventRef CreateAndDispatchWhenReady(const FDelegate& InTaskDeletegate, /*const TStatId InStatId,*/ const FGraphEventRef& InPrerequisite, ENamedThreads::Type InCurrentThreadIfKnown = ENamedThreads::AnyThread, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		FGraphEventArray Prerequisites;
+		check(InPrerequisite.GetReference());
+		Prerequisites.Add(InPrerequisite);
+		return CreateAndDispatchWhenReady(InTaskDeletegate, /*InStatId,*/ &Prerequisites, InCurrentThreadIfKnown, InDesiredThread);
+	}
+};
+
+/** Task class for lambda based tasks. **/
+class FFunctionGraphTask /*: public FCustomStatIDGraphTaskBase*/
+{
+public:
+	/** Function to run **/
+	TFunction<void()> Function;
+	/** Thread to run the function on **/
+	const ENamedThreads::Type			DesiredThread;
+
+public:
+	ENamedThreads::Type GetDesiredThread()
+	{
+		return DesiredThread;
+	}
+	static ESubsequentsMode::Type GetSubsequentsMode() { return ESubsequentsMode::TrackSubsequents; }
+
+	void DoTask(ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent)
+	{
+		Function();
+	}
+	/**
+	 * Task constructor
+	 * @param InFunction - function to execute when the prerequisites are complete
+	 *	@param StatId The stat id for this task.
+	 * @param InDesiredThread - Thread to run on
+	 **/
+	FFunctionGraphTask(TFunction<void()>&& InFunction, /*const TStatId StatId,*/ ENamedThreads::Type InDesiredThread)
+		: /*FCustomStatIDGraphTaskBase(StatId)*/
+		/*,*/ Function(MoveTemp(InFunction))
+		, DesiredThread(InDesiredThread)
+	{
+	}
+
+	/**
+	 * Create a task and dispatch it when the prerequisites are complete
+	 * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	 * @param InStatId - StatId of task for debugging or analysis tools
+	 * @param InPrerequisites - Handles for prerequisites for this task, can be NULL if there are no prerequisites
+	 * @param InDesiredThread - Thread to run on
+	 * @return completion handle for the new task
+	 **/
+	static FGraphEventRef CreateAndDispatchWhenReady(TFunction<void()> InFunction, /*const TStatId InStatId,*/ const FGraphEventArray* InPrerequisites = NULL, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		return TGraphTask<FFunctionGraphTask>::CreateTask(InPrerequisites).ConstructAndDispatchWhenReady(MoveTemp(InFunction), /*InStatId,*/ InDesiredThread);
+	}
+	/**
+	 * Create a task and dispatch it when the prerequisites are complete
+	 * @param InTaskDelegate - delegate to execute when the prerequisites are complete
+	 * @param InStatId - StatId of task for debugging or analysis tools
+	 * @param InPrerequisite - Handle for a single prerequisite for this task
+	 * @param InDesiredThread - Thread to run on
+	 * @return completion handle for the new task
+	 **/
+	static FGraphEventRef CreateAndDispatchWhenReady(TFunction<void()> InFunction, /*const TStatId&& InStatId,*/ const FGraphEventRef& InPrerequisite, ENamedThreads::Type InDesiredThread = ENamedThreads::AnyThread)
+	{
+		FGraphEventArray Prerequisites;
+		check(InPrerequisite.GetReference());
+		Prerequisites.Add(InPrerequisite);
+		return CreateAndDispatchWhenReady(MoveTemp(InFunction), /*InStatId,*/ &Prerequisites, InDesiredThread);
+	}
+};
+
 /**
  * List of tasks that can be "joined" into one task which can be waited on or used as a prerequisite.
  * Note, these are FGraphEventRef's, but we manually manage the reference count instead of using a smart pointer
@@ -1091,10 +1286,11 @@ public:
 // 			STAT_FDelegateGraphTask_WaitOnCompletionList,
 // 				STATGROUP_TaskGraphTasks);
 
-// 			CompleteHandle = FDelegateGraphTask::CreateAndDispatchWhenReady(
-// 				FDelegateGraphTask::FDelegate::CreateRaw(this, &FCompletionList::ChainWaitForPrerequisites),
-// 				GET_STATID(STAT_FDelegateGraphTask_WaitOnCompletionList), &PendingHandles, CurrentThread, ENamedThreads::AnyHiPriThreadHiPriTask
-// 			);
+			CompleteHandle = FDelegateGraphTask::CreateAndDispatchWhenReady(
+				//FDelegateGraphTask::FDelegate::CreateRaw(this, &FCompletionList::ChainWaitForPrerequisites),
+				/*std::bind(this, &FCompletionList::ChainWaitForPrerequisites)*/[=](ENamedThreads::Type CurrentThread, const FGraphEventRef& MyCompletionGraphEvent) {this->ChainWaitForPrerequisites(CurrentThread, MyCompletionGraphEvent); },
+				/*GET_STATID(STAT_FDelegateGraphTask_WaitOnCompletionList),*/ &PendingHandles, CurrentThread, ENamedThreads::AnyHiPriThreadHiPriTask
+			);
 		}
 		return CompleteHandle;
 	}
