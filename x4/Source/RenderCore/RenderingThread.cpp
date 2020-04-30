@@ -131,9 +131,9 @@ FSuspendRenderingThread::FSuspendRenderingThread(bool bInRecreateThread)
 // 				STAT_FSimpleDelegateGraphTask_WaitAndResumeRendering,
 // 					STATGROUP_TaskGraphTasks);
 
-// 				FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
-// 					FSimpleDelegateGraphTask::FDelegate::CreateStatic(&WaitAndResumeRendering),
-// 					GET_STATID(STAT_FSimpleDelegateGraphTask_WaitAndResumeRendering), NULL, RenderThread);
+				FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
+					FSimpleDelegateGraphTask::FDelegate(&WaitAndResumeRendering),
+					/*GET_STATID(STAT_FSimpleDelegateGraphTask_WaitAndResumeRendering),*/ NULL, RenderThread);
 			}
 			else
 			{
@@ -164,10 +164,10 @@ FSuspendRenderingThread::~FSuspendRenderingThread()
 // 			STAT_FSimpleDelegateGraphTask_SetRealTimeMode,
 // 				STATGROUP_TaskGraphTasks);
 
-// 			FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
-// 				FSimpleDelegateGraphTask::FDelegate::CreateStatic(&FPlatformProcess::SetRealTimeMode),
-// 				GET_STATID(STAT_FSimpleDelegateGraphTask_SetRealTimeMode), NULL, ENamedThreads::GetRenderThread()
-// 			);
+			FSimpleDelegateGraphTask::CreateAndDispatchWhenReady(
+				FSimpleDelegateGraphTask::FDelegate(&FPlatformProcess::SetRealTimeMode),
+				/*GET_STATID(STAT_FSimpleDelegateGraphTask_SetRealTimeMode),*/ NULL, ENamedThreads::GetRenderThread()
+			);
 		}
 	}
 	else
