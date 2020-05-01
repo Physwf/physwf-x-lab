@@ -25,6 +25,7 @@ class X4_API FRHICommandList;
  */
 
 
+
  /** The maximum number of mip-maps that a texture can contain. 	*/
 extern	X4_API int32		GMaxTextureMipCount;
 
@@ -93,6 +94,47 @@ X4_API bool RHISupportsIndexBufferUAVs(const EShaderPlatform Platform);
 // helper to check if a preview feature level has been requested.
 //X4_API bool RHIGetPreviewFeatureLevel(ERHIFeatureLevel::Type& PreviewFeatureLevelOUT);
 
+inline bool RHISupportsMSAA(EShaderPlatform Platform)
+{
+	return
+		//@todo-rco: Fix when iOS OpenGL supports MSAA
+		Platform != SP_OPENGL_ES2_IOS
+		// @todo marksatt Metal on macOS 10.12 and earlier (or Intel on any macOS < 10.13.2) don't reliably support our MSAA usage & custom resolve.
+#if PLATFORM_MAC
+		&& IsMetalPlatform(Platform) && (FPlatformMisc::MacOSXVersionCompare(10, 13, 0) >= 0) && (!IsRHIDeviceIntel() || FPlatformMisc::MacOSXVersionCompare(10, 13, 2) >= 0)
+#endif
+		// @todo marksatt iOS Desktop Forward needs more work internally
+		&& Platform != SP_METAL_MRT;
+}
+
+inline bool RHISupportsBufferLoadTypeConversion(EShaderPlatform Platform)
+{
+#if PLATFORM_MAC || PLATFORM_IOS
+	return !IsMetalPlatform(Platform);
+#else
+	return true;
+#endif
+}
+
+/** Whether the platform supports reading from volume textures (does not cover rendering to volume textures). */
+inline bool RHISupportsVolumeTextures(ERHIFeatureLevel::Type FeatureLevel)
+{
+	return FeatureLevel >= ERHIFeatureLevel::SM4;
+}
+
+inline bool RHISupports4ComponentUAVReadWrite(EShaderPlatform Platform)
+{
+	// Must match usf PLATFORM_SUPPORTS_4COMPONENT_UAV_READ_WRITE
+	// D3D11 does not support multi-component loads from a UAV: "error X3676: typed UAV loads are only allowed for single-component 32-bit element types"
+	return Platform == SP_XBOXONE_D3D12 || Platform == SP_PS4 || IsMetalPlatform(Platform);
+}
+
+/** Whether Manual Vertex Fetch is supported for the specified shader platform.
+Shader Platform must not use the mobile renderer, and for Metal, the shader language must be at least 2. */
+inline bool RHISupportsManualVertexFetch(EShaderPlatform InShaderPlatform)
+{
+	return (!IsOpenGLPlatform(InShaderPlatform) || IsSwitchPlatform(InShaderPlatform)) && !IsMobilePlatform(InShaderPlatform) && (!IsMetalPlatform(InShaderPlatform) || RHIGetShaderLanguageVersion(InShaderPlatform) >= 2);
+}
 
 template <typename TValueType>
 class TRHIGlobal
@@ -314,6 +356,15 @@ extern X4_API uint64 GRHIPresentCounter;
 
 /** Called once per frame only from within an RHI. */
 extern X4_API void RHIPrivateBeginFrame();
+
+/** Table for finding out which shader platform corresponds to a given feature level for this RHI. */
+extern X4_API EShaderPlatform GShaderPlatformForFeatureLevel[ERHIFeatureLevel::Num];
+
+/** Get the shader platform associated with the supplied feature level on this machine */
+inline EShaderPlatform GetFeatureLevelShaderPlatform(ERHIFeatureLevel::Type InFeatureLevel)
+{
+	return GShaderPlatformForFeatureLevel[InFeatureLevel];
+}
 
 class FReadSurfaceDataFlags
 {
