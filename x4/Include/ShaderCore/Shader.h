@@ -876,7 +876,7 @@ public:
 * A shader type can manage multiple instance of FShader across mutiple dimensions such as EShaderPlatform, or permutation id.
 * The number of permutation of a shader type is simply given by GetPermutationCount().
 */
-class X0_API FShaderType
+class X4_API FShaderType
 {
 public:
 	enum class EShaderTypeForDynamicCast : uint32
@@ -897,7 +897,7 @@ public:
 	static TArray<FShaderType*> GetShaderTypesByFilename(const TCHAR* Filename);
 
 	/** @return The global shader name to type map */
-	static TMap<FName, FShaderType*>& GetNameToTypeMap();
+	static TMap<FString, FShaderType*>& GetNameToTypeMap();
 
 	/** Gets a list of FShaderTypes whose source file no longer matches what that type was compiled with */
 	static void GetOutdatedTypes(TArray<FShaderType*>& OutdatedShaderTypes, TArray<const FVertexFactoryType*>& OutdatedFactoryTypes);
@@ -937,7 +937,7 @@ public:
 	const FSHAHash& GetSourceHash() const;
 
 	/** Serializes a shader type reference by name. */
-	//X0_API friend FArchive& operator<<(FArchive& Ar, FShaderType*& Ref);
+	//X4_API friend FArchive& operator<<(FArchive& Ar, FShaderType*& Ref);
 
 	/** Hashes a pointer to a shader type. */
 	friend uint32 GetTypeHash(FShaderType* Ref)
@@ -1074,7 +1074,7 @@ private:
 	TLinkedList<FShaderType*> GlobalListLink;
 
 	// DumpShaderStats needs to access ShaderIdMap.
-	friend void X0_API DumpShaderStats(EShaderPlatform Platform, EShaderFrequency Frequency);
+	friend void X4_API DumpShaderStats(EShaderPlatform Platform, EShaderFrequency Frequency);
 
 
 	/**
@@ -1192,7 +1192,7 @@ protected:
 #endif
 
 // Binding of a set of shader stages in a single pipeline
-class X0_API FShaderPipelineType
+class X4_API FShaderPipelineType
 {
 public:
 	// Set bShouldOptimizeUnusedOutputs to true if we want unique FShaders for each shader pipeline
@@ -1226,8 +1226,8 @@ public:
 	static TLinkedList<FShaderPipelineType*>*& GetTypeList();
 
 	/** @return The global shader pipeline name to type map */
-	static TMap<FName, FShaderPipelineType*>& GetNameToTypeMap();
-	static const FShaderPipelineType* GetShaderPipelineTypeByName(FName Name);
+	static TMap<FString, FShaderPipelineType*>& GetNameToTypeMap();
+	static const FShaderPipelineType* GetShaderPipelineTypeByName(FString Name);
 
 	/** Initialize static members, this must be called before any shader types are created. */
 	static void Initialize();
@@ -1236,7 +1236,7 @@ public:
 	static TArray<const FShaderPipelineType*> GetShaderPipelineTypesByFilename(const TCHAR* Filename);
 
 	/** Serializes a shader type reference by name. */
-	//X0_API friend FArchive& operator<<(FArchive& Ar, const FShaderPipelineType*& Ref);
+	//X4_API friend FArchive& operator<<(FArchive& Ar, const FShaderPipelineType*& Ref);
 
 	/** Hashes a pointer to a shader type. */
 	friend uint32 GetTypeHash(FShaderPipelineType* Ref) { return Ref ? Ref->HashIndex : 0; }
