@@ -1,5 +1,13 @@
 #pragma once
 
+#include "CoreTypes.h"
+#include "HAL/PlatformMisc.h"
+#include "Templates/AndOrNot.h"
+#include "Templates/EnableIf.h"
+#include "Templates/IsArrayOrRefOfType.h"
+#include "Templates/IsValidVariadicFunctionArg.h"
+#include "Misc/VarArgs.h"
+
 #include <cassert>
 
 #define check(expr)					{ assert(expr); }

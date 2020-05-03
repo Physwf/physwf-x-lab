@@ -8,6 +8,8 @@
 
 #include "X0.h"
 
+/* Whether we are using the event driven loader */
+bool					GEventDrivenLoaderEnabled = false;
 
 X0_API FMalloc*			GMalloc = nullptr;		/* Memory allocator */
 

@@ -9,6 +9,9 @@
 
 #include "X0.h"
 
+/* Whether we are using the event driven loader */
+extern X0_API bool GEventDrivenLoaderEnabled;
+
 extern X0_API bool GIsCriticalError;
 
 /** Has GGameThreadId been set yet? */
