@@ -91,7 +91,7 @@ class X4_API FVertexFactoryShaderParameters
 public:
 	virtual ~FVertexFactoryShaderParameters() {}
 	virtual void Bind(const class FShaderParameterMap& ParameterMap) = 0;
-	//virtual void Serialize(FArchive& Ar) = 0;
+	virtual void Serialize(FArchive& Ar) = 0;
 	virtual void SetMesh(FRHICommandList& RHICmdList, FShader* VertexShader, const class FVertexFactory* VertexFactory, const class FSceneView& View, const struct FMeshBatchElement& BatchElement, uint32 DataFlags) const = 0;
 	virtual uint32 GetSize() const { return sizeof(*this); }
 };

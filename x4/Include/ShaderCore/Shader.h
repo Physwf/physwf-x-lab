@@ -8,7 +8,7 @@
 #include "RenderCore/RenderingThread.h"
 #include "ShaderCore.h"
 #include "ShaderPermutation.h"
-//#include "Serialization/ArchiveProxy.h"
+#include "Serialization/ArchiveProxy.h"
 //#include "UObject/RenderingObjectVersion.h"
 
 #include "X4.h"
@@ -2214,7 +2214,6 @@ public:
 		}
 	}
 };
-#if 0
 /** Archive used when saving shaders, which generates data used to detect serialization mismatches on load. */
 class FShaderSaveArchive : public FArchiveProxy
 {
@@ -2289,7 +2288,6 @@ private:
 	int64 OriginalPosition;
 };
 
-#endif
 
 /**
 * Dumps shader stats to the log. Will also print some shader pipeline information.
