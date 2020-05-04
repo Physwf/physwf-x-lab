@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreTypes.h"
-//#include "Serialization/Archive.h"
+#include "Serialization/Archive.h"
 #include "Containers/UnrealString.h"
 #include "Misc/DateTime.h"
 #include "GenericPlatform/GenericPlatformFile.h"
@@ -190,7 +190,6 @@ private:
 	void FindFilesRecursiveInternal(TArray<FString>& FileNames, const TCHAR* StartDirectory, const TCHAR* Filename, bool Files, bool Directories);
 };
 
-#if 0
 /*-----------------------------------------------------------------------------
 FArchiveFileReaderGeneric
 -----------------------------------------------------------------------------*/
@@ -308,4 +307,3 @@ protected:
 	bool bLoggingError;
 };
 
-#endif
