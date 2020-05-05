@@ -358,9 +358,9 @@ void FArchiveFileReaderGeneric::Seek(int64 InPos)
 	checkf(InPos <= Size, TEXT("Attempted to seek past the end of file (%lld/%lld), file: %s. The file is most likely corrupt."), InPos, Size, *Filename);
 	if (!SeekLowLevel(InPos))
 	{
-		TCHAR ErrorBuffer[1024];
-		ArIsError = true;
-		UE_LOG(LogFileManager, Error, TEXT("SetFilePointer on %s Failed %lld/%lld: %lld %s"), *Filename, InPos, Size, Pos, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
+// 		TCHAR ErrorBuffer[1024];
+// 		ArIsError = true;
+// 		UE_LOG(LogFileManager, Error, TEXT("SetFilePointer on %s Failed %lld/%lld: %lld %s"), *Filename, InPos, Size, Pos, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
 	}
 	Pos = InPos;
 	BufferBase = Pos;
@@ -424,9 +424,9 @@ bool FArchiveFileReaderGeneric::InternalPrecache(int64 PrecacheOffset, int64 Pre
 
 		if (Count != BufferCount)
 		{
-			TCHAR ErrorBuffer[1024];
-			ArIsError = true;
-			UE_LOG(LogFileManager, Warning, TEXT("ReadFile failed: Count=%lld BufferCount=%lld Error=%s"), Count, BufferCount, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
+// 			TCHAR ErrorBuffer[1024];
+// 			ArIsError = true;
+// 			UE_LOG(LogFileManager, Warning, TEXT("ReadFile failed: Count=%lld BufferCount=%lld Error=%s"), Count, BufferCount, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
 		}
 	}
 	return true;
@@ -454,10 +454,10 @@ void FArchiveFileReaderGeneric::Serialize(void* V, int64 Length)
 				}
 				if (Count != Length)
 				{
-					TCHAR ErrorBuffer[1024];
-					ArIsError = true;
-					UE_LOG(LogFileManager, Warning, TEXT("ReadFile failed: Count=%lld Length=%lld Error=%s for file %s"),
-						Count, Length, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0), *Filename);
+// 					TCHAR ErrorBuffer[1024];
+// 					ArIsError = true;
+// 					UE_LOG(LogFileManager, Warning, TEXT("ReadFile failed: Count=%lld Length=%lld Error=%s for file %s"),
+// 						Count, Length, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0), *Filename);
 				}
 				Pos += Length;
 				return;
@@ -605,8 +605,8 @@ void FArchiveFileWriterGeneric::LogWriteError(const TCHAR* Message)
 	if (!bLoggingError)
 	{
 		bLoggingError = true;
-		TCHAR ErrorBuffer[1024];
-		UE_LOG(LogFileManager, Error, TEXT("%s: %s (%s)"), Message, *Filename, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
+// 		TCHAR ErrorBuffer[1024];
+// 		UE_LOG(LogFileManager, Error, TEXT("%s: %s (%s)"), Message, *Filename, FPlatformMisc::GetSystemErrorMessage(ErrorBuffer, 1024, 0));
 		bLoggingError = false;
 	}
 }

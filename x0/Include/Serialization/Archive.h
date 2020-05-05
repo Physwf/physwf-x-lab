@@ -14,6 +14,8 @@
 #include "Templates/AndOrNot.h"
 #include "Templates/IsArrayOrRefOfType.h"
 
+#include "Containers/EnumAsByte.h"
+
 // Temporary while we shake out the EDL at boot
 #define USE_EVENT_DRIVEN_ASYNC_LOAD_AT_BOOT_TIME (1)
 
@@ -975,10 +977,10 @@ public:
 	/**
 	* Checks whether the archive wants to skip the property independent of the other flags
 	*/
-	virtual bool ShouldSkipProperty(const UProperty* InProperty) const
-	{
-		return false;
-	}
+// 	virtual bool ShouldSkipProperty(const UProperty* InProperty) const
+// 	{
+// 		return false;
+// 	}
 
 	/**
 	* Overrides the property that is currently being serialized
@@ -986,26 +988,26 @@ public:
 	*
 	* @param InProperty Pointer to the property that is currently being serialized
 	*/
-	FORCEINLINE void SetSerializedProperty(UProperty* InProperty)
-	{
-		SerializedProperty = InProperty;
-	}
+// 	FORCEINLINE void SetSerializedProperty(UProperty* InProperty)
+// 	{
+// 		SerializedProperty = InProperty;
+// 	}
 
 	/**
 	* Gets the property that is currently being serialized
 	*
 	* @return Pointer to the property that is currently being serialized
 	*/
-	FORCEINLINE class UProperty* GetSerializedProperty() const
-	{
-		return SerializedProperty;
-	}
+// 	FORCEINLINE class UProperty* GetSerializedProperty() const
+// 	{
+// 		return SerializedProperty;
+// 	}
 
 	/**
 	* Gets the chain of properties that are currently being serialized
 	* @note This populates the array in stack order, so the 0th entry in the array is the top of the stack of properties
 	*/
-	void GetSerializedPropertyChain(TArray<class UProperty*>& OutProperties) const;
+	//void GetSerializedPropertyChain(TArray<class UProperty*>& OutProperties) const;
 
 	/**
 	* Get the raw serialized property chain for this archive
@@ -1027,7 +1029,7 @@ public:
 	* @param InProperty			Pointer to the property that is currently being serialized
 	* @param bIsEditorOnlyProperty True if the property is editor only (call UProperty::IsEditorOnlyProperty to work this out, as the archive can't since it can't access CoreUObject types)
 	*/
-	virtual void PushSerializedProperty(class UProperty* InProperty, const bool bIsEditorOnlyProperty);
+	//virtual void PushSerializedProperty(class UProperty* InProperty, const bool bIsEditorOnlyProperty);
 
 	/**
 	* Pop a property that was previously being serialized off the property stack
@@ -1035,7 +1037,7 @@ public:
 	* @param InProperty			Pointer to the property that was previously being serialized
 	* @param bIsEditorOnlyProperty True if the property is editor only (call UProperty::IsEditorOnlyProperty to work this out, as the archive can't since it can't access CoreUObject types)
 	*/
-	virtual void PopSerializedProperty(class UProperty* InProperty, const bool bIsEditorOnlyProperty);
+	//virtual void PopSerializedProperty(class UProperty* InProperty, const bool bIsEditorOnlyProperty);
 
 #if WITH_EDITORONLY_DATA
 	/** Returns true if the stack of currently serialized properties contains an editor-only property */
@@ -1417,7 +1419,7 @@ private:
 	//const ITargetPlatform* CookingTargetPlatform;
 
 	/** Holds the pointer to the property that is currently being serialized */
-	UProperty* SerializedProperty;
+	//UProperty* SerializedProperty;
 
 	/** Holds the chain of properties that are currently being serialized */
 	//FArchiveSerializedPropertyChain* SerializedPropertyChain;

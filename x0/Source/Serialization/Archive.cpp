@@ -160,7 +160,7 @@ void FArchive::Reset()
 	ArCustomPropertyList = nullptr;
 	ArUseCustomPropertyList = false;
 	//CookingTargetPlatform = nullptr;
-	SerializedProperty = nullptr;
+	//SerializedProperty = nullptr;
 
 	//delete SerializedPropertyChain;
 	//SerializedPropertyChain = nullptr;
@@ -216,7 +216,7 @@ void FArchive::CopyTrivialFArchiveStatusMembers(const FArchive& ArchiveToCopy)
 	ArCustomPropertyList = ArchiveToCopy.ArCustomPropertyList;
 	ArUseCustomPropertyList = ArchiveToCopy.ArUseCustomPropertyList;
 	//CookingTargetPlatform = ArchiveToCopy.CookingTargetPlatform;
-	SerializedProperty = ArchiveToCopy.SerializedProperty;
+	//SerializedProperty = ArchiveToCopy.SerializedProperty;
 #if USE_STABLE_LOCALIZATION_KEYS
 	SetBaseLocalizationNamespace(ArchiveToCopy.GetBaseLocalizationNamespace());
 #endif // USE_STABLE_LOCALIZATION_KEYS
