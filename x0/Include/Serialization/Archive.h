@@ -1041,7 +1041,7 @@ public:
 
 #if WITH_EDITORONLY_DATA
 	/** Returns true if the stack of currently serialized properties contains an editor-only property */
-	virtual bool IsEditorOnlyPropertyOnTheStack() const;
+	//virtual bool IsEditorOnlyPropertyOnTheStack() const;
 #endif
 
 	/**

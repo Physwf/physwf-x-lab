@@ -6,14 +6,14 @@
 #include "HAL/UnrealMemory.h"
 #include "Templates/UnrealTemplate.h"
 #include "CoreGlobals.h"
-//#include "HAL/FileManager.h"
+#include "HAL/FileManager.h"
 //#include "Misc/Parse.h"
 #include "Containers/StringConv.h"
 #include "Containers/UnrealString.h"
 #include "Containers/Set.h"
 #include "Misc/SingleThreadEvent.h"
 //#include "Misc/CommandLine.h"
-//#include "Misc/Paths.h"
+#include "Misc/Paths.h"
 //#include "Internationalization/Internationalization.h"
 #include "CoreGlobals.h"
 //#include "Stats/Stats.h"
@@ -179,4 +179,74 @@ void FEventWin::Reset()
 FRunnableThread* FWindowsPlatformProcess::CreateRunnableThread()
 {
 	return new FRunnableThreadWin();
+}
+
+const TCHAR* FWindowsPlatformProcess::BaseDir()
+{
+	static TCHAR Result[512] = TEXT("");
+	if (!Result[0])
+	{
+		// Normally the BaseDir is determined from the path of the running process module, 
+		// but for debugging, particularly client or server, it can be useful to point the
+		// code at an existing cooked directory. If using -BaseFromWorkingDir set the
+		// workingdir in your debugger to the <path>/Project/Binaries/Win64 of your cooked
+		// data
+		// Too early to use the FCommand line interface
+// 		FString BaseArg;
+// 		FParse::Value(::GetCommandLineW(), TEXT("-basedir="), BaseArg);
+// 
+// 		if (BaseArg.Len())
+// 		{
+// 			BaseArg = BaseArg.Replace(TEXT("\\"), TEXT("/"));
+// 			BaseArg += TEXT('/');
+// 			FCString::Strcpy(Result, *BaseArg);
+// 		}
+// 		else if (FCString::Stristr(::GetCommandLineW(), TEXT("-BaseFromWorkingDir")))
+// 		{
+// 			::GetCurrentDirectory(512, Result);
+// 
+// 			FString TempResult(Result);
+// 			TempResult = TempResult.Replace(TEXT("\\"), TEXT("/"));
+// 			TempResult += TEXT('/');
+// 			FCString::Strcpy(Result, *TempResult);
+// 		}
+// 		else
+		{
+			// Get the directory containing the current module if possible, or use the directory containing the executable if not
+			HMODULE hCurrentModule;
+			if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)&BaseDir, &hCurrentModule) == 0)
+			{
+				hCurrentModule = hInstance;
+			}
+			GetModuleFileName(hCurrentModule, Result, ARRAY_COUNT(Result));
+			FString TempResult(Result);
+			TempResult = TempResult.Replace(TEXT("\\"), TEXT("/"));
+			FCString::Strcpy(Result, *TempResult);
+			int32 StringLength = FCString::Strlen(Result);
+			int32 NumSubDirectories = 0;
+#ifdef ENGINE_BASE_DIR_ADJUST
+			NumSubDirectories = ENGINE_BASE_DIR_ADJUST;
+#endif
+			if (StringLength > 0)
+			{
+				--StringLength;
+				for (; StringLength > 0; StringLength--)
+				{
+					if (Result[StringLength - 1] == TEXT('/') || Result[StringLength - 1] == TEXT('\\'))
+					{
+						if (--NumSubDirectories < 0) //-V547
+						{
+							break;
+						}
+					}
+				}
+			}
+			Result[StringLength] = 0;
+
+			FString CollapseResult(Result);
+			FPaths::CollapseRelativeDirectories(CollapseResult);
+			FCString::Strcpy(Result, *CollapseResult);
+		}
+	}
+	return Result;
 }

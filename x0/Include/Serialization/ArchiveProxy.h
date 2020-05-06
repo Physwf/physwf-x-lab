@@ -136,10 +136,10 @@ public:
 	}
 #if WITH_EDITORONLY_DATA
 	/** Returns true if the stack of currently serialized properties contains an editor-only property */
-	virtual FORCEINLINE bool IsEditorOnlyPropertyOnTheStack() const
-	{
-		return InnerArchive.IsEditorOnlyPropertyOnTheStack();
-	}
+// 	virtual FORCEINLINE bool IsEditorOnlyPropertyOnTheStack() const
+// 	{
+// 		return InnerArchive.IsEditorOnlyPropertyOnTheStack();
+// 	}
 #endif
 
 	virtual FORCEINLINE bool IsProxyOf(FArchive* InOther) const

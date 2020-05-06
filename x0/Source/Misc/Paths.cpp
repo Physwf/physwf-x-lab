@@ -14,6 +14,9 @@
 #include "Misc/App.h"
 //#include "Misc/DataDrivenPlatformInfoRegistry.h"
 //#include "Misc/EngineVersion.h"
+
+#include "HAL/PlatformProperties.h"
+
 namespace UE4Paths_Private
 {
 	auto IsSlashOrBackslash = [](TCHAR C) { return C == TEXT('/') || C == TEXT('\\'); };
@@ -266,4 +269,140 @@ void FPaths::RemoveDuplicateSlashes(FString& InPath)
 	{
 		InPath = InPath.Replace(TEXT("//"), TEXT("/"), ESearchCase::CaseSensitive);
 	}
+}
+
+FString FPaths::ScreenShotDir()
+{
+	return FPaths::ProjectSavedDir() + TEXT("Screenshots/") + FPlatformProperties::PlatformName() + TEXT("/");
+}
+
+FString FPaths::ProjectLogDir()
+{
+#if PLATFORM_PS4
+
+	const FString* OverrideDir = FPS4PlatformFile::GetOverrideLogDirectory();
+	if (OverrideDir != nullptr)
+	{
+		return *OverrideDir;
+	}
+
+#endif
+
+#if PLATFORM_MAC || PLATFORM_XBOXONE
+	if (UE4Paths_Private::CustomUserDirArgument().IsEmpty())
+	{
+		return FPlatformProcess::UserLogsDir();
+	}
+#endif
+
+	return FPaths::ProjectSavedDir() + TEXT("Logs/");
+}
+
+
+FString FPaths::GetCleanFilename(const FString& InPath)
+{
+	static_assert(INDEX_NONE == -1, "INDEX_NONE assumed to be -1");
+
+	int32 EndPos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsNotSlashOrBackslash) + 1;
+	int32 StartPos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsSlashOrBackslash, EndPos) + 1;
+
+	FString Result = InPath.Mid(StartPos, EndPos - StartPos);
+	return Result;
+}
+
+FString FPaths::GetCleanFilename(FString&& InPath)
+{
+	static_assert(INDEX_NONE == -1, "INDEX_NONE assumed to be -1");
+
+	int32 EndPos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsNotSlashOrBackslash) + 1;
+	int32 StartPos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsSlashOrBackslash, EndPos) + 1;
+
+	InPath.RemoveAt(EndPos, InPath.Len() - EndPos, false);
+	InPath.RemoveAt(0, StartPos, false);
+
+	return MoveTemp(InPath);
+}
+
+FString FPaths::GetPath(const FString& InPath)
+{
+	int32 Pos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsSlashOrBackslash);
+
+	FString Result;
+	if (Pos != INDEX_NONE)
+	{
+		Result = InPath.Left(Pos);
+	}
+
+	return Result;
+}
+
+FString FPaths::GetPath(FString&& InPath)
+{
+	int32 Pos = InPath.FindLastCharByPredicate(UE4Paths_Private::IsSlashOrBackslash);
+
+	FString Result;
+	if (Pos != INDEX_NONE)
+	{
+		InPath.RemoveAt(Pos, InPath.Len() - Pos, false);
+		Result = MoveTemp(InPath);
+	}
+
+	return Result;
+}
+
+void FPaths::NormalizeFilename(FString& InPath)
+{
+	InPath.ReplaceInline(TEXT("\\"), TEXT("/"), ESearchCase::CaseSensitive);
+
+	FPlatformMisc::NormalizePath(InPath);
+}
+
+bool FPaths::MakePathRelativeTo(FString& InPath, const TCHAR* InRelativeTo)
+{
+	FString Target = FPaths::ConvertRelativePathToFull(InPath);
+	FString Source = FPaths::ConvertRelativePathToFull(InRelativeTo);
+
+	Source = FPaths::GetPath(Source);
+	Source.ReplaceInline(TEXT("\\"), TEXT("/"), ESearchCase::CaseSensitive);
+	Target.ReplaceInline(TEXT("\\"), TEXT("/"), ESearchCase::CaseSensitive);
+
+	TArray<FString> TargetArray;
+	Target.ParseIntoArray(TargetArray, TEXT("/"), true);
+	TArray<FString> SourceArray;
+	Source.ParseIntoArray(SourceArray, TEXT("/"), true);
+
+	if (TargetArray.Num() && SourceArray.Num())
+	{
+		// Check for being on different drives
+		if ((TargetArray[0][1] == TEXT(':')) && (SourceArray[0][1] == TEXT(':')))
+		{
+			if (FChar::ToUpper(TargetArray[0][0]) != FChar::ToUpper(SourceArray[0][0]))
+			{
+				// The Target and Source are on different drives... No relative path available.
+				return false;
+			}
+		}
+	}
+
+	while (TargetArray.Num() && SourceArray.Num() && TargetArray[0] == SourceArray[0])
+	{
+		TargetArray.RemoveAt(0);
+		SourceArray.RemoveAt(0);
+	}
+	FString Result;
+	for (int32 Index = 0; Index < SourceArray.Num(); Index++)
+	{
+		Result += TEXT("../");
+	}
+	for (int32 Index = 0; Index < TargetArray.Num(); Index++)
+	{
+		Result += TargetArray[Index];
+		if (Index + 1 < TargetArray.Num())
+		{
+			Result += TEXT("/");
+		}
+	}
+
+	InPath = Result;
+	return true;
 }
