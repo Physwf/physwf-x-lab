@@ -123,7 +123,7 @@ public:
 		return X != V.X || Y != V.Y || Z != V.Z;
 	}
 
-	//bool Equals(const XVector& V, float Tolerance = KINDA_SMALL_NUMBER) const;
+	bool Equals(const FVector& V, float Tolerance = KINDA_SMALL_NUMBER) const;
 
 
 	FVector operator-() const
@@ -277,6 +277,28 @@ public:
 	 * @see ToOrientationQuat()
 	 */
 	X0_API FRotator ToOrientationRotator() const;
+
+	/**
+ * Gets the reciprocal of this vector, avoiding division by zero.
+ * Zero components are set to BIG_NUMBER.
+ *
+ * @return Reciprocal of this vector.
+ */
+	FVector Reciprocal() const;
+
+	/**
+	 * Get a textual representation of this vector.
+	 *
+	 * @return A string describing the vector.
+	 */
+	FString ToString() const;
+
+	/**
+	 * Utility to check if there are any non-finite values (NaN or Inf) in this vector.
+	 *
+	 * @return true if there are any non-finite values in this vector, false otherwise.
+	 */
+	bool ContainsNaN() const;
 };
 
 inline FVector2D::FVector2D(const FVector& V)
@@ -320,4 +342,97 @@ FORCEINLINE FVector FVector::GetUnsafeNormal() const
 {
 	const float Scale = FMath::InvSqrt(X*X + Y * Y + Z * Z);
 	return FVector(X*Scale, Y*Scale, Z*Scale);
+}
+
+/**
+ * Util to calculate distance from a point to a bounding box
+ *
+ * @param Mins 3D Point defining the lower values of the axis of the bound box
+ * @param Max 3D Point defining the lower values of the axis of the bound box
+ * @param Point 3D position of interest
+ * @return the distance from the Point to the bounding box.
+ */
+FORCEINLINE float ComputeSquaredDistanceFromBoxToPoint(const FVector& Mins, const FVector& Maxs, const FVector& Point)
+{
+	// Accumulates the distance as we iterate axis
+	float DistSquared = 0.f;
+
+	// Check each axis for min/max and add the distance accordingly
+	// NOTE: Loop manually unrolled for > 2x speed up
+	if (Point.X < Mins.X)
+	{
+		DistSquared += FMath::Square(Point.X - Mins.X);
+	}
+	else if (Point.X > Maxs.X)
+	{
+		DistSquared += FMath::Square(Point.X - Maxs.X);
+	}
+
+	if (Point.Y < Mins.Y)
+	{
+		DistSquared += FMath::Square(Point.Y - Mins.Y);
+	}
+	else if (Point.Y > Maxs.Y)
+	{
+		DistSquared += FMath::Square(Point.Y - Maxs.Y);
+	}
+
+	if (Point.Z < Mins.Z)
+	{
+		DistSquared += FMath::Square(Point.Z - Mins.Z);
+	}
+	else if (Point.Z > Maxs.Z)
+	{
+		DistSquared += FMath::Square(Point.Z - Maxs.Z);
+	}
+
+	return DistSquared;
+}
+
+FORCEINLINE FVector FVector::Reciprocal() const
+{
+	FVector RecVector;
+	if (X != 0.f)
+	{
+		RecVector.X = 1.f / X;
+	}
+	else
+	{
+		RecVector.X = BIG_NUMBER;
+	}
+	if (Y != 0.f)
+	{
+		RecVector.Y = 1.f / Y;
+	}
+	else
+	{
+		RecVector.Y = BIG_NUMBER;
+	}
+	if (Z != 0.f)
+	{
+		RecVector.Z = 1.f / Z;
+	}
+	else
+	{
+		RecVector.Z = BIG_NUMBER;
+	}
+
+	return RecVector;
+}
+
+FORCEINLINE FString FVector::ToString() const
+{
+	return FString::Printf(TEXT("X=%3.3f Y=%3.3f Z=%3.3f"), X, Y, Z);
+}
+
+FORCEINLINE bool FVector::Equals(const FVector& V, float Tolerance) const
+{
+	return FMath::Abs(X - V.X) <= Tolerance && FMath::Abs(Y - V.Y) <= Tolerance && FMath::Abs(Z - V.Z) <= Tolerance;
+}
+
+FORCEINLINE bool FVector::ContainsNaN() const
+{
+	return (!FMath::IsFinite(X) ||
+		!FMath::IsFinite(Y) ||
+		!FMath::IsFinite(Z));
 }

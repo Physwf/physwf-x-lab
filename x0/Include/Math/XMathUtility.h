@@ -280,4 +280,314 @@ struct FMath : public FPlatformMath
 		return Abs<double>(Value) <= ErrorTolerance;
 	}
 
+	// Geometry intersection 
+
+	/**
+	 * Find the intersection of a ray and a plane.  The ray has a start point with an infinite length.  Assumes that the
+	 * line and plane do indeed intersect; you must make sure they're not parallel before calling.
+	 *
+	 * @param RayOrigin	The start point of the ray
+	 * @param RayDirection	The direction the ray is pointing (normalized vector)
+	 * @param Plane	The plane to intersect with
+	 *
+	 * @return The point of intersection between the ray and the plane.
+	 */
+	static FVector RayPlaneIntersection(const FVector& RayOrigin, const FVector& RayDirection, const FPlane& Plane);
+
+	/**
+	 * Find the intersection of a line and an offset plane. Assumes that the
+	 * line and plane do indeed intersect; you must make sure they're not
+	 * parallel before calling.
+	 *
+	 * @param Point1 the first point defining the line
+	 * @param Point2 the second point defining the line
+	 * @param PlaneOrigin the origin of the plane
+	 * @param PlaneNormal the normal of the plane
+	 *
+	 * @return The point of intersection between the line and the plane.
+	 */
+	static FVector LinePlaneIntersection(const FVector &Point1, const FVector &Point2, const FVector &PlaneOrigin, const FVector &PlaneNormal);
+
+	/**
+	 * Find the intersection of a line and a plane. Assumes that the line and
+	 * plane do indeed intersect; you must make sure they're not parallel before
+	 * calling.
+	 *
+	 * @param Point1 the first point defining the line
+	 * @param Point2 the second point defining the line
+	 * @param Plane the plane
+	 *
+	 * @return The point of intersection between the line and the plane.
+	 */
+	static FVector LinePlaneIntersection(const FVector &Point1, const FVector &Point2, const FPlane  &Plane);
+
+
+	// @parma InOutScissorRect should be set to View.ViewRect before the call
+	// @return 0: light is not visible, 1:use scissor rect, 2: no scissor rect needed
+	static X0_API uint32 ComputeProjectedSphereScissorRect(struct FIntRect& InOutScissorRect, FVector SphereOrigin, float Radius, FVector ViewOrigin, const FMatrix& ViewMatrix, const FMatrix& ProjMatrix);
+
+	// @param ConeOrigin Cone origin
+	// @param ConeDirection Cone direction
+	// @param ConeRadius Cone Radius
+	// @param CosConeAngle Cos of the cone angle
+	// @param SinConeAngle Sin of the cone angle
+	// @return Minimal bounding sphere encompassing given cone
+	static FSphere ComputeBoundingSphereForCone(FVector const& ConeOrigin, FVector const& ConeDirection, float ConeRadius, float CosConeAngle, float SinConeAngle);
+
+	/**
+	 * Determine if a plane and an AABB intersect
+	 * @param P - the plane to test
+	 * @param AABB - the axis aligned bounding box to test
+	 * @return if collision occurs
+	 */
+	static X0_API bool PlaneAABBIntersection(const FPlane& P, const FBox& AABB);
+
+	/**
+	 * Performs a sphere vs box intersection test using Arvo's algorithm:
+	 *
+	 *	for each i in (x, y, z)
+	 *		if (SphereCenter(i) < BoxMin(i)) d2 += (SphereCenter(i) - BoxMin(i)) ^ 2
+	 *		else if (SphereCenter(i) > BoxMax(i)) d2 += (SphereCenter(i) - BoxMax(i)) ^ 2
+	 *
+	 * @param Sphere the center of the sphere being tested against the AABB
+	 * @param RadiusSquared the size of the sphere being tested
+	 * @param AABB the box being tested against
+	 *
+	 * @return Whether the sphere/box intersect or not.
+	 */
+	static bool SphereAABBIntersection(const FVector& SphereCenter, const float RadiusSquared, const FBox& AABB);
+
+	/**
+	 * Converts a sphere into a point plus radius squared for the test above
+	 */
+	static bool SphereAABBIntersection(const FSphere& Sphere, const FBox& AABB);
+
+	/** Determines whether a point is inside a box. */
+	static bool PointBoxIntersection(const FVector& Point, const FBox& Box);
+
+	/** Determines whether a line intersects a box. */
+	static bool LineBoxIntersection(const FBox& Box, const FVector& Start, const FVector& End, const FVector& Direction);
+
+	/** Determines whether a line intersects a box. This overload avoids the need to do the reciprocal every time. */
+	static bool LineBoxIntersection(const FBox& Box, const FVector& Start, const FVector& End, const FVector& Direction, const FVector& OneOverDirection);
+
+	/* Swept-Box vs Box test */
+	static X0_API bool LineExtentBoxIntersection(const FBox& inBox, const FVector& Start, const FVector& End, const FVector& Extent, FVector& HitLocation, FVector& HitNormal, float& HitTime);
+
+	/** Determines whether a line intersects a sphere. */
+	static bool LineSphereIntersection(const FVector& Start, const FVector& Dir, float Length, const FVector& Origin, float Radius);
+
+	/**
+	 * Assumes the cone tip is at 0,0,0 (means the SphereCenter is relative to the cone tip)
+	 * @return true: cone and sphere do intersect, false otherwise
+	 */
+	static X0_API bool SphereConeIntersection(const FVector& SphereCenter, float SphereRadius, const FVector& ConeAxis, float ConeAngleSin, float ConeAngleCos);
+
+	/** Find the point on the line segment from LineStart to LineEnd which is closest to Point */
+	static X0_API FVector ClosestPointOnLine(const FVector& LineStart, const FVector& LineEnd, const FVector& Point);
+
+	/** Find the point on the infinite line between two points (LineStart, LineEnd) which is closest to Point */
+	static X0_API FVector ClosestPointOnInfiniteLine(const FVector& LineStart, const FVector& LineEnd, const FVector& Point);
+
+	/** Compute intersection point of three planes. Return 1 if valid, 0 if infinite. */
+	static bool IntersectPlanes3(FVector& I, const FPlane& P1, const FPlane& P2, const FPlane& P3);
+
+	/**
+	 * Compute intersection point and direction of line joining two planes.
+	 * Return 1 if valid, 0 if infinite.
+	 */
+	static bool IntersectPlanes2(FVector& I, FVector& D, const FPlane& P1, const FPlane& P2);
+
+	/**
+	 * Calculates the distance of a given Point in world space to a given line,
+	 * defined by the vector couple (Origin, Direction).
+	 *
+	 * @param	Point				Point to check distance to line
+	 * @param	Direction			Vector indicating the direction of the line. Not required to be normalized.
+	 * @param	Origin				Point of reference used to calculate distance
+	 * @param	OutClosestPoint	optional point that represents the closest point projected onto Axis
+	 *
+	 * @return	distance of Point from line defined by (Origin, Direction)
+	 */
+	static X0_API float PointDistToLine(const FVector &Point, const FVector &Direction, const FVector &Origin, FVector &OutClosestPoint);
+	static X0_API float PointDistToLine(const FVector &Point, const FVector &Direction, const FVector &Origin);
+
+	/**
+	 * Returns closest point on a segment to a given point.
+	 * The idea is to project point on line formed by segment.
+	 * Then we see if the closest point on the line is outside of segment or inside.
+	 *
+	 * @param	Point			point for which we find the closest point on the segment
+	 * @param	StartPoint		StartPoint of segment
+	 * @param	EndPoint		EndPoint of segment
+	 *
+	 * @return	point on the segment defined by (StartPoint, EndPoint) that is closest to Point.
+	 */
+	static X0_API FVector ClosestPointOnSegment(const FVector &Point, const FVector &StartPoint, const FVector &EndPoint);
+
+	/**
+	* FVector2D version of ClosestPointOnSegment.
+	* Returns closest point on a segment to a given 2D point.
+	* The idea is to project point on line formed by segment.
+	* Then we see if the closest point on the line is outside of segment or inside.
+	*
+	* @param	Point			point for which we find the closest point on the segment
+	* @param	StartPoint		StartPoint of segment
+	* @param	EndPoint		EndPoint of segment
+	*
+	* @return	point on the segment defined by (StartPoint, EndPoint) that is closest to Point.
+	*/
+	static X0_API FVector2D ClosestPointOnSegment2D(const FVector2D &Point, const FVector2D &StartPoint, const FVector2D &EndPoint);
+
+	/**
+	 * Returns distance from a point to the closest point on a segment.
+	 *
+	 * @param	Point			point to check distance for
+	 * @param	StartPoint		StartPoint of segment
+	 * @param	EndPoint		EndPoint of segment
+	 *
+	 * @return	closest distance from Point to segment defined by (StartPoint, EndPoint).
+	 */
+	static X0_API float PointDistToSegment(const FVector &Point, const FVector &StartPoint, const FVector &EndPoint);
+
+	/**
+	 * Returns square of the distance from a point to the closest point on a segment.
+	 *
+	 * @param	Point			point to check distance for
+	 * @param	StartPoint		StartPoint of segment
+	 * @param	EndPoint		EndPoint of segment
+	 *
+	 * @return	square of the closest distance from Point to segment defined by (StartPoint, EndPoint).
+	 */
+	static X0_API float PointDistToSegmentSquared(const FVector &Point, const FVector &StartPoint, const FVector &EndPoint);
+
+	/**
+	 * Find closest points between 2 segments.
+	 *
+	 * If either segment may have a length of 0, use SegmentDistToSegmentSafe instance.
+	 *
+	 * @param	(A1, B1)	defines the first segment.
+	 * @param	(A2, B2)	defines the second segment.
+	 * @param	OutP1		Closest point on segment 1 to segment 2.
+	 * @param	OutP2		Closest point on segment 2 to segment 1.
+	 */
+	static X0_API void SegmentDistToSegment(FVector A1, FVector B1, FVector A2, FVector B2, FVector& OutP1, FVector& OutP2);
+
+	/**
+	 * Find closest points between 2 segments.
+	 *
+	 * This is the safe version, and will check both segments' lengths.
+	 * Use this if either (or both) of the segments lengths may be 0.
+	 *
+	 * @param	(A1, B1)	defines the first segment.
+	 * @param	(A2, B2)	defines the second segment.
+	 * @param	OutP1		Closest point on segment 1 to segment 2.
+	 * @param	OutP2		Closest point on segment 2 to segment 1.
+	 */
+	static X0_API void SegmentDistToSegmentSafe(FVector A1, FVector B1, FVector A2, FVector B2, FVector& OutP1, FVector& OutP2);
+
+	/**
+	 * returns the time (t) of the intersection of the passed segment and a plane (could be <0 or >1)
+	 * @param StartPoint - start point of segment
+	 * @param EndPoint   - end point of segment
+	 * @param Plane		- plane to intersect with
+	 * @return time(T) of intersection
+	 */
+	static X0_API float GetTForSegmentPlaneIntersect(const FVector& StartPoint, const FVector& EndPoint, const FPlane& Plane);
+
+	/**
+	 * Returns true if there is an intersection between the segment specified by StartPoint and Endpoint, and
+	 * the plane on which polygon Plane lies. If there is an intersection, the point is placed in out_IntersectionPoint
+	 * @param StartPoint - start point of segment
+	 * @param EndPoint   - end point of segment
+	 * @param Plane		- plane to intersect with
+	 * @param out_IntersectionPoint - out var for the point on the segment that intersects the mesh (if any)
+	 * @return true if intersection occurred
+	 */
+	static X0_API bool SegmentPlaneIntersection(const FVector& StartPoint, const FVector& EndPoint, const FPlane& Plane, FVector& out_IntersectionPoint);
+
+
+	/**
+	* Returns true if there is an intersection between the segment specified by StartPoint and Endpoint, and
+	* the Triangle defined by A, B and C. If there is an intersection, the point is placed in out_IntersectionPoint
+	* @param StartPoint - start point of segment
+	* @param EndPoint   - end point of segment
+	* @param A, B, C	- points defining the triangle
+	* @param OutIntersectPoint - out var for the point on the segment that intersects the triangle (if any)
+	* @param OutNormal - out var for the triangle normal
+	* @return true if intersection occurred
+	*/
+	static X0_API bool SegmentTriangleIntersection(const FVector& StartPoint, const FVector& EndPoint, const FVector& A, const FVector& B, const FVector& C, FVector& OutIntersectPoint, FVector& OutTriangleNormal);
+
+	/**
+	 * Returns true if there is an intersection between the segment specified by SegmentStartA and SegmentEndA, and
+	 * the segment specified by SegmentStartB and SegmentEndB, in 2D space. If there is an intersection, the point is placed in out_IntersectionPoint
+	 * @param SegmentStartA - start point of first segment
+	 * @param SegmentEndA   - end point of first segment
+	 * @param SegmentStartB - start point of second segment
+	 * @param SegmentEndB   - end point of second segment
+	 * @param out_IntersectionPoint - out var for the intersection point (if any)
+	 * @return true if intersection occurred
+	 */
+	static X0_API bool SegmentIntersection2D(const FVector& SegmentStartA, const FVector& SegmentEndA, const FVector& SegmentStartB, const FVector& SegmentEndB, FVector& out_IntersectionPoint);
+
+
+	/**
+	 * Returns closest point on a triangle to a point.
+	 * The idea is to identify the halfplanes that the point is
+	 * in relative to each triangle segment "plane"
+	 *
+	 * @param	Point			point to check distance for
+	 * @param	A,B,C			counter clockwise ordering of points defining a triangle
+	 *
+	 * @return	Point on triangle ABC closest to given point
+	 */
+	static X0_API FVector ClosestPointOnTriangleToPoint(const FVector& Point, const FVector& A, const FVector& B, const FVector& C);
+
+	/**
+	 * Returns closest point on a tetrahedron to a point.
+	 * The idea is to identify the halfplanes that the point is
+	 * in relative to each face of the tetrahedron
+	 *
+	 * @param	Point			point to check distance for
+	 * @param	A,B,C,D			four points defining a tetrahedron
+	 *
+	 * @return	Point on tetrahedron ABCD closest to given point
+	 */
+	static X0_API FVector ClosestPointOnTetrahedronToPoint(const FVector& Point, const FVector& A, const FVector& B, const FVector& C, const FVector& D);
+
+	/**
+	 * Find closest point on a Sphere to a Line.
+	 * When line intersects		Sphere, then closest point to LineOrigin is returned.
+	 * @param SphereOrigin		Origin of Sphere
+	 * @param SphereRadius		Radius of Sphere
+	 * @param LineOrigin		Origin of line
+	 * @param LineDir			Direction of line. Needs to be normalized!!
+	 * @param OutClosestPoint	Closest point on sphere to given line.
+	 */
+	static X0_API void SphereDistToLine(FVector SphereOrigin, float SphereRadius, FVector LineOrigin, FVector LineDir, FVector& OutClosestPoint);
+
+	/**
+	 * Calculates whether a Point is within a cone segment, and also what percentage within the cone (100% is along the center line, whereas 0% is along the edge)
+	 *
+	 * @param Point - The Point in question
+	 * @param ConeStartPoint - the beginning of the cone (with the smallest radius)
+	 * @param ConeLine - the line out from the start point that ends at the largest radius point of the cone
+	 * @param radiusAtStart - the radius at the ConeStartPoint (0 for a 'proper' cone)
+	 * @param radiusAtEnd - the largest radius of the cone
+	 * @param percentageOut - output variable the holds how much within the cone the point is (1 = on center line, 0 = on exact edge or outside cone).
+	 *
+	 * @return true if the point is within the cone, false otherwise.
+	 */
+	static X0_API bool GetDistanceWithinConeSegment(FVector Point, FVector ConeStartPoint, FVector ConeLine, float RadiusAtStart, float RadiusAtEnd, float &PercentageOut);
+
+	/**
+	 * Determines whether a given set of points are coplanar, with a tolerance. Any three points or less are always coplanar.
+	 *
+	 * @param Points - The set of points to determine coplanarity for.
+	 * @param Tolerance - Larger numbers means more variance is allowed.
+	 *
+	 * @return Whether the points are relatively coplanar, based on the tolerance
+	 */
+	static X0_API bool PointsAreCoplanar(const TArray<FVector>& Points, const float Tolerance = 0.1f);
 };
