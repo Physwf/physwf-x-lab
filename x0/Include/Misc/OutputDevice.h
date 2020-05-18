@@ -129,8 +129,8 @@ public:
 
 	
 	// FOutputDevice interface.
-	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category) = 0;
-	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category, const double Time)
+	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FString& Category) = 0;
+	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FString& Category, const double Time)
 	{
 		Serialize(V, Verbosity, Category);
 	}
@@ -186,16 +186,16 @@ public:
 	// Simple text printing.
 	void Log(const TCHAR* S);
 	void Log(ELogVerbosity::Type Verbosity, const TCHAR* S);
-	//void Log(const FName& Category, ELogVerbosity::Type Verbosity, const TCHAR* Str);
-	//void Log(const FString& S);
-	//void Log(const FText& S);
-	//void Log(ELogVerbosity::Type Verbosity, const FString& S);
-	//void Log(const FName& Category, ELogVerbosity::Type Verbosity, const FString& S);
+	void Log(const FString& Category, ELogVerbosity::Type Verbosity, const TCHAR* Str);
+	void Log(const FString& S);
+	void Log(const FText& S);
+	void Log(ELogVerbosity::Type Verbosity, const FString& S);
+	void Log(const FString& Category, ELogVerbosity::Type Verbosity, const FString& S);
 
 private:
 	void VARARGS LogfImpl(const TCHAR* Fmt, ...);
 	void VARARGS LogfImpl(ELogVerbosity::Type Verbosity, const TCHAR* Fmt, ...);
-	//void VARARGS CategorizedLogfImpl(const FName& Category, ELogVerbosity::Type Verbosity, const TCHAR* Fmt, ...);
+	void VARARGS CategorizedLogfImpl(const FString& Category, ELogVerbosity::Type Verbosity, const TCHAR* Fmt, ...);
 
 public:
 	template <typename FmtType, typename... Types>
@@ -216,14 +216,14 @@ public:
 		LogfImpl(Verbosity, Fmt, Args...);
 	}
 
-// 	template <typename FmtType, typename... Types>
-// 	void CategorizedLogf(const FName& Category, ELogVerbosity::Type Verbosity, const FmtType& Fmt, Types... Args)
-// 	{
-// 		static_assert(TIsArrayOrRefOfType<FmtType, TCHAR>::Value, "Formatting string must be a TCHAR array.");
-// 		static_assert(TAnd<TIsValidVariadicFunctionArg<Types>...>::Value, "Invalid argument(s) passed to FOutputDevice::CategorizedLogf");
-// 
-// 		CategorizedLogfImpl(Category, Verbosity, Fmt, Args...);
-// 	}
+	template <typename FmtType, typename... Types>
+	void CategorizedLogf(const FName& Category, ELogVerbosity::Type Verbosity, const FmtType& Fmt, Types... Args)
+	{
+		static_assert(TIsArrayOrRefOfType<FmtType, TCHAR>::Value, "Formatting string must be a TCHAR array.");
+		static_assert(TAnd<TIsValidVariadicFunctionArg<Types>...>::Value, "Invalid argument(s) passed to FOutputDevice::CategorizedLogf");
+
+		CategorizedLogfImpl(Category, Verbosity, Fmt, Args...);
+	}
 
 protected:
 	/** Whether to output the 'Log: ' type front... */

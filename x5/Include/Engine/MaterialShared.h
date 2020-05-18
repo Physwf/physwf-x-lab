@@ -485,7 +485,7 @@ public:
 
 private:
 	/** Static parameters and base Id. */
-	FStaticParameterSet ParameterSet;
+	//FStaticParameterSet ParameterSet;
 	FString ParameterSetLayerParametersKey;
 
 public:
@@ -565,12 +565,12 @@ public:
 	}
 
 	/** Updates the Id's static parameter set */
-	void UpdateParameterSet(const FStaticParameterSet& StaticParameters);
+	//void UpdateParameterSet(const FStaticParameterSet& StaticParameters);
 
-	const FStaticParameterSet& GetParameterSet() const
-	{
-		return ParameterSet;
-	}
+// 	const FStaticParameterSet& GetParameterSet() const
+// 	{
+// 		return ParameterSet;
+// 	}
 
 	const FString& GetParameterSetLayerParametersKey() const
 	{
@@ -1058,7 +1058,7 @@ private:
 };
 
 /** Returns whether the given expression class is allowed. */
-extern X5_API bool IsAllowedExpressionType(UClass* Class, bool bMaterialFunction);
+//extern X5_API bool IsAllowedExpressionType(UClass* Class, bool bMaterialFunction);
 
 /** Parses a string into multiple lines, for use with tooltips. */
 extern X5_API void ConvertToMultilineToolTip(const FString& InToolTip, int32 TargetLineLength, TArray<FString>& OutToolTip);
@@ -1314,20 +1314,20 @@ public:
 
 	class FMaterialShaderMap* GetGameThreadShaderMap() const
 	{
-		checkSlow(IsInGameThread() || IsInAsyncLoadingThread());
+		checkSlow(IsInGameThread() /*|| IsInAsyncLoadingThread()*/);
 		return GameThreadShaderMap;
 	}
 
 	/** Note: SetRenderingThreadShaderMap must also be called with the same value, but from the rendering thread. */
 	void SetGameThreadShaderMap(FMaterialShaderMap* InMaterialShaderMap)
 	{
-		checkSlow(IsInGameThread() || IsInAsyncLoadingThread());
+		checkSlow(IsInGameThread() /*|| IsInAsyncLoadingThread()*/);
 		GameThreadShaderMap = InMaterialShaderMap;
 	}
 
 	void SetInlineShaderMap(FMaterialShaderMap* InMaterialShaderMap)
 	{
-		checkSlow(IsInGameThread() || IsInAsyncLoadingThread());
+		checkSlow(IsInGameThread() /*|| IsInAsyncLoadingThread()*/);
 		GameThreadShaderMap = InMaterialShaderMap;
 		bContainsInlineShaders = true;
 		bLoadedCookedShaderMapId = true;
@@ -1345,7 +1345,7 @@ public:
 		OutstandingCompileShaderMapIds.Remove(OldOutstandingCompileShaderMapId);
 	}
 
-	X5_API virtual void AddReferencedObjects(FReferenceCollector& Collector);
+	//X5_API virtual void AddReferencedObjects(FReferenceCollector& Collector);
 
 	virtual const TArray<UTexture*>& GetReferencedTextures() const = 0;
 

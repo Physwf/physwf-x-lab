@@ -68,3 +68,7 @@ extern X0_API FRunnableThread* GRHIThread_InternalUseOnly;
 
 /** Thread ID of the the thread we are executing RHI commands on. This could either be a constant dedicated thread or changing every task if we run the rhi thread on tasks. */
 extern X0_API uint32 GRHIThreadId;
+
+X0_API FOutputDeviceRedirector* GetGlobalLogSingleton();
+
+#define GLog GetGlobalLogSingleton()

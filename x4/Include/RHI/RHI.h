@@ -565,6 +565,22 @@ struct FSamplerStateInitializerRHI
 	int32 MaxAnisotropy;
 	uint32 BorderColor;
 	TEnumAsByte<ESamplerCompareFunction> SamplerComparisonFunction;
+
+	friend FArchive& operator<<(FArchive& Ar, FSamplerStateInitializerRHI& SamplerStateInitializer)
+	{
+		Ar << SamplerStateInitializer.Filter;
+		Ar << SamplerStateInitializer.AddressU;
+		Ar << SamplerStateInitializer.AddressV;
+		Ar << SamplerStateInitializer.AddressW;
+		Ar << SamplerStateInitializer.MipBias;
+		Ar << SamplerStateInitializer.MinMipLevel;
+		Ar << SamplerStateInitializer.MaxMipLevel;
+		Ar << SamplerStateInitializer.MaxAnisotropy;
+		Ar << SamplerStateInitializer.BorderColor;
+		Ar << SamplerStateInitializer.SamplerComparisonFunction;
+		return Ar;
+	}
+
 };
 
 struct FRasterizerStateInitializerRHI
