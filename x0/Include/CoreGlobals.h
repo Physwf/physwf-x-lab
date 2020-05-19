@@ -9,6 +9,50 @@
 
 #include "X0.h"
 
+class Error;
+class FConfigCacheIni;
+class FFixedUObjectArray;
+class FChunkedFixedUObjectArray;
+class FOutputDeviceConsole;
+class FOutputDeviceRedirector;
+class ITransaction;
+
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogHAL, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogMac, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogLinux, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogIOS, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogAndroid, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogPS4, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogXboxOne, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogWindows, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogSwitch, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogQuail, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogSerialization, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogUnrealMath, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogUnrealMatrix, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogContentComparisonCommandlet, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogNetPackageMap, Warning, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogNetSerialization, Warning, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogMemory, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogProfilingDebugging, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogCore, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogOutputDevice, Log, All);
+
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogSHA, Warning, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogStats, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogStreaming, Display, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogInit, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogExit, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogExec, Warning, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogScript, Warning, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogLocalization, Error, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogLongPackageNames, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogProcess, Log, All);
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogLoad, Log, All);
+
+// Temporary log category, generally you should not check things in that use this
+X0_API DECLARE_LOG_CATEGORY_EXTERN(LogTemp, Log, All);
+
 /* Whether we are using the event driven loader */
 extern X0_API bool GEventDrivenLoaderEnabled;
 
@@ -71,4 +115,9 @@ extern X0_API uint32 GRHIThreadId;
 
 X0_API FOutputDeviceRedirector* GetGlobalLogSingleton();
 
+X0_API extern class FOutputDeviceError*			GError;
+
 #define GLog GetGlobalLogSingleton()
+
+/** Time at which FPlatformTime::Seconds() was first initialized (very early on) */
+extern X0_API double GStartTime;

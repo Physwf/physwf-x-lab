@@ -19,7 +19,7 @@ class IAsyncReadFileHandle;
 /**
 * Wrapper to log the low level file system
 **/
-//DECLARE_LOG_CATEGORY_EXTERN(LogPlatformFile, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogPlatformFile, Log, All);
 
 extern bool bSuppressFileLog;
 

@@ -1,9 +1,15 @@
 #pragma once
 
 #include "CoreTypes.h"
+#include "Misc/Crc.h"
 #include "Math/XMathUtility.h"
+#include "Containers/UnrealString.h"
+//#include "Misc/Parse.h"
+#include "Logging/LogMacros.h"
 #include "Math/Vector2D.h"
 #include "Math/Vector.h"
+
+#include "Serialization/Archive.h"
 
 struct alignas(16) FVector4
 {
@@ -134,6 +140,26 @@ struct alignas(16) FVector4
 	{
 		const float Scale = FMath::InvSqrt(X*X + Y * Y + Z * Z);
 		return FVector4(X*Scale, Y*Scale, Z*Scale, 0.0f);
+	}
+
+public:
+
+	/**
+		* Serializer.
+		*
+		* @param Ar The Serialization Archive.
+		* @param V The vector being serialized.
+		* @return Reference to the Archive after serialization.
+	*/
+	friend FArchive& operator<<(FArchive& Ar, FVector4& V)
+	{
+		return Ar << V.X << V.Y << V.Z << V.W;
+	}
+
+	bool Serialize(FArchive& Ar)
+	{
+		Ar << *this;
+		return true;
 	}
 };
 

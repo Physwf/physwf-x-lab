@@ -5,6 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 //#include "UObject/NameTypes.h"
+#include "HAL/CriticalSection.h"
 
 #include "X0.h"
 
@@ -125,7 +126,7 @@ public:
 	* @param	Data	Text to log
 	* @param	Event	Event name used for suppression purposes
 	*/
-	virtual void Serialize(const TCHAR* Data, ELogVerbosity::Type Verbosity, const class FName& Category, const double Time) override;
+	virtual void Serialize(const TCHAR* Data, ELogVerbosity::Type Verbosity, const class FString& Category, const double Time) override;
 
 	/**
 	* Serializes the passed in data via all current output devices.
@@ -133,7 +134,7 @@ public:
 	* @param	Data	Text to log
 	* @param	Event	Event name used for suppression purposes
 	*/
-	virtual void Serialize(const TCHAR* Data, ELogVerbosity::Type Verbosity, const class FName& Category) override;
+	virtual void Serialize(const TCHAR* Data, ELogVerbosity::Type Verbosity, const class FString& Category) override;
 
 	/**
 	* Passes on the flush request to all current output devices.

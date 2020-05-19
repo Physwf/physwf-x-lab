@@ -2,6 +2,8 @@
 
 #include "HAL/PlatformMath.h"
 
+#include "X0.h"
+
 struct FVector;
 struct  FVector4;
 struct  FPlane;

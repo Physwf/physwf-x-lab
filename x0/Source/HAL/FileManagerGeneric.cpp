@@ -9,6 +9,8 @@
 
 #include "HAL/PlatformProcess.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogFileManager, Log, All);
+
 #define COPYBLOCKSIZE	32768
 
 /*-----------------------------------------------------------------------------

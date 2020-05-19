@@ -2,9 +2,10 @@
 // #include "Internationalization/Text.h"
 // #include "Internationalization/Internationalization.h"
 // #include "Stats/Stats.h"
-// #include "HAL/IConsoleManager.h"
-// #include "Modules/ModuleManager.h"
+#include "HAL/IConsoleManager.h"
+#include "Modules/ModuleManager.h"
 // #include "Misc/CoreStats.h"
+#include "HAL/PlatformTime.h"
 
 #include "X0.h"
 
@@ -29,3 +30,23 @@ uint32					GFrameNumberRenderThread = 1;
 TSAN_ATOMIC(uint64)		GFrameCounter(0);
 
 bool					GIsCriticalError = false;					/* An appError() has occured */
+
+/** Time at which FPlatformTime::Seconds() was first initialized (before main)											*/
+double					GStartTime = FPlatformTime::InitTiming();
+
+DEFINE_LOG_CATEGORY(LogHAL);
+DEFINE_LOG_CATEGORY(LogMac);
+DEFINE_LOG_CATEGORY(LogLinux);
+DEFINE_LOG_CATEGORY(LogIOS);
+DEFINE_LOG_CATEGORY(LogAndroid);
+DEFINE_LOG_CATEGORY(LogWindows);
+DEFINE_LOG_CATEGORY(LogXboxOne);
+DEFINE_LOG_CATEGORY(LogSerialization);
+DEFINE_LOG_CATEGORY(LogContentComparisonCommandlet);
+DEFINE_LOG_CATEGORY(LogNetPackageMap);
+DEFINE_LOG_CATEGORY(LogNetSerialization);
+DEFINE_LOG_CATEGORY(LogMemory);
+DEFINE_LOG_CATEGORY(LogProfilingDebugging);
+DEFINE_LOG_CATEGORY(LogSwitch);
+
+DEFINE_LOG_CATEGORY(LogTemp);

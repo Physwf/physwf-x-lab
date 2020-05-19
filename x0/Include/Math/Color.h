@@ -1,7 +1,14 @@
 #pragma once
 
-#include "X0.h"
+#include "CoreTypes.h"
+#include "Misc/Crc.h"
 #include "Math/XMathUtility.h"
+#include "Containers/UnrealString.h"
+//#include "Misc/Parse.h"
+
+#include "Serialization/Archive.h"
+
+#include "X0.h"
 
 struct FColor;
 
@@ -203,6 +210,19 @@ struct FLinearColor
 	inline float GetLuminance() const
 	{
 		return R * 0.3f + G * 0.59f + B * 0.11f;
+	}
+
+	// Serializer.
+
+	friend FArchive& operator<<(FArchive& Ar, FLinearColor& Color)
+	{
+		return Ar << Color.R << Color.G << Color.B << Color.A;
+	}
+
+	bool Serialize(FArchive& Ar)
+	{
+		Ar << *this;
+		return true;
 	}
 
 	X0_API static const FLinearColor White;

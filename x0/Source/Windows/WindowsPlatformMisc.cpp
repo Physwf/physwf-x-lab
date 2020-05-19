@@ -581,6 +581,11 @@ FCPUIDQueriedData FCPUIDQueriedData::CPUIDStaticCache;
 
 #include "Windows/AllowWindowsPlatformTypes.h"
 
+void FWindowsPlatformMisc::PromptForRemoteDebugging(bool bIsEnsure)
+{
+
+}
+
 FString FWindowsPlatformMisc::GetPrimaryGPUBrand()
 {
 	static FString PrimaryGPUBrand;

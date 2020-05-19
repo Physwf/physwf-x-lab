@@ -85,6 +85,12 @@ Logging suppression
 #define UE_LOG_EXPAND_IS_FATAL_All(        ActiveBlock, InactiveBlock) InactiveBlock
 #define UE_LOG_EXPAND_IS_FATAL_SetColor(   ActiveBlock, InactiveBlock) InactiveBlock
 
+#if DO_CHECK
+#define UE_LOG_SOURCE_FILE(File) File
+#else
+#define UE_LOG_SOURCE_FILE(File) "Unknown"
+#endif
+
 #if NO_LOGGING
 
 struct FNoLoggingCategory {};
@@ -289,3 +295,4 @@ struct FNoLoggingCategory {};
 	**/
 	#define DEFINE_LOG_CATEGORY_CLASS(Class, CategoryName) Class::FLogCategory##CategoryName Class::CategoryName;
 
+#endif // NO_LOGGING

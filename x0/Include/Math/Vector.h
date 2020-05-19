@@ -19,6 +19,8 @@
 #include "Math/IntVector.h"
 #include "Math/Axis.h"
 
+#include "Serialization/Archive.h"
+
 struct FVector
 {
 	float X, Y, Z;
@@ -299,6 +301,20 @@ public:
 	 * @return true if there are any non-finite values in this vector, false otherwise.
 	 */
 	bool ContainsNaN() const;
+
+	/**
+	 * Serializer.
+	 *
+	 * @param Ar Serialization Archive.
+	 * @param V Vector to serialize.
+	 * @return Reference to Archive after serialization.
+	 */
+	friend FArchive& operator<<(FArchive& Ar, FVector& V)
+	{
+		// @warning BulkSerialize: FVector is serialized as memory dump
+		// See TArray::BulkSerialize for detailed description of implied limitations.
+		return Ar << V.X << V.Y << V.Z;
+	}
 };
 
 inline FVector2D::FVector2D(const FVector& V)

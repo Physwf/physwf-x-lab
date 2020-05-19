@@ -6,6 +6,8 @@
 #include "Math/Rotator.h"
 #include "Math/Matrix.h"
 
+#include "Serialization/Archive.h"
+
 struct alignas(16) FQuat
 {
 	float X, Y, Z, W;
@@ -107,6 +109,26 @@ public:
 	inline FQuat Inverse() const;
 
 	X0_API FRotator Rotator() const;
+
+public:
+
+	/**
+		* Serializes the quaternion.
+		*
+		* @param Ar Reference to the serialization archive.
+		* @param F Reference to the quaternion being serialized.
+		* @return Reference to the Archive after serialization.
+		*/
+	friend FArchive& operator<<(FArchive& Ar, FQuat& F)
+	{
+		return Ar << F.X << F.Y << F.Z << F.W;
+	}
+
+	bool Serialize(FArchive& Ar)
+	{
+		Ar << *this;
+		return true;
+	}
 };
 
 inline FQuat::FQuat(float InX, float InY, float InZ, float InW)
