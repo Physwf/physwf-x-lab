@@ -11,7 +11,7 @@
 #include "CoreGlobals.h"
 #include "HAL/ThreadSingleton.h"
 
-
+#include "X0.h"
 /**
  * Check to see if this executable is running as dedicated server
  * Editor can run as dedicated with -server
@@ -36,3 +36,5 @@ FORCEINLINE bool IsRunningDedicatedServer()
 // #endif
 	return false;
 }
+
+bool X0_API StringHasBadDashes(const TCHAR* Str);

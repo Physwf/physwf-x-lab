@@ -10,10 +10,10 @@
 //#include "HAL/PlatformStackWalk.h"
 #include "Logging/LogMacros.h"
 #include "CoreGlobals.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 #include "Misc/ScopeLock.h"
 #include "Misc/CoreMisc.h"
-//#include "Misc/CommandLine.h"
+#include "Misc/CommandLine.h"
 #include "Misc/OutputDeviceRedirector.h"
 #include "Misc/OutputDeviceError.h"
 //#include "Stats/StatsMisc.h"
@@ -141,7 +141,7 @@ bool FDebug::IsEnsuring()
 
 void FDebug::LogFormattedMessageWithCallstack(const FString& LogName, const ANSICHAR* File, int32 Line, const TCHAR* Heading, const TCHAR* Message, ELogVerbosity::Type Verbosity)
 {
-	const bool bLowLevel = LogName == NAME_None;
+	const bool bLowLevel = LogName == TEXT("None");
 	const bool bWriteUATMarkers = FParse::Param(FCommandLine::Get(), TEXT("CrashForUAT")) && FParse::Param(FCommandLine::Get(), TEXT("stdout")) && !bLowLevel;
 
 	if (bWriteUATMarkers)
@@ -288,10 +288,10 @@ void FDebug::EnsureFailed(const ANSICHAR* Expr, const ANSICHAR* File, int32 Line
 			// Thread heartbeat will be resumed the next time this thread calls FThreadHeartBeat::Get().HeartBeat();
 			// The reason why we don't call HeartBeat() at the end of this function is that maybe this thread
 			// Never had a heartbeat checked and may not be sending heartbeats at all which would later lead to a false positives when detecting hangs.
-			FThreadHeartBeat::Get().KillHeartBeat();
+			//FThreadHeartBeat::Get().KillHeartBeat();
 			if (IsInGameThread())
 			{
-				FGameThreadHitchHeartBeat::Get().FrameStart(true);
+				//FGameThreadHitchHeartBeat::Get().FrameStart(true);
 			}
 
 			{
@@ -300,7 +300,7 @@ void FDebug::EnsureFailed(const ANSICHAR* Expr, const ANSICHAR* File, int32 Line
 				SCOPE_LOG_TIME_IN_SECONDS(*StackWalkPerfMessage, nullptr)
 #endif
 					StackTrace[0] = 0;
-				FPlatformStackWalk::StackWalkAndDumpEx(StackTrace, StackTraceSize, CALLSTACK_IGNOREDEPTH, FGenericPlatformStackWalk::EStackWalkFlags::FlagsUsedWhenHandlingEnsure);
+				//FPlatformStackWalk::StackWalkAndDumpEx(StackTrace, StackTraceSize, CALLSTACK_IGNOREDEPTH, FGenericPlatformStackWalk::EStackWalkFlags::FlagsUsedWhenHandlingEnsure);
 			}
 
 			// Create a final string that we'll output to the log (and error history buffer)
@@ -356,9 +356,9 @@ void FDebug::EnsureFailed(const ANSICHAR* Expr, const ANSICHAR* File, int32 Line
 						SCOPE_LOG_TIME_IN_SECONDS(*SubmitErrorReporterfMessage, nullptr)
 #endif
 
-							FCoreDelegates::OnHandleSystemEnsure.Broadcast();
+							//FCoreDelegates::OnHandleSystemEnsure.Broadcast();
 
-						FPlatformMisc::SubmitErrorReport(ErrorMsg, EErrorReportMode::Balloon);
+						//FPlatformMisc::SubmitErrorReport(ErrorMsg, EErrorReportMode::Balloon);
 
 						bShouldSendNewReport = true;
 					}
@@ -387,7 +387,7 @@ void FDebug::EnsureFailed(const ANSICHAR* Expr, const ANSICHAR* File, int32 Line
 #if PLATFORM_DESKTOP
 				FScopeLock Lock(&FailDebugCriticalSection);
 
-			NewReportEnsure(GErrorMessage);
+			//NewReportEnsure(GErrorMessage);
 
 			GErrorHist[0] = 0;
 			GErrorMessage[0] = 0;
@@ -459,7 +459,7 @@ void FDebug::DumpStackTraceToLog()
 		SCOPE_LOG_TIME_IN_SECONDS(*StackWalkPerfMessage, nullptr)
 #endif
 			StackTrace[0] = 0;
-		FPlatformStackWalk::StackWalkAndDumpEx(StackTrace, StackTraceSize, CALLSTACK_IGNOREDEPTH, FGenericPlatformStackWalk::EStackWalkFlags::FlagsUsedWhenHandlingEnsure);
+		//FPlatformStackWalk::StackWalkAndDumpEx(StackTrace, StackTraceSize, CALLSTACK_IGNOREDEPTH, FGenericPlatformStackWalk::EStackWalkFlags::FlagsUsedWhenHandlingEnsure);
 	}
 
 	// Dump the error and flush the log.

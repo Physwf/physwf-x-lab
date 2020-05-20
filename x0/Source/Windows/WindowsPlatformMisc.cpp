@@ -10,7 +10,7 @@
 #include "CoreGlobals.h"
 //#include "HAL/FileManager.h"
 #include "Misc/CString.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 //#include "Misc/MessageDialog.h"
 #include "Containers/StringConv.h"
 #include "Containers/UnrealString.h"
@@ -966,6 +966,17 @@ bool FWindowsPlatformMisc::IsDebuggerPresent()
 }
 
 #endif
+
+void FWindowsPlatformMisc::LocalPrint(const TCHAR *Str)
+{
+#if PLATFORM_TCHAR_IS_CHAR16
+	printf("%s", TCHAR_TO_UTF8(Str));
+#elif PLATFORM_USE_LS_SPEC_FOR_WIDECHAR
+	printf("%ls", Str);
+#else
+	wprintf(TEXT("%s"), Str);
+#endif
+}
 
 void FWindowsPlatformMisc::RequestExit(bool Force)
 {

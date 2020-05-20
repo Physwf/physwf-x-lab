@@ -5,7 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/UnrealString.h"
 #include "Containers/Map.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 #include "Containers/StringConv.h"
 #include "Misc/DateTime.h"
 #include "GenericPlatform/GenericPlatformFile.h"

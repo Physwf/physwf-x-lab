@@ -1,6 +1,6 @@
 #include "HAL/FileManagerGeneric.h"
 #include "Logging/LogMacros.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 //#include "Misc/CommandLine.h"
 #include "Misc/Paths.h"
 #include "Misc/SecureHash.h"

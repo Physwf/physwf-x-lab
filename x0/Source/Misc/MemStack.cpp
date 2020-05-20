@@ -1,5 +1,5 @@
 #include "Misc/MemStack.h"
-// #include "Misc/Parse.h"
+#include "Misc/Parse.h"
 //#include "Misc/CommandLine.h"
 //#include "Stats/Stats.h"
 //#include "HAL/IConsoleManager.h"

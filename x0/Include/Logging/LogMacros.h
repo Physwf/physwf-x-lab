@@ -249,6 +249,7 @@ struct FNoLoggingCategory {};
 				} \
 			} \
 		} \
+	}
 
 		/** 
 	 * A macro to declare a logging category as a C++ "extern", usually declared in the header and paired with DEFINE_LOG_CATEGORY in the source. Accessible by all files that include the header.

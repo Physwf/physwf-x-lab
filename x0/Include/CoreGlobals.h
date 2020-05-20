@@ -121,3 +121,9 @@ X0_API extern class FOutputDeviceError*			GError;
 
 /** Time at which FPlatformTime::Seconds() was first initialized (very early on) */
 extern X0_API double GStartTime;
+
+extern X0_API TCHAR GErrorHist[16384];
+
+// #crashReport: 2014-08-19 Combine into one, refactor.
+extern X0_API TCHAR GErrorExceptionDescription[4096];
+extern X0_API TCHAR GErrorMessage[4096];

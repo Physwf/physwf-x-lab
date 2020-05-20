@@ -7,7 +7,7 @@
 #include "Templates/UnrealTemplate.h"
 #include "CoreGlobals.h"
 #include "HAL/FileManager.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 #include "Containers/StringConv.h"
 #include "Containers/UnrealString.h"
 #include "Containers/Set.h"

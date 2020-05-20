@@ -5,7 +5,7 @@
 #include "Containers/Array.h"
 #include "Math/XMathUtility.h"
 #include "Containers/UnrealString.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 //#include "Misc/ConfigCacheIni.h"
 
 // video driver details

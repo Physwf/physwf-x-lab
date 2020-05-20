@@ -454,8 +454,7 @@ struct X0_API FGenericPlatformMisc
 
 	static void RaiseException(uint32 ExceptionCode);
 
-#if 0
-	public:
+public:
 
 		/**
 		 * Platform specific function for adding a named event that can be viewed in external tool
@@ -574,7 +573,7 @@ struct X0_API FGenericPlatformMisc
 		 * @param Error the error code to convert to string form
 		 */
 		static const TCHAR* GetSystemErrorMessage(TCHAR* OutBuffer, int32 BufferCount, int32 Error);
-#endif
+
 		/** Create a new globally unique identifier. **/
 		static void CreateGuid(struct FGuid& Result);
 

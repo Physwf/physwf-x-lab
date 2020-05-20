@@ -8,7 +8,7 @@
 #include "Misc/Crc.h"
 #include "Math/XMathUtility.h"
 #include "Containers/UnrealString.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 #include "Math/Color.h"
 #include "Math/IntPoint.h"
 #include "Logging/LogMacros.h"

@@ -4,7 +4,7 @@
 #include "Logging/LogMacros.h"
 #include "HAL/FileManager.h"
 #include "HAL/PlatformFile.h"
-//#include "Misc/Parse.h"
+#include "Misc/Parse.h"
 #include "Misc/ScopeLock.h"
 //#include "Misc/CommandLine.h"
 //#include "Internationalization/Text.h"
