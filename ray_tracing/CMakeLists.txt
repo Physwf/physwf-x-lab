@@ -4,11 +4,16 @@ set(DIR_PROJECT ".")
 
 add_executable(ray_tracing 
 ${DIR_PROJECT}/main.cpp
-${DIR_PROJECT}/primitives.h
-${DIR_PROJECT}/primitives.cpp
-${DIR_PROJECT}/scene.h
+${DIR_PROJECT}/math.h
+${DIR_PROJECT}/math.cpp
 ${DIR_PROJECT}/core.h
 ${DIR_PROJECT}/core.cpp
+${DIR_PROJECT}/scene.h
+${DIR_PROJECT}/scene.cpp
+${DIR_PROJECT}/primitives.h
+${DIR_PROJECT}/primitives.cpp
+${DIR_PROJECT}/camera.h
+${DIR_PROJECT}/camera.cpp
 )
 
 add_definitions(-DUNICODE -D_UNICODE)

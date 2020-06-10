@@ -1,60 +1,66 @@
+#pragma once
 
-#include <math.h>
+#include "math.h"
 
-typedef double Float;
-typedef Float Vec[3];
-typedef Vec	Point;
-typedef Vec Color;
-
-inline void Add(const Vec lfs, const Vec rhs, Vec Result)
+struct Ray
 {
-	Result[0] = lfs[0] + rhs[0];
-	Result[1] = lfs[1] + rhs[1];
-	Result[2] = lfs[2] + rhs[2];
-}
+	Point P;//origin
+	Point D;//direction
+};
 
-inline void Subtract(const Vec lfs, const Vec rhs, Vec Result)
+//calculate a "point" on a "ray" with parameter "t"
+#define RayPoint(ray,t,point) MultiplyAdd(t,ray->D,ray->P,point);
+
+struct Comp
 {
-	Result[0] = lfs[0] - rhs[0];
-	Result[1] = lfs[1] - rhs[1];
-	Result[2] = lfs[2] - rhs[2];
-}
+	int flag;//=1
+	int op;
+	Comp* left;
+	Comp* right;
+};
 
-inline Float Dot(const Vec lfs, const Vec rhs, Vec Result)
+struct Prim
 {
-	return lfs[0] * rhs[0] + lfs[1] * rhs[1] + lfs[2] * rhs[2];
-}
+	int flag;//=0
+	void* info;
+	struct PrimProcs* procs;
+	//Matrix mat;
+	struct Surf *surf;
+};
 
-inline Float Lenght(Vec v)
+struct PrimProcs
 {
-	return sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
+	const char*(*name)(const Prim* prim);
+	void(*print)(const Prim* prim);
+	struct Prim* (*read)(const char* desc, std::size_t size);
+	int(*intersect)(const Ray* ray, const Prim* prim,struct Isect* hit);
+	void(*normal)(const Prim* prim, const Point P, Point N);
+};
 
-inline void Copy(const Vec From, const Vec To)
+struct Surf
 {
-	To[0] = From[0];
-	To[1] = From[1];
-	To[2] = From[2];
-}
+	Float kdiff;//漫反射系数
+	Float kspec;//镜面反射系数
+	Float ktran;//透射系数
+	Color color;//
+	Float refrindex;//折射率
+};
 
-inline void MultiplyAdd(Float a, const Vec A, Float b, const Vec B, Vec Result)
+struct Isect
 {
-	Result[0] = a * A[0] + b * B[0];
-	Result[1] = a * A[1] + b * B[1];
-	Result[2] = a * A[2] + b * B[2];
-}
+	Float t;
+	const Prim *prim;
+	int enter;//enter or out
+	const Surf *medium;
+};
 
-inline void MultiplyAdd(Float a, const Vec A, const Vec B, Vec Result)
-{
-	MultiplyAdd(a,A,1.0,B,Result);
-}
+void IsectAdd(Isect* hit, Float t, const Prim* prim, int enter, const Surf* medium);
+// extern int maxlevel;
+// extern Float minweight;
+extern Float rayeps;
 
-inline Normalize(const Vec A, const Vec Result)
-{
-	Float L = Lenght(A);
-	Result[0] = A[0] / L;
-	Result[1] = A[1] / L;
-	Result[2] = A[2] / L;
-}
-
-
+void Trace(int level, Float Weight, Ray* ray, Color color);
+int Intersect(Ray* ray, Comp* solid, Isect* hit);
+int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hit);
+void Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit, Color color);
+Float Shadow(Ray* ray, Float tmax);
