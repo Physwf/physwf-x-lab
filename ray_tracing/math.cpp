@@ -2,7 +2,7 @@
 #include "core.h"
 #include <cctype>
 
-int VecRead(const char* desc, std::size_t size, Vec Result)
+int VecRead(const char* desc, std::size_t size, Vec& Result)
 {
 	std::size_t startpos = 0;
 	int index = 0;
@@ -20,7 +20,7 @@ int VecRead(const char* desc, std::size_t size, Vec Result)
 	return index == 3;
 }
 
-int TransmissionDirection(Surf* m1, Surf* m2, Point I, Point N, Point T)
+int TransmissionDirection(const Surf* m1, const Surf* m2, const Point& I, const Point& N, Point& T)
 {
 	Float n1, n2, eta, c1, cs2;
 

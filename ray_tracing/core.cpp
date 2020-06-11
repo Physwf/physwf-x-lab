@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <algorithm>
+#include <math.h>
 
 int maxlevel = 5;
 Float minweight = .01;
@@ -14,17 +15,19 @@ void IsectAdd(Isect* hit, Float t, const Prim* prim, int enter, const Surf* medi
 	i.prim = prim;
 	i.enter = enter;
 	i.medium = medium;
+	*hit = i;
 }
 
 Float rayeps = 1e-7;
 
 #define ISECTMAX 10
 
-void Trace(int level, Float Weight, Ray* ray, Color color)
+Color Trace(int level, Float Weight, Ray* ray)
 {
 	const Prim* prim;
 	Point P, N;
 	Isect hit[ISECTMAX];
+	Color color;
 
 	if (Intersect(ray, scene->modelroot, hit))
 	{
@@ -36,12 +39,13 @@ void Trace(int level, Float Weight, Ray* ray, Color color)
 			Negate(N, N);
 		}
 
-		Shade(level, Weight, P, N, ray->D, hit, color);
+		color = Shade(level, Weight, P, N, ray->D, hit);
 	}
 	else
 	{
-		color[0]  = color[1]= color[2] = 0.0;
+		color = {0.0,0.0,0.0};
 	}
+	return color;
 }
 
 int Intersect(Ray* ray, Comp* solid, Isect* hit)
@@ -86,7 +90,7 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 		Isect* lhit1 = lhits + i;
 		Isect* lhit2 = lhits + i + 1;
 		//make sure the hit list is sort properly
-		assert(lhit1->t < lhit2->t);
+		assert(lhit1->t <= lhit2->t);
 		for (int j = 0; j < nr; ++j)
 		{
 			Isect* rhit = rhits + j;
@@ -102,7 +106,7 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 		Isect* rhit1 = lhits + i;
 		Isect* rhit2 = lhits + i + 1;
 		//make sure the hit list is sort properly
-		assert(rhit1->t < rhit2->t);
+		assert(rhit1->t <= rhit2->t);
 		for (int j = 0; j < nl; ++j)
 		{
 			Isect* lhit = lhits + j;
@@ -127,20 +131,23 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 				isinternal = true;
 			}
 		}
-		if (op == '&' && isinternal)
+		if (lhit->t > 0.0)
 		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *lhit;
-		}
-		else if (op == '|' && !isinternal)
-		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *lhit;
-		}
-		else if (op == '-' && !isinternal)
-		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *lhit;
+			if (op == '&' && isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *lhit;
+			}
+			else if (op == '|' && !isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *lhit;
+			}
+			else if (op == '-' && !isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *lhit;
+			}
 		}
 	}
 	for (int i = 0; i < nr; ++i)
@@ -155,73 +162,91 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 				isinternal = true;
 			}
 		}
-		if (op == '&' && isinternal)
+		if (rhit->t > 0.0)
 		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *rhit;
-		}
-		else if (op == '|' && !isinternal)
-		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *rhit;
-		}
-		else if (op == '-' && isinternal)
-		{
-			assert(numhit < ISECTMAX);
-			hit[numhit++] = *rhit;
+			if (op == '&' && isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *rhit;
+			}
+			else if (op == '|' && !isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *rhit;
+			}
+			else if (op == '-' && isinternal)
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = *rhit;
+			}
 		}
 	}
 	std::sort(hit, hit + numhit, [](const Isect l, const Isect r) { return l.t < r.t; });
 	return numhit;
 }
 
-void Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit, Color color)
+Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 {
 	Ray tray;
 	Color tcolor;
 	Surf* surf;
+	Color color;
 
-	color[0] = color[1] = color[2] =  0.0 ;
+	color = { 0.0,0.0,0.0 };
 
 	for (int i = 0; i < scene->numlight; ++i)
 	{
-		Light light = scene->lights[i];
+		const Light& light = scene->lights[i];
 		Vec L;
-		Subtract(light.position, P, L);
-		Normalize(L, L);
+		L = light.position - P;
+		Float Dist2 = Dot(L, L);
+		Normalize(L);
 		Ray RL;
-		Copy(RL.P, P);
-		Copy(RL.D, L);
+		RL.P = P;
+		RL.D = L;
 		Float dot = Dot(N, L);
-		if (dot > 0.0 && Shadow(&RL, 100000.0))
+		if (dot > 0.0 && Shadow(&RL, 100000.0) > .0)
 		{
-			Color c;
-			Multiply(light.color, dot, c);
-			Add(color, c, color);
+			Float Intencity = light.intensity / Dist2;
+			Color diffuse = hit[0].medium->color * (dot * Intencity * (hit[0].medium->kdiff));
+			color = color + diffuse;
+			Vec R;
+			SpecularDirection(L, N, R);
+			Normalize(R);
+			Normalize(I);
+			Float s = std::max(0.0, Dot(R, I));
+			assert(s < 1.0);
+			Color specular = hit[0].medium->color * (hit[0].medium->kspec * Intencity * std::powl(s,10.0));
+			color = color + specular;
 		}
 	}
 
 	if (level + 1 < maxlevel)
 	{
-		Copy(P, tray.P);
+		tray.P = P;
 
 		surf = hit[0].prim->surf;
 		if (surf->kspec* weight > minweight)
 		{
 			SpecularDirection(I, N, tray.D);
-			Trace(level + 1, surf->kspec*weight, &tray, tcolor);
+			tcolor = Trace(level + 1, surf->kspec*weight, &tray);
+			if (tcolor.R > 0.0 && tcolor.G > 0.0 && tcolor.B > 0.0)
+			{
+				//tcolor = { 0.5,0.5,0.5 };
+			}
 			MultiplyAdd(surf->kspec, tcolor, color, color);
 		}
 
-		if (surf->ktran*weight > minweight)
-		{
-			if (TransmissionDirection(hit[0].medium, hit[1].medium, I, N, tray.D))
-			{
-				Trace(level + 1, surf->ktran*weight, &tray, tcolor);
-				MultiplyAdd(surf->ktran, tcolor, color, color);
-			}
-		}
+// 		if (surf->ktran*weight > minweight)
+// 		{
+// 			if (TransmissionDirection(hit[0].medium, hit[1].medium, I, N, tray.D))
+// 			{
+// 				tcolor = Trace(level + 1, surf->ktran*weight, &tray);
+// 				MultiplyAdd(surf->ktran, tcolor, color, color);
+// 			}
+// 		}
 	}
+	return color;
 }
 
 Float Shadow(Ray* ray, Float tmax)

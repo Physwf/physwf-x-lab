@@ -1,5 +1,6 @@
 #include "primitives.h"
 #include <stdio.h>
+#include <cctype>
 
 PrimProcs SphereProcs = { SphereName, SpherePrint, SphereRead, SphereIntersect, SphereNormal };
 
@@ -10,55 +11,106 @@ void SpherePrint(const Prim* prim)
 	printf("sphere : center(%g, % g, % g) radius %g\n", s->center[0], s->center[1], s->center[2], s->rad);
 }
 
+Float ReadValue(const char* desc,std::size_t& endpos)
+{
+	std::size_t startpos = 0;
+	while (!std::isdigit(desc[startpos]) && desc[startpos] != '-')
+	{
+		++startpos;
+	}
+	endpos = startpos + 1;
+
+	while (desc[endpos] != ',')
+	{
+		++endpos;
+	}
+	endpos++;//skip ','
+	return std::atof(&desc[startpos]);
+}
+
 Prim* SphereRead(const char* desc, std::size_t size)
 {
 	Sphere* s = new Sphere();
 	Surf* surf = new Surf();
 
-	std::size_t startpos = 1;
+	std::size_t startpos = 2;//skip S and (
 	int index = 0;
-	for (std::size_t i = startpos; i < size; ++i)
+	for (std::size_t i = startpos; i < size; )
 	{
-		if (desc[i] == ',')
+		std::size_t step = 1;
+		switch (desc[i])
 		{
-			if (index < 3)
-			{
-				s->center[index] = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			else if (index == 3)
-			{
-				s->rad = std::atof(&desc[startpos]);
-				s->rad2 = s->rad*s->rad;
-				startpos = i + 1;
-			}
-			else if (index == 4)//diffuse
-			{
-				surf->kdiff = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			else if (index == 5)//specular
-			{
-				surf->kspec = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			else if (index == 6)//transition
-			{
-				surf->ktran = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			else if (index < 10)//color
-			{
-				surf->color[index-7] = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			else if (index == 10)
-			{
-				surf->refrindex = std::atof(&desc[startpos]);
-				startpos = i + 1;
-			}
-			index++;
+		case 'x':
+		case 'X':
+		{
+			s->center[0] = ReadValue(&desc[i], step);
 		}
+			break;
+		case 'y':
+		case 'Y':
+		{
+			s->center[1] = ReadValue(&desc[i], step);
+		}
+			break;
+		case 'z':
+		case 'Z':
+		{
+			s->center[2] = ReadValue(&desc[i], step);
+		}
+			break;
+		case 'r':
+		case 'R':
+		{
+			s->rad = ReadValue(&desc[i], step);
+			s->rad2 = s->rad*s->rad;
+		}
+			break;
+		case 'd':
+		case 'D':
+		{
+			surf->kdiff = ReadValue(&desc[i], step);
+		}
+			break;
+		case 's':
+		case 'S':
+		{
+			surf->kspec = ReadValue(&desc[i], step);
+		}
+			break;
+		case 't':
+		case 'T':
+		{
+			surf->ktran = ReadValue(&desc[i], step);
+		}
+			break;
+		case 'c':
+		case 'C':
+		{
+			switch (desc[i+1])
+			{
+			case 'r':
+			case 'R':
+				surf->color[0] = ReadValue(&desc[i], step);
+				break;
+			case 'g':
+			case 'G':
+				surf->color[1] = ReadValue(&desc[i], step);
+				break;
+			case 'b':
+			case 'B':
+				surf->color[2] = ReadValue(&desc[i], step);
+				break;
+			}
+		}
+			break;
+		case 'f':
+		case 'F':
+		{
+			surf->refrindex = ReadValue(&desc[i], step);
+		}
+			break;
+		}
+		i += step;
 	}
 
 	Prim* Result = new Prim();
@@ -78,7 +130,7 @@ int SphereIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	Sphere* s;
 
 	s = (Sphere*)prim->info;
-	Subtract(s->center, ray->P, V);
+	V = s->center - ray->P;
 	b = Dot(V, ray->D);
 	disc = b * b - Dot(V, V) + s->rad2;
 	if (disc < .0) return 0;
@@ -106,7 +158,7 @@ int SphereIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	return nroots;
 }
 
-void SphereNormal(const Prim* prim, const Point P, Point N)
+void SphereNormal(const Prim* prim, const Point& P, Point& N)
 {
 	const Sphere* s;
 	s = (Sphere*)prim->info;

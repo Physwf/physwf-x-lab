@@ -13,5 +13,6 @@ void GetRayFromPixel(const Camera* camera, int x, int y, Ray* Result)
 	Add(v, v2, v);//pixel position
 	Subtract(v, camera->position, v);//pixel direction
 	Copy(camera->position, Result->P);
+	Normalize(v, v);
 	Copy(v, Result->D);
 }

@@ -19,5 +19,5 @@ Prim* SphereRead(const char* desc, std::size_t size);
 
 int SphereIntersect(const Ray* ray, const Prim* prim, Isect* hit);
 
-void SphereNormal(const Prim* prim, const Point P, Point N);
+void SphereNormal(const Prim* prim, const Point& P, Point& N);
 

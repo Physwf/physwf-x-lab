@@ -34,7 +34,7 @@ struct PrimProcs
 	void(*print)(const Prim* prim);
 	struct Prim* (*read)(const char* desc, std::size_t size);
 	int(*intersect)(const Ray* ray, const Prim* prim,struct Isect* hit);
-	void(*normal)(const Prim* prim, const Point P, Point N);
+	void(*normal)(const Prim* prim, const Point& P, Point& N);
 };
 
 struct Surf
@@ -59,8 +59,8 @@ void IsectAdd(Isect* hit, Float t, const Prim* prim, int enter, const Surf* medi
 // extern Float minweight;
 extern Float rayeps;
 
-void Trace(int level, Float Weight, Ray* ray, Color color);
+Color Trace(int level, Float Weight, Ray* ray);
 int Intersect(Ray* ray, Comp* solid, Isect* hit);
 int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hit);
-void Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit, Color color);
+Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit);
 Float Shadow(Ray* ray, Float tmax);
