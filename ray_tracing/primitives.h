@@ -15,9 +15,27 @@ inline const char* SphereName(const Prim* prim)
 
 void SpherePrint(const Prim* prim);
 
-Prim* SphereRead(const char* desc, std::size_t size);
+Prim* SphereRead(const char* desc, std::size_t& size);
 
 int SphereIntersect(const Ray* ray, const Prim* prim, Isect* hit);
 
 void SphereNormal(const Prim* prim, const Point& P, Point& N);
 
+struct Box
+{
+	Point center;
+	Vec size;
+};
+
+inline const char* BoxName(const Prim* prim)
+{
+	return "box";
+}
+
+void BoxPrint(const Prim* prim);
+
+Prim* BoxRead(const char* desc, std::size_t& size);
+
+int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit);
+
+void BoxNormal(const Prim* prim, const Point& P, Point& N);

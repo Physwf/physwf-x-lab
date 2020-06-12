@@ -5,27 +5,25 @@
 
 Scene* scene = nullptr;
 
-void* ReadCSG(const char* desc, std::size_t size)
+void* ReadCSG(const char* desc, std::size_t& size)
 {
 	char startchar = desc[0];
 	if (startchar == '{')
 	{
 		Comp* comp = new Comp();
-		std::size_t startpos = 0;
+		comp->flag = 1;
+		comp->left = (Comp*)ReadCSG(&desc[1], size);
+
+		int i = size + 1;
 		int numbraces = 0;
-		int numbrackets = 0;
-		for (std::size_t i = startpos + 1; i < size; ++i)
+		while (desc[i++] != '}')
 		{
-			if (desc[i] == '{') numbraces++;
-			else if(desc[i] == '}') numbraces--;
-			if (desc[i] == '(') numbrackets++;
-			else if (desc[i] == ')') numbrackets--;
-			else if (numbraces == 0 && numbrackets  == 0 && (desc[i] == '&' || desc[i] == '|' || desc[i] == '-'))
+			if (desc[i] == '(') numbraces++;
+			else if(desc[i] == ')') numbraces--;
+			if ((desc[i] == '&' || desc[i] == '|' || desc[i] == '-'))
 			{
-				comp->flag = 1;
 				comp->op = desc[i];
-				comp->left = (Comp*)ReadCSG(desc+1,i-1);
-				comp->right = (Comp*)ReadCSG(desc + i + 1, size - i - 1);
+				comp->right = (Comp*)ReadCSG(desc + i + 1, size);
 				return comp;
 			}
 		}
@@ -33,6 +31,11 @@ void* ReadCSG(const char* desc, std::size_t size)
 	else if (startchar == 'S')
 	{
 		Prim* prim = SphereRead(desc,size);
+		return prim;
+	}
+	else if (startchar == 'B')
+	{
+		Prim* prim = BoxRead(desc, size);
 		return prim;
 	}
 	return nullptr;
@@ -51,12 +54,13 @@ void Setup(Scene* s, Camera* c)
 	std::fseek(csgfile, 0L, SEEK_SET);
 	char* buffer = new char[filesize];
 	std::fread(buffer, sizeof(buffer[0]), filesize, csgfile);
-	s->modelroot = (Comp*)ReadCSG(buffer, filesize);
+	std::size_t size;
+	s->modelroot = (Comp*)ReadCSG(buffer, size);
 	delete buffer;
 	std::fclose(csgfile);
 	s->numlight = 1;
 	s->lights = new Light[s->numlight];
-	s->lights[0].position = { 0.0,0.0,100.0};
+	s->lights[0].position = { 0.0,-100.0,100.0};
 	s->lights[0].color = { 1.0,0.50, 1.0 };
 	s->lights[0].intensity = 10000.0;
 	s->lights[0].attenuation = 10.0;

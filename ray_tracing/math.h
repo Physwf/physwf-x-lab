@@ -75,6 +75,10 @@ inline Vec operator*(const Vec& lfs, Float v)
 {
 	return Vec(lfs.X * v, lfs.Y * v, lfs.Z * v);
 }
+inline Vec operator/(const Vec& lfs, Float v)
+{
+	return Vec(lfs.X / v, lfs.Y / v, lfs.Z / v);
+}
 
 inline Float Lenght(const Vec& v)
 {

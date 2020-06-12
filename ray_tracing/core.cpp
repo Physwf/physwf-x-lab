@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <algorithm>
 #include <math.h>
+#include <cctype>
 
 int maxlevel = 5;
 Float minweight = .01;
@@ -208,7 +209,7 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 		if (dot > 0.0 && Shadow(&RL, 100000.0) > .0)
 		{
 			Float Intencity = light.intensity / Dist2;
-			Color diffuse = hit[0].medium->color * (dot * Intencity * (hit[0].medium->kdiff));
+			Color diffuse = hit[0].medium->kdiff * (dot * Intencity);
 			color = color + diffuse;
 			Vec R;
 			SpecularDirection(L, N, R);
@@ -216,7 +217,7 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 			Normalize(I);
 			Float s = std::max(0.0, Dot(R, I));
 			assert(s < 1.0);
-			Color specular = hit[0].medium->color * (hit[0].medium->kspec * Intencity * std::powl(s,10.0));
+			Color specular = hit[0].medium->kspec * (Intencity * std::powl(s,10.0));
 			color = color + specular;
 		}
 	}
@@ -226,16 +227,16 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 		tray.P = P;
 
 		surf = hit[0].prim->surf;
-		if (surf->kspec* weight > minweight)
-		{
-			SpecularDirection(I, N, tray.D);
-			tcolor = Trace(level + 1, surf->kspec*weight, &tray);
-			if (tcolor.R > 0.0 && tcolor.G > 0.0 && tcolor.B > 0.0)
-			{
-				//tcolor = { 0.5,0.5,0.5 };
-			}
-			MultiplyAdd(surf->kspec, tcolor, color, color);
-		}
+// 		if (surf->kspec* weight > minweight)
+// 		{
+// 			SpecularDirection(I, N, tray.D);
+// 			tcolor = Trace(level + 1, surf->kspec*weight, &tray);
+// 			if (tcolor.R > 0.0 && tcolor.G > 0.0 && tcolor.B > 0.0)
+// 			{
+// 				//tcolor = { 0.5,0.5,0.5 };
+// 			}
+// 			MultiplyAdd(surf->kspec, tcolor, color, color);
+// 		}
 
 // 		if (surf->ktran*weight > minweight)
 // 		{
@@ -258,3 +259,42 @@ Float Shadow(Ray* ray, Float tmax)
 	else return 0.0;
 }
 
+Float ReadFloat(const char* desc, std::size_t& endpos)
+{
+	std::size_t startpos = 0;
+	while (!std::isdigit(desc[startpos]) && desc[startpos] != '-')
+	{
+		++startpos;
+	}
+	endpos = startpos + 1;
+
+	while (std::isdigit(desc[endpos]))
+	{
+		++endpos;
+	}
+	return std::atof(&desc[startpos]);
+}
+
+Vec ReadVector(const char* desc, std::size_t& endpos)
+{
+	std::size_t startpos = 0;
+	Vec Result;
+	int index = 0;
+	for (int i = 0; i < 3; ++i)
+	{
+		while (!std::isdigit(desc[startpos]) && desc[startpos] != '-')
+		{
+			++startpos;
+		}
+		endpos = startpos + 1;
+
+		while (desc[endpos] != ',')
+		{
+			++endpos;
+		}
+		endpos++;//skip ','
+		Result[i] = std::atof(&desc[startpos]);
+		startpos = endpos;
+	}
+	return Result;
+}

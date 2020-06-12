@@ -24,8 +24,8 @@ int TransmissionDirection(const Surf* m1, const Surf* m2, const Point& I, const 
 {
 	Float n1, n2, eta, c1, cs2;
 
-	n1 = m1 ? m1->refrindex : 1.0;
-	n2 = m2 ? m2->refrindex : 1.0;
+	n1 = m1 ? m1->n : 1.0;
+	n2 = m2 ? m2->n : 1.0;
 
 	eta = n1 / n2;
 	c1 = -Dot(I, N);
