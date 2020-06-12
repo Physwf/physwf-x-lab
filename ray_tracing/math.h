@@ -79,6 +79,14 @@ inline Vec operator/(const Vec& lfs, Float v)
 {
 	return Vec(lfs.X / v, lfs.Y / v, lfs.Z / v);
 }
+inline bool operator==(const Vec& lfs, const Vec& rhs)
+{
+	return lfs.X == rhs.X && lfs.Y == rhs.Y && lfs.Z == rhs.Z;
+}
+inline bool operator!=(const Vec& lfs, const Vec& rhs)
+{
+	return !(lfs==rhs);
+}
 
 inline Float Lenght(const Vec& v)
 {
