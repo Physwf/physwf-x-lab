@@ -60,7 +60,7 @@ void Setup(Scene* s, Camera* c)
 	std::fclose(csgfile);
 	s->numlight = 1;
 	s->lights = new Light[s->numlight];
-	s->lights[0].position = { 0.0,0,0.0};
+	s->lights[0].position = { 0.0,0.0,150.0};
 	s->lights[0].color = { 1.0,0.50, 1.0 };
 	s->lights[0].intensity = 10000.0;
 	s->lights[0].attenuation = 10.0;
@@ -81,7 +81,8 @@ void Render(const Scene* s,const Camera* c)
 		for (int x = 0; x < c->screen->Height; ++x)
 		{
 			Ray r;
-			//GetRayFromPixel(c, 264, 267, &r);
+			//GetRayFromPixel(c, 338, 220, &r);
+			//GetRayFromPixel(c, 347, 217, &r);
 			GetRayFromPixel(c, x, y, &r);
 			Color color = Trace(0, 1.0, &r);
 			c->screen->buffer[y * 500 + x] = ToRGBA(color);

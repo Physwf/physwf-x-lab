@@ -151,3 +151,5 @@ inline void SpecularDirection(const Point& I, const Point& N, Point& R)
 }
 
 int TransmissionDirection(const struct Surf* m1, const struct Surf* m2, const Point& I, const Point& N, Point& T);
+
+inline Float Clamp(Float v) { if (v < 0.0) return 0; if (v > 1.0) return 1.0; return v; }

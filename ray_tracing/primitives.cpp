@@ -1,6 +1,7 @@
 #include "primitives.h"
 #include <stdio.h>
 #include <assert.h>
+#include <algorithm>
 
 PrimProcs SphereProcs = { SphereName, SpherePrint, SphereRead, SphereIntersect, SphereNormal };
 PrimProcs BoxProcs = { BoxName, BoxPrint, BoxRead, BoxIntersect, BoxNormal };
@@ -234,7 +235,7 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 		int j = 0;
 		for (; j < numt; ++j)
 		{
-			if (t[j] == tcandidates[i]) break;
+			if (std::abs( t[j] - tcandidates[i]) < rayeps) break;
 		}
 		if (j == numt) t[numt++] = tcandidates[i];
 	}
@@ -245,6 +246,9 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	{
 		Vec insect = ray->P + ray->D * t[k];
 		//X_LOG("insect=(%f,%f,%f)\n", insect.X, insect.Y, insect.Z);
+// 		bool inx = insect.X - xmin > rayeps && insect.X - xmax < rayeps;
+// 		bool iny = insect.Y - ymin > rayeps && insect.Y - ymax < rayeps;
+// 		bool inz = insect.Z - zmin > rayeps && insect.Z - zmax < rayeps;
 		bool inx = insect.X > xmin && insect.X < xmax;
 		bool iny = insect.Y > ymin && insect.Y < ymax;
 		bool inz = insect.Z > zmin && insect.Z < zmax;
@@ -262,9 +266,13 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 			if (j == num) validinsects[num++] = insect;
 		}
 	}
-	assert(num % 2 == 0);
-	if (num > 0)
+	if (num > 1)
 	{
+		if (num % 2 != 0)
+		{
+			X_LOG("num=%d\n", num);
+		}
+		assert(num % 2 == 0);
 		Vec Dir1 = validinsects[0] - ray->P;
 		Vec Dir2 = validinsects[1] - ray->P;
 		Float t1 = Lenght(validinsects[0] - ray->P);
@@ -292,9 +300,10 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 		IsectAdd(hit, t1, prim, 1, prim->surf);
 		hit++;
 		IsectAdd(hit, t2, prim, 0, prim->surf);
+		//X_LOG("num=%d\n", num);
+		return num;
 	}
-	//X_LOG("num=%d\n", num);
-	return num;
+	return 0;
 }
 
 void BoxNormal(const Prim* prim, const Point& P, Point& N)

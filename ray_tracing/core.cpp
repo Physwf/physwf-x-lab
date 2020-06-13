@@ -132,7 +132,7 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 				isinternal = true;
 			}
 		}
-		if (lhit->t > 0.0)
+		if (lhit->t > rayeps)
 		{
 			if (op == '&' && isinternal)
 			{
@@ -163,7 +163,7 @@ int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hi
 				isinternal = true;
 			}
 		}
-		if (rhit->t > 0.0)
+		if (rhit->t > rayeps)
 		{
 			if (op == '&' && isinternal)
 			{
@@ -206,7 +206,7 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 		RL.P = P;
 		RL.D = L;
 		Float dot = Dot(N, L);
-		if (dot > 0.0 && Shadow(&RL, 100000.0) > .0)
+		if (dot > 0.0 && Shadow(&RL, std::sqrtl(Dist2)) > 0.0)
 		{
 			Float Intencity = light.intensity / Dist2;
 			Color diffuse = hit[0].medium->kdiff * (dot * Intencity);
@@ -216,7 +216,6 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 			Normalize(R);
 			Normalize(I);
 			Float s = std::max(0.0, Dot(R, I));
-			assert(s < 1.0);
 			Color specular = hit[0].medium->kspec * (Intencity * std::powl(s,10.0));
 			color = color + specular;
 		}
