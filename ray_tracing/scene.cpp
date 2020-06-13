@@ -7,26 +7,23 @@ Scene* scene = nullptr;
 
 void* ReadCSG(const char* desc, std::size_t& size)
 {
-	char startchar = desc[0];
+	char startchar = desc[size];
 	if (startchar == '{')
 	{
 		Comp* comp = new Comp();
 		comp->flag = 1;
-		comp->left = (Comp*)ReadCSG(&desc[1], size);
+		size += 1;
+		comp->left = (Comp*)ReadCSG(desc, size);
 
-		int i = size + 1;
-		int numbraces = 0;
-		while (desc[i++] != '}')
+		size += 1;
+		if ((desc[size] == '&' || desc[size] == '|' || desc[size] == '-'))
 		{
-			if (desc[i] == '(') numbraces++;
-			else if(desc[i] == ')') numbraces--;
-			if ((desc[i] == '&' || desc[i] == '|' || desc[i] == '-'))
-			{
-				comp->op = desc[i];
-				comp->right = (Comp*)ReadCSG(desc + i + 1, size);
-				return comp;
-			}
+			comp->op = desc[size];
+			size += 1;
+			comp->right = (Comp*)ReadCSG(desc, size);
 		}
+		size += 1;
+		return comp;
 	}
 	else if (startchar == 'S')
 	{
@@ -54,7 +51,7 @@ void Setup(Scene* s, Camera* c)
 	std::fseek(csgfile, 0L, SEEK_SET);
 	char* buffer = new char[filesize];
 	std::fread(buffer, sizeof(buffer[0]), filesize, csgfile);
-	std::size_t size;
+	std::size_t size = 0;
 	s->modelroot = (Comp*)ReadCSG(buffer, size);
 	delete buffer;
 	std::fclose(csgfile);
@@ -62,7 +59,7 @@ void Setup(Scene* s, Camera* c)
 	s->lights = new Light[s->numlight];
 	s->lights[0].position = { 0.0,-100.0,0.0};
 	s->lights[0].color = { 1.0,0.50, 1.0 };
-	s->lights[0].intensity = 100000.0;
+	s->lights[0].intensity = 30000.0;
 	s->lights[0].attenuation = 10.0;
 
 	c->position = {.0, .0, .0,};

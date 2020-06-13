@@ -19,54 +19,53 @@ Prim* SphereRead(const char* desc, std::size_t& size)
 	Sphere* s = new Sphere();
 	Surf* surf = new Surf();
 
-	std::size_t i = 2;//skip S and (
+	size += 2;//skip S and (
 	int index = 0;
-	while (desc[i] != ')')
+	while (desc[size] != ')')
 	{
 		std::size_t step = 1;
-		switch (desc[i])
+		switch (desc[size])
 		{
 		case 'p':
 		case 'P':
 		{
-			s->center = ReadVector(&desc[i], step);
+			s->center = ReadVector(&desc[size], step);
 		}
 			break;
 		case 'r':
 		case 'R':
 		{
-			s->rad = ReadFloat(&desc[i], step);
+			s->rad = ReadFloat(&desc[size], step);
 			s->rad2 = s->rad*s->rad;
 		}
 			break;
 		case 'd':
 		case 'D':
 		{
-			surf->kdiff = ReadVector(&desc[i], step);
+			surf->kdiff = ReadVector(&desc[size], step);
 		}
 			break;
 		case 's':
 		case 'S':
 		{
-			surf->kspec = ReadVector(&desc[i], step);
+			surf->kspec = ReadVector(&desc[size], step);
 		}
 			break;
 		case 't':
 		case 'T':
 		{
-			surf->ktran = ReadVector(&desc[i], step);
+			surf->ktran = ReadVector(&desc[size], step);
 		}
 			break;
 		case 'n':
 		case 'N':
 		{
-			surf->n = ReadFloat(&desc[i], step);
+			surf->n = ReadFloat(&desc[size], step);
 		}
 			break;
 		}
-		i += step;
+		size += step;
 	}
-	size = i;
 	Prim* Result = new Prim();
 	Result->flag = 0;
 	Result->procs = &SphereProcs;
@@ -140,53 +139,52 @@ Prim* BoxRead(const char* desc, std::size_t& size)
 	Box* b = new Box();
 	Surf* surf = new Surf();
 
-	std::size_t i = 2;//skip S and (
+	size += 2;//skip S and (
 	int index = 0;
-	while(desc[i] != ')')
+	while(desc[size] != ')')
 	{
 		std::size_t step = 1;
-		switch (desc[i])
+		switch (desc[size])
 		{
 		case 'p':
 		case 'P':
 		{
-			b->center = ReadVector(&desc[i], step);
+			b->center = ReadVector(&desc[size], step);
 		}
 		break;
 		case 'z':
 		case 'Z':
 		{
-			b->size = ReadVector(&desc[i], step);
+			b->size = ReadVector(&desc[size], step);
 		}
 		break;
 		case 'd':
 		case 'D':
 		{
-			surf->kdiff = ReadVector(&desc[i], step);
+			surf->kdiff = ReadVector(&desc[size], step);
 		}
 		break;
 		case 's':
 		case 'S':
 		{
-			surf->kspec = ReadVector(&desc[i], step);
+			surf->kspec = ReadVector(&desc[size], step);
 		}
 		break;
 		case 't':
 		case 'T':
 		{
-			surf->ktran = ReadVector(&desc[i], step);
+			surf->ktran = ReadVector(&desc[size], step);
 		}
 		break;
 		case 'n':
 		case 'N':
 		{
-			surf->n = ReadFloat(&desc[i], step);
+			surf->n = ReadFloat(&desc[size], step);
 		}
 		break;
 		}
-		i += step;
+		size += step;
 	}
-	size = i;
 	Prim* Result = new Prim();
 	Result->flag = 0;
 	Result->procs = &BoxProcs;
@@ -254,9 +252,6 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	{
 		Vec insect = ray->P + ray->D * t[k];
 		//X_LOG("insect=(%f,%f,%f)\n", insect.X, insect.Y, insect.Z);
-// 		bool inx = insect.X - xmin > rayeps && insect.X - xmax < rayeps;
-// 		bool iny = insect.Y - ymin > rayeps && insect.Y - ymax < rayeps;
-// 		bool inz = insect.Z - zmin > rayeps && insect.Z - zmax < rayeps;
 		bool inx = insect.X > xmin && insect.X < xmax;
 		bool iny = insect.Y > ymin && insect.Y < ymax;
 		bool inz = insect.Z > zmin && insect.Z < zmax;

@@ -97,8 +97,8 @@ int Intersect(Ray* ray, Comp* solid, Isect* hit)
 int IntersectMerge(Comp* solid, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hit)
 {
 	//make sure we have even number of intersection, when the intersection is tangent, duplicate it in the results.
-	assert(nl % 2 == 0);
-	assert(nr % 2 == 0);
+	//assert(nl % 2 == 0);
+	//assert(nr % 2 == 0);
 	int numhit = 0;
 
 
@@ -209,16 +209,18 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 		tray.P = P;
 
 		surf = hit[0].prim->surf;
-// 		if (surf->kspec* weight > minweight)
-// 		{
-// 			SpecularDirection(I, N, tray.D);
-// 			tcolor = Trace(level + 1, surf->kspec*weight, &tray);
+		if (Lenght(surf->kspec * weight) > minweight)
+		{
+			SpecularDirection(I, N, tray.D);
+			tcolor = Trace(level + 1, Lenght(surf->kspec*weight), &tray);
 // 			if (tcolor.R > 0.0 && tcolor.G > 0.0 && tcolor.B > 0.0)
 // 			{
 // 				//tcolor = { 0.5,0.5,0.5 };
 // 			}
-// 			MultiplyAdd(surf->kspec, tcolor, color, color);
-// 		}
+			color = color + Multiply(Multiply(surf->kspec, tcolor), color);
+
+			//MultiplyAdd(surf->kspec, tcolor, color, color);
+		}
 
 // 		if (surf->ktran*weight > minweight)
 // 		{
