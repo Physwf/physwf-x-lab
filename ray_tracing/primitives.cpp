@@ -308,34 +308,20 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 
 void BoxNormal(const Prim* prim, const Point& P, Point& N)
 {
-	const Box* b;
-	b = (Box*)prim->info;
-	N = P - b->center;
-	Vec halfsize = b->size / 2.0;
-	if (N.X > b->center[0] - halfsize[0] && N.X < b->center[0] + halfsize[0] &&
-		N.Y > b->center[1] - halfsize[1] && N.Y < b->center[1] + halfsize[1] )
-	{
-		N.X = N.Y = 0;
-		//N.Z = -N.Z;
-// 		if (std::abs(N.Z) < halfsize.Z) N.Z = -1.0;
-// 		else N.Z = 1.0;
-	}
-	else if (N.Y > b->center[1] - halfsize[1] && N.Y < b->center[1] + halfsize[1] &&
-			N.Z >= b->center[2] - halfsize[2] && N.Z < b->center[2] + halfsize[2])
-	{
-		N.Y = N.Z = 0;
-		//N.Z = -N.Z;
-// 		if (std::abs(N.X) < halfsize.X) N.X = -1.0;
-// 		else N.X = 1.0;
-	}
-	else if (N.X > b->center[1] - halfsize[1] && N.X < b->center[1] + halfsize[1] &&
-			N.Z >= b->center[2] - halfsize[2] && N.Z < b->center[2] + halfsize[2])
-	{
-		N.X = N.Z = 0;
-		//N.Z = -N.Z;
-// 		if (std::abs(N.Y) < halfsize.Y) N.Y = -1.0;
-// 		else N.Y = 1.0;
-	}
-	Normalize(N);
+	const Box* box;
+	box = (Box*)prim->info;
+	Float xmin = box->center[0] - box->size[0] / 2.0;
+	Float xmax = box->center[0] + box->size[0] / 2.0;
+	Float ymin = box->center[1] - box->size[1] / 2.0;
+	Float ymax = box->center[1] + box->size[1] / 2.0;
+	Float zmin = box->center[2] - box->size[2] / 2.0;
+	Float zmax = box->center[2] + box->size[2] / 2.0;
+
+	if (std::abs(P.X - xmin) < rayeps) N = { -1.0,0.0,0.0 };
+	if (std::abs(P.X - xmax) < rayeps) N = { 1.0,0.0,0.0 };
+	if (std::abs(P.Y - ymin) < rayeps) N = { 0.0,-1.0,0.0 };
+	if (std::abs(P.Y - ymax) < rayeps) N = { 0.0,1.0,0.0 };
+	if (std::abs(P.Z - zmin) < rayeps) N = { 0.0,0.0,-1.0 };
+	if (std::abs(P.Z - zmax) < rayeps) N = { 0.0,0.0,1.0 };
 }
 

@@ -39,7 +39,7 @@ Color Trace(int level, Float Weight, Ray* ray)
 		{
 			Negate(N, N);
 		}
-
+		//X_LOG("N=(%f,%f,%f)\n", N.X, N.Y, N.Z);
 		color = Shade(level, Weight, P, N, ray->D, hit);
 	}
 	else

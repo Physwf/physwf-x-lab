@@ -60,9 +60,9 @@ void Setup(Scene* s, Camera* c)
 	std::fclose(csgfile);
 	s->numlight = 1;
 	s->lights = new Light[s->numlight];
-	s->lights[0].position = { 0.0,0.0,150.0};
+	s->lights[0].position = { 100.0,0.0,0.0};
 	s->lights[0].color = { 1.0,0.50, 1.0 };
-	s->lights[0].intensity = 10000.0;
+	s->lights[0].intensity = 100000.0;
 	s->lights[0].attenuation = 10.0;
 
 	c->position = {.0, .0, .0,};
