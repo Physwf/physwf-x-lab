@@ -176,8 +176,8 @@ Color Shade(int level, Float weight, Point P, Point N, Point I, Isect* hit)
 	Surf* surf;
 	Color color;
 
-	color = { 0.0,0.0,0.0 };
 
+	color = Multiply( Vec(0.2,0.2,0.2), hit[0].medium->kdiff);
 	for (int i = 0; i < scene->numlight; ++i)
 	{
 		const Light& light = scene->lights[i];
@@ -237,8 +237,16 @@ Float Shadow(Ray* ray, Float tmax)
 	int nhit;
 	Isect hit[ISECTMAX];
 	nhit = Intersect(ray, scene->modelroot, hit);
-	if (nhit == 0 || hit[0].t > tmax - rayeps) return 1.0;
-	else return 0.0;
+	if (nhit == 0 || hit[0].t > tmax - rayeps)
+	{
+		//(*(hit[0].prim->procs->print))(hit[0].prim);
+		return 1.0;
+	}
+	else
+	{
+		//assert(false);
+		return 0.0;
+	}
 }
 
 Float ReadFloat(const char* desc, std::size_t& endpos)

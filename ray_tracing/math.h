@@ -64,7 +64,10 @@ inline Float Dot(const Vec& lfs, const Vec& rhs)
 	return lfs[0] * rhs[0] + lfs[1] * rhs[1] + lfs[2] * rhs[2];
 }
 
-
+inline Vec Multiply(const Vec& A, const Vec& B)
+{
+	return { A.X*B.X,A.Y*B.Y,A.Z*B.Z };
+}
 inline void Multiply(const Vec& A, Float v, Vec& Result)
 {
 	Result[0] = A[0] * v;

@@ -10,7 +10,7 @@ void SpherePrint(const Prim* prim)
 {
 	const Sphere* s;
 	s = (Sphere*)prim->info;
-	printf("sphere : center(%g, % g, % g) radius %g\n", s->center[0], s->center[1], s->center[2], s->rad);
+	X_LOG("sphere : center(%g, % g, % g) radius %g\n", s->center[0], s->center[1], s->center[2], s->rad);
 }
 
 
@@ -132,7 +132,7 @@ void BoxPrint(const Prim* prim)
 {
 	const Box* b;
 	b = (Box*)prim->info;
-	printf("sphere : center(%g, % g, % g) size(%g, % g, % g)\n", b->center[0], b->center[1], b->center[2], b->size[0], b->size[1], b->size[2] );
+	X_LOG("sphere : center(%g, % g, % g) size(%g, % g, % g)\n", b->center[0], b->center[1], b->center[2], b->size[0], b->size[1], b->size[2] );
 }
 
 Prim* BoxRead(const char* desc, std::size_t& size)
@@ -204,7 +204,7 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 
 	Vec halfsize = box->size / 2.0;
 	Float halfdiagnal2 = Dot(halfsize, halfsize);//box的对焦距离一半的平方
-	Vec boxdir = box->center - ray->D;//box中心到射线起点的矢量
+	Vec boxdir = box->center - ray->P;//box中心到射线起点的矢量
 	Float boxdist2 = Dot(boxdir, boxdir);//box中心到射线起点距离的平方
 	Float boxdirproj = Dot(boxdir, ray->D);
 	if (boxdist2 - boxdirproj * boxdirproj > halfdiagnal2) return 0;//射线与box中心的距离小于box的对角线距离的一半
