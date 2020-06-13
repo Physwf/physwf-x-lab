@@ -19,6 +19,7 @@ struct Scene
 void* ReadCSG(const char* desc, std::size_t& size);
 void Setup(Scene* s, struct Camera* c);
 void Render(const Scene* s, const struct Camera* c);
+void Render(const Scene* s, const struct Camera* c,unsigned int x,unsigned int y);
 
 extern Scene* scene;
 

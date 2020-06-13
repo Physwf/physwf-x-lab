@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <algorithm>
 
-PrimProcs SphereProcs = { SphereName, SpherePrint, SphereRead, SphereIntersect, SphereNormal };
-PrimProcs BoxProcs = { BoxName, BoxPrint, BoxRead, BoxIntersect, BoxNormal };
+PrimProcs SphereProcs = { SphereName, SpherePrint, SphereRead, SphereIntersect, SphereNormal, SphereInside };
+PrimProcs BoxProcs = { BoxName, BoxPrint, BoxRead, BoxIntersect, BoxNormal, BoxInside };
 
 void SpherePrint(const Prim* prim)
 {
@@ -104,9 +104,9 @@ int SphereIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	// 	}
 	// 	IsectAdd(hit, t2, prim, 0, prim->surf);
 
-	IsectAdd(hit, t1, prim, 1, prim->surf);
+	IsectAdd(hit, t1, ray->P + ray->P*t1, prim, 1, prim->surf);
 	hit++;
-	IsectAdd(hit, t2, prim, 0, prim->surf);
+	IsectAdd(hit, t2, ray->P + ray->P*t2, prim, 0, prim->surf);
 	nroots = 2;
 
 	return nroots;
@@ -118,6 +118,14 @@ void SphereNormal(const Prim* prim, const Point& P, Point& N)
 	s = (Sphere*)prim->info;
 	Subtract(P, s->center, N);
 	Normalize(N, N);
+}
+
+bool SphereInside(const Prim* prim, const Point& P)
+{
+	const Sphere* s;
+	s = (Sphere*)prim->info;
+	Vec v = P - s->center;
+	return Dot(v, v) < s->rad2;
 }
 
 void BoxPrint(const Prim* prim)
@@ -268,7 +276,7 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 	}
 	if (num > 1)
 	{
-		if (num % 2 != 0)
+		if (num > 2)
 		{
 			X_LOG("num=%d\n", num);
 		}
@@ -293,14 +301,16 @@ int BoxIntersect(const Ray* ray, const Prim* prim, Isect* hit)
 		}
 		if (t1 > t2)
 		{
-			Float temp = t1;
-			t1 = t2;
-			t2 = temp;
+			IsectAdd(hit, t2, validinsects[1], prim, 1, prim->surf);
+			hit++;
+			IsectAdd(hit, t1, validinsects[0], prim, 0, prim->surf);
 		}
-		IsectAdd(hit, t1, prim, 1, prim->surf);
-		hit++;
-		IsectAdd(hit, t2, prim, 0, prim->surf);
-		//X_LOG("num=%d\n", num);
+		else
+		{
+			IsectAdd(hit, t1, validinsects[0], prim, 1, prim->surf);
+			hit++;
+			IsectAdd(hit, t2, validinsects[1], prim, 0, prim->surf);
+		}
 		return num;
 	}
 	return 0;
@@ -323,5 +333,17 @@ void BoxNormal(const Prim* prim, const Point& P, Point& N)
 	if (std::abs(P.Y - ymax) < rayeps) N = { 0.0,1.0,0.0 };
 	if (std::abs(P.Z - zmin) < rayeps) N = { 0.0,0.0,-1.0 };
 	if (std::abs(P.Z - zmax) < rayeps) N = { 0.0,0.0,1.0 };
+}
+
+bool BoxInside(const Prim* prim, const Point& P)
+{
+	const Box* box = (Box*)prim->info;
+	return 
+		P[0] > box->center[0] - box->size[0] / 2.0 &&
+		P[0] < box->center[0] + box->size[0] / 2.0 &&
+		P[1] > box->center[1] - box->size[0] / 2.0 &&
+		P[1] < box->center[1] + box->size[0] / 2.0 &&
+		P[2] > box->center[2] - box->size[0] / 2.0 &&
+		P[2] < box->center[2] + box->size[0] / 2.0;
 }
 

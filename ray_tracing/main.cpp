@@ -123,6 +123,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		EndPaint(hWnd, &ps);
 		break;
 	}
+	case WM_LBUTTONDOWN:
+	{
+		DWORD xPos = LOWORD(lParam);  // horizontal position of cursor 
+		DWORD yPos = HIWORD(lParam);  // vertical position of cursor 
+		Render(scene, camera, xPos, yPos);
+	}
+		break;
 	case WM_DESTROY:
 	{
 		PostQuitMessage(0);

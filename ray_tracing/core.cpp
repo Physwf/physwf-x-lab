@@ -9,10 +9,30 @@
 int maxlevel = 5;
 Float minweight = .01;
 
-void IsectAdd(Isect* hit, Float t, const Prim* prim, int enter, const Surf* medium)
+bool Inside(const Comp* comp,const Point& P)
+{
+	if (comp->flag)
+	{
+		switch (comp->op)
+		{
+		case '|': return Inside(comp->left, P) || Inside(comp->right, P);
+		case '&': return Inside(comp->left, P) && Inside(comp->right, P);
+		case '-': return Inside(comp->left, P) && !Inside(comp->right, P);
+		}
+	}
+	else
+	{
+		return (*((Prim*)comp)->procs->inside)((Prim*)comp, P);
+	}
+	assert(false);
+	return false;
+}
+
+void IsectAdd(Isect* hit, Float t, const Point& P, const Prim* prim, int enter, const Surf* medium)
 {
 	Isect i;
 	i.t = t;
+	i.P = P;
 	i.prim = prim;
 	i.enter = enter;
 	i.medium = medium;
@@ -65,7 +85,7 @@ int Intersect(Ray* ray, Comp* solid, Isect* hit)
 		{
 			nr = Intersect(ray, solid->right, rhit);
 
-			return IntersectMerge(solid->op, nl, lhit, nr, rhit, hit);
+			return IntersectMerge(solid, nl, lhit, nr, rhit, hit);
 		}
 	}
 	else
@@ -74,113 +94,76 @@ int Intersect(Ray* ray, Comp* solid, Isect* hit)
 	}
 }
 
-int IntersectMerge(int op, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hit)
+int IntersectMerge(Comp* solid, int nl, Isect* lhits, int nr, Isect* rhits, Isect* hit)
 {
 	//make sure we have even number of intersection, when the intersection is tangent, duplicate it in the results.
 	assert(nl % 2 == 0);
 	assert(nr % 2 == 0);
 	int numhit = 0;
 
-	//先计算一方在另一方内部的相交次数
-	int numlinternals = 0;
-	int numrinternals = 0;
-	Isect* linternals[ISECTMAX];
-	Isect* rinternals[ISECTMAX];
-	for (int i = 0; i < nl; i += 2)
-	{
-		Isect* lhit1 = lhits + i;
-		Isect* lhit2 = lhits + i + 1;
-		//make sure the hit list is sort properly
-		assert(lhit1->t <= lhit2->t);
-		for (int j = 0; j < nr; ++j)
-		{
-			Isect* rhit = rhits + j;
-			if ((rhit->t >= lhit1->t && rhit->t <= lhit2->t))
-			{
-				assert(numlinternals < ISECTMAX);
-				linternals[numlinternals++] = rhit;
-			}
-		}
-	}
-	for (int i = 0; i < nr; i += 2)
-	{
-		Isect* rhit1 = lhits + i;
-		Isect* rhit2 = lhits + i + 1;
-		//make sure the hit list is sort properly
-		assert(rhit1->t <= rhit2->t);
-		for (int j = 0; j < nl; ++j)
-		{
-			Isect* lhit = lhits + j;
-			if ((lhit->t >= rhit1->t && lhit->t <= rhit2->t))
-			{
-				assert(numrinternals < ISECTMAX);
-				rinternals[numrinternals++] = lhit;
-			}
-		}
-	}
 
-	//再根据合成关系剔除多余的点
-	for (int i = 0; i < nl; ++i)
+	switch (solid->op)
 	{
-		Isect* lhit = lhits + i;
-		bool isinternal = false;
-		for (int j = 0; j < numrinternals; ++j)
+	case '|':
+	{
+		for (int i = 0; i < nl; ++i)
 		{
-			Isect* temp = rinternals[j];
-			if (lhit->t == temp->t)
+			if (lhits[i].t > rayeps)
 			{
-				isinternal = true;
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = lhits[i];
 			}
 		}
-		if (lhit->t > rayeps)
+		for (int i = 0; i < nr; ++i)
 		{
-			if (op == '&' && isinternal)
+			if (rhits[i].t > rayeps)
 			{
 				assert(numhit < ISECTMAX);
-				hit[numhit++] = *lhit;
-			}
-			else if (op == '|' && !isinternal)
-			{
-				assert(numhit < ISECTMAX);
-				hit[numhit++] = *lhit;
-			}
-			else if (op == '-' && !isinternal)
-			{
-				assert(numhit < ISECTMAX);
-				hit[numhit++] = *lhit;
+				hit[numhit++] = rhits[i];
 			}
 		}
+		break;
 	}
-	for (int i = 0; i < nr; ++i)
+	case '&':
 	{
-		Isect* rhit = rhits + i;
-		bool isinternal = false;
-		for (int j = 0; j < numlinternals; ++j)
+		for (int i = 0; i < nl; ++i)
 		{
-			Isect* temp = linternals[j];
-			if (rhit->t == temp->t)
+			if (lhits[i].t > rayeps && Inside(solid->right, lhits[i].P))
 			{
-				isinternal = true;
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = lhits[i];
 			}
 		}
-		if (rhit->t > rayeps)
+		for (int i = 0; i < nr; ++i)
 		{
-			if (op == '&' && isinternal)
+			if (rhits[i].t > rayeps && Inside(solid->left, rhits[i].P))
 			{
 				assert(numhit < ISECTMAX);
-				hit[numhit++] = *rhit;
-			}
-			else if (op == '|' && !isinternal)
-			{
-				assert(numhit < ISECTMAX);
-				hit[numhit++] = *rhit;
-			}
-			else if (op == '-' && isinternal)
-			{
-				assert(numhit < ISECTMAX);
-				hit[numhit++] = *rhit;
+				hit[numhit++] = rhits[i];
 			}
 		}
+		break;
+	}
+	case '-':
+	{
+		for (int i = 0; i < nl; ++i)
+		{
+			if (lhits[i].t > rayeps && !Inside(solid->right, lhits[i].P))
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = lhits[i];
+			}
+		}
+		for (int i = 0; i < nr; ++i)
+		{
+			if (rhits[i].t > rayeps && Inside(solid->left, rhits[i].P))
+			{
+				assert(numhit < ISECTMAX);
+				hit[numhit++] = rhits[i];
+			}
+		}
+		break;
+	}
 	}
 	std::sort(hit, hit + numhit, [](const Isect l, const Isect r) { return l.t < r.t; });
 	return numhit;
