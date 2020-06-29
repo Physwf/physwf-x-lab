@@ -60,13 +60,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	extern void CreateTriangleBuffer();
 	extern void RenderTriangle();
 
+	extern void CreateTestBuffer();
+	extern void RenderTest();
+
 	if (!D3D11Setup())
 	{
 		return 1;
 	}
 
 	//CreateTriangleBuffer();
-
+	CreateTestBuffer();
 	
 	//S.InitResource();
 	//S.Setup();
@@ -85,8 +88,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		//D3D11ClearViewTarget();
-		GW.Draw();
+		D3D11ClearViewTarget();
+		//RenderTriangle();
+		RenderTest();
+		//GW.Draw();
 		D3D11Present();
 
 		Sleep(10);

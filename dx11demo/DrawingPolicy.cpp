@@ -43,8 +43,8 @@ void DepthOnlyDrawingPolicy::SetRenderState()
 
 void DepthOnlyDrawingPolicy::Draw(const ShaderPipeline* Pipeline)
 {
-	D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
-	D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
+	//D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
+	//D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
 }
 
 void ShadowDepthDrawingPolicy::InitResource()
@@ -83,8 +83,8 @@ void ShadowDepthDrawingPolicy::SetRenderState()
 
 void ShadowDepthDrawingPolicy::Draw(const ShaderPipeline* Pipeline)
 {
-	D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
-	D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
+	//D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
+	//D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
 }
 
 void BaseDrawingPolicy::InitResource()
@@ -123,6 +123,6 @@ void BaseDrawingPolicy::SetRenderState()
 
 void BaseDrawingPolicy::Draw(const ShaderPipeline* Pipeline)
 {
-	D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
-	D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
+	//D3D11DeviceContext->VSSetShader(Pipeline->VertexShader);
+	//D3D11DeviceContext->PSSetShader(Pipeline->PixelShader);
 }
