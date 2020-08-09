@@ -72,7 +72,7 @@ public:
 		}
 		return *this;
 	}
-	CoefficientSpectrum operator+(const CoefficientSpectrum& &s2)
+	CoefficientSpectrum operator+(const CoefficientSpectrum& &s2) const
 	{
 		DOCHECK(!s2.HasNaNs());
 		CoefficientSpectrum ret = *this;
@@ -82,7 +82,7 @@ public:
 		}
 		return ret;
 	}
-	CoefficientSpectrum operator-(const CoefficientSpectrum &s2)
+	CoefficientSpectrum operator-(const CoefficientSpectrum &s2) const
 	{
 		DOCHECK(!s2.HasNaNs());
 		CoefficientSpectrum ret = *this;
@@ -92,7 +92,7 @@ public:
 		}
 		return ret;
 	}
-	CoefficientSpectrum operator/(const CoefficientSpectrum &s2)
+	CoefficientSpectrum operator/(const CoefficientSpectrum &s2) const
 	{
 		DOCHECK(!s2.HasNaNs());
 		CoefficientSpectrum ret = *this;
@@ -103,7 +103,7 @@ public:
 		}
 		return ret;
 	}
-	CoefficientSpectrum operator*(const CoefficientSpectrum &s2)
+	CoefficientSpectrum operator*(const CoefficientSpectrum &s2) const
 	{
 		DOCHECK(!s2.HasNaNs());
 		CoefficientSpectrum ret = *this;
@@ -122,7 +122,7 @@ public:
 		}
 		return *this;
 	}
-	CoefficientSpectrum operator*(Float a)
+	CoefficientSpectrum operator*(Float a) const
 	{
 		CoefficientSpectrum ret = *this;
 		for (int i = 0; i < nSpectrumSamples; ++i)
@@ -141,7 +141,7 @@ public:
 		DOCHECK(!HasNaNs());
 		return *this;
 	}
-	CoefficientSpectrum operator/(Float a)
+	CoefficientSpectrum operator/(Float a) const
 	{
 		DOCHECK(a != 0);
 		DOCHECK(!std::isnan(a));
@@ -207,7 +207,7 @@ public:
 		DOCHECK(!ret.HasNaNs());
 		return ret;
 	}
-	CoefficientSpectrum Clamp(Float Low = 0, Float High = Infinity)
+	CoefficientSpectrum Clamp(Float Low = 0, Float High = Infinity) const
 	{
 		CoefficientSpectrum ret;
 		for (int i = 0; i < nSpectrumSamples; ++i)

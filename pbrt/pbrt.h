@@ -3,6 +3,7 @@
 #include <limits>
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #include <stdint.h>
 
@@ -316,3 +317,14 @@ class Transform;
 struct Interaction;
 
 class Medium;
+
+
+template <int nSpectrumSamples>
+class CoefficientSpectrum;
+class RGBSpectrum;
+class SampledSpectrum;
+#ifdef PBRT_SAMPLED_SPECTRUM
+typedef SampledSpectrum Spectrum;
+#else
+typedef RGBSpectrum Spectrum;
+#endif

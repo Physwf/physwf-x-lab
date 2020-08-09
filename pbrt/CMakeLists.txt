@@ -8,6 +8,8 @@ ${DIR_PROJECT}/pbrt.h
 ${DIR_PROJECT}/geometry.h
 ${DIR_PROJECT}/spectrum.h
 ${DIR_PROJECT}/spectrum.cpp
+${DIR_PROJECT}/reflection.h
+${DIR_PROJECT}/reflection.cpp
 )
 
 add_definitions(-DUNICODE -D_UNICODE)
