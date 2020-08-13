@@ -10,6 +10,7 @@ ${DIR_PROJECT}/spectrum.h
 ${DIR_PROJECT}/spectrum.cpp
 ${DIR_PROJECT}/reflection.h
 ${DIR_PROJECT}/reflection.cpp
+${DIR_PROJECT}/material.h
 )
 
 add_definitions(-DUNICODE -D_UNICODE)
