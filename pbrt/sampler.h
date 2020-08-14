@@ -20,7 +20,7 @@ public:
 	virtual int RoundCount(int n) const { return n; }
 	const Float* Get1DArray(int n);
 	const Point2f* Get2DArray(int n);
-	virtual bool StartNextPixel();
+	virtual bool StartNextSample();
 	virtual std::unique_ptr<Sampler> Clone(int seed) = 0;
 	virtual bool SetSamplerNumber(int64_t sampleNum);
 protected:
@@ -36,6 +36,26 @@ protected:
 class PixelSampler : public Sampler
 {
 public:
+	PixelSampler(int64_t samplesPerPixel, int nSampledDeimisions);
+	virtual bool StartNextSample();
+	virtual bool SetSampleNumber(int64_t sampleNum);
+	virtual Float Get1D();
+	virtual Point2f Get2D();
 protected:
+	std::vector<std::vector<Float>> samples1D;
+	std::vector<std::vector<Point2f>> samples2D;
+	int current1DDimension = 0, current2DDimension = 0;
+	RNG rng;
+};
 
+class GlobalSampler : public Sampler
+{
+public:
+	GlobalSampler(int64_t samplesPerPixel) : Sampler(samplesPerPixel) {}
+	virtual int64_t GetIndexForSample(int64_t sampleNum) const = 0;
+	virtual Float SampleDimension(int64_t index, int demension) const = 0;
+	virtual void StartPixel(const Point2i& p) override;
+private:
+	int dimension;
+	int64_t intervalSampleIndex;
 };
