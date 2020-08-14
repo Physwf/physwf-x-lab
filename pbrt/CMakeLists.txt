@@ -11,6 +11,9 @@ ${DIR_PROJECT}/spectrum.cpp
 ${DIR_PROJECT}/reflection.h
 ${DIR_PROJECT}/reflection.cpp
 ${DIR_PROJECT}/material.h
+${DIR_PROJECT}/sampler.h
+${DIR_PROJECT}/sampler.cpp
+${DIR_PROJECT}/rng.h
 )
 
 add_definitions(-DUNICODE -D_UNICODE)
