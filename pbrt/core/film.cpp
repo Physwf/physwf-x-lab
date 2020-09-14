@@ -4,23 +4,23 @@
 
 Film::Film(const Point2i & resolution, 
 	const Bounds2f & cropWindow, //NDC空间,在fullResolution截取部分窗口
-	std::unique_ptr<Filter> filter, 
+	std::unique_ptr<Filter> f, 
 	Float diagonal, 
 	const std::string & filename, 
 	Float scale, 
 	Float maxSampleLumiance)
 	:fullResolution(resolution),
 	diagonal(diagonal*.001),
-	filter(std::move(filter)),
+	filter(std::move(f)),
 	filename(filename),
 	scale(scale),
 	maxSampleLuminance(maxSampleLuminance)
 {
 	croppedPixelBounds = 
 		Bounds2i(Point2i(	std::ceil(fullResolution.x * cropWindow.pMin.x ),
-							std::ceil(fullResolution.y * cropWindow.pMin.y))),
+							std::ceil(fullResolution.y * cropWindow.pMin.y)),
 				Point2i(	std::ceil(fullResolution.x * cropWindow.pMax.x),
-							std::ceil(fullResolution.y * cropWindow.pMax.y));
+							std::ceil(fullResolution.y * cropWindow.pMax.y)));
 
 	pixels = std::unique_ptr<Pixel[]>(new Pixel[croppedPixelBounds.Area()]);
 	//filmPixelMemory += croppedPixelBounds.Area() * sizeof(Pixel);

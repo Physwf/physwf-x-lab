@@ -31,13 +31,13 @@ public:
 
 	T operator[](int i) const
 	{
-		DOCHECK(i > 0 && i <= 1);
+		DOCHECK(i >= 0 && i <= 1);
 		if (i == 0) return x;
 		return y;
 	}
 	T& operator[](int i)
 	{
-		DOCHECK(i > 0 && i <= 1);
+		DOCHECK(i >= 0 && i <= 1);
 		if (i == 0) return x;
 		return y;
 	}
