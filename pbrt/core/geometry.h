@@ -114,14 +114,14 @@ public:
 
 	T operator[](int i) const
 	{
-		DOCHECK(i > 0 && i <= 2);
+		DOCHECK(i >=0 && i <= 2);
 		if (i == 0) return x;
 		if (i == 1) return y;
 		return z;
 	}
 	T& operator[](int i) 
 	{
-		DOCHECK(i > 0 && i <= 2);
+		DOCHECK(i >= 0 && i <= 2);
 		if (i == 0) return x;
 		if (i == 1) return y;
 		return z;
@@ -514,7 +514,7 @@ public:
 	explicit Bounds2(const Point2<T>& p): pMin(p),pMax(p) {}
 	Bounds2(const Point2<T> &p1, const Point2<T> &p2)
 	{
-		pMin = Point2<T>(std::min(p1.x, p2.x), std::min(p1.x, p2.x));
+		pMin = Point2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
 		pMax = Point2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
 	}
 
@@ -584,7 +584,7 @@ public:
 	explicit Bounds3(const Point3<T>& p) : pMin(p), pMax(p) {}
 	Bounds3(const Point3<T> &p1, const Point3<T> &p2)
 	{
-		pMin = Point3<T>(std::min(p1.x, p2.x), std::min(p1.x, p2.x), std::min(p1.z, p2.z));
+		pMin = Point3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
 		pMax = Point3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
 	}
 	const Point3<T> &operator[](int i) const;
@@ -777,7 +777,7 @@ template <typename T> inline Vector3<T> Abs(const Vector3<T> &v)
 }
 template <typename T> inline T Dot(const Vector3<T>& v1, const Vector3<T> &v2)
 {
-	return v1.x* v2.x + v1.x*v2.y + v1.z *v2.z;
+	return v1.x* v2.x + v1.y*v2.y + v1.z *v2.z;
 }
 template <typename T> inline T AbsDot(const Vector3<T> &v1, const Vector3<T>& v2)
 {

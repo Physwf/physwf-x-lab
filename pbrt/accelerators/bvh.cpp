@@ -165,25 +165,46 @@ BVHAccel::~BVHAccel()
 
 bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const
 {
+	struct Clock
+	{
+		Clock()
+		{
+			startTime = std::chrono::system_clock::now();
+		}
+		~Clock()
+		{
+			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
+		}
+		std::chrono::system_clock::time_point startTime;
+	};
+
 	bool hit = false;
 	Vector3f invDir(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
 	int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
 	int toVisitOffset = 0, currentNodeIndex = 0;
 	int nodesToVisit[64];
+	int i = 0;
 	while (true)
 	{
+		i++;
 		const LinearBVHNode* node = &nodes[currentNodeIndex];
 		if (node->bounds.IntersectP(ray, invDir, dirIsNeg))
 		{
+
 			if (node->nPrimitives > 0)//leaf
 			{
+
 				for (int i = 0; i < node->nPrimitives; ++i)
 				{
+					//Clock c;
+
 					if (primitives[node->primitivesOffset + i]->Intersect(ray, isect))
 						hit = true;
-					if(toVisitOffset == 0) break;
-					currentNodeIndex = nodesToVisit[--toVisitOffset];
 				}
+				if (toVisitOffset == 0) break;
+				currentNodeIndex = nodesToVisit[--toVisitOffset];
 			}
 			else//interior node 
 			{
@@ -195,7 +216,7 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const
 				else
 				{
 					nodesToVisit[toVisitOffset++] = node->secondChildOffset;
-					currentNodeIndex = currentNodeIndex;
+					currentNodeIndex = currentNodeIndex + 1;
 				}
 			}
 		}
@@ -205,6 +226,7 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const
 			currentNodeIndex = nodesToVisit[--toVisitOffset];
 		}
 	}
+
 	return hit;
 }
 
@@ -550,7 +572,6 @@ BVHBuildNode* BVHAccel::recursiveBuild(MemoryArena& arena,
 						{
 							return a.centroid[dim] < b.centroid[dim];
 						});
-					break;
 				}
 				else
 				{
@@ -627,10 +648,10 @@ BVHBuildNode* BVHAccel::recursiveBuild(MemoryArena& arena,
 				}
 				break;
 			}
+			}//switch end
 			node->InitInterior(dim,
 				recursiveBuild(arena, primitiveInfo, start, mid, totalNodes, orderedPrims),
 				recursiveBuild(arena, primitiveInfo, mid, end, totalNodes, orderedPrims));
-			}
 		}
 		return node;
 	}

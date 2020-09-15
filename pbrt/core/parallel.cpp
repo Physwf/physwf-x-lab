@@ -5,6 +5,7 @@
 #include <list>
 #include <thread>
 #include <condition_variable>
+#include <chrono>
 
 static std::vector<std::thread> threads;
 static bool shutdownThreads = false;
@@ -43,7 +44,7 @@ public:
 
 	bool Finished() const
 	{
-		return nextIndex > maxIndex && activeWorker == 0;
+		return nextIndex >= maxIndex && activeWorker == 0;
 	}
 };
 
@@ -63,7 +64,7 @@ void Barrier::Wait()
 
 static std::condition_variable workListCondition;
 
-static void workderThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier)
+static void workerThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier)
 {
 	ThreadIndex = tIndex;
 
@@ -85,9 +86,10 @@ static void workderThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier)
 			int64_t indexStart = loop.nextIndex;
 			int64_t indexEnd = std::min(indexStart + loop.chunkSize, loop.maxIndex);
 			loop.nextIndex = indexEnd;
+			//printf("ThreadIndex=%d loop.nextIndex==%I64d\n", ThreadIndex, loop.nextIndex);
 			if (loop.nextIndex == loop.maxIndex) workList = loop.next;
 			loop.activeWorker++;
-
+			//printf("loop.activeWorker++=%d\n", loop.activeWorker);
 			lock.unlock();
 			for (int64_t index = indexStart; index < indexEnd; ++index)
 			{
@@ -97,13 +99,17 @@ static void workderThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier)
 				}
 				else
 				{
+/*					std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();*/
 					loop.func2D(Point2i(index%loop.nX, index / loop.nX));
+// 					std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+// 					int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+// 					printf("elapsedMS:%lld\n", elapsedMS);
 				}
 			}
 			lock.lock();
 
 			loop.activeWorker--;
-
+			//printf("ThreadIndex=%d loop.activeWorker--=%d\n", ThreadIndex, loop.activeWorker);
 			if (loop.Finished()) workListCondition.notify_all();
 		}
 	}
@@ -140,11 +146,13 @@ void ParallelFor(std::function<void(int64_t)> func, int64_t count, int chunkSize
 		for (int64_t index = indexStart; index < indexEnd; ++index) {
 			//uint64_t oldState = ProfilerState;
 			//ProfilerState = loop.profilerState;
-			if (loop.func1D) {
+			if (loop.func1D) 
+			{
 				loop.func1D(index);
 			}
 			// Handle other types of loops
-			else {
+			else 
+			{
 				//CHECK(loop.func2D);
 				loop.func2D(Point2i(index % loop.nX, index / loop.nX));
 			}
@@ -190,28 +198,32 @@ void ParallelFor2D(std::function<void(Point2i)> func, const Point2i& count)
 
 		// Update _loop_ to reflect iterations this thread will run
 		loop.nextIndex = indexEnd;
+		//printf("loop.nextIndex==%I64d\n", loop.nextIndex);
 		if (loop.nextIndex == loop.maxIndex) workList = loop.next;
 		loop.activeWorker++;
-
+		//printf("loop.activeWorker++=%d\n", loop.activeWorker);
 		// Run loop indices in _[indexStart, indexEnd)_
 		lock.unlock();
 		for (int64_t index = indexStart; index < indexEnd; ++index) {
 			//uint64_t oldState = ProfilerState;
 			//ProfilerState = loop.profilerState;
-			if (loop.func1D) {
+			if (loop.func1D) 
+			{
 				loop.func1D(index);
 			}
 			// Handle other types of loops
-			else {
+			else 
+			{
 				//CHECK(loop.func2D);
 				loop.func2D(Point2i(index % loop.nX, index / loop.nX));
 			}
 			//ProfilerState = oldState;
 		}
 		lock.lock();
-
+		
 		// Update _loop_ to reflect completion of iterations
 		loop.activeWorker--;
+		//printf("loop.activeWorker--=%d\n", loop.activeWorker);
 	}
 }
 
@@ -234,7 +246,7 @@ void ParallelInit()
 	std::shared_ptr<Barrier> barrier = std::make_shared<Barrier>(nThreads);
 	for (int i = 0; i < nThreads - 1; ++i)
 	{
-		threads.push_back(std::thread(workderThreadFunc, i + 1, barrier));
+		threads.push_back(std::thread(workerThreadFunc, i + 1, barrier));
 	}
 
 	barrier->Wait();

@@ -17,7 +17,7 @@ struct Interaction
 		n(n),
 		mediumInterface(mediumInterface)
 	{
-
+		DOCHECK(!((n.x == 0) && (n.y == 0) && (n.z == 0)));
 	}
 
 	bool IsSurfaceInteraction() const { return n != Normal3f(); }

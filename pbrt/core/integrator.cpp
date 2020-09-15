@@ -166,7 +166,20 @@ void SamplerIntegrator::Render(const Scene & scene)
 	const int tileSize = 16;
 
 	Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize, (sampleExtent.y + tileSize - 1) / tileSize);
-	
+	struct Clock
+	{
+		Clock()
+		{
+			startTime = std::chrono::system_clock::now();
+		}
+		~Clock()
+		{
+			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
+		}
+		std::chrono::system_clock::time_point startTime;
+	};
 	{
 		ParallelFor2D([&](Point2i tile) 
 			{
@@ -183,33 +196,41 @@ void SamplerIntegrator::Render(const Scene & scene)
 				Bounds2i tileBounds(Point2i(x0, y0), Point2i(x1, y1));
 
 				std::unique_ptr<FilmTile> filmTile = camera->film->GetFilmTile(tileBounds);
-
+				//printf("start %d,%d\n", tile.x, tile.y);
+				int forcount = 0;
+				int whilecount = 0;
+				Clock k;
 				for (Point2i pixel : tileBounds)
 				{
 					tileSampler->StartPixel(pixel);
-
+					forcount++;
 					if (!InsideExclusive(pixel, pixelBounds)) continue;
-
 					do
 					{
 						CameraSample cameraSample = tileSampler->GetCameraSample(pixel);
-
+						whilecount++;
 						RayDifferential ray;
 						Float rayWeight = camera->GenerateRayDifferential(cameraSample, &ray);
 						ray.ScaleDifferentials(1 / std::sqrt((Float)tileSampler->samplesPerPixel));
 						//++nCameraRays;
-
+						
 						Spectrum L(0.f);
+						
 
 						if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
 
+						
 						filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
+
 
 						arena.Reset();
 
 					} while (tileSampler->StartNextSample());
+
+					
 				}
 
+				camera->film->MergeFilmTile(std::move(filmTile));
 			}, nTiles);
 	}
 

@@ -436,7 +436,7 @@ void Lamborghini::Draw()
 				GLfloat model[16] = { 0 };
 				static float rad = 0.0f;
 				rad += 0.01f;
-				glutMatrixRotationY(model, rad);
+				glutMatrixRotationX(model, rad);
 				loc = glGetUniformLocation(Program, "model");
 				glUnitformMatrix4fv(loc, 1, false, model);
 			}

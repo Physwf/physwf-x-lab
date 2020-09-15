@@ -2,6 +2,7 @@
 #include "sampler.h"
 #include "sampling.h"
 #include "light.h"
+#include "paramset.h"
 
 
 PerspectiveCamera::PerspectiveCamera(const AnimatedTransform &CameraToWorld, const Bounds2f &screenWindow, Float shutterOpen, Float shutterClose, Float lensRadius, Float focalDistance, Float fov, Film *film, const Medium *medium)
@@ -102,11 +103,19 @@ Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &sam
 
 PerspectiveCamera * CreatePerspectiveCamera(const ParamSet &params, const AnimatedTransform &cam2world, Film *film, const Medium *medium)
 {
-	Float shutterOpen = 0.f;
-	Float shutterClose = 1.0f;
-	Float lensradius = 0.f;
-	float focaldistance = 1e6;
-	Float frame = film->fullResolution.x / film->fullResolution.y;
+	// Extract common camera parameters from _ParamSet_
+	Float shutteropen = params.FindOneFloat("shutteropen", 0.f);
+	Float shutterclose = params.FindOneFloat("shutterclose", 1.f);
+	if (shutterclose < shutteropen) {
+		Warning("Shutter close time [%f] < shutter open [%f].  Swapping them.",
+			shutterclose, shutteropen);
+		std::swap(shutterclose, shutteropen);
+	}
+	Float lensradius = params.FindOneFloat("lensradius", 0.f);
+	Float focaldistance = params.FindOneFloat("focaldistance", 1e6);
+	Float frame = params.FindOneFloat(
+		"frameaspectratio",
+		Float(film->fullResolution.x) / Float(film->fullResolution.y));
 	Bounds2f screen;
 	if (frame > 1.f) {
 		screen.pMin.x = -frame;
@@ -120,6 +129,23 @@ PerspectiveCamera * CreatePerspectiveCamera(const ParamSet &params, const Animat
 		screen.pMin.y = -1.f / frame;
 		screen.pMax.y = 1.f / frame;
 	}
-	float fov = 90.;
-	return new PerspectiveCamera(cam2world, screen, shutterOpen, shutterClose, lensradius, focaldistance, fov, film, medium);
+	int swi;
+	const Float *sw = params.FindFloat("screenwindow", &swi);
+	if (sw) {
+		if (swi == 4) {
+			screen.pMin.x = sw[0];
+			screen.pMax.x = sw[1];
+			screen.pMin.y = sw[2];
+			screen.pMax.y = sw[3];
+		}
+		else
+			Error("\"screenwindow\" should have four values");
+	}
+	Float fov = params.FindOneFloat("fov", 90.);
+	Float halffov = params.FindOneFloat("halffov", -1.f);
+	if (halffov > 0.f)
+		// hack for structure synth, which exports half of the full fov
+		fov = 2.f * halffov;
+	return new PerspectiveCamera(cam2world, screen, shutteropen, shutterclose,
+		lensradius, focaldistance, fov, film, medium);
 }

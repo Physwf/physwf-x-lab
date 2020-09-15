@@ -14,7 +14,7 @@ Film::Film(const Point2i & resolution,
 	filter(std::move(f)),
 	filename(filename),
 	scale(scale),
-	maxSampleLuminance(maxSampleLuminance)
+	maxSampleLuminance(maxSampleLumiance)
 {
 	croppedPixelBounds = 
 		Bounds2i(Point2i(	std::ceil(fullResolution.x * cropWindow.pMin.x ),
@@ -64,7 +64,7 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i& sampleBounds)
 	return std::unique_ptr<FilmTile>(new FilmTile(tilePixelBounds,filter->radius,filterTable,filterTableWidth,maxSampleLuminance));
 }
 
-void Film::MergeFileTile(std::unique_ptr<FilmTile> tile)
+void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 {
 	std::lock_guard<std::mutex> lock(mutex);
 	for (Point2i pixel : tile->GetPixelBounds())
@@ -73,6 +73,8 @@ void Film::MergeFileTile(std::unique_ptr<FilmTile> tile)
 		Pixel& mergePixel = GetPixel(pixel);
 		Float xyz[3];
 		tilePixel.contribSum.ToXYZ(xyz);
+// 		if (xyz[0] != 0 || xyz[1] != 0 || xyz[2] != 0)
+// 			printf("xyz=(%f,%f,%f)\n", xyz[0], xyz[1], xyz[2]);
 		for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
 		mergePixel.filterWeightSum += tilePixel.filterWeightSum;
 	}
@@ -116,16 +118,13 @@ void Film::WriteImage(Float splatScale /*= 1*/)
 		if (filterWeightSum != 0) {
 			Float invWt = (Float)1 / filterWeightSum;
 			rgb[3 * offset] = std::max((Float)0, rgb[3 * offset] * invWt);
-			rgb[3 * offset + 1] =
-				std::max((Float)0, rgb[3 * offset + 1] * invWt);
-			rgb[3 * offset + 2] =
-				std::max((Float)0, rgb[3 * offset + 2] * invWt);
+			rgb[3 * offset + 1] = std::max((Float)0, rgb[3 * offset + 1] * invWt);
+			rgb[3 * offset + 2] = std::max((Float)0, rgb[3 * offset + 2] * invWt);
 		}
 
 		// Add splat value at pixel
 		Float splatRGB[3];
-		Float splatXYZ[3] = { pixel.splatXYZ[0], pixel.splatXYZ[1],
-			pixel.splatXYZ[2] };
+		Float splatXYZ[3] = { pixel.splatXYZ[0], pixel.splatXYZ[1], pixel.splatXYZ[2] };
 		XYZToRGB(splatXYZ, splatRGB);
 		rgb[3 * offset] += splatScale * splatRGB[0];
 		rgb[3 * offset + 1] += splatScale * splatRGB[1];
@@ -154,6 +153,18 @@ void Film::Clear()
 Film* CreateFilm(const ParamSet &params, std::unique_ptr<Filter> filter)
 {
 	std::string filename;
+	if (PbrtOptions.imageFile != "") {
+		filename = PbrtOptions.imageFile;
+		std::string paramsFilename = params.FindOneString("filename", "");
+		if (paramsFilename != "")
+			Warning(
+				"Output filename supplied on command line, \"%s\" is overriding "
+				"filename provided in scene description file, \"%s\".",
+				PbrtOptions.imageFile.c_str(), paramsFilename.c_str());
+	}
+	else
+		filename = params.FindOneString("filename", "pbrt.exr");
+
 	int xres = params.FindOneInt("xresolution", 1280);
 	int yres = params.FindOneInt("yresolution", 720);
 	Bounds2f crop;

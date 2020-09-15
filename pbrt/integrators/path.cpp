@@ -71,8 +71,11 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 		if (bounces > 3)
 		{
 			Float q = std::max((Float).05, 1 - beta.y());
-			if(sampler.Get1D() < q)
+			if (sampler.Get1D() < q)
+			{
+				printf("path::Li break\n");
 				break;
+			}
 			beta /= 1 - q;
 		}
 	}

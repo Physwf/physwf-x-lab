@@ -23,7 +23,7 @@ public:
 	Bounds2i GetSampleBounds() const;
 	Bounds2f GetPhysicalExtent() const;
 	std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i& sampleBounds);
-	void MergeFileTile(std::unique_ptr<FilmTile> tile);
+	void MergeFilmTile(std::unique_ptr<FilmTile> tile);
 	void SetImage(const Spectrum* img) const;
 	void AddSplat(const Point2f& p, Spectrum v);
 	void WriteImage(Float SplateScale = 1);
@@ -38,6 +38,7 @@ public:
 private:
 	struct Pixel
 	{
+		Pixel() { xyz[0] = xyz[1] = xyz[2] = filterWeightSum = 0; }
 		Float xyz[3];
 		Float filterWeightSum;
 		AtomicFloat splatXYZ[3];

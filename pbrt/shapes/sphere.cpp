@@ -2,7 +2,7 @@
 #include "sampling.h"
 #include "paramset.h"
 #include "efloat.h"
-
+#include <chrono>
 // Sphere Method Definitions
 Bounds3f Sphere::ObjectBound() const {
 	return Bounds3f(Point3f(-radius, -radius, zMin),
@@ -11,6 +11,21 @@ Bounds3f Sphere::ObjectBound() const {
 
 bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const
 {
+	struct Clock
+	{
+		Clock()
+		{
+			startTime = std::chrono::system_clock::now();
+		}
+		~Clock()
+		{
+			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
+		}
+		std::chrono::system_clock::time_point startTime;
+	};
+	
 	//ProfilePhase p(Prof::ShapeIntersect);
 	Float phi;
 	Point3f pHit;
@@ -66,7 +81,6 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, boo
 			(zMax < radius && pHit.z > zMax) || phi > phiMax)
 			return false;
 	}
-
 	// Find parametric representation of sphere hit
 	Float u = phi / phiMax;
 	Float theta = std::acos(Clamp(pHit.z / radius, -1, 1));
@@ -99,6 +113,7 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, boo
 	Float g = Dot(N, d2Pdvv);
 
 	// Compute $\dndu$ and $\dndv$ from fundamental form coefficients
+
 	Float invEGF2 = 1 / (E * G - F * F);
 	Normal3f dndu = Normal3f((f * F - e * G) * invEGF2 * dpdu +
 		(e * F - f * E) * invEGF2 * dpdv);
@@ -108,10 +123,13 @@ bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, boo
 	// Compute error bounds for sphere intersection
 	Vector3f pError = gamma(5) * Abs((Vector3f)pHit);
 
-	// Initialize _SurfaceInteraction_ from parametric information
-	*isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v),
-		-ray.d, dpdu, dpdv, dndu, dndv,
-		ray.time, this));
+	{
+		//Clock cl;
+		// Initialize _SurfaceInteraction_ from parametric information
+		*isect = (*ObjectToWorld)(SurfaceInteraction(pHit, pError, Point2f(u, v), -ray.d, dpdu, dpdv, dndu, dndv, ray.time, this));
+	}
+
+	
 
 	// Update _tHit_ for quadric intersection
 	*tHit = (Float)tShapeHit;

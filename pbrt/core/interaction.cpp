@@ -19,7 +19,7 @@ SurfaceInteraction::SurfaceInteraction(const Point3f &p,
 	dpdv(dpdv),
 	dndu(dndu),
 	dndv(dndv),
-	shape(shape),
+	shape(sh),
 	faceIndex(faceIndex)
 {
 	shading.n = n;
@@ -63,6 +63,7 @@ void SurfaceInteraction::ComputeDifferencials(const RayDifferential& r) const
 	{
 		//射线(o,dir)同平面ax+by+cz+d=0的交点:
 		//t = -Dot((a,b,c),o)-d/Dot((a,b,c),dir)
+		
 		Float d = Dot(n, Vector3f(p.x, p.y, p.z));
 		Float tx = -(Dot(n, Vector3f(p.x, p.y, p.z)) - d) / Dot(n, r.rxDirection);
 		Point3f px = r.rxOrigin + tx * r.rxDirection;
@@ -85,7 +86,7 @@ void SurfaceInteraction::ComputeDifferencials(const RayDifferential& r) const
 		{
 			dim[0] = 0; dim[1] = 1;
 		}
-		Float A[2][2] = { {dpdu[dim[0]], dpdv[dim[0]]},{ dpdu[dim[1], dpdu[dim[1]]]} };
+		Float A[2][2] = { {dpdu[dim[0]], dpdv[dim[0]]},{ dpdu[dim[1]], dpdu[dim[1]]} };
 		Float Bx[2] = { px[dim[0]] - p[dim[0]], px[dim[1]] - p[dim[1]] };
 		Float By[2] = { py[dim[0]] - p[dim[0]], py[dim[1]] - p[dim[1]] };
 		if (!SolveLinearSystem2x2(A, Bx, &dudx, &dvdx))
