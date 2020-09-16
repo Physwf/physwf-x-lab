@@ -10,6 +10,7 @@
 
 #include "accelerators/bvh.h"
 #include "cameras/perspective.h"
+#include "cameras/orthographic.h"
 #include "shapes/sphere.h"
 #include "shapes/disk.h"
 #include "materials/glass.h"
@@ -725,9 +726,9 @@ Camera *MakeCamera(const std::string &name, const ParamSet &paramSet,
 	if (name == "perspective")
 		camera = CreatePerspectiveCamera(paramSet, animatedCam2World, film,
 			mediumInterface.outside);
-// 	else if (name == "orthographic")
-// 		camera = CreateOrthographicCamera(paramSet, animatedCam2World, film,
-// 			mediumInterface.outside);
+	else if (name == "orthographic")
+		camera = CreateOrthographicCamera(paramSet, animatedCam2World, film,
+			mediumInterface.outside);
 // 	else if (name == "realistic")
 // 		camera = CreateRealisticCamera(paramSet, animatedCam2World, film,
 // 			mediumInterface.outside);

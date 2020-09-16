@@ -59,7 +59,7 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i& sampleBounds)
 	Vector2f halfPixel = Vector2f(0.5f, 0.5f);
 	Bounds2f floatBounds = (Bounds2f)sampleBounds;
 	Point2i p0 = (Point2i)(Ceil(floatBounds.pMin - halfPixel - filter->radius));
-	Point2i p1 = (Point2i)(Floor(floatBounds.pMax - halfPixel - filter->radius));
+	Point2i p1 = (Point2i)(Floor(floatBounds.pMax - halfPixel + filter->radius)) + Point2i(1,1);
 	Bounds2i tilePixelBounds = Intersect(Bounds2i(p0, p1), croppedPixelBounds);
 	return std::unique_ptr<FilmTile>(new FilmTile(tilePixelBounds,filter->radius,filterTable,filterTableWidth,maxSampleLuminance));
 }

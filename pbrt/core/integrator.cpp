@@ -215,13 +215,10 @@ void SamplerIntegrator::Render(const Scene & scene)
 						//++nCameraRays;
 						
 						Spectrum L(0.f);
-						
 
 						if (rayWeight > 0) L = Li(ray, scene, *tileSampler, arena);
 
-						
 						filmTile->AddSample(cameraSample.pFilm, L, rayWeight);
-
 
 						arena.Reset();
 

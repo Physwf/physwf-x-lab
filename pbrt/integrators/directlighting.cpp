@@ -40,7 +40,6 @@ Spectrum DirectLightingIntegrator::Li(const RayDifferential& ray, const Scene& s
 	if (!isect.bsdf)
 		return Li(isect.SpawnRay(ray.d), scene, sampler, arena, depth);
 
-	return Spectrum(1.0f);
 	Vector3f wo = isect.wo;
 	L += isect.Le(wo);
 
