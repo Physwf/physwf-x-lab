@@ -231,7 +231,7 @@ thread_local int ThreadIndex;
 
 int MaxThreadIndex()
 {
-	return NumSystemCores();
+	return PbrtOptions.nThreads == 0 ? NumSystemCores() : PbrtOptions.nThreads;
 }
 
 int NumSystemCores()

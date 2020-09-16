@@ -232,9 +232,25 @@ Bounds3f Transform::operator()(const Bounds3f& b) const
 	ret = Union(ret, M(Point3f(b.pMax.x, b.pMax.y, b.pMax.z)));
 	return ret;
 }
-
+#include <chrono>
 SurfaceInteraction Transform::operator()(const SurfaceInteraction& si) const
 {
+	struct Clock
+	{
+		Clock()
+		{
+			startTime = std::chrono::system_clock::now();
+		}
+		~Clock()
+		{
+			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
+			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
+		}
+		std::chrono::system_clock::time_point startTime;
+	};
+	Clock c;
+
 	SurfaceInteraction ret;
 	// Transform _p_ and _pError_ in _SurfaceInteraction_
 	ret.p = (*this)(si.p, si.pError, &ret.pError);

@@ -8,7 +8,7 @@ public:
 	EFloat() {}
 	EFloat(float v, float err = 0.f) : v(v)
 	{
-		if (err = 0.)
+		if (err == 0.)
 		{
 			low = high = v;
 		}
@@ -118,7 +118,7 @@ public:
 	{
 		if (!std::isinf(low) && !std::isnan(low) && !std::isinf(high) && !std::isnan(high))
 		{
-			DOCHECK(low < high);
+			DOCHECK(low <= high);
 #ifndef NDEBUG 
 			if (!std::isinf(v) && !std::isnan(v))
 			{

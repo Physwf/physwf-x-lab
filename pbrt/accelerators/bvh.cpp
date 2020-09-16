@@ -185,10 +185,9 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const
 	int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
 	int toVisitOffset = 0, currentNodeIndex = 0;
 	int nodesToVisit[64];
-	int i = 0;
+	static int i = 0;
 	while (true)
 	{
-		i++;
 		const LinearBVHNode* node = &nodes[currentNodeIndex];
 		if (node->bounds.IntersectP(ray, invDir, dirIsNeg))
 		{
@@ -226,7 +225,11 @@ bool BVHAccel::Intersect(const Ray &ray, SurfaceInteraction *isect) const
 			currentNodeIndex = nodesToVisit[--toVisitOffset];
 		}
 	}
-
+// 	if (hit)
+// 	{
+// 		i++;
+// 		printf("i=%d\n",i);
+// 	}
 	return hit;
 }
 
