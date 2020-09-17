@@ -11,21 +11,6 @@ Bounds3f Sphere::ObjectBound() const {
 
 bool Sphere::Intersect(const Ray &r, Float *tHit, SurfaceInteraction *isect, bool testAlphaTexture) const
 {
-	struct Clock
-	{
-		Clock()
-		{
-			startTime = std::chrono::system_clock::now();
-		}
-		~Clock()
-		{
-			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
-		}
-		std::chrono::system_clock::time_point startTime;
-	};
-	
 	//ProfilePhase p(Prof::ShapeIntersect);
 	Float phi;
 	Point3f pHit;

@@ -28,7 +28,7 @@ void WriteImage(const std::string &name, const Float *rgb, const Bounds2i &outpu
 				dst[1] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 1]);
 				dst[2] = TO_BYTE(rgb[3 * (y * resolution.x + x) + 2]);
 #undef TO_BYTE
-				if (dst[0] != 0 || dst[1] != 0 || dst[2] != 0)
+				if (dst[0] == 255 && dst[1] == 255 && dst[2] == 255)
 				{
 					printf("r:%f,g:%f,b:%f\n", rgb[3 * (y * resolution.x + x) + 0], rgb[3 * (y * resolution.x + x) + 1], rgb[3 * (y * resolution.x + x) + 2]);
 					printf("r:%d,g:%d,b:%d\n", dst[0], dst[1], dst[2]);

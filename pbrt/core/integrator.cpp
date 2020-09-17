@@ -44,11 +44,20 @@ Spectrum UniformSampleOneLight(const Interaction & it, const Scene & scene, Memo
 {
 	int nLights = int(scene.lights.size());
 	if (nLights == 0) return Spectrum(0.f);
-	int lightNum = std::min((int)(sampler.Get1D()*nLights), nLights - 1);
+	int lightNum;
+	Float lightPdf;
+	if (lightDistrib) {
+		lightNum = lightDistrib->SampleDiscrete(sampler.Get1D(), &lightPdf);
+		if (lightPdf == 0) return Spectrum(0.f);
+	}
+	else {
+		lightNum = std::min((int)(sampler.Get1D() * nLights), nLights - 1);
+		lightPdf = Float(1) / nLights;
+	}
 	const std::shared_ptr<Light>& light = scene.lights[lightNum];
 	Point2f uLight = sampler.Get2D();
 	Point2f uScattering = sampler.Get2D();
-	return (Float)nLights * EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena, handleMedia);
+	return (Float)nLights * EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena, handleMedia) / lightPdf;
 }
 
 Spectrum EstimateDirect(const Interaction& it, const Point2f & uScattering, const Light& light, const Point2f& uLight, const Scene& scene, Sampler& sampler, MemoryArena& arena, bool handleMedia, bool specular)
@@ -166,20 +175,7 @@ void SamplerIntegrator::Render(const Scene & scene)
 	const int tileSize = 16;
 
 	Point2i nTiles((sampleExtent.x + tileSize - 1) / tileSize, (sampleExtent.y + tileSize - 1) / tileSize);
-	struct Clock
-	{
-		Clock()
-		{
-			startTime = std::chrono::system_clock::now();
-		}
-		~Clock()
-		{
-			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
-		}
-		std::chrono::system_clock::time_point startTime;
-	};
+
 	{
 		ParallelFor2D([&](Point2i tile) 
 			{
@@ -199,7 +195,6 @@ void SamplerIntegrator::Render(const Scene & scene)
 				//printf("start %d,%d\n", tile.x, tile.y);
 				int forcount = 0;
 				int whilecount = 0;
-				Clock k;
 				for (Point2i pixel : tileBounds)
 				{
 					tileSampler->StartPixel(pixel);

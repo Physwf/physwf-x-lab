@@ -1,14 +1,14 @@
 LookAt 0 0 100  0 0 -1  0 1 0
-#Camera "perspective" "float fov" [90]
+Camera "perspective" "float fov" [90]
 #Identity
-Camera "orthographic" "float screenwindow" [-100.0 100.0 -100.0 100.0]
+#Camera "orthographic" "float screenwindow" [-100.0 100.0 -100.0 100.0]
 Film "image"
 "integer xresolution" [500] "integer yresolution" [500]
     "string filename" "spheres.png"
 
 Sampler "halton" "integer pixelsamples" [8]
 
-Integrator "directlighting"
+Integrator "path"
 
 WorldBegin
 
@@ -20,7 +20,7 @@ AttributeEnd
 
 AttributeBegin
     Material "matte" "color Kd" [0.6 0.6 0.8]
-    Translate 0 0 -100
+    Translate 0 0 0
 Shape "sphere" "float radius" [50]
 AttributeEnd
 

@@ -2315,6 +2315,7 @@ std::vector<uint16_t> ComputeRadicalInversePermutations(RNG& rng)
 			p[j] = j;
 		}
 		Shuffle(p, Primes[i], 1, rng);
+		p += Primes[i];
 	}
 	return perms;
 }

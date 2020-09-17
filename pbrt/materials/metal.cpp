@@ -23,7 +23,23 @@ MetalMaterial::MetalMaterial(const std::shared_ptr<Texture<Spectrum>> &eta,
 
 void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction *si, MemoryArena &arena, TransportMode mode, bool allowMultipleLobes) const
 {
-
+	// Perform bump mapping with _bumpMap_, if present
+// 	if (bumpMap) Bump(bumpMap, si);
+// 	si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+// 
+// 	Float uRough =
+// 		uRoughness ? uRoughness->Evaluate(*si) : roughness->Evaluate(*si);
+// 	Float vRough =
+// 		vRoughness ? vRoughness->Evaluate(*si) : roughness->Evaluate(*si);
+// 	if (remapRoughness) {
+// 		uRough = TrowbridgeReitzDistribution::RoughnessToAlpha(uRough);
+// 		vRough = TrowbridgeReitzDistribution::RoughnessToAlpha(vRough);
+// 	}
+// 	Fresnel *frMf = ARENA_ALLOC(arena, FresnelConductor)(1., eta->Evaluate(*si),
+// 		k->Evaluate(*si));
+// 	MicrofacetDistribution *distrib =
+// 		ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(uRough, vRough);
+// 	si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(1., distrib, frMf));
 }
 
 const int CopperSamples = 56;

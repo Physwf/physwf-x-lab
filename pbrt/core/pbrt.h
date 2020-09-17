@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-
+#include <chrono>
 #include <stdint.h>
 
 #include <float.h>
@@ -181,7 +181,7 @@ inline float BitsToFloat(uint32_t ui)
 inline uint64_t FloatToBits(double f)
 {
 	uint64_t ui;
-	memcpy(&ui, &f, sizeof(float));
+	memcpy(&ui, &f, sizeof(double));
 	return ui;
 }
 inline double BitsToFloat(uint64_t ui)

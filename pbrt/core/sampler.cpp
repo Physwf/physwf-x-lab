@@ -150,5 +150,6 @@ Point2f GlobalSampler::Get2D()
 		dimension = arrayEndDim;
 	Point2f p(SampleDimension(intervalSampleIndex, dimension), SampleDimension(intervalSampleIndex, dimension + 1));
 	dimension += 2;
+	//printf("Get2D=%f,%f\n", p.x, p.y);
 	return p;
 }

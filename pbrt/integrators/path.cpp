@@ -28,6 +28,8 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 	Spectrum L(0.f), beta(1.0f);
 	RayDifferential ray(r);
 	bool specularBounce = false;
+	Float etaScale = 1;
+
 	for (int bounces = 0;; ++bounces)
 	{
 		SurfaceInteraction isect;
@@ -44,8 +46,8 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 					L += beta * light->Le(ray);
 			}
 		}
-		if (!foundIntersection || bounces >= maxDepth)
-			break;
+		if (!foundIntersection || bounces >= maxDepth) break;
+
 		isect.ComputeScatteringFunctions(ray, arena, true);
 		if (!isect.bsdf)
 		{
@@ -53,7 +55,15 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 			bounces--;
 			continue;
 		}
-		L += beta * UniformSampleOneLight(isect, scene, arena, sampler);
+		if(beta[0] < 1.0 && beta[1] < 1.0 && beta[2] < 1.0)
+			printf("beta=%f,%f,%f\n", beta[0], beta[1], beta[2]);
+
+		const Distribution1D *distrib = lightDistribution->Lookup(isect.p);
+
+		if (isect.bsdf->NumComponents(BxDFType( BSDF_ALL & ~BSDF_SPECULAR)) > 0)
+		{
+			L += beta * UniformSampleOneLight(isect, scene, arena, sampler,false, distrib);
+		}
 
 		Vector3f wo = -ray.d, wi;
 		Float pdf;
@@ -67,13 +77,12 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 
 		//to-do
 		// Account for subsurface scattering, if applicable
-
-		if (bounces > 3)
+		Spectrum rrBeta = beta * etaScale;
+		if (rrBeta.MaxComponentValue() < rrThreshold &&bounces > 3)
 		{
-			Float q = std::max((Float).05, 1 - beta.y());
+			Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
 			if (sampler.Get1D() < q)
 			{
-				printf("path::Li break\n");
 				break;
 			}
 			beta /= 1 - q;

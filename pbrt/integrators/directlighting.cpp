@@ -7,21 +7,6 @@
 
 Spectrum DirectLightingIntegrator::Li(const RayDifferential& ray, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth /* = 0 */) const
 {
-	struct Clock
-	{
-		Clock()
-		{
-			startTime = std::chrono::system_clock::now();
-		}
-		~Clock()
-		{
-			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
-		}
-		std::chrono::system_clock::time_point startTime;
-	};
-	//Clock c;
 	Spectrum L(0.0f);
 	SurfaceInteraction isect;
 	{

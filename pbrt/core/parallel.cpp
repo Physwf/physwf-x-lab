@@ -99,11 +99,7 @@ static void workerThreadFunc(int tIndex, std::shared_ptr<Barrier> barrier)
 				}
 				else
 				{
-/*					std::chrono::system_clock::time_point startTime = std::chrono::system_clock::now();*/
 					loop.func2D(Point2i(index%loop.nX, index / loop.nX));
-// 					std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-// 					int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-// 					printf("elapsedMS:%lld\n", elapsedMS);
 				}
 			}
 			lock.lock();

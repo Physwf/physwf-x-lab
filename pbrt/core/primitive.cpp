@@ -15,20 +15,6 @@ Bounds3f GeometricPrimitive::WorldBound() const
 
 bool GeometricPrimitive::Intersect(const Ray& r, SurfaceInteraction* isect) const
 {
-	struct Clock
-	{
-		Clock()
-		{
-			startTime = std::chrono::system_clock::now();
-		}
-		~Clock()
-		{
-			std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-			int64_t elapsedMS = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count();
-			if (elapsedMS > 0) printf("elapsedMS:%lld\n", elapsedMS);
-		}
-		std::chrono::system_clock::time_point startTime;
-	};
 	Float tHit;
 	{
 		if (!shape->Intersect(r, &tHit, isect)) return false;

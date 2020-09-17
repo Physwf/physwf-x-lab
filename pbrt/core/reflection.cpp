@@ -72,9 +72,11 @@ Spectrum BSDF::Sample_f(const Vector3f& woW, Vector3f* wiW, const Point2f& u, Fl
 		}
 	}
 
-	Point2f uRemapped(u[0] * matchingComps - comp, u[1]);
+	//Point2f uRemapped(u[0] * matchingComps - comp, u[1]);
+	Point2f uRemapped(std::min(u[0] * matchingComps - comp, OneMinusEpsilon), u[1]);
 
 	Vector3f wi, wo = WorldToLocal(woW);
+	if (wo.z == 0) return 0.;
 	*pdf = 0;
 	if (sampledType) *sampledType = bxdf->type;
 	Spectrum f = bxdf->Sample_f(wo, &wi, uRemapped, pdf, sampledType);
@@ -94,9 +96,9 @@ Spectrum BSDF::Sample_f(const Vector3f& woW, Vector3f* wiW, const Point2f& u, Fl
 	}
 	if (matchingComps > 1) *pdf /= matchingComps;
 
-	if (!(bxdf->type & BSDF_SPECULAR) && matchingComps > 1)
+	if (!(bxdf->type & BSDF_SPECULAR))
 	{
-		bool reflect = Dot(*wiW, ng)*Dot(woW, ng);
+		bool reflect = Dot(*wiW, ng)*Dot(woW, ng) > 0 ;
 		f = 0.f;
 		for (int i = 0; i < nBxDFs; ++i)
 		{
