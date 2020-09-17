@@ -15,7 +15,7 @@ void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction* si, MemoryAre
 	Float sig = Clamp(sigma->Evaluate(*si), 0, 90);
 	if (!r.IsBlack())
 	{
-		if (sigma == 0)
+		if (sig == 0)
 			si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection(r)));
 		else
 			si->bsdf->Add(ARENA_ALLOC(arena, OrenNayar)(r, sig));

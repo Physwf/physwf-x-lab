@@ -19,9 +19,12 @@ AttributeEnd
 
 
 AttributeBegin
-    Material "matte" "color Kd" [0.6 0.6 0.8]
-    Translate 0 0 0
-Shape "sphere" "float radius" [50]
+Translate 50 0 0
+    Shape "sphere" "float radius" [50]
+    Material "matte" "color Kd" [0.6 0.6 0.6]
+Translate -100 0 0
+    Shape "sphere" "float radius" [50]
+    Material "matte" "color Kd" [0.6 0.6 0.6]
 AttributeEnd
 
 

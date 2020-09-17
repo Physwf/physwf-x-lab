@@ -55,7 +55,7 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 			bounces--;
 			continue;
 		}
-		if(beta[0] < 1.0 && beta[1] < 1.0 && beta[2] < 1.0)
+		if(beta[0] > 1.0 && beta[1] > 1.0 && beta[2] > 1.0)
 			printf("beta=%f,%f,%f\n", beta[0], beta[1], beta[2]);
 
 		const Distribution1D *distrib = lightDistribution->Lookup(isect.p);
@@ -74,11 +74,12 @@ Spectrum PathIntegrator::Li(const RayDifferential& r, const Scene& scene, Sample
 		beta *= f * AbsDot(wi, isect.shading.n) / pdf;
 		specularBounce = (flags & BSDF_SPECULAR) != 0;
 		ray = isect.SpawnRay(wi);
-
+		if (beta[0] > 1.0 && beta[1] > 1.0 && beta[2] > 1.0)
+			printf("beta=%f,%f,%f\n", beta[0], beta[1], beta[2]);
 		//to-do
 		// Account for subsurface scattering, if applicable
 		Spectrum rrBeta = beta * etaScale;
-		if (rrBeta.MaxComponentValue() < rrThreshold &&bounces > 3)
+		if (rrBeta.MaxComponentValue() < rrThreshold && bounces > 3)
 		{
 			Float q = std::max((Float).05, 1 - rrBeta.MaxComponentValue());
 			if (sampler.Get1D() < q)

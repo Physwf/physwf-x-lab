@@ -99,7 +99,7 @@ public:
 	{
 		return Vector3f(ss.x * v.x + ts.x * v.y + ns.x * v.z,
 						ss.y * v.x + ts.y * v.y + ns.y * v.z,
-						ss.z *v.x + ts.z * v.y * ns.z * v.z);
+						ss.z *v.x + ts.z * v.y + ns.z * v.z);
 	}
 	Spectrum f(const Vector3f& woW, const Vector3f& wiW, BxDFType flags = BSDF_ALL) const;
 	Spectrum rho(int nSamples, const Point2f* smaple1, const Point2f* smaple2, BxDFType flags = BSDF_ALL) const;
