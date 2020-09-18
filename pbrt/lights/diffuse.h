@@ -16,7 +16,7 @@ public:
 
 	Spectrum L(const Interaction& intr, const Vector3f &w) const
 	{
-		return Spectrum();
+		return (twoSided || Dot(intr.n, w) > 0) ? Lemit : Spectrum(0.f);
 	}
 
 	virtual Spectrum Power() const override;

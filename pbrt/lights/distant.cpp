@@ -28,12 +28,21 @@ Float DistantLight::Pdf_Li(const Interaction& ref, const Vector3f& wi) const
 
 Spectrum DistantLight::Sample_Le(const Point2f &u1, const Point2f& u2, Float time, Ray* ray, Normal3f *nLight, Float *pdfPos, Float *pdfDir) const
 {
-	return Spectrum();
+	Vector3f v1, v2;
+	CoordinateSystem(wLight, v1, v2);
+	Point2f cd = ConcentricSampleDisk(u1);
+	Point3f pDisk = worldCenter + worldRadius * (cd.x*v1, cd.y*v2);
+	*ray = Ray(pDisk + worldRadius * wLight, -wLight, Infinity, time);
+	*nLight = (Normal3f)ray->d;
+	*pdfPos = 1 / (Pi * worldRadius * worldRadius);
+	*pdfDir = 1;
+	return L;
 }
 
 void DistantLight::Pdf_Le(const Ray &ray, const Normal3f &nLight, Float *pdfPos, Float *pdfDir) const
 {
-
+	*pdfPos = 1 / (Pi * worldRadius * worldRadius);
+	*pdfDir = 0;
 }
 
 std::shared_ptr<DistantLight> CreateDistantLight(const Transform& light2world,const ParamSet &paramSet)

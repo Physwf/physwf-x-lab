@@ -56,7 +56,7 @@ Float Camera::GenerateRayDifferential(const CameraSample& sample, RayDifferentia
 
 Spectrum Camera::We(const Ray& ray, Point2f *pRaster2 /*= nullptr*/) const
 {
-	return Spectrum(0.f);
+	return Spectrum(0);
 }
 
 void Camera::Pdf_We(const Ray& ray, Float *pdfPos, Float *pdfDir) const

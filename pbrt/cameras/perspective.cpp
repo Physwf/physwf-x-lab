@@ -88,17 +88,69 @@ Float PerspectiveCamera::GenerateRayDifferential(const CameraSample &sample, Ray
 
 Spectrum PerspectiveCamera::We(const Ray &ray, Point2f *pRaster2 /*= nullptr*/) const
 {
-	return Spectrum();
+	Transform c2w;
+	CameraToWorld.Interpolate(ray.time, &c2w);
+	Float cosTheta = Dot(ray.d, c2w(Vector3f(0, 0, 1)));
+	if (cosTheta < 0)//ray的方向不在相机可视范围内
+		return 0;
+	//焦平面
+	Point3f pFocus = ray((lensRadius > 0 : focalDistance: 1) / cosTheta);
+	Point3f pRaster = Inverse(RasterToCamera(Inverse(c2w)(pFocus)));
+
+	if (pRaster2) *pRaster2 = Point2f(pRaster.x, pRaster.y);
+
+	Bounds2i sampleBounds = film->GetSampleBounds();
+	if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
+		pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
+		return 0;
+
+	Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
+
+	Float cos2Theta = cosTheta * cosTheta;
+	return Spectrum(1 / (A*lensArea*cos2Theta*cos2Theta));
 }
 
 void PerspectiveCamera::Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) const
 {
-
+	Transform c2w;
+	CameraToWorld.Interpolate(ray.time, &c2w);
+	Float cosTheta = Dot(ray.d, c2w(Vector3f(0, 0, 1)));
+	if (cosTheta < 0)//ray的方向不在相机可视范围内
+	{
+		*pdfPos = *pdfDir = 0;
+		return;
+	}
+	//焦平面
+	Point3f pFocus = ray((lensRadius > 0 : focalDistance: 1) / cosTheta);
+	Point3f pRaster = Inverse(RasterToCamera(Inverse(c2w)(pFocus)));
+	Bounds2i sampleBounds = film->GetSampleBounds();
+	if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
+		pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
+	{
+		*pdfPos = *pdfDir = 0;
+		return;
+	}
+	Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
+	*pdfPos = 1 / lensArea;
+	*pdfDir = 1 / (A * cosTheta * cosTheta * cosTheta);
 }
 
 Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &sample, Vector3f *wi, Float *pdf, Point2f *pRaster, VisibilityTester *vis) const
 {
-	return Spectrum();
+	Point2f pLens = lensRadius * ConcentricSampleDisk(u);
+	Point3f pLensWorld = CameraToWorld(ref.time, Point3f(pLens.x, pLens.y, 0));
+	Interaction lensIntr(pLensWorld, ref.time, medium);
+	lensIntr.n = Normal3f(CameraToWorld(ref.time, Vector3f(0, 0, 1)));
+
+	*vis = VisibilityTester(ref, lensIntr);
+	*wi = lensIntr.p - ref.p;
+	Float dist = wi->Length();
+	*wi /= dist;
+
+	Float lensArea = lensRadius != 0 ? (Pi * lensRadius * lensRadius) : 1;
+	*pdf = (dist*dist) / (AbsDot(lensIntr.n, *wi) * lensArea);
+
+	return We(lensIntr.SpawnRay(-*wi),pRaster);
 }
 
 PerspectiveCamera * CreatePerspectiveCamera(const ParamSet &params, const AnimatedTransform &cam2world, Film *film, const Medium *medium)

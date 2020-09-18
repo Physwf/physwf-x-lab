@@ -27,12 +27,17 @@ Float PointLight::Pdf_Li(const Interaction&, const Vector3f&) const
 
 Spectrum PointLight::Sample_Le(const Point2f& u1, const Point2f& u2, Float time, Ray* ray, Normal3f* nLight, Float* pdfPos, Float *pdfDir) const
 {
-	return Spectrum();
+	*ray = Ray(pLight, UniformSampleSphere(u1), Infinity, time, mediumInterface.inside);
+	*nLight = (Normal3f)ray->d;
+	*pdfPos = 1;
+	*pdfDir = UniformSpherePdf();
+	return I;
 }
 
 void PointLight::Pdf_Le(const Ray&, const Normal3f&, Float* pdfPos, Float* pdfDir) const
 {
-
+	*pdfPos = 0;
+	*pdfDir = UniformSpherePdf();
 }
 
 std::shared_ptr<PointLight> CreatePointLight(const Transform &light2world, const Medium *medium, const ParamSet &paramSet)
