@@ -11,17 +11,27 @@
 
 struct SPPMPixel
 {
+	SPPMPixel() : M(0) {}
+
 	Float radius = 0;
 	Spectrum Ld;
 
 	struct VisiblePoint
 	{
-
+		VisiblePoint() {}
+		VisiblePoint(const Point3f &p, const Vector3f &wo, const BSDF *bsdf,
+			const Spectrum &beta)
+			: p(p), wo(wo), bsdf(bsdf), beta(beta) {}
 		Point3f p;
 		Vector3f wo;
 		const BSDF* bsdf = nullptr;
 		Spectrum beta;
 	} vp;
+
+	AtomicFloat Phi[Spectrum::nSamples];
+	std::atomic<int> M;
+	Float N = 0;
+	Spectrum tau;
 };
 
 struct SPPMPixelListNode
@@ -29,6 +39,24 @@ struct SPPMPixelListNode
 	SPPMPixel* pixel;
 	SPPMPixelListNode* next;
 };
+
+static bool ToGrid(const Point3f& p, const Bounds3f& bounds, const int gridRes[3], Point3i* pi)
+{
+	bool inBounds = true;
+	Vector3f pg = bounds.Offset(p);
+	for (int i = 0; i < 3; ++i)
+	{
+		(*pi)[i] = (int)(gridRes[i] * pg[i]);
+		inBounds &= ((*pi)[i] >= 0 && (*pi)[i] < gridRes[i]);
+		(*pi)[i] = Clamp((*pi)[i], 0, gridRes[i] - 1);
+	}
+}
+
+inline unsigned int hash(const Point3i &p, int hashSize) {
+	return (unsigned int)((p.x * 73856093) ^ (p.y * 19349663) ^
+		(p.z * 83492791)) %
+		hashSize;
+}
 
 void SPPMIntegrator::Render(const Scene& scene)
 {
@@ -126,10 +154,154 @@ void SPPMIntegrator::Render(const Scene& scene)
 				}
 			}
 		}, nTiles);
-	}
+	
+		
+		int hashSize = nPixels;
+		std::vector<std::atomic<SPPMPixelListNode*>> grid(hashSize);
+		Bounds3f gridBounds;
+		Float maxRadius = 0;
+		for (int i = 0; i < nPixels; ++i)
+		{
+			if (pixels.vp.beta.IsBlack())
+				continue;
+			Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixels.radius);
+			gridBounds = Union(gridBounds, vpBound);
+			maxRadius = std::max(maxRadius, pixel.radius);
+		}
+		Vector3f diag = gridBounds.Diagonal();
+		Float maxDiag = MaxComponent(diag);
+		int baseGridRes = (int)(max / maxRadius);
+		int gridRes[3];
+		for (int = 0; i < 3; ++i)
+			gridRes[i] = std::max((int)baseGridRes*diag[i] / maxDiag, 1);
+	
 
-	int hashSize = nPixels;
-	std::vector<std::atomic<SPPMPixelListNode*>> grid(hashSize);
+		ParallelFor([&](int pixelIndex) {
+			MemoryArena& arena = perThreadArenas[ThreadIndex];
+			SPPMPixel& pixel = pixels[pixelIndex];
+			if (!pixel.vp.beta.IsBlack())
+			{
+				Float radius = pixel.radius;
+				Point3i pMin, pMax;
+				ToGrid(pixel.vp.p - Vector3f(radius, radius, radius), gridBounds, gridRes, &pMin);
+				ToGrid(pixel.vp.p + Vector3f(radius, radius, radius), gridBounds, gridRes, &pMax);
+				for (int z = pMin.z; z < pMax.z; ++z)
+					for (int y = pMin.y; y < pMax.y; ++y)
+						for (int x = pMin.x; x < pMax.x; ++x)
+						{
+							int h = hash(Point3i(x, y, z), hashSize);
+							SPPMPixelListNode* node = arena.Alloc<SPPMPixelListNode>();
+							node->pixel = &pixel;
+							node->next = grid[h];
+							while (grid[h].compare_exchange_weak(node->next, node) == false)
+								;
+						}
+			}
+		}, nPixels, 4096);
+
+		std::vector<MemoryArena> photoShootArenas(MaxThreadIndex());
+		ParallelFor([&](int photonIndex) {
+			MemoryArena& arena = photoShootArenas[ThreadIndex];
+			uint64_t haltonIndex = (uint64_t)iter *(uint64_t)photonsPerIteration + photonIndex;
+			int haltonDim = 0;
+
+			Float lightPdf;
+			Float lightSample = RadicalInverse(haltonDim++, haltonIndex);
+			int lightNum = lightDistr->SampleDiscrete(lightSample, &lightPdf);
+			const std::shared_ptr<Light>& light = scene.lights[lightNum];
+
+			Point2f uLihgt0(RadicalInverse(haltonDim, haltonIndex),
+				RadicalInverse(haltonDim + 1, haltonIndex));
+			Point2f uLihgt1(RadicalInverse(haltonDim + 2, haltonIndex),
+				RadicalInverse(haltonDim + 3, haltonIndex));
+			Float uLightTime = Lerp(RadicalInverse(haltonDim + 4, haltonIndex), camera->shutterOpen, camera->shutterClose);
+			haltonDim += 5;
+
+			RayDifferential photonRay;
+			Normal3f nLight;
+			Float pdfPos, pdfDir;
+			Spectrum Le = light->Sample_Le(uLihgt0, uLihgt1, uLightTime, &photonRay, &nLight, &pdfPos, &pdfDir);
+			if (pdfPos == 0 || pdfDir == 0 || Le.IsBlack()) return;
+			Spectrum beta = (AbsDot(nLight, photonRay.d)*Le) / (lightPdf*pdfPos*pdfDir);
+			if (beta.IsBlack()) return;
+
+			SurfaceInteraction isect;
+			for (int depth = 0; depth < maxDepth; ++depth)
+			{
+				if (!scene.Intersect(photonRay, &isect))
+					break;
+				if (depth > 0)
+				{
+					Point3i photoGridIndex;
+					if (ToGrid(isect.p, gridBounds, gridRes, &photoGridIndex))
+					{
+						int h = hash(photoGridIndex, hashSize);
+						for (SPPMPixelListNode* node = grid[h].load(std::memory_order_relaxed); node != nullptr; node = node->next)
+						{
+							SPPMPixel &pixel = *node->pixel;
+							Float radius = pixel.radius;
+							if (DistanceSquared(pixel.vp.p, isect.p) > radius*radius)
+								continue;
+							Vector3f wi = -photonRay.d;
+							Spectrum Phi = beta * pixel.vp.bsdf->f(pixel.vp.wo, wi);
+							for (int i = 0; i < Spectrum::nSamples; ++i)
+								pixel.Phi[i].Add(Phi[i]);
+							++pixel.M;
+						}
+					}
+				}
+				isect.ComputeScatteringFunctions(photonRay, arena, true, TransportMode::Importance);
+				if (!isect.bsdf)
+				{
+					--depth;
+					photonRay = isect.SpawnRay(photonRay.d);
+					continue;
+				}
+				const BSDF& photonBSDF = *isect.bsdf;
+				Vector3f wi, wo = -photonRay.d;
+				Float pdf;
+				BxDFType flags;
+				Point2f bsdfSample(RadicalInverse(haltonDim, haltonIndex),
+					RadicalInverse(haltonDim + 1, haltonIndex));
+				Spectrum fr = photonBSDF.Sample_f(wo, &wi, bsdfSample, &pdf, BSDF_ALL, &flags);
+				if (fr.IsBlack() || pdf = 0.f) break;
+
+				Spectrum bnew = beta * fr * AbsDot(wi, isect.shading.n) / pdf;
+
+				Float q = std::max((Float)0, 1 - bnew.y() / beta.y());
+				if (RadicalInverse(haltonDim++, haltonIndex) < q)
+					break;
+				beta = bnew / (1 - q);
+
+				photonRay = (RayDifferential)isect.SpawnRay(wi);
+			}
+			arena.Reset();
+		}, photonsPerIteration, 8192);
+
+		ParallelFor([&](int i) {
+			SPPMPixel &p = pixels[i];
+			if (p.M > 0) {
+				// Update pixel photon count, search radius, and $\tau$ from
+				// photons
+				Float gamma = (Float)2 / (Float)3;
+				Float Nnew = p.N + gamma * p.M;
+				Float Rnew = p.radius * std::sqrt(Nnew / (p.N + p.M));
+				Spectrum Phi;
+				for (int j = 0; j < Spectrum::nSamples; ++j)
+					Phi[j] = p.Phi[j];
+				p.tau = (p.tau + p.vp.beta * Phi) * (Rnew * Rnew) /
+					(p.radius * p.radius);
+				p.N = Nnew;
+				p.radius = Rnew;
+				p.M = 0;
+				for (int j = 0; j < Spectrum::nSamples; ++j)
+					p.Phi[j] = (Float)0;
+			}
+			// Reset _VisiblePoint_ in pixel
+			p.vp.beta = 0.;
+			p.vp.bsdf = nullptr;
+		}, nPixels, 4096);
+	}
 }
 
 Integrator* CreateSPPMIntegrator(const ParamSet& params, std::shared_ptr<const Camera> camera)
