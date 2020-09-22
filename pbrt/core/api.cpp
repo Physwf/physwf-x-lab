@@ -1625,9 +1625,9 @@ Integrator *RenderOptions::MakeIntegrator() const {
 // 	else if (IntegratorName == "ambientocclusion") {
 // 		integrator = CreateAOIntegrator(IntegratorParams, sampler, camera);
 // 	}
-// 	else if (IntegratorName == "sppm") {
-// 		integrator = CreateSPPMIntegrator(IntegratorParams, camera);
-//	}
+	else if (IntegratorName == "sppm") {
+		integrator = CreateSPPMIntegrator(IntegratorParams, camera);
+	}
 	else {
 		Error("Integrator \"%s\" unknown.", IntegratorName.c_str());
 		return nullptr;

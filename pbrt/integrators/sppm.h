@@ -15,7 +15,7 @@ public:
 		initialSearchRadius(initialSearchRadius),
 		nIterations(nIterations),
 		maxDepth(maxDepth),
-		photonsPerIteration(photonsPerIteration > 0 ? photonsPerIteration : camera->film - croppedPixelBounds.Area()),
+		photonsPerIteration(photonsPerIteration > 0 ? photonsPerIteration : camera->film->croppedPixelBounds.Area()),
 		writeFrequency(writeFrequency) {}
 
 	void Render(const Scene& scene);

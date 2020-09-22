@@ -94,8 +94,8 @@ Spectrum PerspectiveCamera::We(const Ray &ray, Point2f *pRaster2 /*= nullptr*/) 
 	if (cosTheta < 0)//ray的方向不在相机可视范围内
 		return 0;
 	//焦平面
-	Point3f pFocus = ray((lensRadius > 0 : focalDistance: 1) / cosTheta);
-	Point3f pRaster = Inverse(RasterToCamera(Inverse(c2w)(pFocus)));
+	Point3f pFocus = ray((lensRadius > 0 ? focalDistance: 1) / cosTheta);
+	Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
 
 	if (pRaster2) *pRaster2 = Point2f(pRaster.x, pRaster.y);
 
@@ -121,8 +121,8 @@ void PerspectiveCamera::Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) con
 		return;
 	}
 	//焦平面
-	Point3f pFocus = ray((lensRadius > 0 : focalDistance: 1) / cosTheta);
-	Point3f pRaster = Inverse(RasterToCamera(Inverse(c2w)(pFocus)));
+	Point3f pFocus = ray((lensRadius > 0 ? focalDistance: 1) / cosTheta);
+	Point3f pRaster = Inverse(RasterToCamera)(Inverse(c2w)(pFocus));
 	Bounds2i sampleBounds = film->GetSampleBounds();
 	if (pRaster.x < sampleBounds.pMin.x || pRaster.x >= sampleBounds.pMax.x ||
 		pRaster.y < sampleBounds.pMin.y || pRaster.y >= sampleBounds.pMax.y)
@@ -137,7 +137,7 @@ void PerspectiveCamera::Pdf_We(const Ray &ray, Float *pdfPos, Float *pdfDir) con
 
 Spectrum PerspectiveCamera::Sample_Wi(const Interaction &ref, const Point2f &sample, Vector3f *wi, Float *pdf, Point2f *pRaster, VisibilityTester *vis) const
 {
-	Point2f pLens = lensRadius * ConcentricSampleDisk(u);
+	Point2f pLens = lensRadius * ConcentricSampleDisk(sample);
 	Point3f pLensWorld = CameraToWorld(ref.time, Point3f(pLens.x, pLens.y, 0));
 	Interaction lensIntr(pLensWorld, ref.time, medium);
 	lensIntr.n = Normal3f(CameraToWorld(ref.time, Vector3f(0, 0, 1)));

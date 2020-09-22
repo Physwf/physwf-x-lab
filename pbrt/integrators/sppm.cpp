@@ -50,6 +50,7 @@ static bool ToGrid(const Point3f& p, const Bounds3f& bounds, const int gridRes[3
 		inBounds &= ((*pi)[i] >= 0 && (*pi)[i] < gridRes[i]);
 		(*pi)[i] = Clamp((*pi)[i], 0, gridRes[i] - 1);
 	}
+	return inBounds;
 }
 
 inline unsigned int hash(const Point3i &p, int hashSize) {
@@ -79,6 +80,7 @@ void SPPMIntegrator::Render(const Scene& scene)
 
 	for (int iter = 0; iter < nIterations; ++iter)
 	{
+		//生成visible point
 		ParallelFor2D([&](Point2i tile) {
 			MemoryArena& arena = perThreadArenas[ThreadIndex];
 			int tileIndex = tile.y * nTiles.x + tile.x;
@@ -155,28 +157,29 @@ void SPPMIntegrator::Render(const Scene& scene)
 			}
 		}, nTiles);
 	
-		
+		//创建visible point栅格
 		int hashSize = nPixels;
 		std::vector<std::atomic<SPPMPixelListNode*>> grid(hashSize);
 		Bounds3f gridBounds;
 		Float maxRadius = 0;
 		for (int i = 0; i < nPixels; ++i)
 		{
-			if (pixels.vp.beta.IsBlack())
+			const SPPMPixel& pixel = pixels[i];
+			if (pixel.vp.beta.IsBlack())
 				continue;
-			Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixels.radius);
+			Bounds3f vpBound = Expand(Bounds3f(pixel.vp.p), pixel.radius);
 			gridBounds = Union(gridBounds, vpBound);
 			maxRadius = std::max(maxRadius, pixel.radius);
 		}
 		Vector3f diag = gridBounds.Diagonal();
 		Float maxDiag = MaxComponent(diag);
-		int baseGridRes = (int)(max / maxRadius);
+		int baseGridRes = (int)(maxDiag / maxRadius);
 		int gridRes[3];
-		for (int = 0; i < 3; ++i)
-			gridRes[i] = std::max((int)baseGridRes*diag[i] / maxDiag, 1);
+		for (int i = 0; i < 3; ++i)
+			gridRes[i] = std::max((int)(baseGridRes*diag[i] / maxDiag), 1);
 	
-
-		ParallelFor([&](int pixelIndex) {
+		//将visible point 加入栅格
+		ParallelFor([&](int64_t pixelIndex) {
 			MemoryArena& arena = perThreadArenas[ThreadIndex];
 			SPPMPixel& pixel = pixels[pixelIndex];
 			if (!pixel.vp.beta.IsBlack())
@@ -199,8 +202,9 @@ void SPPMIntegrator::Render(const Scene& scene)
 			}
 		}, nPixels, 4096);
 
+		//发射光子
 		std::vector<MemoryArena> photoShootArenas(MaxThreadIndex());
-		ParallelFor([&](int photonIndex) {
+		ParallelFor([&](int64_t photonIndex) {
 			MemoryArena& arena = photoShootArenas[ThreadIndex];
 			uint64_t haltonIndex = (uint64_t)iter *(uint64_t)photonsPerIteration + photonIndex;
 			int haltonDim = 0;
@@ -264,7 +268,7 @@ void SPPMIntegrator::Render(const Scene& scene)
 				Point2f bsdfSample(RadicalInverse(haltonDim, haltonIndex),
 					RadicalInverse(haltonDim + 1, haltonIndex));
 				Spectrum fr = photonBSDF.Sample_f(wo, &wi, bsdfSample, &pdf, BSDF_ALL, &flags);
-				if (fr.IsBlack() || pdf = 0.f) break;
+				if (fr.IsBlack() || pdf == 0.f) break;
 
 				Spectrum bnew = beta * fr * AbsDot(wi, isect.shading.n) / pdf;
 
@@ -278,7 +282,8 @@ void SPPMIntegrator::Render(const Scene& scene)
 			arena.Reset();
 		}, photonsPerIteration, 8192);
 
-		ParallelFor([&](int i) {
+		//更新像素
+		ParallelFor([&](int64_t i) {
 			SPPMPixel &p = pixels[i];
 			if (p.M > 0) {
 				// Update pixel photon count, search radius, and $\tau$ from
@@ -301,6 +306,65 @@ void SPPMIntegrator::Render(const Scene& scene)
 			p.vp.beta = 0.;
 			p.vp.bsdf = nullptr;
 		}, nPixels, 4096);
+
+
+		// Periodically store SPPM image in film and write image
+		if (iter + 1 == nIterations || ((iter + 1) % writeFrequency) == 0) {
+			int x0 = pixelBounds.pMin.x;
+			int x1 = pixelBounds.pMax.x;
+			uint64_t Np = (uint64_t)(iter + 1) * (uint64_t)photonsPerIteration;
+			std::unique_ptr<Spectrum[]> image(new Spectrum[pixelBounds.Area()]);
+			int offset = 0;
+			for (int y = pixelBounds.pMin.y; y < pixelBounds.pMax.y; ++y) {
+				for (int x = x0; x < x1; ++x) {
+					// Compute radiance _L_ for SPPM pixel _pixel_
+					const SPPMPixel &pixel =
+						pixels[(y - pixelBounds.pMin.y) * (x1 - x0) + (x - x0)];
+					Spectrum L = pixel.Ld / (iter + 1);
+					L += pixel.tau / (Np * Pi * pixel.radius * pixel.radius);
+					image[offset++] = L;
+				}
+			}
+			camera->film->SetImage(image.get());
+			camera->film->WriteImage();
+			// Write SPPM radius image, if requested
+			if (getenv("SPPM_RADIUS")) {
+				std::unique_ptr<Float[]> rimg(
+					new Float[3 * pixelBounds.Area()]);
+				Float minrad = 1e30f, maxrad = 0;
+				for (int y = pixelBounds.pMin.y; y < pixelBounds.pMax.y; ++y) {
+					for (int x = x0; x < x1; ++x) {
+						const SPPMPixel &p =
+							pixels[(y - pixelBounds.pMin.y) * (x1 - x0) +
+							(x - x0)];
+						minrad = std::min(minrad, p.radius);
+						maxrad = std::max(maxrad, p.radius);
+					}
+				}
+// 				fprintf(stderr,
+// 					"iterations: %d (%.2f s) radius range: %f - %f\n",
+// 					iter + 1, progress.ElapsedMS() / 1000., minrad, maxrad);
+				int offset = 0;
+				for (int y = pixelBounds.pMin.y; y < pixelBounds.pMax.y; ++y) {
+					for (int x = x0; x < x1; ++x) {
+						const SPPMPixel &p =
+							pixels[(y - pixelBounds.pMin.y) * (x1 - x0) +
+							(x - x0)];
+						Float v = 1.f - (p.radius - minrad) / (maxrad - minrad);
+						rimg[offset++] = v;
+						rimg[offset++] = v;
+						rimg[offset++] = v;
+					}
+				}
+				Point2i res(pixelBounds.pMax.x - pixelBounds.pMin.x,
+					pixelBounds.pMax.y - pixelBounds.pMin.y);
+				WriteImage("sppm_radius.png", rimg.get(), pixelBounds, res);
+			}
+		}
+
+		// Reset memory arenas
+		for (size_t i = 0; i < perThreadArenas.size(); ++i)
+			perThreadArenas[i].Reset();
 	}
 }
 

@@ -8,7 +8,8 @@ Film "image"
 
 Sampler "halton" "integer pixelsamples" [8]
 
-Integrator "path"
+#Integrator "path"
+Integrator "sppm"
 
 WorldBegin
 

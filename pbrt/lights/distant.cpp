@@ -29,7 +29,7 @@ Float DistantLight::Pdf_Li(const Interaction& ref, const Vector3f& wi) const
 Spectrum DistantLight::Sample_Le(const Point2f &u1, const Point2f& u2, Float time, Ray* ray, Normal3f *nLight, Float *pdfPos, Float *pdfDir) const
 {
 	Vector3f v1, v2;
-	CoordinateSystem(wLight, v1, v2);
+	CoordinateSystem(wLight, &v1, &v2);
 	Point2f cd = ConcentricSampleDisk(u1);
 	Point3f pDisk = worldCenter + worldRadius * (cd.x*v1, cd.y*v2);
 	*ray = Ray(pDisk + worldRadius * wLight, -wLight, Infinity, time);

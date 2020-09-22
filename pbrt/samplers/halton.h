@@ -6,7 +6,7 @@
 class HaltonSampler : public GlobalSampler
 {
 public:
-	HaltonSampler(int samplesPerPixel, const Bounds2i& sampleBounds,bool sampleAtCenter);
+	HaltonSampler(int samplesPerPixel, const Bounds2i& sampleBounds,bool sampleAtCenter =false);
 	virtual int64_t GetIndexForSample(int64_t sampleNum) const override;
 	virtual Float SampleDimension(int64_t index, int demension) const override;
 	std::unique_ptr<Sampler> Clone(int seed);

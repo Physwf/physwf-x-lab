@@ -342,7 +342,7 @@ public:
 	{
 		return Vector3<T>(x - p.x, y - p.y, z - p.z);
 	}
-	Point3<T> operator-(const Vector3<T>& v)
+	Point3<T> operator-(const Vector3<T>& v) const
 	{
 		return Point3<T>(x - v.x, y - v.y, z - v.z);
 	}
