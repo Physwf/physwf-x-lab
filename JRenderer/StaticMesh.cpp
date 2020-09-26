@@ -103,7 +103,7 @@ void LocalVertexFactory::SetData(const MeshDataType& InData)
 	UpdateRHI();
 }
 
-bool SimpleMesh::GetMeshElement(int32 BatchIndex, int32 SectionIndex, MeshBatch& OutMeshBatch)
+bool MeshRenderData::GetMeshElement(int32 BatchIndex, int32 SectionIndex, MeshBatch& OutMeshBatch)
 {
 	OutMeshBatch.VF = VF;
 	const StaticMeshSection& Section = Sections[SectionIndex];
@@ -115,7 +115,7 @@ bool SimpleMesh::GetMeshElement(int32 BatchIndex, int32 SectionIndex, MeshBatch&
 	return true;
 }
 
-void SimpleMesh::SetIndexSource(int32 ElementIndex, FMeshBatch& OutMeshElement, bool bWireframe, bool bRequiresAdjacencyInformation, bool bUseInversedIndices, bool bAllowPreCulledIndices) const
+void MeshRenderData::SetIndexSource(int32 ElementIndex, FMeshBatch& OutMeshElement, bool bWireframe, bool bRequiresAdjacencyInformation, bool bUseInversedIndices, bool bAllowPreCulledIndices) const
 {
 	MeshBatchElement& OutElement = OutMeshElement.Elements[0];
 	const StaticMeshSection& Section = Sections[SectionIndex];
