@@ -7,8 +7,8 @@
 add_executable(JRenderer ${DIR_SRC})
 
 MESSAGE(STATUS "FBX_SDK_HOME=$ENV{FBX_SDK_HOME}")
-target_include_directories(dx11demo PRIVATE "../x6/Include")
-target_include_directories(dx11demo PRIVATE $ENV{FBX_SDK_HOME}/include)
+target_include_directories(JRenderer PRIVATE "../x0/Include")
+target_include_directories(JRenderer PRIVATE $ENV{FBX_SDK_HOME}/include)
 find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
 
 add_definitions(-DUNICODE -D_UNICODE)
