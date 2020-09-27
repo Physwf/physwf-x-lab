@@ -1,6 +1,8 @@
 #include <windows.h>
 #include "D3D11RHI.h"
 #include "GameViewport.h"
+#include "Scene.h"
+#include "DeferredShading.h"
 
 void OutputDebug(const char* Format)
 {
@@ -69,11 +71,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	//CreateTriangleBuffer();
-	CreateTestBuffer();
+	//CreateTestBuffer();
 	
-	//S.InitResource();
-	//S.Setup();
+// 	Scene S;
+// 	S.InitResource();
+// 	S.Setup();
 	
+	InitInput();
 
 	MSG msg;
 	while (true)
@@ -88,10 +92,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		D3D11ClearViewTarget();
+		//D3D11ClearViewTarget();
 		//RenderTriangle();
-		RenderTest();
+		//RenderTest();
 		//GW.Draw();
+		//S.Draw();
+		RenderPrePass();
 		D3D11Present();
 
 		Sleep(10);

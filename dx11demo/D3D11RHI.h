@@ -1,5 +1,6 @@
 #include <dxgi.h>
 #include <d3d11.h>
+#include <wrl/client.h>
 
 extern IDXGIFactory*	DXGIFactory;
 extern IDXGIAdapter*	DXGIAdapter;
@@ -21,3 +22,12 @@ extern LONG WindowHeight;
 bool D3D11Setup();
 void D3D11ClearViewTarget();
 void D3D11Present();
+
+ID3D11Buffer* CreateVertexBuffer(void* Data,unsigned int Size);
+ID3D11Buffer* CreateIndexBuffer(void* Data, unsigned int Size);
+ID3D11Buffer* CreateConstantBuffer(void* Data, unsigned int Size);
+ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint);
+ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint);
+ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode);
+ID3D11PixelShader* CreatePixelShader(ID3DBlob* PSBytecode);
+ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsigned int Count, ID3DBlob* VSBytecode);

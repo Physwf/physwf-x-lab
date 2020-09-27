@@ -8,49 +8,8 @@
 
 void MeshLODResources::InitResource()
 {
-	HRESULT hr;
-
-	D3D11_BUFFER_DESC VertexDesc;
-	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
-	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
-	VertexDesc.ByteWidth = sizeof(StaticMeshBuildVertex) * Vertices.size();
-	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	VertexDesc.CPUAccessFlags = 0;
-	VertexDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = &Vertices[0];
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
-
-	hr = D3D11Device->CreateBuffer(&VertexDesc, &InitData, &VertexBuffer);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateBuffer failed!");
-		return;
-	}
-
-	D3D11_BUFFER_DESC IndexDesc;
-	ZeroMemory(&IndexDesc, sizeof(IndexDesc));
-	IndexDesc.Usage = D3D11_USAGE_DEFAULT;
-	IndexDesc.ByteWidth = sizeof(unsigned int) * Indices.size();
-	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	IndexDesc.CPUAccessFlags = 0;
-	IndexDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA IndexData;
-	ZeroMemory(&IndexData, sizeof(IndexData));
-	IndexData.pSysMem = &Indices[0];
-	IndexData.SysMemPitch = 0;
-	IndexData.SysMemSlicePitch = 0;
-
-	hr = D3D11Device->CreateBuffer(&IndexDesc, &IndexData, &IndexBuffer);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateBuffer failed!");
-		return;
-	}
+	VertexBuffer = CreateVertexBuffer(Vertices.data(), sizeof(StaticMeshBuildVertex) * Vertices.size());
+	IndexBuffer = CreateIndexBuffer(Indices.data(), sizeof(unsigned int) * Indices.size());
 }
 
 void MeshLODResources::ReleaseResource()
@@ -527,93 +486,8 @@ void Mesh::GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSect
 void Mesh::InitResource()
 {
 	LODResource.InitResource();
-	HRESULT hr;
-	D3D11_BUFFER_DESC ConstBufferDesc;
-	ZeroMemory(&ConstBufferDesc, sizeof(D3D11_BUFFER_DESC));
-	ConstBufferDesc.ByteWidth = sizeof(Matrix);
-	ConstBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	ConstBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
-	D3D11_SUBRESOURCE_DATA ConstInitData;
-	Matrix World;
-	World.SetIndentity();
-	ConstInitData.pSysMem = &World;
-	ConstInitData.SysMemPitch = 0;
-	ConstInitData.SysMemSlicePitch = 0;
-
-	hr = D3D11Device->CreateBuffer(&ConstBufferDesc, &ConstInitData, &ConstantBuffer);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateBuffer failed!");
-		return;
-	}
-	/*
-	ID3DBlob* VSByteCode;
-	ID3DBlob* PSByteCode;
-	ID3DBlob* ErrorMsg;
-	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() > D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
-	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
-
-	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"),NULL,NULL,"VS_Main", VSTarget, VSFlags, 0, &VSByteCode, &ErrorMsg);
-	if (FAILED(hr))
-	{
-		X_LOG("D3DCompileFromFile failed! %s", (const char*)ErrorMsg->GetBufferPointer());
-		return;
-	}
-
-	LPCSTR PSTarget = D3D11Device->GetFeatureLevel() > D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
-	UINT PSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
-	hr = D3DCompileFromFile(TEXT("Mesh.hlsl"), NULL, NULL, "PS_Main", PSTarget, PSFlags, 0, &PSByteCode, &ErrorMsg);
-	if (FAILED(hr))
-	{
-		X_LOG("D3DCompileFromFile failed! %s", (const char*)ErrorMsg->GetBufferPointer());
-		return;
-	}
-
-	hr = D3D11Device->CreateVertexShader(VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), NULL, &ShaderState.VertexShader);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateVertexShader failed!");
-		return;
-	}
-	hr = D3D11Device->CreatePixelShader(PSByteCode->GetBufferPointer(), PSByteCode->GetBufferSize(), NULL, &ShaderState.PixelShader);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreatePixelShader failed!");
-		return;
-	}
-
-
-	D3D11_INPUT_ELEMENT_DESC InputDesc[] = 
-	{
-		{"POSITION",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 12, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"ATTRIBUTE",	1,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 24, D3D11_INPUT_PER_VERTEX_DATA,	0},
-		{"ATTRIBUTE",	2,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 36, D3D11_INPUT_PER_VERTEX_DATA,	0},
-	};
-
-	UINT NumElement = ARRAYSIZE(InputDesc);
-
-	hr = D3D11Device->CreateInputLayout(InputDesc, NumElement, VSByteCode->GetBufferPointer(), VSByteCode->GetBufferSize(), &ShaderState.InputLayout);
-	if (FAILED(hr))
-	{
-		X_LOG("D3D11Device->CreateInputLayout failed!");
-		return;
-	}
-
-	if (VSByteCode)
-	{
-		VSByteCode->Release();
-	}
-	if (PSByteCode)
-	{
-		PSByteCode->Release();
-	}
-	if (ErrorMsg)
-	{
-		ErrorMsg->Release();
-	}
-	*/
+	PrimitiveUniform PU;
+	PrimitiveUniformBuffer = CreateConstantBuffer(&PU, sizeof(PU));
 }
 
 void Mesh::ReleaseResource()
@@ -621,27 +495,28 @@ void Mesh::ReleaseResource()
 	LODResource.ReleaseResource();
 }
 
-void Mesh::Draw(MeshShaderState* ShaderState)
+void Mesh::Draw(ID3D11DeviceContext* Context, const MeshRenderState& RenderState)
 {
-	D3D11DeviceContext->IASetInputLayout(ShaderState->InputLayout);
-	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context->IASetInputLayout(RenderState.InputLayout);
+	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	D3D11DeviceContext->VSSetConstantBuffers(1, 1, &ConstantBuffer);
-	//Pitch(0.01f);
-	//Roll(0.01f);
-	Matrix World = GetWorldMatrix();
-	D3D11DeviceContext->UpdateSubresource(ConstantBuffer, 0, 0, &World, 0, 0);
 	UINT Stride = sizeof(StaticMeshBuildVertex);
 	UINT Offset = 0;
-	D3D11DeviceContext->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
-	D3D11DeviceContext->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	int i = 0;
+	Context->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
+	Context->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	Context->VSSetShader(RenderState.VertexShader, 0, 0);
+	Context->PSSetShader(RenderState.PixelShader, 0, 0);
+
+	Context->VSSetConstantBuffers(1, 1, &PrimitiveUniformBuffer);
+	PrimitiveUniform PU;
+	PU.World = GetWorldMatrix();
+	Context->UpdateSubresource(PrimitiveUniformBuffer, 0, 0, &PU, 0, 0);
+
+
 	for (const auto& Section : LODResource.Sections)
 	{
-		//if(i++!=0) continue;
-		D3D11DeviceContext->VSSetShader(ShaderState->VertexShader, 0, 0);
-		D3D11DeviceContext->PSSetShader(ShaderState->PixelShader, 0, 0);
-		D3D11DeviceContext->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
+		Context->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
 	}
 }
 

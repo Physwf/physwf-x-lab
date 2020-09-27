@@ -43,7 +43,7 @@ struct MeshLODResources
 	void ReleaseResource();
 };
 
-struct MeshShaderState
+struct MeshRenderState
 {
 	ID3D11InputLayout* InputLayout = NULL;
 	ID3D11VertexShader* VertexShader = NULL;
@@ -55,6 +55,11 @@ struct FbxMaterial
 	FbxSurfaceMaterial* fbxMaterial;
 
 	std::string GetName() const { return fbxMaterial ? fbxMaterial->GetName() : "None"; }
+};
+
+struct PrimitiveUniform
+{
+	Matrix World;
 };
 
 class Mesh : public Actor
@@ -70,15 +75,15 @@ public:
 	void InitResource();
 	void ReleaseResource();
 
-	void Draw(MeshShaderState* ShaderState);
+	void Draw(ID3D11DeviceContext* Context, const MeshRenderState& ShaderState);
 private:
 	void Build();
 	void BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
 private:
 	MeshDescription MD;
 	MeshLODResources LODResource;
-	//MeshShaderState ShaderState;
-	ID3D11Buffer* ConstantBuffer = NULL;
+	ID3D11InputLayout* InputLayout = NULL;
+	ID3D11Buffer* PrimitiveUniformBuffer = NULL;
 	
 };
 

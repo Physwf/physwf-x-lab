@@ -1,5 +1,6 @@
 #include "D3D11RHI.h"
 #include "log.h"
+#include <D3Dcompiler.h>
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;
@@ -196,8 +197,142 @@ void D3D11ClearViewTarget()
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
-
 void D3D11Present()
 {
 	DXGISwapChain->Present(0, 0);
+}
+
+ID3D11Buffer* CreateVertexBuffer(void* Data, unsigned int Size)
+{
+	D3D11_BUFFER_DESC VertexDesc;
+	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
+	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
+	VertexDesc.ByteWidth = Size;
+	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	VertexDesc.CPUAccessFlags = 0;
+	VertexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = Data;
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	ID3D11Buffer* Result;
+	if (S_OK == D3D11Device->CreateBuffer(&VertexDesc, &InitData, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateVertexBuffer  failed!");
+	return NULL;
+}
+
+ID3D11Buffer* CreateIndexBuffer(void* Data, unsigned int Size)
+{
+	D3D11_BUFFER_DESC IndexDesc;
+	ZeroMemory(&IndexDesc, sizeof(IndexDesc));
+	IndexDesc.Usage = D3D11_USAGE_DEFAULT;
+	IndexDesc.ByteWidth = Size;
+	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	IndexDesc.CPUAccessFlags = 0;
+	IndexDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA IndexData;
+	ZeroMemory(&IndexData, sizeof(IndexData));
+	IndexData.pSysMem = Data;
+	IndexData.SysMemPitch = 0;
+	IndexData.SysMemSlicePitch = 0;
+
+	ID3D11Buffer* Result;
+	if (S_OK == D3D11Device->CreateBuffer(&IndexDesc, &IndexData, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateIndexBuffer failed!");
+	return NULL;
+}
+
+ID3D11Buffer* CreateConstantBuffer(void* Data, unsigned int Size)
+{
+	D3D11_BUFFER_DESC Desc;
+	ZeroMemory(&Desc, sizeof(D3D11_BUFFER_DESC));
+	Desc.ByteWidth = Size;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	InitData.pSysMem = Data;
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	ID3D11Buffer* Result;
+	if (S_OK == D3D11Device->CreateBuffer(&Desc, &InitData, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateConstantBuffer failed!");
+	return NULL;
+}
+
+ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
+{
+	ID3DBlob* Bytecode;
+	ID3DBlob* OutErrorMsg;
+	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
+	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	if (S_OK == D3DCompileFromFile(File, NULL, NULL, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	{
+		return Bytecode;
+	}
+	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
+	return NULL;
+}
+
+ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
+{
+	ID3DBlob* Bytecode;
+	ID3DBlob* OutErrorMsg;
+	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
+	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	if (S_OK == D3DCompileFromFile(File, NULL, NULL, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	{
+		return Bytecode;
+	}
+	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
+	return NULL;
+}
+
+ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode)
+{
+	ID3D11VertexShader* Result;
+	if (S_OK == D3D11Device->CreateVertexShader(VSBytecode->GetBufferPointer(), VSBytecode->GetBufferSize(), NULL, &Result))
+	{
+		return Result;
+	}
+
+	X_LOG("CreateVertexShader failed!");
+	return NULL;
+}
+
+ID3D11PixelShader* CreatePixelShader(ID3DBlob* PSBytecode)
+{
+	ID3D11PixelShader* Result;
+	if (S_OK == D3D11Device->CreatePixelShader(PSBytecode->GetBufferPointer(), PSBytecode->GetBufferSize(), NULL, &Result))
+	{
+		return Result;
+	}
+
+	X_LOG("CreateVertexShader failed!");
+	return NULL;
+}
+
+ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsigned int Count, ID3DBlob* VSBytecode)
+{
+	ID3D11InputLayout* Result;
+	if (S_OK == D3D11Device->CreateInputLayout(InputDesc, Count, VSBytecode->GetBufferPointer(), VSBytecode->GetBufferSize(), &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateInputLayout failed!");
+	return NULL;
 }

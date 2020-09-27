@@ -1,9 +1,9 @@
 struct VertexIn
 {
-    float3 Position 	: POSITION;
-	float3 Normal 		: NORMAL;
-	float2 TexCoord0	: TEXCOORD;
-	float2 TexCoord1	: TEXCOORD;
+    float3 Position 	: ATTRIBUTE0;
+	float3 TangetX 		: ATTRIBUTE1;
+	float3 TangetY 		: ATTRIBUTE2;
+	float3 TangetZ 		: ATTRIBUTE3;
 };
 
 struct VertexOut
