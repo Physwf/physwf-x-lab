@@ -16,9 +16,28 @@ ID3DBlob* PrePassVSBytecode;
 ID3DBlob* PrePassPSBytecode;
 ID3D11VertexShader* PrePassVS;
 ID3D11PixelShader* PrePassPS;
+ID3D11RasterizerState* PrePassRasterizerState;
+ID3D11BlendState* PrePassBlendState;
+ID3D11DepthStencilState* PrePassDepthStencilState;
 
+ID3DBlob* ShadowPassVSBytecode;
+ID3DBlob* ShadowPassPSBytecode;
+ID3D11DepthStencilView* ShadowPassDSV;
+ID3D11VertexShader* ShadowPassVS;
+ID3D11PixelShader* ShadowPassPS;
+ID3D11RasterizerState* ShadowPassRasterizerState;
+ID3D11BlendState* ShadowPassBlendState;
+ID3D11DepthStencilState* ShadowPassDepthStencilState;
+
+ID3DBlob* BasePassVSBytecode;
+ID3DBlob* BasePassPSBytecode;
+ID3D11Texture2D* BasePassRT[8];
+ID3D11RenderTargetView* BasePassRTV[8];
 ID3D11VertexShader* BasePassVS;
 ID3D11PixelShader* BasePassPS;
+ID3D11RasterizerState* BasePassRasterizerState;
+ID3D11BlendState* BasePassBlendState;
+ID3D11DepthStencilState* BasePassDepthStencilState;
 
 void InitInput()
 {
@@ -49,10 +68,33 @@ void InitInput()
 	MeshInputLayout = CreateInputLayout(InputDesc, sizeof(InputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), PrePassVSBytecode);
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
+	PrePassRasterizerState = CreateRasterizerState();
+
+
+	BasePassRT[0] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//WorldNormal(3),metalic(1)
+	BasePassRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//DiffuseColor(3),Roughness(1)
+	BasePassRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//SpecularColor(3),specular(1)
+	BasePassRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//BaseColor(3)
+	BasePassRT[4] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//Velocity(4)
+	BasePassRT[5] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//StoredBaseColor(3),Depth(1)
+	BasePassRT[6] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//PrecomputedShadowFactors(4)
+	BasePassRT[7] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//CustomData(4)
+
+	BasePassRTV[0] = CreateRenderTargetView(BasePassRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[1] = CreateRenderTargetView(BasePassRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[2] = CreateRenderTargetView(BasePassRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[3] = CreateRenderTargetView(BasePassRT[3], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[4] = CreateRenderTargetView(BasePassRT[4], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[5] = CreateRenderTargetView(BasePassRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[6] = CreateRenderTargetView(BasePassRT[6], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[7] = CreateRenderTargetView(BasePassRT[7], DXGI_FORMAT_R32G32B32A32_FLOAT);
+
+
 }
 
 void RenderPrePass()
 {
+	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -67,8 +109,21 @@ void RenderPrePass()
 	}
 }
 
+void RenderShadowPass()
+{
+
+}
+
 void RenderBasePass()
 {
+	D3D11DeviceContext->OMSetRenderTargets(8, BasePassRTV, DepthStencialView);
+	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
+	for (ID3D11RenderTargetView* RTV : BasePassRTV)
+	{
+		D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
+	}
+	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
 
 }
 

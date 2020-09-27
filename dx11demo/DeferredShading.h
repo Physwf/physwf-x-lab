@@ -4,5 +4,6 @@
 
 void InitInput();
 void RenderPrePass();
+void RenderShadowPass();
 void RenderBasePass();
 void RenderLight();

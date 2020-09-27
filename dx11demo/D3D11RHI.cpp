@@ -12,6 +12,7 @@ ID3D11DeviceContext*	D3D11DeviceContext = NULL;
 
 ID3D11RenderTargetView* RenderTargetView = NULL;
 ID3D11DepthStencilView* DepthStencialView = NULL;
+ID3D11Texture2D* RenderTargetTexture = NULL; 
 ID3D11Texture2D* DepthStencialTexture = NULL;
 D3D11_VIEWPORT Viewport;
 ID3D11RasterizerState* RasterState;
@@ -127,20 +128,18 @@ bool D3D11Setup()
 		}
 	}
 
-	ID3D11Texture2D* BackBuffer = NULL;
-	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&BackBuffer);
+	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&RenderTargetTexture);
 	if (FAILED(hr))
 	{
 		X_LOG("GetBuffer failed!");
 		return false;
 	}
-	hr = D3D11Device->CreateRenderTargetView(BackBuffer, NULL, &RenderTargetView);
+	hr = D3D11Device->CreateRenderTargetView(RenderTargetTexture, NULL, &RenderTargetView);
 	if (FAILED(hr))
 	{
 		X_LOG("CreateRenderTargetView failed!");
 		return false;
 	}
-	BackBuffer->Release();
 
 
 	D3D11_TEXTURE2D_DESC DepthStencialDesc;
@@ -170,7 +169,6 @@ bool D3D11Setup()
 		return false;
 	}
 
-
 	Viewport.Width = (FLOAT)WindowWidth;
 	Viewport.Height = (FLOAT)WindowHeight;
 	Viewport.MinDepth = 0.0f;
@@ -178,15 +176,7 @@ bool D3D11Setup()
 	Viewport.TopLeftX = 0;
 	Viewport.TopLeftY = 0;
 
-	D3D11_RASTERIZER_DESC wfdesc;
-	ZeroMemory(&wfdesc, sizeof(D3D11_RASTERIZER_DESC));
-	wfdesc.FillMode = D3D11_FILL_SOLID;
-	wfdesc.CullMode = D3D11_CULL_BACK;
-	hr = D3D11Device->CreateRasterizerState(&wfdesc, &RasterState);
-
-	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
 	D3D11DeviceContext->RSSetViewports(1, &Viewport);
-	D3D11DeviceContext->RSSetState(RasterState);
 
 	return true;
 }
@@ -334,5 +324,104 @@ ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsign
 		return Result;
 	}
 	X_LOG("CreateInputLayout failed!");
+	return NULL;
+}
+
+ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format)
+{
+	D3D11_TEXTURE2D_DESC Desc;
+	Desc.Width = W;
+	Desc.Height = H;
+	Desc.Format = Format;
+	Desc.ArraySize = 1;
+	Desc.MipLevels = 1;
+	Desc.SampleDesc.Count = 1;
+	Desc.SampleDesc.Quality = 0;
+	Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.CPUAccessFlags = 0;
+	Desc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA Data;
+
+	ID3D11Texture2D* Result;
+	if (S_OK == D3D11Device->CreateTexture2D(&Desc,&Data, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateTexture2D failed!");
+	return NULL;
+}
+
+ID3D11RenderTargetView* CreateRenderTargetView(ID3D11Texture2D* Resource, DXGI_FORMAT Format)
+{
+	D3D11_RENDER_TARGET_VIEW_DESC Desc;
+	Desc.Format = Format;
+	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	Desc.Texture2D.MipSlice = 0;
+
+	ID3D11RenderTargetView* Result;
+	if (S_OK == D3D11Device->CreateRenderTargetView(Resource, &Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateRenderTargetView failed!");
+	return NULL;
+}
+
+ID3D11RasterizerState* CreateRasterizerState()
+{
+	D3D11_RASTERIZER_DESC Desc;
+	ZeroMemory(&Desc, sizeof(D3D11_RASTERIZER_DESC));
+	Desc.FillMode = D3D11_FILL_SOLID;
+	Desc.CullMode = D3D11_CULL_BACK;
+	ID3D11RasterizerState* Result;
+	if (S_OK == D3D11Device->CreateRasterizerState(&Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateRasterizerState failed!");
+	return NULL;
+}
+
+ID3D11DepthStencilState* CreateDepthStencilState()
+{
+	D3D11_DEPTH_STENCIL_DESC Desc;
+	ZeroMemory(&Desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+	//Desc.
+	ID3D11DepthStencilState* Result;
+	if (S_OK == D3D11Device->CreateDepthStencilState(&Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateDepthStencilState failed!");
+	return NULL;
+}
+
+ID3D11BlendState* CreateBlendState()
+{
+	D3D11_BLEND_DESC Desc;
+	ZeroMemory(&Desc, sizeof(D3D11_BLEND_DESC));
+	Desc;
+	ID3D11BlendState* Result;
+	if (S_OK == D3D11Device->CreateBlendState(&Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateBlendState failed!");
+	return NULL;
+}
+
+ID3D11SamplerState* CreateSamplerState()
+{
+	D3D11_SAMPLER_DESC Desc;
+	ZeroMemory(&Desc, sizeof(D3D11_SAMPLER_DESC));
+	Desc;
+	ID3D11SamplerState* Result;
+	if (S_OK == D3D11Device->CreateSamplerState(&Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateSamplerState failed!");
 	return NULL;
 }

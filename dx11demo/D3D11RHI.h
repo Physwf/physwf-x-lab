@@ -10,11 +10,11 @@ extern IDXGISwapChain* DXGISwapChain;
 extern ID3D11Device*			D3D11Device;
 extern ID3D11DeviceContext*	D3D11DeviceContext;
 
+extern ID3D11Texture2D* RenderTargetTexture;
+extern ID3D11Texture2D* DepthStencialTexture;
 extern ID3D11RenderTargetView* RenderTargetView;
 extern ID3D11DepthStencilView* DepthStencialView;
 extern D3D11_VIEWPORT Viewport;
-extern ID3D11RasterizerState* RasterState;
-extern ID3D11Texture2D* DepthStencialTexture;
 
 extern LONG WindowWidth;
 extern LONG WindowHeight;
@@ -31,3 +31,10 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint);
 ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode);
 ID3D11PixelShader* CreatePixelShader(ID3DBlob* PSBytecode);
 ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsigned int Count, ID3DBlob* VSBytecode);
+ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format);
+ID3D11RenderTargetView* CreateRenderTargetView(ID3D11Texture2D* Resource, DXGI_FORMAT Format);
+ID3D11RasterizerState* CreateRasterizerState();
+ID3D11DepthStencilState* CreateDepthStencilState();
+ID3D11BlendState* CreateBlendState();
+ID3D11SamplerState* CreateSamplerState();
+
