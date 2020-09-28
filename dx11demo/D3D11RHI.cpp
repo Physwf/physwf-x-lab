@@ -282,14 +282,14 @@ public:
 			IncludeFile = std::string("./") + pFileName;
 			break;
 		}
-		X_LOG("filename:%s",IncludeFile.c_str());
+		X_LOG("filename:%s\n",IncludeFile.c_str());
 		FILE* file;
 		fopen_s(&file,IncludeFile.c_str(), "r");
 		if (file)
 		{
-			fseek(file, EOF, SEEK_SET);
+			fseek(file, 0, SEEK_END);
 			size_t filesize = ftell(file);
-			X_LOG("filesize:%d", filesize);
+			X_LOG("filesize:%d\n", filesize);
 			fseek(file, 0, SEEK_SET);
 			filedata = std::make_unique<char[]>(filesize);
 			fread( filedata.get(), 1, filesize, file);
@@ -314,7 +314,11 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
 	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
 	ShaderIncludeHandler IncludeHandler;
-	if (S_OK == D3DCompileFromFile(File,  NULL, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	D3D_SHADER_MACRO Macros[] =
+	{
+		 NULL,NULL
+	};
+	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode;
 	}
@@ -329,7 +333,11 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
 	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
 	ShaderIncludeHandler IncludeHandler;
-	if (S_OK == D3DCompileFromFile(File,  NULL, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	D3D_SHADER_MACRO Macros[] =
+	{
+		NULL,NULL
+	};
+	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode;
 	}

@@ -91,7 +91,6 @@ cbuffer DeferredLightUniform : register(b3)
     uint ShadowedBits;
     uint LightingChannelMask;
     float VolumetricScatteringIntensity;
-    float VolumetricScatteringIntensity;
     Texture2D SourceTexture;
 };
 

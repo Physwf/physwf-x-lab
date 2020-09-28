@@ -43,8 +43,8 @@ ID3D11DepthStencilState* BasePassDepthStencilState;
 void InitInput()
 {
 	Mesh m1;
-	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
-	//m1.GeneratePlane(100.f, 100.f, 1, 1);
+	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	m1.GeneratePlane(100.f, 100.f, 1, 1);
 	m1.SetPosition(0.0f, 0.0f, 500.0f);
 	m1.SetRotation(-3.14f / 2, 0, 0);
 	m1.InitResource();
