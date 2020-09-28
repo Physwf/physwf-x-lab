@@ -1,6 +1,9 @@
 #include "D3D11RHI.h"
 #include "log.h"
 #include <D3Dcompiler.h>
+#include <memory>
+#include <string>
+#include <stdio.h>
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;
@@ -264,13 +267,54 @@ ID3D11Buffer* CreateConstantBuffer(void* Data, unsigned int Size)
 	return NULL;
 }
 
+class ShaderIncludeHandler : public ID3DInclude
+{
+public:
+	HRESULT __stdcall Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
+	{
+		std::string IncludeFile;
+		switch (IncludeType)
+		{
+		case D3D_INCLUDE_LOCAL:
+			IncludeFile = std::string("./") + pFileName;
+			break;
+		case D3D_INCLUDE_SYSTEM:
+			IncludeFile = std::string("./") + pFileName;
+			break;
+		}
+		X_LOG("filename:%s",IncludeFile.c_str());
+		FILE* file;
+		fopen_s(&file,IncludeFile.c_str(), "r");
+		if (file)
+		{
+			fseek(file, EOF, SEEK_SET);
+			size_t filesize = ftell(file);
+			X_LOG("filesize:%d", filesize);
+			fseek(file, 0, SEEK_SET);
+			filedata = std::make_unique<char[]>(filesize);
+			fread( filedata.get(), 1, filesize, file);
+			fclose(file);
+			*ppData = filedata.get();
+			*pBytes = filesize;
+			return S_OK;
+		}
+		return E_FAIL;
+	}
+	HRESULT __stdcall Close(LPCVOID pData)
+	{
+		return S_OK;
+	}
+private:
+	std::unique_ptr<char[]> filedata;
+};
 ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 {
 	ID3DBlob* Bytecode;
 	ID3DBlob* OutErrorMsg;
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
 	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
-	if (S_OK == D3DCompileFromFile(File, NULL, NULL, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	ShaderIncludeHandler IncludeHandler;
+	if (S_OK == D3DCompileFromFile(File,  NULL, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode;
 	}
@@ -284,7 +328,8 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 	ID3DBlob* OutErrorMsg;
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
 	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
-	if (S_OK == D3DCompileFromFile(File, NULL, NULL, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
+	ShaderIncludeHandler IncludeHandler;
+	if (S_OK == D3DCompileFromFile(File,  NULL, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode;
 	}
@@ -366,62 +411,5 @@ ID3D11RenderTargetView* CreateRenderTargetView(ID3D11Texture2D* Resource, DXGI_F
 		return Result;
 	}
 	X_LOG("CreateRenderTargetView failed!");
-	return NULL;
-}
-
-ID3D11RasterizerState* CreateRasterizerState()
-{
-	D3D11_RASTERIZER_DESC Desc;
-	ZeroMemory(&Desc, sizeof(D3D11_RASTERIZER_DESC));
-	Desc.FillMode = D3D11_FILL_SOLID;
-	Desc.CullMode = D3D11_CULL_BACK;
-	ID3D11RasterizerState* Result;
-	if (S_OK == D3D11Device->CreateRasterizerState(&Desc, &Result))
-	{
-		return Result;
-	}
-	X_LOG("CreateRasterizerState failed!");
-	return NULL;
-}
-
-ID3D11DepthStencilState* CreateDepthStencilState()
-{
-	D3D11_DEPTH_STENCIL_DESC Desc;
-	ZeroMemory(&Desc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-	//Desc.
-	ID3D11DepthStencilState* Result;
-	if (S_OK == D3D11Device->CreateDepthStencilState(&Desc, &Result))
-	{
-		return Result;
-	}
-	X_LOG("CreateDepthStencilState failed!");
-	return NULL;
-}
-
-ID3D11BlendState* CreateBlendState()
-{
-	D3D11_BLEND_DESC Desc;
-	ZeroMemory(&Desc, sizeof(D3D11_BLEND_DESC));
-	Desc;
-	ID3D11BlendState* Result;
-	if (S_OK == D3D11Device->CreateBlendState(&Desc, &Result))
-	{
-		return Result;
-	}
-	X_LOG("CreateBlendState failed!");
-	return NULL;
-}
-
-ID3D11SamplerState* CreateSamplerState()
-{
-	D3D11_SAMPLER_DESC Desc;
-	ZeroMemory(&Desc, sizeof(D3D11_SAMPLER_DESC));
-	Desc;
-	ID3D11SamplerState* Result;
-	if (S_OK == D3D11Device->CreateSamplerState(&Desc, &Result))
-	{
-		return Result;
-	}
-	X_LOG("CreateSamplerState failed!");
 	return NULL;
 }

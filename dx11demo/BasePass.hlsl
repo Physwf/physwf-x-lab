@@ -106,17 +106,17 @@ SamplerState GlossSampler;
 SamplerState SpecularSampler;
 
 
-PS_Output PS_Main(VertexOut pin)
+PS_Output PS_Main(VertexOut Input)
 {
     GBufferData GBuffer = (GBufferData)0;
-    GBuffer.WorldNormal = NormalSampler.Sampler(Normal,pin.TexCoords);
-    GBuffer.BaseColor = BaseColorSampler.Sample(BaseColor,pin.TexCoords);
+    GBuffer.WorldNormal = NormalSampler.Sampler(Normal,Input.TexCoords);
+    GBuffer.BaseColor = BaseColorSampler.Sample(BaseColor,Input.TexCoords);
     GBuffer.Metallic = 0.5;
-    GBuffer.Specular = SpecularSampler.Sample(Specular,pin.TexCoords);
+    GBuffer.Specular = SpecularSampler.Sample(Specular,Input.TexCoords);
     GBuffer.Roughness = 0.5;
     //GBuffer.GBufferAO = 0.5;
     //GBuffer.PerObjectGBufferData = Primitive.PerObjectGBufferData;
-    GBuffer.Depth = pin.PosH.w;
+    GBuffer.Depth = Input.PosH.w;
     //GBuffer.PrecomputedShadowFactors = GetPrecomputedShadowMasks(Interpolants, MaterialParameters.AbsoluteWorldPosition, VolumetricLightmapBrickTextureUVs);
     //GBuffer.Velocity = 0;
 

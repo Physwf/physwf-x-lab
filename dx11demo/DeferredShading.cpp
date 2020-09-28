@@ -2,6 +2,7 @@
 #include "Mesh.h"
 
 std::vector<Mesh> AllMeshes;
+std::vector<MeshBatch> AllBatches;
 
 struct ViewUniform
 {
@@ -42,7 +43,7 @@ ID3D11DepthStencilState* BasePassDepthStencilState;
 void InitInput()
 {
 	Mesh m1;
-	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.FBX");
+	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	m1.SetPosition(0.0f, 0.0f, 500.0f);
 	m1.SetRotation(-3.14f / 2, 0, 0);
@@ -63,24 +64,28 @@ void InitInput()
 		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "ATTRIBUTE",	1,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 12, D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "ATTRIBUTE",	2,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 24, D3D11_INPUT_PER_VERTEX_DATA,0 },
-		{ "ATTRIBUTE",	3,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 36, D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "ATTRIBUTE",	3,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 40, D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "ATTRIBUTE",	4,	DXGI_FORMAT_R32G32_FLOAT,		0, 48, D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "ATTRIBUTE",	5,	DXGI_FORMAT_R32G32_FLOAT,		0, 56, D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 	MeshInputLayout = CreateInputLayout(InputDesc, sizeof(InputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), PrePassVSBytecode);
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
-	PrePassRasterizerState = CreateRasterizerState();
+	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
+	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_GREATER>::GetRHI();
+	PrePassBlendState = TStaticBlendState<>::GetRHI();
 
 
-	BasePassRT[0] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//WorldNormal(3),metalic(1)
-	BasePassRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//DiffuseColor(3),Roughness(1)
-	BasePassRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//SpecularColor(3),specular(1)
-	BasePassRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//BaseColor(3)
-	BasePassRT[4] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//Velocity(4)
-	BasePassRT[5] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//StoredBaseColor(3),Depth(1)
-	BasePassRT[6] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//PrecomputedShadowFactors(4)
-	BasePassRT[7] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//CustomData(4)
+	BasePassRT[0] = RenderTargetTexture;
+	BasePassRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//WorldNormal(3),PerObjectGBufferData(1)
+	BasePassRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//metalic(1),specular(1),Roughness(1),ShadingModelID|SelectiveOutputMask(1)
+	BasePassRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//BaseColor(3),GBufferAO(1)
+	BasePassRT[4] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//CustomData(4)
+	BasePassRT[5] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//PrecomputedShadowFactors(4)
+	BasePassRT[6] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//Velocity(4)
+	BasePassRT[7] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//
 
-	BasePassRTV[0] = CreateRenderTargetView(BasePassRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassRTV[0] = RenderTargetView;
 	BasePassRTV[1] = CreateRenderTargetView(BasePassRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[2] = CreateRenderTargetView(BasePassRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[3] = CreateRenderTargetView(BasePassRT[3], DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -89,12 +94,13 @@ void InitInput()
 	BasePassRTV[6] = CreateRenderTargetView(BasePassRT[6], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[7] = CreateRenderTargetView(BasePassRT[7], DXGI_FORMAT_R32G32B32A32_FLOAT);
 
-
+	BasePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID,D3D11_CULL_BACK,FALSE>::GetRHI();
+	BasePassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_GREATER>::GetRHI();
+	BasePassBlendState = TStaticBlendState<>::GetRHI();
 }
 
 void RenderPrePass()
 {
-	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -102,10 +108,27 @@ void RenderPrePass()
 
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 
-	for (Mesh& m : AllMeshes)
+	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
+
+	for (MeshBatch& MB : AllBatches)
 	{
-		MeshRenderState RS = { MeshInputLayout, PrePassVS , PrePassPS };
-		m.Draw(D3D11DeviceContext, RS);
+		D3D11DeviceContext->IASetInputLayout(MeshInputLayout);
+		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		UINT Stride = sizeof(StaticMeshBuildVertex);
+		UINT Offset = 0;
+		D3D11DeviceContext->IASetVertexBuffers(0, 1, &MB.VertexBuffer, &Stride, &Offset);
+		D3D11DeviceContext->IASetIndexBuffer(MB.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		D3D11DeviceContext->VSSetShader(PrePassVS, 0, 0);
+		D3D11DeviceContext->PSSetShader(PrePassPS, 0, 0);
+
+		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
+		{
+			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
+		}
+
 	}
 }
 
@@ -122,9 +145,29 @@ void RenderBasePass()
 	{
 		D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
 	}
-	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	D3D11DeviceContext->OMSetDepthStencilState(BasePassDepthStencilState,0);
+	//D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+	for (MeshBatch& MB : AllBatches)
+	{
+		D3D11DeviceContext->IASetInputLayout(MeshInputLayout);
+		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+		UINT Stride = sizeof(StaticMeshBuildVertex);
+		UINT Offset = 0;
+		D3D11DeviceContext->IASetVertexBuffers(0, 1, &MB.VertexBuffer, &Stride, &Offset);
+		D3D11DeviceContext->IASetIndexBuffer(MB.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		D3D11DeviceContext->VSSetShader(BasePassVS, 0, 0);
+		D3D11DeviceContext->PSSetShader(BasePassPS, 0, 0);
+
+		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
+		{
+			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
+		}
+
+	}
 }
 
 void RenderLight()

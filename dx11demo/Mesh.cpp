@@ -5,6 +5,7 @@
 #include <d3dcompiler.h>
 #include <vector>
 
+extern std::vector<MeshBatch> AllBatches;
 
 void MeshLODResources::InitResource()
 {
@@ -488,11 +489,24 @@ void Mesh::InitResource()
 	LODResource.InitResource();
 	PrimitiveUniform PU;
 	PrimitiveUniformBuffer = CreateConstantBuffer(&PU, sizeof(PU));
+	
 }
 
 void Mesh::ReleaseResource()
 {
 	LODResource.ReleaseResource();
+}
+
+bool Mesh::GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBatch)
+{
+	const StaticMeshSection& Section = LODResource.Sections[SectionIndex];
+	MeshElement Element;
+	Element.PrimitiveUniformBuffer = PrimitiveUniformBuffer;
+	Element.FirstIndex = Section.FirstIndex;
+	Element.NumTriangles = Section.NumTriangles;
+	Element.MaterialIndex = Section.MaterialIndex;
+	OutMeshBatch.Elements.emplace_back(Element);
+	return true;
 }
 
 void Mesh::Draw(ID3D11DeviceContext* Context, const MeshRenderState& RenderState)
@@ -517,6 +531,21 @@ void Mesh::Draw(ID3D11DeviceContext* Context, const MeshRenderState& RenderState
 	for (const auto& Section : LODResource.Sections)
 	{
 		Context->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
+	}
+}
+
+void Mesh::DrawStaticElement()
+{
+	for (size_t SectionIndex = 0; SectionIndex < LODResource.Sections.size();++SectionIndex)
+	{
+		MeshBatch MB;
+		for (int BatchIndex = 0; BatchIndex < GetNumberBatches(); ++BatchIndex)
+		{
+			if (GetMeshElement(BatchIndex, SectionIndex, MB))
+			{
+				AllBatches.emplace_back(MB);
+			}
+		}
 	}
 }
 
