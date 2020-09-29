@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <stdio.h>
+#include <fstream>
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;
@@ -283,39 +284,73 @@ public:
 			break;
 		}
 		X_LOG("filename:%s\n",IncludeFile.c_str());
-		FILE* file;
-		fopen_s(&file,IncludeFile.c_str(), "r");
-		if (file)
-		{
-			fseek(file, 0, SEEK_END);
-			size_t filesize = ftell(file);
-			X_LOG("filesize:%d\n", filesize);
-			fseek(file, 0, SEEK_SET);
-			filedata = std::make_unique<char[]>(filesize);
-			fread( filedata.get(), 1, filesize, file);
-			fclose(file);
-			*ppData = filedata.get();
-			*pBytes = filesize;
+// 		FILE* file;
+// 		fopen_s(&file,IncludeFile.c_str(), "r");
+// 		if (file)
+// 		{
+// 			fseek(file, 0, SEEK_END);
+// 			size_t filesize = ftell(file);
+// 			X_LOG("filesize:%d\n", filesize);
+// 			fseek(file, 0, SEEK_SET);
+// 			filedata = std::make_unique<char[]>(filesize);
+// 			fread(filedata.get(), 1, filesize, file);
+// 			fclose(file);
+// 			X_LOG("content:%s\n", filedata.get());
+//  			*ppData = filedata.get();
+//  			*pBytes = filesize;
+// 			return S_OK;
+// 		}
+		std::ifstream includeFile(IncludeFile.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+
+
+		if (includeFile.is_open()) {
+			unsigned int fileSize = (unsigned int)includeFile.tellg();
+			char* buf = new char[fileSize];
+			includeFile.seekg(0, std::ios::beg);
+			includeFile.read(buf, fileSize);
+			includeFile.close();
+			*ppData = buf;
+			*pBytes = fileSize;
 			return S_OK;
 		}
+		else {
+			return E_FAIL;
+		}
+// 		CString D(pFileName);
+// 		D3DReadFileToBlob(D.GetBuffer(), &blob);
+// 		D.ReleaseBuffer();
+// 
+// 		(*ppData) = blob->GetBufferPointer();
+// 		(*pBytes) = blob->GetBufferSize();
 		return E_FAIL;
 	}
 	HRESULT __stdcall Close(LPCVOID pData)
 	{
+		//blob->Release();
+		char* buf = (char*)pData;
+		delete[] buf;
 		return S_OK;
 	}
 private:
 	std::unique_ptr<char[]> filedata;
+	//ID3DBlob* blob;
 };
 ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 {
 	ID3DBlob* Bytecode;
 	ID3DBlob* OutErrorMsg;
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "vs_5_0" : "vs_4_0";
-	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG /*| D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY*/;
 	ShaderIncludeHandler IncludeHandler;
 	D3D_SHADER_MACRO Macros[] =
 	{
+		"PIXELSHADER",										"1",
+		"COMPILER_HLSL",									"1",
+		"MATERIAL_TANGENTSPACENORMAL",						"1",
+		"LIGHTMAP_UV_ACCESS",								"0",
+		"USE_INSTANCING",									"0",
+		"TEX_COORD_SCALE_ANALYSIS",							"0",
+		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -326,15 +361,22 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 	return NULL;
 }
 
-ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
+ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint) 
 {
 	ID3DBlob* Bytecode;
 	ID3DBlob* OutErrorMsg;
 	LPCSTR VSTarget = D3D11Device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? "ps_5_0" : "ps_4_0";
-	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG;
+	UINT VSFlags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG /*| D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY*/;
 	ShaderIncludeHandler IncludeHandler;
 	D3D_SHADER_MACRO Macros[] =
 	{
+		"PIXELSHADER",										"1",
+		"COMPILER_HLSL",									"1",
+		"MATERIAL_TANGENTSPACENORMAL",						"1",
+		"LIGHTMAP_UV_ACCESS",								"0",
+		"USE_INSTANCING",									"0",
+		"TEX_COORD_SCALE_ANALYSIS",							"0",
+		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))

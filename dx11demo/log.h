@@ -7,7 +7,7 @@
 
 inline void XLOG(const char* format, ...)
 {
-	char buffer[1024] = { 0 };
+	char buffer[16*1024] = { 0 };
 	va_list v_list;
 	va_start(v_list, format);
 	vsprintf_s(buffer, format, v_list);
