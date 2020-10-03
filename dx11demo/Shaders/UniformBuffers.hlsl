@@ -8,8 +8,6 @@
 
 cbuffer View : register(b0)
 {
-	float4x4 View_WorldToView;
-	float4x4 View_ViewToProj;
     float4x4 View_TranslatedWorldToClip;
     float4x4 View_WorldToClip;
     float4x4 View_TranslatedWorldToView;
@@ -36,14 +34,12 @@ cbuffer View : register(b0)
 
 
     float3 View_PreViewTranslation;
-
+    //float View_Padding;
     float4 View_ViewRectMin;
     float4 View_ViewSizeAndInvSize;
 };
 static const struct
 {
-    float4x4 WorldToView;
-	float4x4 ViewToProj;
     float4x4 TranslatedWorldToClip;
     float4x4 WorldToClip;
     float4x4 TranslatedWorldToView;
@@ -74,8 +70,6 @@ static const struct
     float4 ViewSizeAndInvSize;
 } View = 
 {
-    View_WorldToView,
-	View_ViewToProj,
     View_TranslatedWorldToClip,
     View_WorldToClip,
     View_TranslatedWorldToView,

@@ -26,13 +26,15 @@ public:
 		B = Temp;
 	}
 };
+struct Vector;
 
 struct alignas(16) Vector4
 {
 	float X, Y, Z, W;
 
 	Vector4(): X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
-	explicit Vector4(float V): X(V), Y(V), Z(V), W(V) {}
+	explicit Vector4(float V) : X(V), Y(V), Z(V), W(V) {}
+	explicit Vector4(const Vector& V,float InW);
 	Vector4(float InX, float InY, float InZ, float InW) : X(InX), Y(InY), Z(InZ), W(InW) {}
 	Vector4(std::initializer_list<float> list);
 
@@ -321,6 +323,11 @@ inline void Vector::Normalize()
 	X *= InvSqrt;
 	Y *= InvSqrt;
 	Z *= InvSqrt;
+}
+
+inline Vector4::Vector4(const Vector& V, float InW) : X(V.X), Y(V.Y), Z(V.Z), W(InW)
+{
+
 }
 
 struct Vector2

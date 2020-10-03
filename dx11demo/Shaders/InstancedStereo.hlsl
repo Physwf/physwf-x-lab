@@ -1,3 +1,5 @@
+#include "UniformBuffers.hlsl"
+
 #ifndef __ViewState__
 #define __ViewState__
 struct ViewState

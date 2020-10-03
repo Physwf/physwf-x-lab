@@ -9,7 +9,8 @@ extern std::vector<MeshBatch> AllBatches;
 
 void MeshLODResources::InitResource()
 {
-	VertexBuffer = CreateVertexBuffer(Vertices.data(), sizeof(StaticMeshBuildVertex) * Vertices.size());
+	VertexBuffer = CreateVertexBuffer(Vertices.data(), sizeof(LocalVertex) * Vertices.size());
+	PositionOnlyVertexBuffer = CreateVertexBuffer(PositionOnlyVertices.data(), sizeof(PositionOnlyLocalVertex) * Vertices.size());
 	IndexBuffer = CreateIndexBuffer(Indices.data(), sizeof(unsigned int) * Indices.size());
 }
 
@@ -18,6 +19,10 @@ void MeshLODResources::ReleaseResource()
 	if (VertexBuffer)
 	{
 		VertexBuffer->Release();
+	}
+	if (PositionOnlyVertexBuffer)
+	{
+		PositionOnlyVertexBuffer->Release();
 	}
 	if (IndexBuffer)
 	{
@@ -453,10 +458,14 @@ void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int I
 		{
 			float X = IntervalX * i;
 			float Y = IntervalY * j;
-			StaticMeshBuildVertex V;
+			LocalVertex V;
 			V.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
 			V.TangentZ = {0,0,1};
 			LODResource.Vertices.push_back(V);
+
+			PositionOnlyLocalVertex PLV;
+			PLV.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
+			LODResource.PositionOnlyVertices.push_back(PLV);
 		}
 	}
 
@@ -488,6 +497,7 @@ void Mesh::InitResource()
 {
 	LODResource.InitResource();
 	PrimitiveUniform PU;
+	PU.LocalToWorld = GetWorldMatrix();
 	PrimitiveUniformBuffer = CreateConstantBuffer(&PU, sizeof(PU));
 	
 }
@@ -524,7 +534,7 @@ void Mesh::Draw(ID3D11DeviceContext* Context, const MeshRenderState& RenderState
 
 	Context->VSSetConstantBuffers(1, 1, &PrimitiveUniformBuffer);
 	PrimitiveUniform PU;
-	PU.World = GetWorldMatrix();
+	PU.LocalToWorld = GetWorldMatrix();
 	Context->UpdateSubresource(PrimitiveUniformBuffer, 0, 0, &PU, 0, 0);
 
 
@@ -539,6 +549,10 @@ void Mesh::DrawStaticElement()
 	for (size_t SectionIndex = 0; SectionIndex < LODResource.Sections.size();++SectionIndex)
 	{
 		MeshBatch MB;
+		MB.IndexBuffer = LODResource.IndexBuffer;
+		MB.VertexBuffer = LODResource.VertexBuffer;
+		MB.PositionOnlyVertexBuffer = LODResource.PositionOnlyVertexBuffer;
+
 		for (int BatchIndex = 0; BatchIndex < GetNumberBatches(); ++BatchIndex)
 		{
 			if (GetMeshElement(BatchIndex, SectionIndex, MB))
@@ -585,12 +599,23 @@ void Mesh::Build()
 				Section.MaxVertexIndex = Section.MaxVertexIndex < VertIndex ? VertIndex : Section.MaxVertexIndex;
 				*DestPtr++ = VertIndex;
 			}
-
-			
 		}
 	}
+
 	LODResource.Indices = std::move(CombinedIndices);
-	LODResource.Vertices = std::move(StaticMeshBuildVertices);
+	for (const auto& V : StaticMeshBuildVertices)
+	{
+		LocalVertex LV;
+		LV.Position = Vector4(V.Position,1.0f);
+		LV.TangentX = V.TangentX;
+		Vector Binormal = V.TangentZ ^ V.TangentX;
+		LV.TangentZ = Vector4(V.TangentZ, Binormal == V.TangentY ? 1.f : 0);
+		LODResource.Vertices.push_back(LV);
+
+		PositionOnlyLocalVertex PLV;
+		PLV.Position = V.Position;
+		LODResource.PositionOnlyVertices.push_back(PLV);
+	}
 }
 
 void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices)

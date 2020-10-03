@@ -20,6 +20,21 @@ struct StaticMeshBuildVertex
 	//Vector2 LightMapCoordinate;
 };
 
+struct LocalVertex
+{
+	Vector4 Position;
+	Vector  TangentX;
+	Vector4 TangentZ;
+	Vector4 Color;
+	Vector2 TexCoords;
+	Vector2	LightMapCoordinate;
+};
+
+struct PositionOnlyLocalVertex
+{
+	Vector Position;
+};
+
 struct StaticMeshSection
 {
 	int MaterialIndex;
@@ -33,9 +48,11 @@ struct StaticMeshSection
 struct MeshLODResources
 {
 	ID3D11Buffer* VertexBuffer = NULL;
+	ID3D11Buffer* PositionOnlyVertexBuffer = NULL;
 	ID3D11Buffer* IndexBuffer = NULL;
 
-	std::vector<StaticMeshBuildVertex> Vertices;
+	std::vector<LocalVertex> Vertices;
+	std::vector<PositionOnlyLocalVertex> PositionOnlyVertices;
 	std::vector<uint32> Indices;
 
 	std::vector<StaticMeshSection> Sections;
@@ -61,7 +78,9 @@ struct FbxMaterial
 
 struct PrimitiveUniform
 {
-	Matrix World;
+	Matrix LocalToWorld;
+	Matrix WorldToLocal;
+	Vector4 InvNonUniformScale;
 };
 
 struct MeshElement
@@ -78,6 +97,7 @@ struct MeshBatch
 	std::vector<MeshElement> Elements;
 
 	ID3D11Buffer* VertexBuffer = NULL;
+	ID3D11Buffer* PositionOnlyVertexBuffer = NULL;
 	ID3D11Buffer* IndexBuffer = NULL;
 };
 

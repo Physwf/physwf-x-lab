@@ -438,9 +438,12 @@ ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT For
 	Desc.MiscFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA Data;
+	Data.pSysMem = nullptr;
+	Data.SysMemPitch = 0;
+	Data.SysMemSlicePitch = 0;
 
 	ID3D11Texture2D* Result;
-	if (S_OK == D3D11Device->CreateTexture2D(&Desc,&Data, &Result))
+	if (S_OK == D3D11Device->CreateTexture2D(&Desc,NULL, &Result))
 	{
 		return Result;
 	}
