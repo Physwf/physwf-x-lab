@@ -9,12 +9,12 @@
 
 void VS_Main(VertexFactoryInput Input, out BasePassVSOutput Output)
 {
-    ResolvedView = ResovleView();
+    ResolvedView = ResolveView();
 
-    VertexIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
+    VertexFactoryIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
 
     float4 WorldPositionExcludingWPO = VertexFactoryGetWorldPosition(Input, VFIntermediates);
-    float4 WorldPostion = WorldPositionExcludingWPO;
+    float4 WorldPosition = WorldPositionExcludingWPO;
     float4 ClipSpacePosition;
 
     float3x3 TangentToLocal = VertexFactoryGetTangentToLocal(Input, VFIntermediates);	
@@ -28,7 +28,7 @@ void VS_Main(VertexFactoryInput Input, out BasePassVSOutput Output)
     float4 RasterizedWorldPosition = VertexFactoryGetRasterizedWorldPosition(Input, VFIntermediates, WorldPosition);
     ClipSpacePosition = mul(RasterizedWorldPosition, ResolvedView.TranslatedWorldToClip);
     
-    Output.Position = ClipSpacePosition //INVARIANT(ClipSpacePosition);
+    Output.Position = ClipSpacePosition; //INVARIANT(ClipSpacePosition);
 
     Output.FactoryInterpolants = VertexFactoryGetInterpolants(Input, VFIntermediates, VertexParameters);
     

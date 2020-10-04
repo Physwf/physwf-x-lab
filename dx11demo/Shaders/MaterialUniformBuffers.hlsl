@@ -1,3 +1,6 @@
+#ifndef __UniformBuffer_Material_Definition__
+#define __UniformBuffer_Material_Definition__
+
 cbuffer Material
 {
 	half4 Material_VectorExpressions[5];
@@ -34,4 +37,4 @@ static const struct
     Material_SpecularSampler,
 };
 
-
+#endif

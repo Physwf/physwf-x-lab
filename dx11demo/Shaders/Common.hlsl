@@ -70,6 +70,147 @@ struct PixelShaderOut
 	float Depth;
 };
 
+// shadow and light function
+Texture2D		LightAttenuationTexture;
+SamplerState	LightAttenuationTextureSampler;
+
+float Square( float x )
+{
+	return x*x;
+}
+
+float2 Square( float2 x )
+{
+	return x*x;
+}
+
+float3 Square( float3 x )
+{
+	return x*x;
+}
+
+float4 Square( float4 x )
+{
+	return x*x;
+}
+
+float Pow2( float x )
+{
+	return x*x;
+}
+
+float2 Pow2( float2 x )
+{
+	return x*x;
+}
+
+float3 Pow2( float3 x )
+{
+	return x*x;
+}
+
+float4 Pow2( float4 x )
+{
+	return x*x;
+}
+
+float Pow3( float x )
+{
+	return x*x*x;
+}
+
+float2 Pow3( float2 x )
+{
+	return x*x*x;
+}
+
+float3 Pow3( float3 x )
+{
+	return x*x*x;
+}
+
+float4 Pow3( float4 x )
+{
+	return x*x*x;
+}
+
+float Pow4( float x )
+{
+	float xx = x*x;
+	return xx * xx;
+}
+
+float2 Pow4( float2 x )
+{
+	float2 xx = x*x;
+	return xx * xx;
+}
+
+float3 Pow4( float3 x )
+{
+	float3 xx = x*x;
+	return xx * xx;
+}
+
+float4 Pow4( float4 x )
+{
+	float4 xx = x*x;
+	return xx * xx;
+}
+
+float Pow5( float x )
+{
+	float xx = x*x;
+	return xx * xx * x;
+}
+
+float2 Pow5( float2 x )
+{
+	float2 xx = x*x;
+	return xx * xx * x;
+}
+
+float3 Pow5( float3 x )
+{
+	float3 xx = x*x;
+	return xx * xx * x;
+}
+
+float4 Pow5( float4 x )
+{
+	float4 xx = x*x;
+	return xx * xx * x;
+}
+
+float Pow6( float x )
+{
+	float xx = x*x;
+	return xx * xx * xx;
+}
+
+float2 Pow6( float2 x )
+{
+	float2 xx = x*x;
+	return xx * xx * xx;
+}
+
+float3 Pow6( float3 x )
+{
+	float3 xx = x*x;
+	return xx * xx * xx;
+}
+
+float4 Pow6( float4 x )
+{
+	float4 xx = x*x;
+	return xx * xx * xx;
+}
+
+MaterialFloat4 Texture2DSampleLevel(Texture2D Tex, SamplerState Sampler, float2 UV, MaterialFloat Mip)
+{
+	return Tex.SampleLevel(Sampler, UV, Mip);
+}
+
 // Used for vertex factory shaders which need to use the resolved view
 float3 SvPositionToResolvedTranslatedWorld(float4 SvPosition)
 {
@@ -109,5 +250,16 @@ float3 TransformTangentNormalToWorld(MaterialFloat3x3 TangentToWorld, float3 Tan
 MaterialFloat3x3 GetLocalToWorld3x3()
 {
 	return (MaterialFloat3x3)Primitive.LocalToWorld;
+}
+
+float ConvertFromDeviceZ(float DeviceZ)
+{
+    return DeviceZ * View.InvDeviceZToWorldZTransform[0] + View.InvDeviceZToWorldZTransform[1] + 1.0f / (DeviceZ * View.InvDeviceZToWorldZTransform[2] - View.InvDeviceZToWorldZTransform[3]);
+}
+
+
+float4 GetPerPixelLightAttenuation(float2 UV)
+{
+	return Square(Texture2DSampleLevel(LightAttenuationTexture, LightAttenuationTextureSampler, UV, 0));
 }
 #endif

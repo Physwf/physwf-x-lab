@@ -1,4 +1,5 @@
-
+//#include "LightAccumulator.ush"
+#include "SceneTexturesCommon.hlsl"
 
 #define SHADINGMODELID_UNLIT				0
 #define SHADINGMODELID_DEFAULT_LIT			1
@@ -102,17 +103,6 @@ GBufferData DecodeGBufferData(
     return GBuffer;
 }
 
-float ConvertFromDeviceZ(float DeviceZ)
-{
-    return DeviceZ * View.InvDeviceZToWorldZTransform[0] + View.InvDeviceZToWorldZTransform[1] + 1.0f / (DeviceZ * View.InvDeviceZToWorldZTransform[2] - View.InvDeviceZToWorldZTransform[3]);
-}
-
-float4 CalSceneDepth(float2 ScreenUV)
-{
-    float DeviceZ = SceneDepthTextureSampler.Sample(SceneDepthTexture,ScreenUV);
-    return ConvertFromDeviceZ(DeviceZ);
-}
-
 struct DeferredLightData
 {
     float4 LightPositionAndInvRadius;
@@ -136,8 +126,8 @@ struct DeferredLightData
 DeferredLightData SetupLightDataForStandardDeferred()
 {
     DeferredLightData LightData;
-    LightData.LightPositionAndInvRadius = float4(DeferredLightUniform.LightPositionAndInvRadius,DeferredLightUniform.LightInvRadius);
-    LightData.LightColorAndFalloffExponent = float4(DeferredLightUniform.LightColorAndFalloffExponent,DeferredLightUniform.LightFalloffExponent);
+    LightData.LightPositionAndInvRadius = float4(DeferredLightUniform.LightPosition,DeferredLightUniform.LightInvRadius);
+    LightData.LightColorAndFalloffExponent = float4(DeferredLightUniform.LightColor,DeferredLightUniform.LightFalloffExponent);
     LightData.LightDirection = DeferredLightUniform.NormalizedLightDirection;
     LightData.LightTangent = DeferredLightUniform.NormalizedLightTangent;
     LightData.SpotAnglesAndSourceRadius = float4(DeferredLightUniform.SpotAngles,DeferredLightUniform.SourceRadius,DeferredLightUniform.SourceLength);
@@ -157,20 +147,14 @@ DeferredLightData SetupLightDataForStandardDeferred()
     return LightData;
 }
 
-float4 GetPerPixelLightAttenuation(float2 UV)
+float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData GBuffer, float AmbientOcclusion, uint ShadingModelID, DeferredLightData LightData, float4 LightAttenuation, float Dither, uint2 SVPos)
 {
-    return float2(0,0);
-	return Square(Texture2DSampleLevel(LightAttenuationTexture, LightAttenuationTextureSampler, UV, 0));
-}
-
-float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, FGBufferData GBuffer, float AmbientOcclusion, uint ShadingModelID, FDeferredLightData LightData, float4 LightAttenuation, float Dither, uint2 SVPos)
-{
-    return float4();
+    return float4(0,0,0,0);
 }
 
 /** Populates OutGBufferA, B and C */
 void EncodeGBuffer(
-	FGBufferData GBuffer,
+	GBufferData GBuffer,
 	out float4 OutGBufferA,
 	out float4 OutGBufferB,
 	out float4 OutGBufferC,

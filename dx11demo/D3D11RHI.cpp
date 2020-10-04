@@ -361,7 +361,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 	return NULL;
 }
 
-ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint) 
+ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)  
 {
 	ID3DBlob* Bytecode;
 	ID3DBlob* OutErrorMsg;

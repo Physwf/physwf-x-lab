@@ -4,6 +4,7 @@
 
 struct SharedBasePassInterpolants
 {
+    float3 PixelPositionExcludingWPO : TEXCOORD9;
 };
 
 

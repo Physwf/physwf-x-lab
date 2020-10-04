@@ -110,12 +110,13 @@ template<D3D11_FILL_MODE FillMode = D3D11_FILL_SOLID,
 	bool bEnableLineAA = false,
 	bool bEnableMSAA = true
 >
-class TStaticRasterizerState : public TStaticStateRHI<TStaticRasterizerState<FillMode, CullMode, bEnableLineAA>, ComPtr<ID3D11RasterizerState>, ID3D11RasterizerState*>
+class TStaticRasterizerState : public TStaticStateRHI<TStaticRasterizerState<FillMode, CullMode, bEnableLineAA, bEnableMSAA>, ComPtr<ID3D11RasterizerState>, ID3D11RasterizerState*>
 {
 public:
 	static ID3D11RasterizerState* CreateRHI()
 	{
 		D3D11_RASTERIZER_DESC Desc;
+		ZeroMemory(&Desc, sizeof(D3D11_RASTERIZER_DESC));
 		Desc.FillMode = FillMode;
 		Desc.CullMode = CullMode;
 		Desc.DepthBias = 0;

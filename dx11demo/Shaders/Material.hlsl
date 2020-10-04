@@ -3,6 +3,8 @@
 // #include "/Engine/Private/MonteCarlo.ush"
 #include "MaterialUniformBuffers.hlsl"
 
+#include "Common.hlsl"
+
 #define NUM_MATERIAL_TEXCOORDS_VERTEX 1
 #define NUM_TEX_COORD_INTERPOLATORS 1
 
@@ -264,6 +266,33 @@ half3 GetMaterialNormal(MaterialPixelParameters Parameters, PixelMaterialInputs 
 	return RetNormal;
 }
 
+// Should only be used by GetMaterialOpacity(), returns the unmodified value generated from the shader expressions of the opacity input.
+// To compute the opacity depending on the material blending GetMaterialOpacity() should be called instead.
+half GetMaterialOpacityRaw(PixelMaterialInputs Inputs)
+{
+	return Inputs.Opacity;
+}
+
+// Returns the material opacity depending on the material blend mode.
+half GetMaterialOpacity(PixelMaterialInputs Inputs)
+{
+	// Clamp to valid range to prevent negative colors from lerping
+	return saturate(GetMaterialOpacityRaw(Inputs));
+}
+
+half3 GetMaterialEmissiveRaw(PixelMaterialInputs Inputs)
+{
+	return Inputs.EmissiveColor;
+}
+
+half3 GetMaterialEmissive(PixelMaterialInputs Inputs)
+{
+	half3 EmissiveColor = GetMaterialEmissiveRaw(Inputs);
+// #if !MATERIAL_ALLOW_NEGATIVE_EMISSIVECOLOR
+// 	EmissiveColor = max(EmissiveColor, 0.0f);
+// #endif
+	return EmissiveColor;
+}
 
 void CalcPixelMaterialInputs(in out MaterialPixelParameters Parameters, in out PixelMaterialInputs Inputs)
 {

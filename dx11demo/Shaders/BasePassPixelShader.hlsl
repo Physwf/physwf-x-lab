@@ -1,4 +1,4 @@
-#include "SHCommon.hlsl"
+//#include "SHCommon.hlsl"
 #include "Material.hlsl"
 #include "BasePassCommon.hlsl"
 #include "LocalVertexFactory.hlsl"
@@ -7,11 +7,12 @@
 // #include "BRDF.ush"
 // #include "Random.ush"
 // #include "LightAccumulator.ush"
-// #include "DeferredShadingCommon.ush"
+#include "DeferredShadingCommon.hlsl"
 // #include "VelocityCommon.ush"
 // #include "SphericalGaussian.ush"
 // #include "DBufferDecalShared.ush"
 
+#include "ShadingModelsMaterial.hlsl"
 
 void FPixelShaderInOut_PS_Main(
 	VertexFactoryInterpolantsVSToPS Interpolants,
@@ -35,7 +36,14 @@ void FPixelShaderInOut_PS_Main(
 		{
 			float4 ScreenPosition = SvPositionToResolvedScreenPosition(In.SvPosition);
 			float3 TranslatedWorldPosition = SvPositionToResolvedTranslatedWorld(In.SvPosition);
-			CalcMaterialParametersEx(MaterialParameters, PixelMaterialInputs, In.SvPosition, ScreenPosition, In.bIsFrontFace, TranslatedWorldPosition, BasePassInterpolants.PixelPositionExcludingWPO);
+			CalcMaterialParametersEx(
+										MaterialParameters, 
+										PixelMaterialInputs, 
+										In.SvPosition, 
+										ScreenPosition, 
+										In.bIsFrontFace, 
+										TranslatedWorldPosition, 
+										BasePassInterpolants.PixelPositionExcludingWPO);
 		}
 	// #else
 	// 	{
@@ -56,6 +64,8 @@ void FPixelShaderInOut_PS_Main(
 
     half Opacity = GetMaterialOpacity(PixelMaterialInputs);
 
+	float SubsurfaceProfile = 0;
+	float3 SubsurfaceColor = 0;
 
     GBufferData GBuffer = (GBufferData)0;
 
@@ -164,46 +174,46 @@ void PS_Main(
     BasePassInterpolantsVSToPS BasePassInterpolants,
     in INPUT_POSITION_QUALIFIERS float4 SvPosition : SV_Position	
     , out float4 OutTarget1 : SV_Target1
-    , out float4 OutTarget1 : SV_Target2
-    , out float4 OutTarget1 : SV_Target3
-    , out float4 OutTarget1 : SV_Target4
-    , out float4 OutTarget1 : SV_Target5
+    , out float4 OutTarget2 : SV_Target2
+    , out float4 OutTarget3 : SV_Target3
+    , out float4 OutTarget4 : SV_Target4
+    , out float4 OutTarget5 : SV_Target5
     )
 {
-    PixelShaderIn PixelShaderIn = (PixelShaderIn)0;
-    PixelShaderOut PixelShaderOut = (PixelShaderOut)0;
+    PixelShaderIn PSIn = (PixelShaderIn)0;
+    PixelShaderOut PSOut = (PixelShaderOut)0;
 
-    FPixelShaderInOut_PS_Main(Interpolants, BasePassInterpolants, PixelShaderIn, PixelShaderOut);
+    FPixelShaderInOut_PS_Main(Interpolants, BasePassInterpolants, PSIn, PSOut);
 
 #if PIXELSHADEROUTPUT_MRT0
-	OutTarget0 = PixelShaderOut.MRT[0];
+	OutTarget0 = PSOut.MRT[0];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT1
-	OutTarget1 = PixelShaderOut.MRT[1];
+	OutTarget1 = PSOut.MRT[1];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT2
-	OutTarget2 = PixelShaderOut.MRT[2];
+	OutTarget2 = PSOut.MRT[2];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT3
-	OutTarget3 = PixelShaderOut.MRT[3];
+	OutTarget3 = PSOut.MRT[3];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT4
-	OutTarget4 = PixelShaderOut.MRT[4];
+	OutTarget4 = PSOut.MRT[4];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT5
-	OutTarget5 = PixelShaderOut.MRT[5];
+	OutTarget5 = PSOut.MRT[5];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT6
-	OutTarget6 = PixelShaderOut.MRT[6];
+	OutTarget6 = PSOut.MRT[6];
 #endif
 
 #if PIXELSHADEROUTPUT_MRT7
-	OutTarget7 = PixelShaderOut.MRT[7];
+	OutTarget7 = PSOut.MRT[7];
 #endif
 }

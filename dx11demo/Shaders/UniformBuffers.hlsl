@@ -26,7 +26,7 @@ cbuffer View : register(b0)
     // half3 View_ViewRight;
     // half3 View_HMDViewNoRollUp;
     // half3 View_HMDViewNoRollRight;
-    // float4 View_InvDeviceZToWorldZTransform;
+    float4 View_InvDeviceZToWorldZTransform;
     // half4 View_ScreenPositionScaleBias;
     // float4 View_WorldCameraOrigin;
     // float4 View_TranslatedWorldCameraOrigin;
@@ -58,7 +58,7 @@ static const struct
     // half3 ViewRight;
     // half3 HMDViewNoRollUp;
     // half3 HMDViewNoRollRight;
-    // float4 InvDeviceZToWorldZTransform;
+    float4 InvDeviceZToWorldZTransform;
     // half4 ScreenPositionScaleBias;
     // float4 WorldCameraOrigin;
     // float4 TranslatedWorldCameraOrigin;
@@ -88,7 +88,7 @@ static const struct
     // View_ViewRight,
     // View_HMDViewNoRollUp,
     // View_HMDViewNoRollRight,
-    // View_InvDeviceZToWorldZTransform,
+    View_InvDeviceZToWorldZTransform,
     // View_ScreenPositionScaleBias,
     // View_WorldCameraOrigin,
     // View_TranslatedWorldCameraOrigin,
@@ -106,17 +106,33 @@ static const struct
 #define __UniformBuffer_Primitive_Definition__
 cbuffer	Primitive : register(b1)
 {
-	float4x4 Primitive_LocalToWorld;
+    float4x4 Primitive_LocalToWorld;
 	float4x4 Primitive_WorldToLocal;
-
-    float4 Primitive_InvNonUniformScale;
+	// float4 Primitive_ObjectWorldPositionAndRadius;
+	// float3 Primitive_ObjectBounds;
+	// half Primitive_LocalToWorldDeterminantSign;
+	// float3 Primitive_ActorWorldPosition;
+	// half Primitive_DecalReceiverMask;
+	float Primitive_PerObjectGBufferData;
+	// half Primitive_UseSingleSampleShadowFromStationaryLights;
+	// half Primitive_UseVolumetricLightmapShadowFromStationaryLights;
+	// half Primitive_UseEditorDepthTest;
+	// half4 Primitive_ObjectOrientation;
+	// half4 Primitive_NonUniformScale;
+	float4 Primitive_InvNonUniformScale;
+	// float3 Primitive_LocalObjectBoundsMin;
+	// float PrePadding_Primitive_252;
+	// float3 Primitive_LocalObjectBoundsMax;
+	// uint Primitive_LightingChannelMask;
+	// float Primitive_LpvBiasMultiplier;
 };
 static const struct
 {
     float4x4 LocalToWorld;
 	float4x4 WorldToLocal;
+    float PerObjectGBufferData;
     float4 InvNonUniformScale;
-} Primitive = { Primitive_LocalToWorld, Primitive_WorldToLocal,Primitive_InvNonUniformScale };
+} Primitive = { Primitive_LocalToWorld, Primitive_WorldToLocal, Primitive_PerObjectGBufferData, Primitive_InvNonUniformScale };
 #endif
 
 //DrawRectangleParameters

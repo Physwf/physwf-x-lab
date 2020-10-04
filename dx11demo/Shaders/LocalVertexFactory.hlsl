@@ -121,6 +121,8 @@ MaterialVertexParameters GetMaterialVertexParameters(VertexFactoryInput Input, V
 
     Result.PreSkinnedPosition = Input.Position.xyz;
 	Result.PreSkinnedNormal = TangentToLocal[2]; //TangentBias(Input.TangentZ.xyz);
+
+    return Result;
 }
 
 float4 VertexFactoryGetRasterizedWorldPosition(VertexFactoryInput Input, VertexFactoryIntermediates Intermediates, float4 InWorldPosition)

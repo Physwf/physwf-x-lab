@@ -2,8 +2,8 @@
 
 
 void SetGBufferForShadingModel(
-	in out FGBufferData GBuffer, 
-	in const FMaterialPixelParameters MaterialParameters,
+	in out GBufferData GBuffer, 
+	in const MaterialPixelParameters MaterialParameters,
 	const float Opacity,
 	const half3 BaseColor,
 	const half  Metallic,
