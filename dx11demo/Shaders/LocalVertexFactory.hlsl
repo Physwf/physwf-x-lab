@@ -11,9 +11,9 @@ struct VertexFactoryInput
     float2	LightMapCoordinate  : ATTRIBUTE5;
 };
 
-struct PostionOnlyVertexFactoryInput
+struct PositionOnlyVertexFactoryInput
 {
-    float3 Position 	        : ATTRIBUTE0;
+    float4 Position 	        : ATTRIBUTE0;
 };
 
 struct VertexFactoryIntermediates
@@ -87,6 +87,14 @@ float4 CalcWorldPosition(float4 Position)
 float4 VertexFactoryGetWorldPosition(VertexFactoryInput Input, VertexFactoryIntermediates Intermediates)
 {
     return CalcWorldPosition(Input.Position);
+}
+
+/** for depth-only pass */
+float4 VertexFactoryGetWorldPosition(PositionOnlyVertexFactoryInput Input)
+{
+	float4 Position = Input.Position;
+
+    return CalcWorldPosition(Position);
 }
 
 /**

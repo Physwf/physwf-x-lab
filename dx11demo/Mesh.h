@@ -32,7 +32,7 @@ struct LocalVertex
 
 struct PositionOnlyLocalVertex
 {
-	Vector Position;
+	Vector4 Position;
 };
 
 struct StaticMeshSection

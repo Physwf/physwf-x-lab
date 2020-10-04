@@ -17,7 +17,11 @@ public:
 protected:
 	Matrix GetWorldMatrix() 
 	{ 
-		return Matrix::DXFormRotation(Rotation) * Matrix::DXFromTranslation(Position);
+		Matrix R = Matrix::DXFormRotation(Rotation);
+		Matrix T = Matrix::DXFromTranslation(Position);
+		R.Transpose();
+		T.Transpose();
+		return  T * R;
 	}
 
 	Vector Position;

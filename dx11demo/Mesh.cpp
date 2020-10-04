@@ -464,7 +464,7 @@ void Mesh::GeneratePlane(float InWidth, float InHeight, int InNumSectionW, int I
 			LODResource.Vertices.push_back(V);
 
 			PositionOnlyLocalVertex PLV;
-			PLV.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f };
+			PLV.Position = { X - InWidth * 0.5f, Y - InHeight * 0.5f, 0.0f , 1.0f};
 			LODResource.PositionOnlyVertices.push_back(PLV);
 		}
 	}
@@ -613,7 +613,7 @@ void Mesh::Build()
 		LODResource.Vertices.push_back(LV);
 
 		PositionOnlyLocalVertex PLV;
-		PLV.Position = V.Position;
+		PLV.Position = Vector4(V.Position,1.0f);
 		LODResource.PositionOnlyVertices.push_back(PLV);
 	}
 }

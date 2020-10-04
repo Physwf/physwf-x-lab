@@ -3,12 +3,12 @@
 #include "Material.hlsl"
 #include "LocalVertexFactory.hlsl"
 
-
+/*
 void VS_Main(PostionOnlyVertexFactoryInput Input, out float4 Position : SV_POSITION)
 {
     ResolvedView = ResolveView();
 
-    float4 WorldPostion =   mul(Primitive.LocalToWorld,             float4(Input.Position, 1.f));
+    float4 WorldPostion =   mul(Primitive.LocalToWorld,             Input.Position);
     float4 ViewPostion =    mul(ResolvedView.TranslatedWorldToView, WorldPostion);
     Position =              mul(ResolvedView.ViewToClip,            ViewPostion);
 
@@ -25,6 +25,20 @@ void VS_Main(PostionOnlyVertexFactoryInput Input, out float4 Position : SV_POSIT
     //Position =              mul(View.TranslatedWorldToView,            float4(Input.Position, 1.f));
 
     //Position = float4(Input.Position, 1.f);
+}
+*/
+void VS_Main(PositionOnlyVertexFactoryInput Input, out float4 Position : SV_POSITION)
+{
+    ResolvedView = ResolveView();
+
+    float4 WorldPostion =   VertexFactoryGetWorldPosition(Input);
+    //float4 WorldPostion =   mul( Input.Position, Primitive.LocalToWorld);
+    //float4 WorldPostion =   mul(Primitive.LocalToWorld, Input.Position);
+    Position = mul(WorldPostion, ResolvedView.TranslatedWorldToClip);
+
+    // float4 WorldPostion =   mul(Primitive.LocalToWorld,             Input.Position);
+    // float4 ViewPostion =    mul(ResolvedView.TranslatedWorldToView, WorldPostion);
+    // Position =              mul(ResolvedView.ViewToClip,            ViewPostion);
 }
 
 void PS_Main(float4 Position : SV_POSITION, out float4 Color : SV_Target, out float Depth : SV_Depth) 

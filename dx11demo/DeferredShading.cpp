@@ -84,8 +84,12 @@ void InitInput()
 
 	ViewUniform VU;
 	VU.TranslatedWorldToView = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
-	VU.ViewToClip = Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	//VU.ViewToClip = Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	VU.ViewToClip = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	VU.ViewToClip.Transpose();
+	VU.TranslatedWorldToView.Transpose();
+	VU.TranslatedWorldToClip = VU.ViewToClip *  VU.TranslatedWorldToView;
+	VU.PreViewTranslation = Vector(0.f, 0.f, 0.f);
 	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
 
 	PrePassVSBytecode = CompileVertexShader(TEXT("DepthOnlyPass.hlsl"), "VS_Main");
@@ -93,7 +97,7 @@ void InitInput()
 	
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] =
 	{
-		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
 // 		{ "ATTRIBUTE",	1,	DXGI_FORMAT_R32G32B32_FLOAT,	0, 16, D3D11_INPUT_PER_VERTEX_DATA,0 },
 // 		{ "ATTRIBUTE",	2,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 32, D3D11_INPUT_PER_VERTEX_DATA,0 },
 // 		{ "ATTRIBUTE",	3,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 48, D3D11_INPUT_PER_VERTEX_DATA,0 },
