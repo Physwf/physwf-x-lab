@@ -27,10 +27,10 @@ void VS_Main(PostionOnlyVertexFactoryInput Input, out float4 Position : SV_POSIT
     //Position = float4(Input.Position, 1.f);
 }
 
-void PS_Main(float4 Position : SV_POSITION, out float4 Color : SV_Target/*, out float Depth : SV_Depth*/) 
+void PS_Main(float4 Position : SV_POSITION, out float4 Color : SV_Target, out float Depth : SV_Depth) 
 {
     Color = float4(1.f,0.f,0.f,1.f);
-    //Depth = 0;
+    Depth = Position.z;
 }
 
 

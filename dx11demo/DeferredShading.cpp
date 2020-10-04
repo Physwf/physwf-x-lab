@@ -69,11 +69,11 @@ ID3D11DepthStencilState* BasePassDepthStencilState;
 void InitInput()
 {
 	Mesh m1;
-	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
-	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
+	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	m1.SetPosition(0.0f, 0.0f, 500.0f);
-	//m1.SetRotation(-3.14f / 2, 0, 0);
+	m1.SetRotation(-3.14f / 2, 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
 
@@ -84,7 +84,8 @@ void InitInput()
 
 	ViewUniform VU;
 	VU.TranslatedWorldToView = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
-	VU.ViewToClip = Matrix::DXFromPerspectiveFovLH(3.1415926f/2, 1.0, 1.0f, 10000.f);
+	VU.ViewToClip = Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	VU.ViewToClip = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
 
 	PrePassVSBytecode = CompileVertexShader(TEXT("DepthOnlyPass.hlsl"), "VS_Main");
@@ -103,7 +104,7 @@ void InitInput()
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
 	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
-	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_ALWAYS>::GetRHI();
+	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_GREATER>::GetRHI();
 	PrePassBlendState = TStaticBlendState<>::GetRHI();
 
 
