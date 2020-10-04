@@ -31,7 +31,7 @@
 
 #include "InstancedStereo.hlsl"
 
-//#include "Definitions.usf"
+#include "Definitions.hlsl"
 
 // Helper macro to determine whether we need to separately interpolate the world vertex normal to the pixel center.
 // Currently only curvature-to-roughness needs this interpolation, so disable it when it's not used to save on interpolants.

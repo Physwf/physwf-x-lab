@@ -5,7 +5,7 @@
 // #include "LightmapCommon.ush"  
 // #include "PlanarReflectionShared.ush"
 // #include "BRDF.ush"
-// #include "Random.ush"
+#include "Random.hlsl"
 // #include "LightAccumulator.ush"
 #include "DeferredShadingCommon.hlsl"
 // #include "VelocityCommon.ush"
@@ -14,6 +14,28 @@
 
 #include "ShadingModelsMaterial.hlsl"
 
+#if USES_GBUFFER
+
+// The selective output mask can only depend on defines, since the shadow will not export the data.
+uint GetSelectiveOutputMask()
+{
+	uint Mask = 0;
+// #if !WRITES_CUSTOMDATA_TO_GBUFFER
+// 	Mask |= SKIP_CUSTOMDATA_MASK;
+// #endif
+// #if !GBUFFER_HAS_PRECSHADOWFACTOR
+// 	Mask |= SKIP_PRECSHADOW_MASK;
+// #endif
+// #if (GBUFFER_HAS_PRECSHADOWFACTOR && WRITES_PRECSHADOWFACTOR_ZERO)
+// 	Mask |= ZERO_PRECSHADOW_MASK;
+// #endif
+// #if !WRITES_VELOCITY_TO_GBUFFER
+// 	Mask |= SKIP_VELOCITY_MASK;
+// #endif
+	return Mask;
+}
+#endif // USES_GBUFFER
+
 void FPixelShaderInOut_PS_Main(
 	VertexFactoryInterpolantsVSToPS Interpolants,
 	BasePassInterpolantsVSToPS BasePassInterpolants,
@@ -21,6 +43,13 @@ void FPixelShaderInOut_PS_Main(
 	inout PixelShaderOut Out)
 {
     ResolvedView = ResolveView();
+
+	// Velocity
+	float4 OutVelocity = 0;
+	// CustomData
+	float4 OutGBufferD = 0;
+	// PreShadowFactor
+	float4 OutGBufferE = 0;
 
     MaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Interpolants, In.SvPosition);
     PixelMaterialInputs PixelMaterialInputs;
@@ -152,7 +181,9 @@ void FPixelShaderInOut_PS_Main(
 		EncodeGBuffer(GBuffer, Out.MRT[1], Out.MRT[2], Out.MRT[3], OutGBufferD, OutGBufferE, OutVelocity, QuantizationBias);
     #endif 
 
-
+	Out.MRT[1] = float4(1.0f,1.0f,1.0f,.0f);
+	Out.MRT[2] = float4(1.0f,1.0f,.0f,1.0f);
+	Out.MRT[3] = float4(.0f,1.0f,1.0f,1.0f);
 
     #if USES_GBUFFER
 	#if GBUFFER_HAS_VELOCITY
@@ -169,15 +200,65 @@ void FPixelShaderInOut_PS_Main(
 #endif
 }
 
+#define PIXELSHADEROUTPUT_MRT0 	!USES_GBUFFER
+#define PIXELSHADEROUTPUT_MRT1  USES_GBUFFER
+#define PIXELSHADEROUTPUT_MRT2  USES_GBUFFER
+#define PIXELSHADEROUTPUT_MRT3  USES_GBUFFER
+
+
+#ifndef PIXELSHADEROUTPUT_MRT0
+	#define PIXELSHADEROUTPUT_MRT0 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT1
+	#define PIXELSHADEROUTPUT_MRT1 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT2
+	#define PIXELSHADEROUTPUT_MRT2 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT3
+	#define PIXELSHADEROUTPUT_MRT3 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT4
+	#define PIXELSHADEROUTPUT_MRT4 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT5
+	#define PIXELSHADEROUTPUT_MRT5 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT6
+	#define PIXELSHADEROUTPUT_MRT6 0
+#endif
+#ifndef PIXELSHADEROUTPUT_MRT7
+	#define PIXELSHADEROUTPUT_MRT7 0
+#endif
+
 void PS_Main(
     VertexFactoryInterpolantsVSToPS Interpolants, 
     BasePassInterpolantsVSToPS BasePassInterpolants,
-    in INPUT_POSITION_QUALIFIERS float4 SvPosition : SV_Position	
+    in INPUT_POSITION_QUALIFIERS float4 SvPosition : SV_Position
+
+#if PIXELSHADEROUTPUT_MRT0
+	, out float4 OutTarget0 : SV_Target0
+#endif
+
+#if PIXELSHADEROUTPUT_MRT1
     , out float4 OutTarget1 : SV_Target1
+#endif
+
+#if PIXELSHADEROUTPUT_MRT2
     , out float4 OutTarget2 : SV_Target2
+#endif
+
+#if PIXELSHADEROUTPUT_MRT3
     , out float4 OutTarget3 : SV_Target3
+#endif
+
+#if PIXELSHADEROUTPUT_MRT4
     , out float4 OutTarget4 : SV_Target4
+#endif
+
+#if PIXELSHADEROUTPUT_MRT5
     , out float4 OutTarget5 : SV_Target5
+#endif
     )
 {
     PixelShaderIn PSIn = (PixelShaderIn)0;

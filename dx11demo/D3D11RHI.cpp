@@ -117,8 +117,8 @@ bool D3D11Setup()
 		SwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		SwapChainDesc.OutputWindow = g_hWind;
-		SwapChainDesc.SampleDesc.Count = 8;
-		SwapChainDesc.SampleDesc.Quality = NumQualityLevels-1;
+		SwapChainDesc.SampleDesc.Count = 1;
+		SwapChainDesc.SampleDesc.Quality = 0;// NumQualityLevels - 1;
 		SwapChainDesc.Windowed = TRUE;
 		SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 		SwapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
@@ -153,7 +153,7 @@ bool D3D11Setup()
 	DepthStencialDesc.MipLevels = 1;
 	DepthStencialDesc.ArraySize = 1;
 	DepthStencialDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DepthStencialDesc.SampleDesc.Count = 8;
+	DepthStencialDesc.SampleDesc.Count = 1;
 	DepthStencialDesc.SampleDesc.Quality = 0;
 	DepthStencialDesc.Usage = D3D11_USAGE_DEFAULT;
 	DepthStencialDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;

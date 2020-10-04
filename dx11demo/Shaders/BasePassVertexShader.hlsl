@@ -13,6 +13,7 @@ void VS_Main(VertexFactoryInput Input, out BasePassVSOutput Output)
 
     VertexFactoryIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
 
+    //WPO==World Position Offset
     float4 WorldPositionExcludingWPO = VertexFactoryGetWorldPosition(Input, VFIntermediates);
     float4 WorldPosition = WorldPositionExcludingWPO;
     float4 ClipSpacePosition;
