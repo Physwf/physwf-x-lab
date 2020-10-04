@@ -158,11 +158,11 @@ void RenderPrePass()
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 
-	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
+	//D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
 	D3D11DeviceContext->OMSetDepthStencilState(PrePassDepthStencilState, 0);
 
