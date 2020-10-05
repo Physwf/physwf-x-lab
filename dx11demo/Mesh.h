@@ -12,7 +12,7 @@ struct StaticMeshBuildVertex
 	Vector Position;
 
 	Vector TangentX;
-	Vector TangentY;
+	float TangentYSign;
 	Vector TangentZ;
 
 	Color C;

@@ -52,7 +52,7 @@ void FPixelShaderInOut_PS_Main(
 	float4 OutGBufferE = 0;
 
     MaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Interpolants, In.SvPosition);
-    PixelMaterialInputs PixelMaterialInputs;
+    PixelMaterialInputs PMInputs;
 
 // #if HQ_TEXTURE_LIGHTMAP && USES_AO_MATERIAL_MASK && !MATERIAL_SHADINGMODEL_UNLIT
 // 	float2 LightmapUV0, LightmapUV1;
@@ -67,7 +67,7 @@ void FPixelShaderInOut_PS_Main(
 			float3 TranslatedWorldPosition = SvPositionToResolvedTranslatedWorld(In.SvPosition);
 			CalcMaterialParametersEx(
 										MaterialParameters, 
-										PixelMaterialInputs, 
+										PMInputs, 
 										In.SvPosition, 
 										ScreenPosition, 
 										In.bIsFrontFace, 
@@ -78,20 +78,20 @@ void FPixelShaderInOut_PS_Main(
 	// 	{
 	// 		float4 ScreenPosition = SvPositionToResolvedScreenPosition(In.SvPosition);
 	// 		float3 TranslatedWorldPosition = SvPositionToResolvedTranslatedWorld(In.SvPosition);
-	// 		CalcMaterialParametersEx(MaterialParameters, PixelMaterialInputs, In.SvPosition, ScreenPosition, In.bIsFrontFace, TranslatedWorldPosition, TranslatedWorldPosition);
+	// 		CalcMaterialParametersEx(MaterialParameters, PMInputs, In.SvPosition, ScreenPosition, In.bIsFrontFace, TranslatedWorldPosition, TranslatedWorldPosition);
 	// 	}
 	// #endif
 
 
-    half3 BaseColor = GetMaterialBaseColor(PixelMaterialInputs);
-	half  Metallic = GetMaterialMetallic(PixelMaterialInputs);
-	half  Specular = GetMaterialSpecular(PixelMaterialInputs);
+    half3 BaseColor = GetMaterialBaseColor(PMInputs);
+	half  Metallic = GetMaterialMetallic(PMInputs);
+	half  Specular = GetMaterialSpecular(PMInputs);
 
-	float MaterialAO = GetMaterialAmbientOcclusion(PixelMaterialInputs);
-	float Roughness = GetMaterialRoughness(PixelMaterialInputs);
+	float MaterialAO = GetMaterialAmbientOcclusion(PMInputs);
+	float Roughness = GetMaterialRoughness(PMInputs);
 
 
-    half Opacity = GetMaterialOpacity(PixelMaterialInputs);
+    half Opacity = GetMaterialOpacity(PMInputs);
 
 	float SubsurfaceProfile = 0;
 	float3 SubsurfaceColor = 0;
@@ -172,7 +172,7 @@ void FPixelShaderInOut_PS_Main(
     // #if NEEDS_BASEPASS_PIXEL_VOLUMETRIC_FOGGING
     // #endif
 
-    half3 Emissive = GetMaterialEmissive(PixelMaterialInputs);
+    half3 Emissive = GetMaterialEmissive(PMInputs);
 
 
     #if USES_GBUFFER
@@ -180,10 +180,6 @@ void FPixelShaderInOut_PS_Main(
         float QuantizationBias = PseudoRandom( MaterialParameters.SvPosition.xy ) - 0.5f;
 		EncodeGBuffer(GBuffer, Out.MRT[1], Out.MRT[2], Out.MRT[3], OutGBufferD, OutGBufferE, OutVelocity, QuantizationBias);
     #endif 
-
-	Out.MRT[1] = float4(1.0f,1.0f,1.0f,.0f);
-	Out.MRT[2] = float4(1.0f,1.0f,.0f,1.0f);
-	Out.MRT[3] = float4(.0f,1.0f,1.0f,1.0f);
 
     #if USES_GBUFFER
 	#if GBUFFER_HAS_VELOCITY

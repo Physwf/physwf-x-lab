@@ -53,9 +53,9 @@ half3x3 CalcTangentToWorldNoScale(in half3x3 TangentToLocal)
 {
     half3x3 LocalToWorld = GetLocalToWorld3x3();
 	half3 InvScale = Primitive.InvNonUniformScale.xyz;
-	LocalToWorld[0] *= InvScale.x;
-	LocalToWorld[1] *= InvScale.y;
-	LocalToWorld[2] *= InvScale.z;
+	// LocalToWorld[0] *= InvScale.x;
+	// LocalToWorld[1] *= InvScale.y;
+	// LocalToWorld[2] *= InvScale.z;
     return mul(TangentToLocal,LocalToWorld);
 }
 
@@ -68,6 +68,7 @@ half3x3 CalcTangentToWorld(VertexFactoryIntermediates Intermediates, half3x3 Tan
 VertexFactoryIntermediates GetVertexFactoryIntermediates(VertexFactoryInput Input)
 {
     VertexFactoryIntermediates Intermediates;
+    Intermediates = (VertexFactoryIntermediates)0;
 
     Intermediates.Color = Input.Color;
 
@@ -145,10 +146,16 @@ VertexFactoryInterpolantsVSToPS VertexFactoryGetInterpolantsVSToPS(VertexFactory
 	{
 		SetUV(Interpolants, CoordinateIndex, CustomizedUVs[CoordinateIndex]);
 	}
+//#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 0 && USE_PARTICLE_SUBUVS
+
+#endif
+
 // #if NEEDS_LIGHTMAP_COORDINATE
 // #endif	// NEEDS_LIGHTMAP_COORDINATE
 
-#endif
+	SetTangents(Interpolants, Intermediates.TangentToWorld[0], Intermediates.TangentToWorld[2], Intermediates.TangentToWorldSign);
+	SetColor(Interpolants, Intermediates.Color);
+
     return Interpolants;
 }
 
@@ -170,6 +177,7 @@ MaterialPixelParameters GetMaterialPixelParameters(VertexFactoryInterpolantsVSTo
 
 	Result.VertexColor = GetColor(Interpolants);
 
+    Result.TangentToWorld = AssembleTangentToWorld( TangentToWorld0, TangentToWorld2 );
 	// Required for previewing materials that use ParticleColor
 	//Result.Particle.Color = half4(1,1,1,1);
 

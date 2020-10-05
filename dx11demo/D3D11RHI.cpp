@@ -351,6 +351,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"USE_INSTANCING",									"0",
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
+		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -377,6 +378,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"USE_INSTANCING",									"0",
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
+		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))

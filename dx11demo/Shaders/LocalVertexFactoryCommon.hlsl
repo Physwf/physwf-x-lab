@@ -48,3 +48,19 @@ float4 GetColor(VertexFactoryInterpolantsVSToPS Interpolants)
 {
     return 0;
 }
+
+void SetTangents(inout VertexFactoryInterpolantsVSToPS Interpolants, float3 InTangentToWorld0, float3 InTangentToWorld2, float InTangentToWorldSign)
+{
+	Interpolants.TangentToWorld0 = float4(InTangentToWorld0,0);
+	Interpolants.TangentToWorld2 = float4(InTangentToWorld2,InTangentToWorldSign);
+#if USE_WORLDVERTEXNORMAL_CENTER_INTERPOLATION
+	Interpolants.TangentToWorld2_Center = Interpolants.TangentToWorld2;
+#endif
+}
+
+void SetColor(inout VertexFactoryInterpolantsVSToPS Interpolants, float4 InValue)
+{
+#if INTERPOLATE_VERTEX_COLOR
+	Interpolants.Color = InValue;
+#endif
+}

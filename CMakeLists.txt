@@ -18,6 +18,7 @@ add_subdirectory(JRenderer)
 add_subdirectory(path_tracing)
 add_subdirectory(ray_tracing)
 add_subdirectory(pbrt)
+add_subdirectory(MikkTSpace)
 include_directories(x3/Include)
 set(DIR_PROJECT "./demo")
 add_executable(x-lab ${DIR_PROJECT}/winmain.cpp 

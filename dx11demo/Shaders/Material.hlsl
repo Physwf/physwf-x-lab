@@ -370,5 +370,18 @@ void CalcMaterialParametersEx(
     CalcPixelMaterialInputs(Parameters, Inputs);
 }
 
+/** Assemble the transform from tangent space into world space */
+half3x3 AssembleTangentToWorld( half3 TangentToWorld0, half4 TangentToWorld2 )
+{
+	// Will not be orthonormal after interpolation. This perfectly matches xNormal.
+	// Any mismatch with xNormal will cause distortions for baked normal maps.
+
+	// Derive the third basis vector off of the other two.
+	// Flip based on the determinant sign
+	half3 TangentToWorld1 = cross(TangentToWorld2.xyz,TangentToWorld0) * TangentToWorld2.w;
+	// Transform from tangent space to world space
+	return half3x3(TangentToWorld0, TangentToWorld1, TangentToWorld2.xyz);
+}
+
 #define INPUT_POSITION_QUALIFIERS linear noperspective centroid
 
