@@ -4,6 +4,9 @@
 #include "D3D11RHI.h"
 #include <d3dcompiler.h>
 #include <vector>
+#include <string>
+#include <algorithm>
+#include <assert.h>
 
 extern std::vector<MeshBatch> AllBatches;
 
@@ -29,6 +32,157 @@ void MeshLODResources::ReleaseResource()
 		IndexBuffer->Release();
 	}
 }
+
+struct FBXUVs
+{
+	explicit FBXUVs(FbxMesh* Mesh)
+		:UniqueUVCount(0)
+	{
+		assert(Mesh != NULL);
+
+		int LayerCount = Mesh->GetLayerCount();
+		if (LayerCount > 0)
+		{
+			int UVLayerIndex;
+			for (UVLayerIndex = 0; UVLayerIndex < LayerCount; UVLayerIndex++)
+			{
+				FbxLayer* lLayer = Mesh->GetLayer(UVLayerIndex);
+				int UVSetCount = lLayer->GetUVSetCount();
+				if (UVSetCount)
+				{
+					FbxArray<FbxLayerElementUV const*> EleUVs = lLayer->GetUVSets();
+					for (int UVIndex = 0; UVIndex < UVSetCount; ++UVIndex)
+					{
+						FbxLayerElementUV const* ElementUV = EleUVs[UVIndex];
+						if (ElementUV)
+						{
+							const char* UVSetName = ElementUV->GetName();
+							std::string LocalUVSetName = UVSetName;
+							if (LocalUVSetName.size() == 0)
+							{
+								LocalUVSetName = std::string("UVmap_") + std::to_string(UVLayerIndex);
+							}
+							UVSets.push_back(LocalUVSetName);
+						}
+					}
+				}
+			}
+		}
+
+
+		if (UVSets.size())
+		{
+			for (int ChannelNumIdx = 0; ChannelNumIdx < 4; ChannelNumIdx++)
+			{
+				std::string ChannelName = std::string("UVChannel_") + std::to_string(ChannelNumIdx + 1);
+				auto it = std::find(UVSets.begin(), UVSets.end(), ChannelName);
+				int SetIdx = -1;
+				if (it != UVSets.end())
+				{
+					SetIdx = it - UVSets.begin();
+				}
+
+				if (SetIdx != -1 && SetIdx != ChannelNumIdx)
+				{
+					for (int ArrSize = UVSets.size(); ArrSize < ChannelNumIdx + 1; ArrSize++)
+					{
+						UVSets.push_back(std::string(""));
+					}
+					std::swap(UVSets[SetIdx], UVSets[ChannelNumIdx]);
+				}
+			}
+		}
+	}
+
+	void Phase2(FbxMesh* Mesh)
+	{
+		UniqueUVCount = UVSets.size();
+		if (UniqueUVCount > 0)
+		{
+			LayerElementUV.resize(UniqueUVCount);
+			UVReferenceMode.resize(UniqueUVCount);
+			UVMappingMode.resize(UniqueUVCount);
+		}
+		for (int32 UVIndex = 0; UVIndex < UniqueUVCount; UVIndex++)
+		{
+			LayerElementUV[UVIndex] = NULL;
+			for (int UVLayerIndex = 0, LayerCount = Mesh->GetLayerCount(); UVLayerIndex < LayerCount; UVLayerIndex++)
+			{
+				FbxLayer* lLayer = Mesh->GetLayer(UVLayerIndex);
+				int UVSetCount = lLayer->GetUVSetCount();
+				if (UVSetCount > 0)
+				{
+					FbxArray<FbxLayerElementUV const*> EleUVs = lLayer->GetUVSets();
+					for (int FbxUVIndex = 0; FbxUVIndex < UVSetCount; FbxUVIndex++)
+					{
+						FbxLayerElementUV const* ElementUV = EleUVs[FbxUVIndex];
+						if (ElementUV)
+						{
+							const char* UVSetName = ElementUV->GetName();
+							std::string LocalUVSetName = UVSetName;
+							if (LocalUVSetName.size() == 0)
+							{
+								LocalUVSetName = std::string("UVmap_") + std::to_string(UVLayerIndex);
+							}
+							if (LocalUVSetName == UVSets[UVIndex])
+							{
+								LayerElementUV[UVIndex] = ElementUV;
+								UVReferenceMode[UVIndex] = ElementUV->GetReferenceMode();
+								UVMappingMode[UVIndex] = ElementUV->GetMappingMode();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		UniqueUVCount = (std::min)(UniqueUVCount,8);
+	}
+
+	int FindLightUVIndex() const
+	{
+		for (int UVSetIdx = 0; UVSetIdx < (int)UVSets.size(); UVSetIdx++)
+		{
+			if (UVSets[UVSetIdx] == "LightMapUV")
+			{
+				return UVSetIdx;
+			}
+		}
+
+		return -1;
+	}
+
+	int ComputeUVIndex(int UVLayerIndex, int lControlPointIndex, int FaceCornerIndex) const
+	{
+		int UVMapIndex = (UVMappingMode[UVLayerIndex] == FbxLayerElement::eByControlPoint) ? lControlPointIndex : FaceCornerIndex;
+		int Ret;
+
+		if (UVReferenceMode[UVLayerIndex] == FbxLayerElement::eDirect)
+		{
+			Ret = UVMapIndex;
+		}
+		else
+		{
+			FbxLayerElementArrayTemplate<int>& Array = LayerElementUV[UVLayerIndex]->GetIndexArray();
+			Ret = Array.GetAt(UVMapIndex);
+		}
+
+		return Ret;
+	}
+
+	void CleanUp()
+	{
+		LayerElementUV.clear();
+		UVReferenceMode.clear();
+		UVMappingMode.clear();
+	}
+
+	std::vector<std::string> UVSets;
+	std::vector<FbxLayerElementUV const*> LayerElementUV;
+	std::vector<FbxLayerElement::EReferenceMode> UVReferenceMode;
+	std::vector<FbxLayerElement::EMappingMode> UVMappingMode;
+	int UniqueUVCount;
+};
 
 void FillFbxArray(FbxNode* pNode, std::vector<FbxNode*>& pOutMeshArray)
 {
@@ -124,7 +278,11 @@ void RegisterMeshAttributes(MeshDescription& MD)
 	// Add basic polygon group attributes
 	MD.PolygonGroupAttributes().RegisterAttribute<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName,1,std::string()); //The unique key to match the mesh material slot
 }
-
+struct A
+{
+	A(int i) { j = i; }
+	int j;
+};
 void Mesh::ImportFromFBX(const char* pFileName)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
@@ -190,9 +348,13 @@ void Mesh::ImportFromFBX(const char* pFileName)
 
 			FbxLayer* BaseLayer = lMesh->GetLayer(0);
 
+			FBXUVs fbxUVs(lMesh);
+
 			FbxLayerElementMaterial* LayerElementMaterial = BaseLayer->GetMaterials();
 			FbxLayerElement::EMappingMode MaterialMappingMode = LayerElementMaterial ? LayerElementMaterial->GetMappingMode() : FbxLayerElement::eByPolygon;
 			
+			fbxUVs.Phase2(lMesh);
+
 			bool bSmootingAvaliable = false;
 			FbxLayerElementSmoothing* SmoothingInfo = BaseLayer->GetSmoothing();
 			FbxLayerElement::EReferenceMode SmoothingReferenceMode(FbxLayerElement::eDirect);
@@ -264,7 +426,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			std::vector<Vector>& VertexInstanceTangents = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
 			std::vector<float>& VertexInstanceBinormalSigns = MD.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
 			std::vector<Vector4>& VertexInstanceColors = MD.VertexInstanceAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
-			std::vector<Vector2>& VertexInstanceUVs = MD.VertexInstanceAttributes().GetAttributes<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+			std::vector<std::vector<Vector2>>& VertexInstanceUVs = MD.VertexInstanceAttributes().GetAttributesSet<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
 
 			std::vector<bool>& EdgeHardnesses = MD.EdgeAttributes().GetAttributes<bool>(MeshAttribute::Edge::IsHard);
 			std::vector<float>& EdgeCreaseSharpnesses = MD.EdgeAttributes().GetAttributes<float>(MeshAttribute::Edge::CreaseSharpness);
@@ -277,6 +439,27 @@ void Mesh::ImportFromFBX(const char* pFileName)
 			int PolygonOffset = MD.Polygons().Num();
 
 			std::map<int, int> PolygonGroupMapping;
+
+			int ExistingUVCount = 0;
+			for (int UVChannelIndex = 0; UVChannelIndex < (int)VertexInstanceUVs.size(); ++UVChannelIndex)
+			{
+				if (VertexInstanceUVs[UVChannelIndex].size() > 0)
+				{
+					ExistingUVCount++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			int32 NumUVs = (std::max)(fbxUVs.UniqueUVCount, ExistingUVCount);
+			NumUVs = (std::min)(8, NumUVs);
+			// At least one UV set must exist.  
+			NumUVs = (std::max)(1, NumUVs);
+
+			//Make sure all Vertex instance have the correct number of UVs
+			VertexInstanceUVs.resize(NumUVs);
 
 			for (auto VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 			{
@@ -323,6 +506,20 @@ void Mesh::ImportFromFBX(const char* pFileName)
 					CornerVerticesIDs[CornerIndex] = VertexID;
 
 					int AddedVertexInstanceId = MD.CreateVertexInstance(VertexID);
+
+					for (int UVLayerIndex = 0; UVLayerIndex < fbxUVs.UniqueUVCount; UVLayerIndex++)
+					{
+						Vector2 FinalUVVector(0.f, 0.f);
+						if (fbxUVs.LayerElementUV[UVLayerIndex] != NULL)
+						{
+							int UVMapIndex = (fbxUVs.UVMappingMode[UVLayerIndex] == FbxLayerElement::eByControlPoint) ? ControlPointIndex : RealFbxVertexIndex;
+							int UVIndex = (fbxUVs.UVReferenceMode[UVLayerIndex] == FbxLayerElement::eDirect) ? UVMapIndex : fbxUVs.LayerElementUV[UVLayerIndex]->GetIndexArray().GetAt(UVMapIndex);
+							FbxVector2	UVVector = fbxUVs.LayerElementUV[UVLayerIndex]->GetDirectArray().GetAt(UVIndex);
+							FinalUVVector.X = static_cast<float>(UVVector[0]);
+							FinalUVVector.Y = 1.f - static_cast<float>(UVVector[1]);   //flip the Y of UVs for DirectX
+						}
+						VertexInstanceUVs[UVLayerIndex][AddedVertexInstanceId] = FinalUVVector;
+					}
 
 					if (LayerElementVertexColor)
 					{
@@ -435,6 +632,8 @@ void Mesh::ImportFromFBX(const char* pFileName)
 				MD.ComputePolygonTriangulation(NewPolygonID, Polygon.Triangles);
 			}
 			lMesh->EndGetMeshEdgeIndexForPolygon();
+
+			fbxUVs.CleanUp();
 		}
 	}
 
@@ -498,6 +697,7 @@ void Mesh::InitResource()
 	LODResource.InitResource();
 	PrimitiveUniform PU;
 	PU.LocalToWorld = GetWorldMatrix();
+	PU.InvNonUniformScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	PrimitiveUniformBuffer = CreateConstantBuffer(&PU, sizeof(PU));
 	
 }
