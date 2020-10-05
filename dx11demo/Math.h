@@ -15,6 +15,15 @@ typedef unsigned short		uint16;
 typedef unsigned int		uint32;
 typedef unsigned long long	uint64;
 
+#undef  PI
+#define PI 					(3.1415926535897932f)
+#define SMALL_NUMBER		(1.e-8f)
+#define KINDA_SMALL_NUMBER	(1.e-4f)
+#define BIG_NUMBER			(3.4e+38f)
+#define EULERS_NUMBER       (2.71828182845904523536f)
+
+#define DELTA			(0.00001f)
+
 class Math
 {
 public:
@@ -203,12 +212,17 @@ struct Vector
 	float& operator[](int32 Index);
 	float operator[](int32 Index) const;
 
+	float SizeSquared() const;
 	inline void Normalize();
+	static void CreateOrthonormalBasis(Vector& XAxis, Vector& YAxis, Vector& ZAxis);
 
 	friend inline Vector operator*(float Value, const Vector& rhs)
 	{
 		return rhs.operator*(Value);
 	}
+
+	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const;
+	Vector GetSafeNormal(float Tolerance = SMALL_NUMBER) const;
 };
 
 inline Vector::Vector(std::initializer_list<float> list)
@@ -324,6 +338,27 @@ inline void Vector::Normalize()
 	Y *= InvSqrt;
 	Z *= InvSqrt;
 }
+
+inline bool Vector::IsNearlyZero(float Tolerance /*= KINDA_SMALL_NUMBER*/) const
+{
+	return std::abs(X) <= Tolerance && std::abs(Y) <= Tolerance && std::abs(Z) <= Tolerance;
+}
+
+inline Vector Vector::GetSafeNormal(float Tolerance /*= SMALL_NUMBER*/) const
+{
+	const float SquareSum = X * X + Y * Y + Z * Z;
+	if (SquareSum == 1.f)
+	{
+		return *this;
+	}
+	else if (SquareSum < Tolerance)
+	{
+		return Vector(0.f);
+	}
+	const float Scale = 1.f / std::sqrt(SquareSum);
+	return Vector(X*Scale, Y*Scale, Z*Scale);
+}
+
 
 inline Vector4::Vector4(const Vector& V, float InW) : X(V.X), Y(V.Y), Z(V.Z), W(InW)
 {
@@ -498,6 +533,29 @@ struct Color
 	uint8 R, G, B, A;
 };
 
+struct alignas(16) Plane : public Vector
+{
+public:
+	float W;
+
+	inline Plane(float InX, float InY, float InZ, float InW) : Vector(InX, InY, InZ)
+		, W(InW)
+	{}
+	inline Plane(Vector InNormal, float InW) : Vector(InNormal), W(InW)
+	{}
+};
+
+namespace EAxis
+{
+	enum Type
+	{
+		None,
+		X,
+		Y,
+		Z,
+	};
+}
+
 struct Matrix
 {
 	union
@@ -505,11 +563,22 @@ struct Matrix
 		alignas(16) float M[4][4];
 	};
 
+
+	static alignas(16) const Matrix Identity;
+
 	Matrix() {}
+
+	Matrix(const Plane& InX, const Plane& InY, const Plane& InZ, const Plane& InW);
 
 	void SetIndentity();
 
 	void Transpose();
+
+	inline Matrix Inverse() const;
+
+	inline Vector GetScaledAxis(EAxis::Type Axis) const;
+
+	inline float Determinant() const;
 
 	Matrix operator* (const Matrix& Other) const;
 
@@ -527,7 +596,7 @@ struct Matrix
 
 	inline bool operator!=(const Matrix& Other) const;
 
-	Vector Transform(Vector InVector);
+	Vector Transform(const Vector& InVector) const;
 
 	static Matrix	FromScale(float Scale);
 	static Matrix	DXFromPitch(float fPitch);
@@ -540,6 +609,90 @@ struct Matrix
 	static Matrix	DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
 	static Matrix	DXFromPerspectiveLH(float w, float h, float zn, float zf);
 };
+
+inline void VectorMatrixInverse(void* DstMatrix, const void* SrcMatrix)
+{
+	typedef float Float4x4[4][4];
+	const Float4x4& M = *((const Float4x4*)SrcMatrix);
+	Float4x4 Result;
+	float Det[4];
+	Float4x4 Tmp;
+
+	Tmp[0][0] = M[2][2] * M[3][3] - M[2][3] * M[3][2];
+	Tmp[0][1] = M[1][2] * M[3][3] - M[1][3] * M[3][2];
+	Tmp[0][2] = M[1][2] * M[2][3] - M[1][3] * M[2][2];
+
+	Tmp[1][0] = M[2][2] * M[3][3] - M[2][3] * M[3][2];
+	Tmp[1][1] = M[0][2] * M[3][3] - M[0][3] * M[3][2];
+	Tmp[1][2] = M[0][2] * M[2][3] - M[0][3] * M[2][2];
+
+	Tmp[2][0] = M[1][2] * M[3][3] - M[1][3] * M[3][2];
+	Tmp[2][1] = M[0][2] * M[3][3] - M[0][3] * M[3][2];
+	Tmp[2][2] = M[0][2] * M[1][3] - M[0][3] * M[1][2];
+
+	Tmp[3][0] = M[1][2] * M[2][3] - M[1][3] * M[2][2];
+	Tmp[3][1] = M[0][2] * M[2][3] - M[0][3] * M[2][2];
+	Tmp[3][2] = M[0][2] * M[1][3] - M[0][3] * M[1][2];
+
+	Det[0] = M[1][1] * Tmp[0][0] - M[2][1] * Tmp[0][1] + M[3][1] * Tmp[0][2];
+	Det[1] = M[0][1] * Tmp[1][0] - M[2][1] * Tmp[1][1] + M[3][1] * Tmp[1][2];
+	Det[2] = M[0][1] * Tmp[2][0] - M[1][1] * Tmp[2][1] + M[3][1] * Tmp[2][2];
+	Det[3] = M[0][1] * Tmp[3][0] - M[1][1] * Tmp[3][1] + M[2][1] * Tmp[3][2];
+
+	float Determinant = M[0][0] * Det[0] - M[1][0] * Det[1] + M[2][0] * Det[2] - M[3][0] * Det[3];
+	const float	RDet = 1.0f / Determinant;
+
+	Result[0][0] = RDet * Det[0];
+	Result[0][1] = -RDet * Det[1];
+	Result[0][2] = RDet * Det[2];
+	Result[0][3] = -RDet * Det[3];
+	Result[1][0] = -RDet * (M[1][0] * Tmp[0][0] - M[2][0] * Tmp[0][1] + M[3][0] * Tmp[0][2]);
+	Result[1][1] = RDet * (M[0][0] * Tmp[1][0] - M[2][0] * Tmp[1][1] + M[3][0] * Tmp[1][2]);
+	Result[1][2] = -RDet * (M[0][0] * Tmp[2][0] - M[1][0] * Tmp[2][1] + M[3][0] * Tmp[2][2]);
+	Result[1][3] = RDet * (M[0][0] * Tmp[3][0] - M[1][0] * Tmp[3][1] + M[2][0] * Tmp[3][2]);
+	Result[2][0] = RDet * (
+		M[1][0] * (M[2][1] * M[3][3] - M[2][3] * M[3][1]) -
+		M[2][0] * (M[1][1] * M[3][3] - M[1][3] * M[3][1]) +
+		M[3][0] * (M[1][1] * M[2][3] - M[1][3] * M[2][1])
+		);
+	Result[2][1] = -RDet * (
+		M[0][0] * (M[2][1] * M[3][3] - M[2][3] * M[3][1]) -
+		M[2][0] * (M[0][1] * M[3][3] - M[0][3] * M[3][1]) +
+		M[3][0] * (M[0][1] * M[2][3] - M[0][3] * M[2][1])
+		);
+	Result[2][2] = RDet * (
+		M[0][0] * (M[1][1] * M[3][3] - M[1][3] * M[3][1]) -
+		M[1][0] * (M[0][1] * M[3][3] - M[0][3] * M[3][1]) +
+		M[3][0] * (M[0][1] * M[1][3] - M[0][3] * M[1][1])
+		);
+	Result[2][3] = -RDet * (
+		M[0][0] * (M[1][1] * M[2][3] - M[1][3] * M[2][1]) -
+		M[1][0] * (M[0][1] * M[2][3] - M[0][3] * M[2][1]) +
+		M[2][0] * (M[0][1] * M[1][3] - M[0][3] * M[1][1])
+		);
+	Result[3][0] = -RDet * (
+		M[1][0] * (M[2][1] * M[3][2] - M[2][2] * M[3][1]) -
+		M[2][0] * (M[1][1] * M[3][2] - M[1][2] * M[3][1]) +
+		M[3][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1])
+		);
+	Result[3][1] = RDet * (
+		M[0][0] * (M[2][1] * M[3][2] - M[2][2] * M[3][1]) -
+		M[2][0] * (M[0][1] * M[3][2] - M[0][2] * M[3][1]) +
+		M[3][0] * (M[0][1] * M[2][2] - M[0][2] * M[2][1])
+		);
+	Result[3][2] = -RDet * (
+		M[0][0] * (M[1][1] * M[3][2] - M[1][2] * M[3][1]) -
+		M[1][0] * (M[0][1] * M[3][2] - M[0][2] * M[3][1]) +
+		M[3][0] * (M[0][1] * M[1][2] - M[0][2] * M[1][1])
+		);
+	Result[3][3] = RDet * (
+		M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1]) -
+		M[1][0] * (M[0][1] * M[2][2] - M[0][2] * M[2][1]) +
+		M[2][0] * (M[0][1] * M[1][2] - M[0][2] * M[1][1])
+		);
+
+	memcpy(DstMatrix, &Result, 16 * sizeof(float));
+}
 
 inline void Matrix::SetIndentity()
 {
@@ -558,6 +711,74 @@ inline void Matrix::Transpose()
 	Math::Swap(M[2][1], M[1][2]);
 	Math::Swap(M[3][1], M[1][3]);
 	Math::Swap(M[3][2], M[2][3]);
+}
+
+Matrix Matrix::Inverse() const
+{
+	Matrix Result;
+	if (GetScaledAxis(EAxis::X).IsNearlyZero(SMALL_NUMBER) &&
+		GetScaledAxis(EAxis::Y).IsNearlyZero(SMALL_NUMBER) &&
+		GetScaledAxis(EAxis::Z).IsNearlyZero(SMALL_NUMBER))
+	{
+		// just set to zero - avoids unsafe inverse of zero and duplicates what QNANs were resulting in before (scaling away all children)
+		Result = Matrix::Identity;
+	}
+	else
+	{
+		const float	Det = Determinant();
+
+		if (Det == 0.0f)
+		{
+			Result = Matrix::Identity;
+		}
+		else
+		{
+			VectorMatrixInverse(&Result, this);
+		}
+	}
+	return Result;
+}
+
+inline Vector Matrix::GetScaledAxis(EAxis::Type InAxis) const
+{
+	switch (InAxis)
+	{
+	case EAxis::X:
+		return Vector(M[0][0], M[0][1], M[0][2]);
+
+	case EAxis::Y:
+		return Vector(M[1][0], M[1][1], M[1][2]);
+
+	case EAxis::Z:
+		return Vector(M[2][0], M[2][1], M[2][2]);
+
+	default:
+		return Vector(0.f);
+	}
+}
+
+inline float Matrix::Determinant() const
+{
+	return	M[0][0] * (
+			M[1][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+			M[2][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) +
+			M[3][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2])
+			) -
+		M[1][0] * (
+			M[0][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
+			M[2][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+			M[3][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2])
+			) +
+		M[2][0] * (
+			M[0][1] * (M[1][2] * M[3][3] - M[1][3] * M[3][2]) -
+			M[1][1] * (M[0][2] * M[3][3] - M[0][3] * M[3][2]) +
+			M[3][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+			) -
+		M[3][0] * (
+			M[0][1] * (M[1][2] * M[2][3] - M[1][3] * M[2][2]) -
+			M[1][1] * (M[0][2] * M[2][3] - M[0][3] * M[2][2]) +
+			M[2][1] * (M[0][2] * M[1][3] - M[0][3] * M[1][2])
+			);
 }
 
 inline Matrix Matrix::operator+(const Matrix& Other) const
@@ -708,7 +929,7 @@ inline void Matrix::operator*=(const Matrix& Other)
 	*this = operator*(Other);
 }
 
-inline Vector Matrix::Transform(Vector InVector)
+inline Vector Matrix::Transform(const Vector& InVector) const
 {
 	return 
 	{ 

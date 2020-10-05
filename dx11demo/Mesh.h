@@ -80,6 +80,7 @@ struct PrimitiveUniform
 {
 	Matrix LocalToWorld;
 	Matrix WorldToLocal;
+	float PerObjectGBufferData;
 	Vector4 InvNonUniformScale;
 };
 
@@ -129,7 +130,8 @@ public:
 	void DrawStaticElement();
 private:
 	void Build();
-	void BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
+	void BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
+	void GetRenderMeshDescription(const MeshDescription& InOriginalMeshDescription, MeshDescription& OutRenderMeshDescription);
 private:
 	MeshDescription MD;
 	MeshLODResources LODResource;

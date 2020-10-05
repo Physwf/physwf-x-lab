@@ -197,7 +197,7 @@ public:
 		return ID >= 0 && ID < MaxID && Container.find(ID) != Container.end();
 	}
 
-	std::vector<int> GetElementIDs() 
+	std::vector<int> GetElementIDs() const
 	{ 
 		std::vector<int> Keys;
 		for (auto kv : Container)

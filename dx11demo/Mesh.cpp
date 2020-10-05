@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <assert.h>
+#include "MeshDescriptionOperations.h"
 
 extern std::vector<MeshBatch> AllBatches;
 
@@ -765,10 +766,15 @@ void Mesh::DrawStaticElement()
 
 void Mesh::Build()
 {
+
+	MeshDescription MD2;
+
+	GetRenderMeshDescription(MD, MD2);
+
 	std::vector<std::vector<uint32> > OutPerSectionIndices;
 	OutPerSectionIndices.resize(MD.PolygonGroups().Num());
 	std::vector<StaticMeshBuildVertex> StaticMeshBuildVertices;
-	BuildVertexBuffer(OutPerSectionIndices, StaticMeshBuildVertices);
+	BuildVertexBuffer(MD2, OutPerSectionIndices, StaticMeshBuildVertices);
 
 	std::vector<uint32> CombinedIndices;
 	for (uint32 i = 0; i < LODResource.Sections.size(); ++i)
@@ -818,24 +824,24 @@ void Mesh::Build()
 	}
 }
 
-void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices)
+void Mesh::BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices)
 {
-	const TMeshElementArray<MeshVertex>& Vertices = MD.Vertices();
-	const TMeshElementArray<MeshVertexInstance>& VertexInstances = MD.VertexInstances();
-	const TMeshElementArray<MeshPolygonGroup>& PolygonGroupArray = MD.PolygonGroups();
-	const TMeshElementArray<MeshPolygon>& PolygonArray = MD.Polygons();
+	const TMeshElementArray<MeshVertex>& Vertices = MD2.Vertices();
+	const TMeshElementArray<MeshVertexInstance>& VertexInstances = MD2.VertexInstances();
+	const TMeshElementArray<MeshPolygonGroup>& PolygonGroupArray = MD2.PolygonGroups();
+	const TMeshElementArray<MeshPolygon>& PolygonArray = MD2.Polygons();
 
-	const std::vector<std::string>& PolygonGroupImportedMaterialSlotNames = MD.PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
+	const std::vector<std::string>& PolygonGroupImportedMaterialSlotNames = MD2.PolygonGroupAttributes().GetAttributes<std::string>(MeshAttribute::PolygonGroup::ImportedMaterialSlotName);
 
-	const std::vector<Vector>& VertexPositions = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
-	const std::vector<Vector>& VertexInstanceNormals = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
-	const std::vector<Vector>& VertexInstanceTangents = MD.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
-	const std::vector<float>& VertexInstanceBinormalSigns = MD.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
-	const std::vector<Vector4>& VertexInstanceColors = MD.VertexInstanceAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
-	const std::vector<std::vector<Vector2>>& VertexInstanceUVs = MD.VertexInstanceAttributes().GetAttributesSet<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+	const std::vector<Vector>& VertexPositions = MD2.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
+	const std::vector<Vector>& VertexInstanceNormals = MD2.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
+	const std::vector<Vector>& VertexInstanceTangents = MD2.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
+	const std::vector<float>& VertexInstanceBinormalSigns = MD2.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+	const std::vector<Vector4>& VertexInstanceColors = MD2.VertexInstanceAttributes().GetAttributes<Vector4>(MeshAttribute::VertexInstance::Color);
+	const std::vector<std::vector<Vector2>>& VertexInstanceUVs = MD2.VertexInstanceAttributes().GetAttributesSet<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
 
 	std::map<int, int> PolygonGroupToSectionIndex;
-	for (const int PolgyonGroupID : MD.PolygonGroups().GetElementIDs())
+	for (const int PolgyonGroupID : MD2.PolygonGroups().GetElementIDs())
 	{
 		int& SectionIndex = PolygonGroupToSectionIndex[PolgyonGroupID];
 		LODResource.Sections.push_back(StaticMeshSection());
@@ -848,19 +854,19 @@ void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionInd
 	}
 
 	int ReserveIndicesCount = 0;
-	for (const int PolygonID : MD.Polygons().GetElementIDs())
+	for (const int PolygonID : MD2.Polygons().GetElementIDs())
 	{
-		const std::vector<MeshTriangle>& PolygonTriangles = MD.GetPolygonTriangles(PolygonID);
+		const std::vector<MeshTriangle>& PolygonTriangles = MD2.GetPolygonTriangles(PolygonID);
 		ReserveIndicesCount += PolygonTriangles.size() * 3;
 	}
 	LODResource.Indices.reserve(ReserveIndicesCount);
 
-	for (const int PolygonID : MD.Polygons().GetElementIDs())
+	for (const int PolygonID : MD2.Polygons().GetElementIDs())
 	{
-		const int PolygonGroupID = MD.GetPolygonPolygonGroup(PolygonID);
+		const int PolygonGroupID = MD2.GetPolygonPolygonGroup(PolygonID);
 		const int SectionIndex = PolygonGroupToSectionIndex[PolygonGroupID];
 		std::vector<uint32>& SectionIndices = OutPerSectionIndices[SectionIndex];
-		const std::vector<MeshTriangle>& PolygonTriangles = MD.GetPolygonTriangles(PolygonID);
+		const std::vector<MeshTriangle>& PolygonTriangles = MD2.GetPolygonTriangles(PolygonID);
 		uint32 MinIndex = 0;
 		uint32 MaxIndex = 0xFFFFFFFF;
 		for (int TriangleIndex = 0; TriangleIndex < (int)PolygonTriangles.size(); ++TriangleIndex)
@@ -870,7 +876,7 @@ void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionInd
 			for (int TriVert = 0; TriVert < 3; ++TriVert)
 			{
 				const int VertexInstanceID = Triangle.GetVertexInstanceID(TriVert);
-				const int VertexID = MD.GetVertexInstanceVertex(VertexInstanceID);
+				const int VertexID = MD2.GetVertexInstanceVertex(VertexInstanceID);
 				CornerPositions[TriVert] = VertexPositions[VertexID];
 			}
 
@@ -895,4 +901,34 @@ void Mesh::BuildVertexBuffer(std::vector<std::vector<uint32> >& OutPerSectionInd
 		}
 
 	}
+}
+
+void Mesh::GetRenderMeshDescription(const MeshDescription& InOriginalMeshDescription, MeshDescription& OutRenderMeshDescription)
+{
+	OutRenderMeshDescription = InOriginalMeshDescription;
+
+	MeshDescriptionOperations::CreatePolygonNTB(OutRenderMeshDescription, 0.f);
+
+	TMeshElementArray<MeshVertexInstance>& VertexInstanceArray = OutRenderMeshDescription.VertexInstances();
+	std::vector<Vector>& Normals = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
+	std::vector<Vector>& Tangents = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
+	std::vector<float>& BinormalSigns = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+
+	uint32 TangentOptions = MeshDescriptionOperations::ETangentOptions::BlendOverlappingNormals;
+
+	bool bHasAllNormals = true;
+	bool bHasAllTangents = true;
+
+	for (const int VertexInstanceID : VertexInstanceArray.GetElementIDs())
+	{
+		bHasAllNormals &= !Normals[VertexInstanceID].IsNearlyZero();
+		bHasAllTangents &= !Tangents[VertexInstanceID].IsNearlyZero();
+	}
+
+	if (!bHasAllNormals)
+	{
+
+	}
+
+	MeshDescriptionOperations::CreateMikktTangents(OutRenderMeshDescription, (MeshDescriptionOperations::ETangentOptions)TangentOptions);
 }
