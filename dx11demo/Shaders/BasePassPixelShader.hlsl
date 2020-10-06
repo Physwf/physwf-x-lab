@@ -6,7 +6,7 @@
 // #include "PlanarReflectionShared.ush"
 // #include "BRDF.ush"
 #include "Random.hlsl"
-// #include "LightAccumulator.ush"
+#include "LightAccumulator.hlsl"
 #include "DeferredShadingCommon.hlsl"
 // #include "VelocityCommon.ush"
 // #include "SphericalGaussian.ush"
@@ -14,7 +14,11 @@
 
 #include "ShadingModelsMaterial.hlsl"
 
+
+#define POST_PROCESS_SUBSURFACE 0 //((MATERIAL_SHADINGMODEL_SUBSURFACE_PROFILE || MATERIAL_SHADINGMODEL_EYE) && USES_GBUFFER)
+
 #if USES_GBUFFER
+
 
 // The selective output mask can only depend on defines, since the shadow will not export the data.
 uint GetSelectiveOutputMask()
@@ -152,28 +156,48 @@ void FPixelShaderInOut_PS_Main(
     half3 DiffuseColor = 0;
 	half3 Color = 0;
 	float IndirectIrradiance = 0;
-/*
+
     #if !MATERIAL_SHADINGMODEL_UNLIT
         float3 DiffuseDir = BentNormal;
         float3 DiffuseColorForIndirect = GBuffer.DiffuseColor;
 
-        float3 DiffuseIndirectLighting;
-        float3 SubsurfaceIndirectLighting;
-        GetPrecomputedIndirectLightingAndSkyLight(MaterialParameters, Interpolants, BasePassInterpolants, DiffuseDir, VolumetricLightmapBrickTextureUVs, DiffuseIndirectLighting, SubsurfaceIndirectLighting, IndirectIrradiance);
+        //float3 DiffuseIndirectLighting;
+        //float3 SubsurfaceIndirectLighting;
+        //GetPrecomputedIndirectLightingAndSkyLight(MaterialParameters, Interpolants, BasePassInterpolants, DiffuseDir, VolumetricLightmapBrickTextureUVs, DiffuseIndirectLighting, SubsurfaceIndirectLighting, IndirectIrradiance);
 
         float IndirectOcclusion = 1.0f;
         float2 NearestResolvedDepthScreenUV = 0;
 
-        #if FORWARD_SHADING && (MATERIALBLENDING_SOLID || MATERIALBLENDING_MASKED)
-        #endif
+        //#if FORWARD_SHADING && (MATERIALBLENDING_SOLID || MATERIALBLENDING_MASKED)
+        //#endif
 
-        DiffuseColor += (DiffuseIndirectLighting * DiffuseColorForIndirect + SubsurfaceIndirectLighting * SubsurfaceColor) * AOMultiBounce( GBuffer.BaseColor, DiffOcclusion );
-*/
+        //DiffuseColor += (DiffuseIndirectLighting * DiffuseColorForIndirect + SubsurfaceIndirectLighting * SubsurfaceColor) * AOMultiBounce( GBuffer.BaseColor, DiffOcclusion );
+		DiffuseColor += half3(0.5,0.9f,0.4f);
     // #if NEEDS_BASEPASS_PIXEL_VOLUMETRIC_FOGGING
     // #endif
+	#endif
 
     half3 Emissive = GetMaterialEmissive(PMInputs);
 
+#if !POST_PROCESS_SUBSURFACE
+ 	// For non-skin, we just add diffuse and non-diffuse color together, otherwise we need to keep them separate
+	Color += DiffuseColor;
+#endif
+	Color += Emissive;
+
+	#if MATERIAL_DOMAIN_POSTPROCESS
+	#elif MATERIALBLENDING_ALPHACOMPOSITE
+	#elif MATERIALBLENDING_TRANSLUCENT
+	#elif MATERIALBLENDING_ADDITIVE
+	#elif MATERIALBLENDING_MODULATE
+	#else
+
+	LightAccumulator LA = (LightAccumulator)0;
+	LightAccumulator_Add(LA, Color, 0, 1.0f, false);
+
+	Out.MRT[0] = RETURN_COLOR(LightAccumulator_GetResult(LA));
+
+	#endif
 
     #if USES_GBUFFER
 		GBuffer.IndirectIrradiance = IndirectIrradiance;
@@ -181,7 +205,7 @@ void FPixelShaderInOut_PS_Main(
 		EncodeGBuffer(GBuffer, Out.MRT[1], Out.MRT[2], Out.MRT[3], OutGBufferD, OutGBufferE, OutVelocity, QuantizationBias);
     #endif 
 
-    #if USES_GBUFFER
+#if USES_GBUFFER
 	#if GBUFFER_HAS_VELOCITY
 		Out.MRT[4] = OutVelocity;
 	#endif
@@ -191,12 +215,11 @@ void FPixelShaderInOut_PS_Main(
 	#if GBUFFER_HAS_PRECSHADOWFACTOR
 		Out.MRT[GBUFFER_HAS_VELOCITY ? 6 : 5] = OutGBufferE;
 	#endif
-
-
 #endif
+
 }
 
-#define PIXELSHADEROUTPUT_MRT0 	!USES_GBUFFER
+#define PIXELSHADEROUTPUT_MRT0 	(!USES_GBUFFER || ALLOW_STATIC_LIGHTING)
 #define PIXELSHADEROUTPUT_MRT1  USES_GBUFFER
 #define PIXELSHADEROUTPUT_MRT2  USES_GBUFFER
 #define PIXELSHADEROUTPUT_MRT3  USES_GBUFFER

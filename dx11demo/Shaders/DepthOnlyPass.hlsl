@@ -41,9 +41,9 @@ void VS_Main(PositionOnlyVertexFactoryInput Input, out float4 Position : SV_POSI
     // Position =              mul(ResolvedView.ViewToClip,            ViewPostion);
 }
 
-void PS_Main(float4 Position : SV_POSITION, out float4 Color : SV_Target, out float Depth : SV_Depth) 
+void PS_Main(float4 Position : SV_POSITION, /*out float4 Color : SV_Target,*/ out float Depth : SV_Depth) 
 {
-    Color = float4(1.f,0.f,0.f,1.f);
+    //Color = float4(1.f,0.f,0.f,1.f);
     Depth = Position.z;
 }
 

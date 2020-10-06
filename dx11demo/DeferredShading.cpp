@@ -125,7 +125,8 @@ void InitInput()
 	BasePassVS = CreateVertexShader(BasePassVSBytecode);
 	BasePassPS = CreatePixelShader(BasePassPSBytecode);
 
-	BasePassRT[0] = NULL;
+	BasePassRT[0] = RenderTargetTexture;//diffuse color
+	//BasePassRT[0] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);;//diffuse color
 	BasePassRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//WorldNormal(3),PerObjectGBufferData(1)
 	BasePassRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//metalic(1),specular(1),Roughness(1),ShadingModelID|SelectiveOutputMask(1)
 	BasePassRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//BaseColor(3),GBufferAO(1)
@@ -134,7 +135,8 @@ void InitInput()
 // 	BasePassRT[6] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//Velocity(4)
 // 	BasePassRT[7] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//
 
-	BasePassRTV[0] = NULL;
+	BasePassRTV[0] = RenderTargetView;
+	//BasePassRTV[0] = CreateRenderTargetView(BasePassRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[1] = CreateRenderTargetView(BasePassRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[2] = CreateRenderTargetView(BasePassRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT);
 	BasePassRTV[3] = CreateRenderTargetView(BasePassRT[3], DXGI_FORMAT_R32G32B32A32_FLOAT);
@@ -150,9 +152,9 @@ void InitInput()
 
 void RenderPrePass()
 {
-	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
+	D3D11DeviceContext->OMSetRenderTargets(0, NULL, DepthStencialView);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
-	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
+	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);

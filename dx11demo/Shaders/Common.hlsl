@@ -45,6 +45,11 @@
 	#define TANGENTTOWORLD_INTERPOLATOR_BLOCK	float4 TangentToWorld0 : TEXCOORD10_centroid; float4	TangentToWorld2	: TEXCOORD11_centroid;
 #endif
 
+MaterialFloat Luminance( MaterialFloat3 LinearColor )
+{
+	return dot( LinearColor, MaterialFloat3( 0.3, 0.59, 0.11 ) );
+}
+
 // see PixelShaderOutputCommon
 struct PixelShaderIn
 {
@@ -73,6 +78,9 @@ struct PixelShaderOut
 // shadow and light function
 Texture2D		LightAttenuationTexture;
 SamplerState	LightAttenuationTextureSampler;
+
+// We don't use an inline function so we can avoid type promotion/ coercion.
+#define RETURN_COLOR( Color ) ( Color )
 
 float Square( float x )
 {
