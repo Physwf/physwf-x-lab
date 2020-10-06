@@ -1,82 +1,58 @@
-#include "Common.ush"
-#include "DeferredShadingCommond.hlsl"
+#include "Common.hlsl"
+#include "DeferredShadingCommon.hlsl"
+#include "DeferredLightingCommon.hlsl"
 
-struct VS_Input
+DeferredLightData SetupLightDataForStandardDeferred()
 {
-    float2 Postion : ATTRIBUTE0;
-    float2 UV      : ATTRIBUTE1;
-};
+    DeferredLightData LightData;
+    LightData.LightPositionAndInvRadius = float4(DeferredLightUniform.LightPosition,DeferredLightUniform.LightInvRadius);
+    LightData.LightColorAndFalloffExponent = float4(DeferredLightUniform.LightColor,DeferredLightUniform.LightFalloffExponent);
+    LightData.LightDirection = DeferredLightUniform.NormalizedLightDirection;
+    LightData.LightTangent = DeferredLightUniform.NormalizedLightTangent;
+    LightData.SpotAnglesAndSourceRadius = float4(DeferredLightUniform.SpotAngles,DeferredLightUniform.SourceRadius,DeferredLightUniform.SourceLength);
+    LightData.SoftSourceRadius = DeferredLightUniform.SoftSourceRadius;
+    LightData.SpecularScale = DeferredLightUniform.SpecularScale;
+    LightData.ContactShadowLength = abs(DeferredLightUniform.ContactShadowLength);
+    LightData.ContactShadowLengthInWS = DeferredLightUniform.ContactShadowLength < 0.0f;
+    LightData.DistanceFadeMAD = DeferredLightUniform.DistanceFadeMAD;
+    LightData.ShadowMapChannelMask = DeferredLightUniform.ShadowMapChannelMask;
+    LightData.ShadowedBits = DeferredLightUniform.ShadowedBits;
 
-struct VS_Output
-{
-    float3 TexCoord     : TEXCOORD0;
-    float3 ScreenVector : TEXCOORD1;
-    float4 Postion      : SV_Position;
-};
+    // LightData.bInverseSquared = INVERSE_SQUARED_FALLOFF;
+    // LightData.bRadialLight = LIGHT_SOURCE_SHAPE > 0;
+    // LightData.bSpotLight = LIGHT_SOURCE_SHAPE > 0;
+    // LightData.bRectLight = LIGHT_SOURCE_SHAPE == 2;
 
-void DrawRectangle(in float4 InPosition, in float2 InTexCoord,out float4 OutPosition, out float2 OutTexCoord)
-{
-    OutPosition = InPosition;
-    OutPosition.xy = -1.0f + 2.f * (DrawRectangleParameters.zw + (InPosition.xy * DrawRectangleParameters.xy)) * DrawRectangleParameters.InvTargetSizeAndTextureSize.xy;
-    OutPosition.xy *= float2(1,-1);
-    OutTexCoord.xy = (DrawRectangleParameters.UVScaleBias.zw + (InTexCoord.xy * DrawRectangleParameters.xy) * DrawRectangleParameters.InvTargetSizeAndTextureSize.xy;
+    return LightData;
 }
 
-VS_Output VS_Main(VS_Input Input) : SV_Position
+
+void PS_Main(
+    float2 ScreenUV		: TEXCOORD0,
+	float3 ScreenVector	: TEXCOORD1,
+    float4 SVPos		: SV_POSITION,
+    out float4 OutColor : SV_Target) 
 {
-    VS_Output Out;
-    DrawRectangle(float4(Input.Position,0,1), Input.UV, Out.Position, Out.TexCoord);
-    Out.ScreenVector = mul(float4(OutPosition,1,0),View.ScreenToTranslatedWorld).xyz;
-    return Out;
-}
+    //ScreenSpaceData ScreenSpaceData = GetScreenSpaceData(ScreenUV);
 
-GBufferData GetGBufferData(float2 UV, bool bGetNormalizedNormal = true)
-{
-    float4 GBufferA = GBufferATextureSampler.Sample(GBufferATexture,UV);
-	float4 GBufferB = GBufferBTextureSampler.Sample(GBufferBTexture,UV);
-	float4 GBufferC = GBufferCTextureSampler.Sample(GBufferCTexture,UV);
-	float4 GBufferD = GBufferDTextureSampler.Sample(GBufferDTexture,UV);
+   // float SceneDepth = CalcSceneDepth(ScreenUV);
+   // float3 WorldPosition = ScreenVector * SceneDepth + View.WorldCameraOrigin;
 
-	float CustomNativeDepth = CustomDepthTextureSampler.Sample(CustomDepthTexture,UV).r;
-    uint CustomStencil = 0;
-	float4 GBufferE = GBufferETextureSampler.Sample(GBufferETexture,UV);
-	float4 GBufferVelocity = GBufferVelocityTextureSampler.Sample(GBufferVelocityTexture,UV);
-
-    float SceneDepth = CalcSceneDepth(UV);
-    bool bChecker = false;
-
-    return DecodeGBufferData(GBufferA,GBufferB,GBufferC,GBufferD,GBufferE,GBufferVelocity,CustomNativeDepth,CustomNativeDepth,SceneDepth,bGetNormalizedNormal,bChecker);
-}
-
-struct ScreenSpaceData
-{
-    GBufferData GBuffer;
-    float AmbientOcclusion;
-};
-
-ScreenSpaceData GetScreenSpaceData(float2 UV, bool bGetNormalizedNormal = true)
-{
-    FScreenSpaceData Out;
-    Out.GBuffer = GetGBufferData(UV, bGetNormalizedNormal);
-
-    //float4 ScreenSpaceAO = Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
-
-	//Out.AmbientOcclusion = ScreenSpaceAO.r;
-
-    return Out;
-}
-
-void PS_Main(VS_Output Input, out float4 OutColor : SV_Target0) 
-{
-    FScreenSpaceData ScreenSpaceData = GetScreenSpaceData(Input.TexCoord);
-
-    float SceneDepth = CalcSceneDepth(Input.TexCoord);
-    float3 WorldPosition = Input.ScreenVector * ScreenDepth + View.WorldCameraOrigin;
-
-    DeferredLightData LightData = SetupLightDataForStandardDeferred();
+   // DeferredLightData LightData = SetupLightDataForStandardDeferred();
 
     //float Dither = InterleavedGradientNoise( SVPos.xy, View.StateFrameIndexMod8 );
-    float Dither = 0;
+   // float Dither = 0;
 
-    OutColor = GetDynamicLighting(WorldPosition,CameraVector,ScreenSpaceData.GBuffer,ScreenSpaceData.AmbientOcclusion,ScreenSpaceData.GBuffer.ShadingModelID,LightData, GetPerPixelLightAttenuation(ScreenUV), Dither, uint2( Input.Position.xy ));    
+    // OutColor = GetDynamicLighting(
+    //     WorldPosition,
+    //     CameraVector,
+    //     ScreenSpaceData.GBuffer,
+    //     ScreenSpaceData.AmbientOcclusion,
+    //     ScreenSpaceData.GBuffer.ShadingModelID,
+    //     LightData, 
+    //     GetPerPixelLightAttenuation(ScreenUV),
+    //     Dither, 
+    //     uint2( Position.xy )
+    // );    
+    OutColor = float4(0.6,0.4,0.7,1.0f);
 }

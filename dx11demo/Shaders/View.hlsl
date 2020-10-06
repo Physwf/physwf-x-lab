@@ -24,9 +24,9 @@ cbuffer View : register(b0)
     // half3 View_HMDViewNoRollRight;
     float4 View_InvDeviceZToWorldZTransform;
     // half4 View_ScreenPositionScaleBias;
-    // float4 View_WorldCameraOrigin;
-    // float4 View_TranslatedWorldCameraOrigin;
-    // float4 View_WorldViewOrigin;
+    float3 View_WorldCameraOrigin;
+    float3 View_TranslatedWorldCameraOrigin;
+    float3 View_WorldViewOrigin;
 
 
     float3 View_PreViewTranslation;
@@ -56,9 +56,9 @@ static const struct
     // half3 HMDViewNoRollRight;
     float4 InvDeviceZToWorldZTransform;
     // half4 ScreenPositionScaleBias;
-    // float4 WorldCameraOrigin;
-    // float4 TranslatedWorldCameraOrigin;
-    // float4 WorldViewOrigin;
+    float3 WorldCameraOrigin;
+    float3 TranslatedWorldCameraOrigin;
+    float3 WorldViewOrigin;
 
     float3 PreViewTranslation;
 
@@ -85,10 +85,10 @@ static const struct
     // View_HMDViewNoRollUp,
     // View_HMDViewNoRollRight,
     View_InvDeviceZToWorldZTransform,
-    // View_ScreenPositionScaleBias,
-    // View_WorldCameraOrigin,
-    // View_TranslatedWorldCameraOrigin,
-    // View_WorldViewOrigin,
+    //View_ScreenPositionScaleBias,
+    View_WorldCameraOrigin,
+    View_TranslatedWorldCameraOrigin,
+    View_WorldViewOrigin,
 
     View_PreViewTranslation,
 

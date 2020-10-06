@@ -270,4 +270,13 @@ float4 GetPerPixelLightAttenuation(float2 UV)
 {
 	return Square(Texture2DSampleLevel(LightAttenuationTexture, LightAttenuationTextureSampler, UV, 0));
 }
+
+void DrawRectangle(in float4 InPosition, in float2 InTexCoord,out float4 OutPosition, out float2 OutTexCoord)
+{
+    OutPosition = InPosition;
+    OutPosition.xy = -1.0f + 2.f * (DrawRectangleParameters.PosScaleBias.zw + (InPosition.xy * DrawRectangleParameters.PosScaleBias.xy)) * DrawRectangleParameters.InvTargetSizeAndTextureSize.xy;
+    OutPosition.xy *= float2(1,-1);
+    OutTexCoord.xy = (DrawRectangleParameters.UVScaleBias.zw + (InTexCoord.xy * DrawRectangleParameters.UVScaleBias.xy)) * DrawRectangleParameters.InvTargetSizeAndTextureSize.xy;
+}
+
 #endif

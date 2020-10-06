@@ -99,9 +99,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//S.Draw();
 		RenderPrePass();
 		RenderBasePass();
+		RenderLight();
 		D3D11Present();
 
-		Sleep(10);
+		Sleep(1);
 	}
 
 	//S.ReleaseResource();

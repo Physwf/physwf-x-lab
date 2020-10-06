@@ -20,6 +20,9 @@ SamplerState SceneTexturesStruct_GBufferDTextureSampler;
 SamplerState SceneTexturesStruct_GBufferETextureSampler;
 SamplerState SceneTexturesStruct_GBufferVelocityTextureSampler;
 
+Texture2D SceneTexturesStruct_CustomDepthTexture;
+SamplerState SceneTexturesStruct_CustomDepthTextureSampler;
+
 Texture2D<float4> SceneTexturesStruct_ScreenSpaceAOTexture;
 SamplerState SceneTexturesStruct_ScreenSpaceAOTextureSampler;
 
@@ -43,6 +46,9 @@ static const struct
     SamplerState GBufferETextureSampler;
     SamplerState GBufferVelocityTextureSampler;
 
+    Texture2D CustomDepthTexture;
+    SamplerState CustomDepthTextureSampler;
+
     Texture2D<float4> ScreenSpaceAOTexture;
     SamplerState ScreenSpaceAOTextureSampler;
 } SceneTexturesStruct = 
@@ -65,6 +71,9 @@ static const struct
     SceneTexturesStruct_GBufferETextureSampler,
     SceneTexturesStruct_GBufferVelocityTextureSampler,
 
+    SceneTexturesStruct_CustomDepthTexture,
+    SceneTexturesStruct_CustomDepthTextureSampler,
+    
     SceneTexturesStruct_ScreenSpaceAOTexture,
     SceneTexturesStruct_ScreenSpaceAOTextureSampler
 };

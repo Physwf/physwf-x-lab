@@ -1,4 +1,7 @@
-//#include "LightAccumulator.ush"
+#ifndef __Deferred_Shading_Common__
+#define __Deferred_Shading_Common__
+
+#include "LightAccumulator.hlsl"
 #include "SceneTexturesCommon.hlsl"
 
 #define SHADINGMODELID_UNLIT				0
@@ -123,34 +126,43 @@ struct DeferredLightData
     uint ShadowedBits;
 };
 
-DeferredLightData SetupLightDataForStandardDeferred()
+GBufferData GetGBufferData(float2 UV, bool bGetNormalizedNormal = true)
 {
-    DeferredLightData LightData;
-    LightData.LightPositionAndInvRadius = float4(DeferredLightUniform.LightPosition,DeferredLightUniform.LightInvRadius);
-    LightData.LightColorAndFalloffExponent = float4(DeferredLightUniform.LightColor,DeferredLightUniform.LightFalloffExponent);
-    LightData.LightDirection = DeferredLightUniform.NormalizedLightDirection;
-    LightData.LightTangent = DeferredLightUniform.NormalizedLightTangent;
-    LightData.SpotAnglesAndSourceRadius = float4(DeferredLightUniform.SpotAngles,DeferredLightUniform.SourceRadius,DeferredLightUniform.SourceLength);
-    LightData.SoftSourceRadius = DeferredLightUniform.SoftSourceRadius;
-    LightData.SpecularScale = DeferredLightUniform.SpecularScale;
-    LightData.ContactShadowLength = abs(DeferredLightUniform.ContactShadowLength);
-    LightData.ContactShadowLengthInWS = DeferredLightUniform.ContactShadowLength < 0.0f;
-    LightData.DistanceFadeMAD = DeferredLightUniform.DistanceFadeMAD;
-    LightData.ShadowMapChannelMask = DeferredLightUniform.ShadowMapChannelMask;
-    LightData.ShadowedBits = DeferredLightUniform.ShadowedBits;
+    float4 GBufferA = Texture2DSampleLevel(SceneTexturesStruct.GBufferATexture, SceneTexturesStruct.GBufferATextureSampler,UV,0);
+	float4 GBufferB = Texture2DSampleLevel(SceneTexturesStruct.GBufferBTexture, SceneTexturesStruct.GBufferBTextureSampler,UV,0);
+	float4 GBufferC = Texture2DSampleLevel(SceneTexturesStruct.GBufferCTexture, SceneTexturesStruct.GBufferCTextureSampler,UV,0);
+	float4 GBufferD = Texture2DSampleLevel(SceneTexturesStruct.GBufferDTexture, SceneTexturesStruct.GBufferDTextureSampler,UV,0);
+	float CustomNativeDepth = Texture2DSampleLevel(SceneTexturesStruct.CustomDepthTexture, SceneTexturesStruct.CustomDepthTextureSampler,UV,0).r;
+    
+    uint CustomStencil = 0;
+	float4 GBufferE = Texture2DSampleLevel(SceneTexturesStruct.GBufferETexture, SceneTexturesStruct.GBufferETextureSampler,UV,0);
+	float4 GBufferVelocity = Texture2DSampleLevel(SceneTexturesStruct.GBufferVelocityTexture,SceneTexturesStruct.GBufferVelocityTextureSampler,UV,0);
 
-    // LightData.bInverseSquared = INVERSE_SQUARED_FALLOFF;
-    // LightData.bRadialLight = LIGHT_SOURCE_SHAPE > 0;
-    // LightData.bSpotLight = LIGHT_SOURCE_SHAPE > 0;
-    // LightData.bRectLight = LIGHT_SOURCE_SHAPE == 2;
+    float SceneDepth = CalcSceneDepth(UV);
+    bool bChecker = false;
 
-    return LightData;
+    return DecodeGBufferData(GBufferA,GBufferB,GBufferC,GBufferD,GBufferE,GBufferVelocity,CustomNativeDepth,CustomNativeDepth,SceneDepth,bGetNormalizedNormal,bChecker);
 }
 
-float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData GBuffer, float AmbientOcclusion, uint ShadingModelID, DeferredLightData LightData, float4 LightAttenuation, float Dither, uint2 SVPos)
+
+struct ScreenSpaceData
 {
-    return float4(0,0,0,0);
+    GBufferData GBuffer;
+    float AmbientOcclusion;
+};
+
+ScreenSpaceData GetScreenSpaceData(float2 UV, bool bGetNormalizedNormal = true)
+{
+    ScreenSpaceData Out;
+    Out.GBuffer = GetGBufferData(UV, bGetNormalizedNormal);
+
+    //float4 ScreenSpaceAO = Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
+
+	//Out.AmbientOcclusion = ScreenSpaceAO.r;
+
+    return Out;
 }
+
 
 /** Populates OutGBufferA, B and C */
 void EncodeGBuffer(
@@ -186,3 +198,5 @@ void EncodeGBuffer(
 
     OutGBufferVelocity = 0;
 }
+
+#endif
