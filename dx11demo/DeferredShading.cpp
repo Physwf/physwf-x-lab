@@ -1,5 +1,6 @@
 #include "DeferredShading.h"
 #include "Mesh.h"
+#include "Light.h"
 
 std::vector<Mesh> AllMeshes;
 std::vector<MeshBatch> AllBatches;
@@ -35,18 +36,18 @@ struct ScreenRectangle
 
 	ScreenRectangle(float W, float H)
 	{
-		Vertices[0].Position = Vector2(0.0f, 0.0f);
-		Vertices[0].UV = Vector2(0.0f, 0.0f);
-		Vertices[1].Position = Vector2(W, 0.0f);
-		Vertices[1].UV = Vector2(1.0f, 0.0f);
-		Vertices[2].Position = Vector2(0.0f, H);
-		Vertices[2].UV = Vector2(0.0f, 1.0f);
-		Vertices[3].Position = Vector2(W, H);
-		Vertices[3].UV = Vector2(1.0f, 1.0f);
+		Vertices[0].Position = Vector2(1.0f, 1.0f);
+		Vertices[0].UV = Vector2(1.0f, 1.0f);
+		Vertices[1].Position = Vector2(0.0f, 1.0f);
+		Vertices[1].UV = Vector2(0.0f, 1.0f);
+		Vertices[2].Position = Vector2(1.0f, 0.0f);
+		Vertices[2].UV = Vector2(1.0f, 0.0f);
+		Vertices[3].Position = Vector2(0.0f, 0.0f);
+		Vertices[3].UV = Vector2(0.0f, 0.0f);
 
-		UniformPrameters.PosScaleBias = Vector4(1.0f, 1.0f, 0.0f, 0.0f);
-		UniformPrameters.UVScaleBias = Vector4(1.0f, 1.0f, 0.0f, 0.0f);
-		UniformPrameters.InvTargetSizeAndTextureSize = Vector4(1.0f/W, 1.0f/H, 1.0f, 1.0f);
+		UniformPrameters.PosScaleBias = Vector4(W, H, 0.0f, 0.0f);
+		UniformPrameters.UVScaleBias = Vector4(W, H, 0.0f, 0.0f);
+		UniformPrameters.InvTargetSizeAndTextureSize = Vector4(1.0f/W, 1.0f/H, 1.0f / W, 1.0f / H);
 	}
 
 	~ScreenRectangle()
@@ -75,6 +76,12 @@ struct ScreenRectangle
 };
 
 ScreenRectangle ScreenRect((float)WindowWidth, (float)WindowHeight);
+
+
+DirectionalLight DirLight;
+DeferredLightUniforms DLU;
+ID3D11Buffer* DeferredLightUniformBuffer;
+ID3D11Buffer* VSourceTexture;
 
 struct ViewUniform
 {
@@ -106,12 +113,19 @@ struct ViewUniform
 	//float Padding;
 	Vector4 ViewRectMin;
 	Vector4 ViewSizeAndInvSize;
+
+	uint32 Random;
+	uint32 FrameNumber;
+	uint32 StateFrameIndexMod8;
 };
 ID3D11Buffer* ViewUniformBuffer;
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
 ID3D11InputLayout* MeshInputLayout;
 ID3D11InputLayout* RectangleInputLayout;
+
+ID3D11Texture2D* SceneDepthRT;
+ID3D11DepthStencilView* SceneDepthDSV;
 
 ID3DBlob* PrePassVSBytecode;
 ID3DBlob* PrePassPSBytecode;
@@ -132,8 +146,11 @@ ID3D11DepthStencilState* ShadowPassDepthStencilState;
 
 ID3DBlob* BasePassVSBytecode;
 ID3DBlob* BasePassPSBytecode;
-ID3D11Texture2D* BasePassRT[8];
-ID3D11RenderTargetView* BasePassRTV[8];
+
+ID3D11Texture2D* BasePassSceneColorRT;
+ID3D11RenderTargetView* BasePassSceneColorRTV;
+ID3D11Texture2D* BasePassGBufferRT[6];
+ID3D11RenderTargetView* BasePassGBufferRTV[6];
 ID3D11VertexShader* BasePassVS;
 ID3D11PixelShader* BasePassPS;
 ID3D11RasterizerState* BasePassRasterizerState;
@@ -142,7 +159,25 @@ ID3D11DepthStencilState* BasePassDepthStencilState;
 
 ID3DBlob* LightPassVSByteCode;
 ID3DBlob* LightPassPSByteCode;
-ID3D11ShaderResourceView* LightPassSRV[8];
+//Scene Color and depth
+ID3D11ShaderResourceView* LightPassSceneColorSRV;
+ID3D11ShaderResourceView* LightPassSceneDepthSRV;
+ID3D11SamplerState* LightPassSceneColorSamplerState;
+ID3D11SamplerState* LightPassSceneDepthSamplerState;
+//G-Buffer
+ID3D11ShaderResourceView* LightPassGBufferSRV[6];
+ID3D11SamplerState* LightPassGBufferSamplerState[6];
+//Screen Space AO, Custom Depth, Custom Stencil
+ID3D11Texture2D* LightPassScreenSapceAOTexture;
+ID3D11Texture2D* LightPassCustomDepthTexture;
+ID3D11Texture2D* LightPassCustomStencialTexture;
+ID3D11ShaderResourceView* LightPassScreenSapceAOSRV;
+ID3D11ShaderResourceView* LightPassCustomDepthSRV;
+ID3D11ShaderResourceView* LightPassCustomStencialSRV;
+ID3D11SamplerState* LightPassScreenSapceAOSamplerState;
+ID3D11SamplerState* LightPassCustomDepthSamplerState;
+ID3D11SamplerState* LightPassCustomStencialState;
+
 ID3D11VertexShader* LightPassVS;
 ID3D11PixelShader* LightPassPS;
 ID3D11RasterizerState* LightPassRasterizerState;
@@ -175,6 +210,9 @@ void InitInput()
 	VU.PreViewTranslation = Vector(0.f, 0.f, 0.f);
 	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
 
+	SceneDepthRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R24G8_TYPELESS, false, true, true);
+	SceneDepthDSV = CreateDepthStencilView2D(SceneDepthRT, DXGI_FORMAT_D24_UNORM_S8_UINT, 0);
+	//Prepass
 	PrePassVSBytecode = CompileVertexShader(TEXT("DepthOnlyPass.hlsl"), "VS_Main");
 	PrePassPSBytecode = CompilePixelShader(TEXT("DepthOnlyPass.hlsl"), "PS_Main");
 	
@@ -188,7 +226,7 @@ void InitInput()
 	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
 	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_GREATER>::GetRHI();
 	PrePassBlendState = TStaticBlendState<>::GetRHI();
-
+	//Base Pass
 	BasePassVSBytecode = CompileVertexShader(TEXT("BasePassVertexShader.hlsl"), "VS_Main");
 	BasePassPSBytecode = CompilePixelShader(TEXT("BasePassPixelShader.hlsl"), "PS_Main");
 
@@ -206,25 +244,21 @@ void InitInput()
 	BasePassVS = CreateVertexShader(BasePassVSBytecode);
 	BasePassPS = CreatePixelShader(BasePassPSBytecode);
 
-	//BasePassRT[0] = RenderTargetTexture;//diffuse color
-	BasePassRT[0] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);;//diffuse color
-	BasePassRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//WorldNormal(3),PerObjectGBufferData(1)
-	BasePassRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//metalic(1),specular(1),Roughness(1),ShadingModelID|SelectiveOutputMask(1)
-	BasePassRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//BaseColor(3),GBufferAO(1)
-// 	BasePassRT[4] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//CustomData(4)
-// 	BasePassRT[5] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//PrecomputedShadowFactors(4)
-// 	BasePassRT[6] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//Velocity(4)
-// 	BasePassRT[7] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT);//
+	BasePassSceneColorRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);
+	BasePassGBufferRT[0] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//WorldNormal(3),PerObjectGBufferData(1)
+	BasePassGBufferRT[1] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//metalic(1),specular(1),Roughness(1),ShadingModelID|SelectiveOutputMask(1)
+	BasePassGBufferRT[2] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//BaseColor(3),GBufferAO(1)
+// 	BasePassGBufferRT[3] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//CustomData(4)
+// 	BasePassGBufferRT[4] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//PrecomputedShadowFactors(4)
+// 	BasePassGBufferRT[5] = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);//Velocity(4)
 
-	//BasePassRTV[0] = RenderTargetView;
-	BasePassRTV[0] = CreateRenderTargetView(BasePassRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT);
-	BasePassRTV[1] = CreateRenderTargetView(BasePassRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT);
-	BasePassRTV[2] = CreateRenderTargetView(BasePassRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT);
-	BasePassRTV[3] = CreateRenderTargetView(BasePassRT[3], DXGI_FORMAT_R32G32B32A32_FLOAT);
-// 	BasePassRTV[4] = CreateRenderTargetView(BasePassRT[4], DXGI_FORMAT_R32G32B32A32_FLOAT);
-// 	BasePassRTV[5] = CreateRenderTargetView(BasePassRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT);
-// 	BasePassRTV[6] = CreateRenderTargetView(BasePassRT[6], DXGI_FORMAT_R32G32B32A32_FLOAT);
-// 	BasePassRTV[7] = CreateRenderTargetView(BasePassRT[7], DXGI_FORMAT_R32G32B32A32_FLOAT);
+	BasePassSceneColorRTV = CreateRenderTargetView2D(BasePassSceneColorRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	BasePassGBufferRTV[0] = CreateRenderTargetView2D(BasePassGBufferRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	BasePassGBufferRTV[1] = CreateRenderTargetView2D(BasePassGBufferRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	BasePassGBufferRTV[2] = CreateRenderTargetView2D(BasePassGBufferRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+// 	BasePassGBufferRTV[3] = CreateRenderTargetView2D(BasePassGBufferRT[4], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+// 	BasePassGBufferRTV[4] = CreateRenderTargetView2D(BasePassGBufferRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+// 	BasePassGBufferRTV[5] = CreateRenderTargetView2D(BasePassGBufferRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
 	BasePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID,D3D11_CULL_BACK,FALSE, FALSE>::GetRHI();
 	BasePassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_GREATER_EQUAL>::GetRHI();
@@ -244,17 +278,41 @@ void InitInput()
 	RectangleInputLayout = CreateInputLayout(RectangleInputDesc, sizeof(RectangleInputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), LightPassVSByteCode);
 	LightPassVS = CreateVertexShader(LightPassVSByteCode);
 	LightPassPS = CreatePixelShader(LightPassPSByteCode);
+
+	LightPassSceneColorSRV = CreateShaderResourceView2D(BasePassSceneColorRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
+	LightPassSceneDepthSRV = CreateShaderResourceView2D(SceneDepthRT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS, 1, 0);
+	LightPassSceneColorSamplerState = TStaticSamplerState<>::GetRHI();
+	LightPassSceneDepthSamplerState = TStaticSamplerState<>::GetRHI();
+
+	LightPassGBufferSRV[0] = CreateShaderResourceView2D(BasePassGBufferRT[0], DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
+	LightPassGBufferSRV[1] = CreateShaderResourceView2D(BasePassGBufferRT[1], DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
+	LightPassGBufferSRV[2] = CreateShaderResourceView2D(BasePassGBufferRT[2], DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
+
+	LightPassGBufferSamplerState[0] = TStaticSamplerState<>::GetRHI();
+	LightPassGBufferSamplerState[1] = TStaticSamplerState<>::GetRHI();
+	LightPassGBufferSamplerState[2] = TStaticSamplerState<>::GetRHI();
+
 	LightPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_NONE, FALSE>::GetRHI();
 	LightPassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI();
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
+
+	DirLight.Color = Vector(1.0f,1.0f,1.0f);
+	DirLight.Direction = Vector(1.0f,0.f,0.f);
+	DirLight.Intencity = 1000.f;
+
+	DirLight.Direction.Normalize();
+	DLU.NormalizedLightDirection = DirLight.Direction;
+	DLU.LightColor = DirLight.Color;
+
+	DeferredLightUniformBuffer = CreateConstantBuffer(&DLU, sizeof(DLU));
 }
 
 void RenderPrePass()
 {
-	D3D11DeviceContext->OMSetRenderTargets(0, NULL, DepthStencialView);
+	D3D11DeviceContext->OMSetRenderTargets(0, NULL, SceneDepthDSV);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	D3D11DeviceContext->ClearDepthStencilView(DepthStencialView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+	D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 
@@ -291,9 +349,14 @@ void RenderShadowPass()
 
 void RenderBasePass()
 {
-	D3D11DeviceContext->OMSetRenderTargets(4, BasePassRTV, DepthStencialView);
+	ID3D11RenderTargetView* MRT[4];
+	MRT[0] = BasePassSceneColorRTV;
+	MRT[1] = BasePassGBufferRTV[0];
+	MRT[2] = BasePassGBufferRTV[1];
+	MRT[3] = BasePassGBufferRTV[2];
+	D3D11DeviceContext->OMSetRenderTargets(4, MRT, SceneDepthDSV);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
-	for (ID3D11RenderTargetView* RTV : BasePassRTV)
+	for (ID3D11RenderTargetView* RTV : MRT)
 	{
 		if(RTV) D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
 	}
@@ -326,7 +389,7 @@ void RenderBasePass()
 
 void RenderLight()
 {
-	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, DepthStencialView);
+	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
 
 	D3D11DeviceContext->RSSetState(LightPassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
@@ -340,11 +403,33 @@ void RenderLight()
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &ScreenRect.VertexBuffer, &Stride, &Offset);
 	D3D11DeviceContext->IASetIndexBuffer(ScreenRect.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
+	D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
+	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
+	D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
+	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
+
+	D3D11DeviceContext->PSSetShaderResources(3, 3, LightPassGBufferSRV);
+	D3D11DeviceContext->PSSetSamplers(3, 3, LightPassGBufferSamplerState);
+
 	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
 
-	D3D11DeviceContext->VSSetConstantBuffers(2,1,&ScreenRect.UniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(2, 1, &ScreenRect.UniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &DeferredLightUniformBuffer);
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
+
+	ID3D11ShaderResourceView* SRV = NULL;
+	ID3D11SamplerState* Sampler = NULL;
+	D3D11DeviceContext->PSSetShaderResources(0, 1, &SRV);
+	D3D11DeviceContext->PSSetShaderResources(1, 1, &SRV);
+	D3D11DeviceContext->PSSetSamplers(0, 1, &Sampler);
+	D3D11DeviceContext->PSSetSamplers(1, 1, &Sampler);
+
+	for (int i = 3; i < 6; ++i)
+	{
+		D3D11DeviceContext->PSSetShaderResources(i, 1, &SRV);
+		D3D11DeviceContext->PSSetSamplers(i, 1, &Sampler);
+	}
 }
 
 

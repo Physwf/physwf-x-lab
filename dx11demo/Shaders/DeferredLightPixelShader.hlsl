@@ -18,41 +18,80 @@ DeferredLightData SetupLightDataForStandardDeferred()
     LightData.ShadowMapChannelMask = DeferredLightUniform.ShadowMapChannelMask;
     LightData.ShadowedBits = DeferredLightUniform.ShadowedBits;
 
-    // LightData.bInverseSquared = INVERSE_SQUARED_FALLOFF;
-    // LightData.bRadialLight = LIGHT_SOURCE_SHAPE > 0;
-    // LightData.bSpotLight = LIGHT_SOURCE_SHAPE > 0;
-    // LightData.bRectLight = LIGHT_SOURCE_SHAPE == 2;
+    // enum class ELightSourceShape
+    // {
+    //     Directional,
+    //     Capsule,
+    //     Rect,
+
+    //     MAX
+    // };
+
+    LightData.bInverseSquared = 1;//INVERSE_SQUARED_FALLOFF;
+    LightData.bRadialLight = LIGHT_SOURCE_SHAPE > 0;
+    LightData.bSpotLight = LIGHT_SOURCE_SHAPE > 0;
+    LightData.bRectLight = LIGHT_SOURCE_SHAPE == 2;
 
     return LightData;
 }
 
 
 void PS_Main(
-    float2 ScreenUV		: TEXCOORD0,
-	float3 ScreenVector	: TEXCOORD1,
-    float4 SVPos		: SV_POSITION,
-    out float4 OutColor : SV_Target) 
+#if LIGHT_SOURCE_SHAPE > 0//non-directional
+    float4 InScreenPosition : TEXCOORD0
+#else
+    float2 ScreenUV		    : TEXCOORD0,
+	float3 ScreenVector	    : TEXCOORD1,
+#endif
+    float4 SVPos		    : SV_POSITION,
+    out float4 OutColor     : SV_Target
+    ) 
 {
-    //ScreenSpaceData ScreenSpaceData = GetScreenSpaceData(ScreenUV);
+#if LIGHT_SOURCE_SHAPE > 0//non-directional
+    float2 ScreenUV = InScreenPosition.xy / InScreenPosition.w * View.ScreenPositionScaleBias.xy + View.ScreenPositionScaleBias.wz;
+#else
+    float3 CameraVector = normalize(ScreenVector);
+#endif
 
-   // float SceneDepth = CalcSceneDepth(ScreenUV);
-   // float3 WorldPosition = ScreenVector * SceneDepth + View.WorldCameraOrigin;
+    ScreenSpaceData SSD = GetScreenSpaceData(ScreenUV);
 
-   // DeferredLightData LightData = SetupLightDataForStandardDeferred();
+    [branch]
+    if(SSD.GBuffer.ShadingModelID > 0
+#if USE_LIGHTING_CHANNELS
+     && (GetLightingChannelMask(ScreenUV) & DeferredLightUniforms.LightChannelMask)
+#endif
+        )
+     {
+        float SceneDepth = CalcSceneDepth(ScreenUV);
 
-    //float Dither = InterleavedGradientNoise( SVPos.xy, View.StateFrameIndexMod8 );
-   // float Dither = 0;
+#if LIGHT_SOURCE_SHAPE > 0//non-directional
+        float2 ClipPosition = InScreenPosition.xy / InScreenPosition.w * (View.ViewToClip[3][3] ? SceneDepth : 1.0f);
+        float3 WorldPostion = mul(float4(ClipPosition,SceneDepth,1), View.ScreenToWorld).xyz;
+        float3 CameraVector = normalize(WorldPosition - View.WorldCameraOrigin);
+#else
+        float3 WorldPosition = ScreenVector * SceneDepth + View.WorldCameraOrigin;
+#endif
 
-    // OutColor = GetDynamicLighting(
-    //     WorldPosition,
-    //     CameraVector,
-    //     ScreenSpaceData.GBuffer,
-    //     ScreenSpaceData.AmbientOcclusion,
-    //     ScreenSpaceData.GBuffer.ShadingModelID,
-    //     LightData, 
-    //     GetPerPixelLightAttenuation(ScreenUV),
-    //     Dither, 
-    //     uint2( Position.xy )
-    // );    
-    OutColor = float4(0.6,0.4,0.7,1.0f);
+        DeferredLightData LightData = SetupLightDataForStandardDeferred();
+
+        float Dither = InterleaveGradientNosie( SVPos.xy, View.StateFrameIndexMod8 );
+
+        OutColor = GetDynamicLighting(
+            WorldPosition,
+            CameraVector,
+            SSD.GBuffer,
+            SSD.AmbientOcclusion,
+            SSD.GBuffer.ShadingModelID,
+            LightData, 
+            GetPerPixelLightAttenuation(ScreenUV),
+            Dither, 
+            uint2( SVPos.xy )
+        );    
+        //OutColor *= ComputeLightProfileMultiplier(WorldPosition, DeferredLightUniforms.LightPosition, -DeferredLightUniforms.NormalizedLightDirection, DeferredLightUniforms.NormalizedLightTangent);
+        OutColor = float4(0.7f,0.4f,0.7f,1.0f);
+// #if USE_PREEXPOSURE
+// 		OutColor *= View.PreExposure;
+// #endif
+     }
+
 }

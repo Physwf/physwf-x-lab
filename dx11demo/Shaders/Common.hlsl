@@ -33,6 +33,8 @@
 
 #include "Definitions.hlsl"
 
+#include "Random.hlsl"
+
 // Helper macro to determine whether we need to separately interpolate the world vertex normal to the pixel center.
 // Currently only curvature-to-roughness needs this interpolation, so disable it when it's not used to save on interpolants.
 #define USE_WORLDVERTEXNORMAL_CENTER_INTERPOLATION	1 //(FEATURE_LEVEL >= FEATURE_LEVEL_SM5 && MATERIAL_NORMAL_CURVATURE_TO_ROUGHNESS)

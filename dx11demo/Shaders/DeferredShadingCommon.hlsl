@@ -23,6 +23,11 @@ float EncodeShadingModelIdAndSelectiveOutputMask(uint ShadingModelId, uint Selec
 	return (float)Value / (float)0xFF;
 }
 
+bool UseSubsurfaceProfile(int ShadingModel)
+{
+	return ShadingModel == SHADINGMODELID_SUBSURFACE_PROFILE || ShadingModel == SHADINGMODELID_EYE;
+}
+
 struct GBufferData
 {
     float3 WorldNormal;
@@ -79,7 +84,7 @@ GBufferData DecodeGBufferData(
 	bool bGetNormalizedNormal,
 	bool bChecker)
 {
-    GBufferData GBuffer;
+    GBufferData GBuffer = (GBufferData)0;
     GBuffer.WorldNormal = DecodeNormal(InGBufferA.xyz);
     if(bGetNormalizedNormal)
     {
@@ -106,25 +111,6 @@ GBufferData DecodeGBufferData(
     return GBuffer;
 }
 
-struct DeferredLightData
-{
-    float4 LightPositionAndInvRadius;
-    float4 LightColorAndFalloffExponent;
-    float3 LightDirection;
-    float3 LightTangent;
-    float SoftSourceRadius;
-    float4 SpotAnglesAndSourceRadius;
-    float SpecularScale;
-    float ContactShadowLength;
-    float2 DistanceFadeMAD;
-    float4 ShadowMapChannelMask;
-    bool ContactShadowLengthInWS;
-    bool bInverseSquared;
-    bool bRadialLight;
-    bool bSpotLight;
-	bool bRectLight;
-    uint ShadowedBits;
-};
 
 GBufferData GetGBufferData(float2 UV, bool bGetNormalizedNormal = true)
 {
@@ -156,9 +142,9 @@ ScreenSpaceData GetScreenSpaceData(float2 UV, bool bGetNormalizedNormal = true)
     ScreenSpaceData Out;
     Out.GBuffer = GetGBufferData(UV, bGetNormalizedNormal);
 
-    //float4 ScreenSpaceAO = Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
+    float4 ScreenSpaceAO = Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
 
-	//Out.AmbientOcclusion = ScreenSpaceAO.r;
+	Out.AmbientOcclusion = ScreenSpaceAO.r;
 
     return Out;
 }

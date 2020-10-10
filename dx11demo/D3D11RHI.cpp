@@ -146,32 +146,7 @@ bool D3D11Setup()
 	}
 
 
-	D3D11_TEXTURE2D_DESC DepthStencialDesc;
-	ZeroMemory(&DepthStencialDesc, sizeof(D3D11_TEXTURE2D_DESC));
-	DepthStencialDesc.Width = WindowWidth;
-	DepthStencialDesc.Height = WindowHeight;
-	DepthStencialDesc.MipLevels = 1;
-	DepthStencialDesc.ArraySize = 1;
-	DepthStencialDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DepthStencialDesc.SampleDesc.Count = 1;
-	DepthStencialDesc.SampleDesc.Quality = 0;
-	DepthStencialDesc.Usage = D3D11_USAGE_DEFAULT;
-	DepthStencialDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	//DepthStencialDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	//DepthStencialDesc.MiscFlags = 
-	
-	hr = D3D11Device->CreateTexture2D(&DepthStencialDesc, 0, &DepthStencialTexture);
-	if (FAILED(hr))
-	{
-		X_LOG("CreateTexture2D failed!");
-		return false;
-	}
-	hr = D3D11Device->CreateDepthStencilView(DepthStencialTexture,0,&DepthStencialView);
-	if (FAILED(hr))
-	{
-		X_LOG("CreateDepthStencilView failed!");
-		return false;
-	}
+
 
 	Viewport.Width = (FLOAT)WindowWidth;
 	Viewport.Height = (FLOAT)WindowHeight;
@@ -353,6 +328,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		"ALLOW_STATIC_LIGHTING",							"1",
+		"LIGHT_SOURCE_SHAPE",								"0",//directional 
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -381,6 +357,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"TEX_COORD_SCALE_ANALYSIS",							"0",
 		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		"ALLOW_STATIC_LIGHTING",							"1",
+		"LIGHT_SOURCE_SHAPE",								"0",
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -426,9 +403,10 @@ ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsign
 	return NULL;
 }
 
-ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format)
+ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format, bool bRenderTarget, bool bShaderResource, bool bDepthStencil)
 {
 	D3D11_TEXTURE2D_DESC Desc;
+	ZeroMemory(&Desc, sizeof(Desc));
 	Desc.Width = W;
 	Desc.Height = H;
 	Desc.Format = Format;
@@ -436,7 +414,18 @@ ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT For
 	Desc.MipLevels = 1;
 	Desc.SampleDesc.Count = 1;
 	Desc.SampleDesc.Quality = 0;
-	Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+	if (bRenderTarget)
+	{
+		Desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+	}
+	if (bShaderResource)
+	{
+		Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+	}
+	if (bDepthStencil)
+	{
+		Desc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+	}
 	Desc.Usage = D3D11_USAGE_DEFAULT;
 	Desc.CPUAccessFlags = 0;
 	Desc.MiscFlags = 0;
@@ -455,18 +444,52 @@ ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT For
 	return NULL;
 }
 
-ID3D11RenderTargetView* CreateRenderTargetView(ID3D11Texture2D* Resource, DXGI_FORMAT Format)
+ID3D11RenderTargetView* CreateRenderTargetView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice)
 {
 	D3D11_RENDER_TARGET_VIEW_DESC Desc;
 	Desc.Format = Format;
 	Desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-	Desc.Texture2D.MipSlice = 0;
+	Desc.Texture2D.MipSlice = MipSlice;
 
 	ID3D11RenderTargetView* Result;
 	if (S_OK == D3D11Device->CreateRenderTargetView(Resource, &Desc, &Result))
 	{
 		return Result;
 	}
-	X_LOG("CreateRenderTargetView failed!");
+	X_LOG("CreateRenderTargetView2D failed!");
+	return NULL;
+}
+
+ID3D11DepthStencilView* CreateDepthStencilView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice)
+{
+	D3D11_DEPTH_STENCIL_VIEW_DESC Desc;
+	Desc.Format = Format;
+	Desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	Desc.Flags = 0;
+	Desc.Texture2D.MipSlice = MipSlice;
+
+	ID3D11DepthStencilView* Result;
+	if (S_OK == D3D11Device->CreateDepthStencilView(Resource, &Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateDepthStencilView failed!");
+	return NULL;
+}
+
+ID3D11ShaderResourceView* CreateShaderResourceView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipLevels, UINT MostDetailedMip)
+{
+	D3D11_SHADER_RESOURCE_VIEW_DESC Desc;
+	Desc.Format = Format;
+	Desc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+	Desc.Texture2D.MipLevels = MipLevels;
+	Desc.Texture2D.MostDetailedMip = MostDetailedMip;
+
+	ID3D11ShaderResourceView* Result;
+	if (S_OK == D3D11Device->CreateShaderResourceView(Resource, &Desc, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateShaderResourceView2D failed!");
 	return NULL;
 }

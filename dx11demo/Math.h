@@ -523,14 +523,40 @@ inline float Vector2::SizeSquared()
 	return X * X + Y * Y;
 }
 
+
 struct LinearColor
 {
 	float R, G, B, A;
+
+	static float sRGBToLinearTable[256];
+
+	LinearColor() {}
+	LinearColor(float InR, float InG, float InB, float InA = 1.0f) : R(InR), G(InG), B(InB), A(InA) {}
+	LinearColor(struct Color);
 };
 
 struct Color
 {
-	uint8 R, G, B, A;
+	union { struct { uint8 B, G, R, A; }; uint32 AlignmentDummy; };
+	uint32& DWColor(void) { return *((uint32*)this); }
+	const uint32& DWColor(void) const { return *((uint32*)this); }
+
+	Color() {}
+
+	Color(uint8 InR, uint8 InG, uint8 InB, uint8 InA = 255)
+	{
+		// put these into the body for proper ordering with INTEL vs non-INTEL_BYTE_ORDER
+		R = InR;
+		G = InG;
+		B = InB;
+		A = InA;
+	}
+
+	explicit Color(uint32 InColor)
+	{
+		DWColor() = InColor;
+	}
+
 };
 
 struct alignas(16) Plane : public Vector

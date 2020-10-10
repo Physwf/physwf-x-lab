@@ -4,12 +4,6 @@
 #include "Light.h"
 #include "Camera.h"
 
-struct LIGHT_CBUFFER
-{
-	AmbientLight AmLight;
-	DirectionalLight DirLight;
-	PointLight PointLights[8];
-};
 
 class Scene
 {
@@ -23,7 +17,4 @@ private:
 	std::vector<Mesh*> Meshes;
 	Camera* CurrentCamera;
 
-	LIGHT_CBUFFER LightConstBuffer;
-
-	ID3D11Buffer* ConstantBuffer;
 };

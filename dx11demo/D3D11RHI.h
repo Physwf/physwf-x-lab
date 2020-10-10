@@ -35,8 +35,10 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint);
 ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode);
 ID3D11PixelShader* CreatePixelShader(ID3DBlob* PSBytecode);
 ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsigned int Count, ID3DBlob* VSBytecode);
-ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format);
-ID3D11RenderTargetView* CreateRenderTargetView(ID3D11Texture2D* Resource, DXGI_FORMAT Format);
+ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format, bool bRenderTarget, bool bShaderResource, bool bDepthStencil);
+ID3D11RenderTargetView* CreateRenderTargetView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice);
+ID3D11DepthStencilView* CreateDepthStencilView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice);
+ID3D11ShaderResourceView* CreateShaderResourceView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipLevels, UINT MostDetailedMip);
 
 template<typename InitializerType, typename RHIRefType, typename RHIParamRefType>
 class TStaticStateRHI
@@ -94,7 +96,11 @@ public:
 		Desc.AddressW = AddressW;
 		Desc.MipLODBias = MipBias;
 		Desc.MaxAnisotropy = MaxAnisotroy;
-		Desc.BorderColor = BorderColor;
+		LinearColor LC = Color(BorderColor);
+		Desc.BorderColor[0] = LC.R;
+		Desc.BorderColor[1] = LC.G;
+		Desc.BorderColor[2] = LC.B;
+		Desc.BorderColor[3] = LC.A;
 		Desc.ComparisonFunc = SamplerComparisonFunction;
 		ID3D11SamplerState* Result;
 		if (S_OK == D3D11Device->CreateSamplerState(&Desc, &Result))

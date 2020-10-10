@@ -33,6 +33,11 @@ cbuffer View : register(b0)
     //float View_Padding;
     float4 View_ViewRectMin;
     float4 View_ViewSizeAndInvSize;
+
+
+    uint View_Random;
+	uint View_FrameNumber;
+	uint View_StateFrameIndexMod8;
 };
 static const struct
 {
@@ -64,6 +69,10 @@ static const struct
 
     float4 ViewRectMin;
     float4 ViewSizeAndInvSize;
+
+    uint Random;
+	uint FrameNumber;
+	uint StateFrameIndexMod8;
 } View = 
 {
     View_TranslatedWorldToClip,
@@ -93,6 +102,10 @@ static const struct
     View_PreViewTranslation,
 
     View_ViewRectMin,
-    View_ViewSizeAndInvSize
+    View_ViewSizeAndInvSize,
+
+    View_Random,
+	View_FrameNumber,
+	View_StateFrameIndexMod8,
 };
 #endif
