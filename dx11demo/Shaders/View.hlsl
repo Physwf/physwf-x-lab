@@ -16,7 +16,7 @@ cbuffer View : register(b0)
     float4x4 View_ClipToTranslatedWorld;
     float4x4 View_SVPositionToTranslatedWorld;
     float4x4 View_ScreenToWorld;
-    float4x4 View_ScreenToTranslatedWorld;
+    float4x4 View_ScreenToTranslatedWorld;//832
     // half3 View_ViewForward;
     // half3 View_ViewUp;
     // half3 View_ViewRight;
@@ -25,12 +25,15 @@ cbuffer View : register(b0)
     float4 View_InvDeviceZToWorldZTransform;
     // half4 View_ScreenPositionScaleBias;
     float3 View_WorldCameraOrigin;
+    float View_Padding01;
     float3 View_TranslatedWorldCameraOrigin;
+    float View_Padding02;
     float3 View_WorldViewOrigin;
+    float View_Padding03;
 
 
     float3 View_PreViewTranslation;
-    //float View_Padding;
+    float View_Padding04;
     float4 View_ViewRectMin;
     float4 View_ViewSizeAndInvSize;
 
@@ -38,6 +41,7 @@ cbuffer View : register(b0)
     uint View_Random;
 	uint View_FrameNumber;
 	uint View_StateFrameIndexMod8;
+    uint View_Padding05;
 };
 static const struct
 {

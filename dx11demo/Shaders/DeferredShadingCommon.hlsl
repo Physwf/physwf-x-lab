@@ -109,10 +109,16 @@ GBufferData DecodeGBufferData(
 	GBuffer.SelectiveOutputMask = DecodeSelectiveOutputMask(InGBufferB.a);
 
     GBuffer.BaseColor = InGBufferC.rgb;
+
     GBuffer.GBufferAO = InGBufferC.a;
 
     GBuffer.CustomData = InGBufferD;
 
+    GBuffer.PrecomputedShadowFactors = 1.0f;
+    //GBuffer.PrecomputedShadowFactors = !(GBuffer.SelectiveOutputMask & SKIP_PRECSHADOW_MASK) ? InGBufferE :  ((GBuffer.SelectiveOutputMask & ZERO_PRECSHADOW_MASK) ? 0 :  1);
+	//GBuffer.CustomDepth = ConvertFromDeviceZ(CustomNativeDepth);
+	//GBuffer.CustomStencil = CustomStencil;
+	GBuffer.Depth = SceneDepth;
 
     GBuffer.StoredBaseColor = GBuffer.BaseColor;
 	GBuffer.StoredMetallic = GBuffer.Metallic;
@@ -127,12 +133,12 @@ GBufferData GetGBufferData(float2 UV, bool bGetNormalizedNormal = true)
     float4 GBufferA = Texture2DSampleLevel(SceneTexturesStruct.GBufferATexture, SceneTexturesStruct.GBufferATextureSampler,UV,0);
 	float4 GBufferB = Texture2DSampleLevel(SceneTexturesStruct.GBufferBTexture, SceneTexturesStruct.GBufferBTextureSampler,UV,0);
 	float4 GBufferC = Texture2DSampleLevel(SceneTexturesStruct.GBufferCTexture, SceneTexturesStruct.GBufferCTextureSampler,UV,0);
-	float4 GBufferD = Texture2DSampleLevel(SceneTexturesStruct.GBufferDTexture, SceneTexturesStruct.GBufferDTextureSampler,UV,0);
-	float CustomNativeDepth = Texture2DSampleLevel(SceneTexturesStruct.CustomDepthTexture, SceneTexturesStruct.CustomDepthTextureSampler,UV,0).r;
+	float4 GBufferD = 0;//Texture2DSampleLevel(SceneTexturesStruct.GBufferDTexture, SceneTexturesStruct.GBufferDTextureSampler,UV,0);
+	float CustomNativeDepth = 0;//Texture2DSampleLevel(SceneTexturesStruct.CustomDepthTexture, SceneTexturesStruct.CustomDepthTextureSampler,UV,0).r;
     
     uint CustomStencil = 0;
-	float4 GBufferE = Texture2DSampleLevel(SceneTexturesStruct.GBufferETexture, SceneTexturesStruct.GBufferETextureSampler,UV,0);
-	float4 GBufferVelocity = Texture2DSampleLevel(SceneTexturesStruct.GBufferVelocityTexture,SceneTexturesStruct.GBufferVelocityTextureSampler,UV,0);
+	float4 GBufferE = 0;//Texture2DSampleLevel(SceneTexturesStruct.GBufferETexture, SceneTexturesStruct.GBufferETextureSampler,UV,0);
+	float4 GBufferVelocity = 0; //Texture2DSampleLevel(SceneTexturesStruct.GBufferVelocityTexture,SceneTexturesStruct.GBufferVelocityTextureSampler,UV,0);
 
     float SceneDepth = CalcSceneDepth(UV);
     bool bChecker = false;
@@ -152,7 +158,7 @@ ScreenSpaceData GetScreenSpaceData(float2 UV, bool bGetNormalizedNormal = true)
     ScreenSpaceData Out;
     Out.GBuffer = GetGBufferData(UV, bGetNormalizedNormal);
 
-    float4 ScreenSpaceAO = Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
+    float4 ScreenSpaceAO = 1.0f;//Texture2DSampleLevel(SceneTexturesStruct.ScreenSpaceAOTexture, SceneTexturesStruct.ScreenSpaceAOTextureSampler, UV, 0);
 
 	Out.AmbientOcclusion = ScreenSpaceAO.r;
 

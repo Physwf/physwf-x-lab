@@ -35,7 +35,7 @@ void VS_Main(PositionOnlyVertexFactoryInput Input, out float4 Position : SV_POSI
     //float4 WorldPostion =   mul( Input.Position, Primitive.LocalToWorld);
     //float4 WorldPostion =   mul(Primitive.LocalToWorld, Input.Position);
     Position = mul(WorldPostion, ResolvedView.TranslatedWorldToClip);
-
+    //Position = WorldPostion;
     // float4 WorldPostion =   mul(Primitive.LocalToWorld,             Input.Position);
     // float4 ViewPostion =    mul(ResolvedView.TranslatedWorldToView, WorldPostion);
     // Position =              mul(ResolvedView.ViewToClip,            ViewPostion);
@@ -43,7 +43,7 @@ void VS_Main(PositionOnlyVertexFactoryInput Input, out float4 Position : SV_POSI
 
 void PS_Main(float4 Position : SV_POSITION, /*out float4 Color : SV_Target,*/ out float Depth : SV_Depth) 
 {
-    //Color = float4(1.f,0.f,0.f,1.f);
+    //Color = float4(Position.z * Position.w,0.f,0.f,1.f);
     Depth = Position.z;
 }
 

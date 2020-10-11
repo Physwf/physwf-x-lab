@@ -17,7 +17,7 @@ struct ViewMatrices
 		ViewOrigin = Vector(0.0f, 0.0f, 0.0f);
 	}
 
-	ViewMatrices(const Vector& ViewOrigin,const Matrix& ProjectMatrix);
+	ViewMatrices(const Vector& ViewOrigin, const Matrix& InViewMatrix, const Matrix& ProjectMatrix);
 private:
 	Matrix ProjectionMatrix;//ViewToClip
 	Matrix InvProjectionMatrix;//ClipToView
@@ -112,3 +112,5 @@ private:
 	Camera* CurrentCamera;
 
 };
+
+Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix);

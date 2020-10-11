@@ -2,25 +2,31 @@
 #ifndef __UniformBuffer_DeferredLightUniform_Definition__
 #define __UniformBuffer_DeferredLightUniform_Definition__
 
-cbuffer DeferredLightUniform : register(b3)
+cbuffer DeferredLightUniform : register(b2)
 {
     float3 DeferredLightUniform_LightPosition;
     float DeferredLightUniform_LightInvRadius;
     float3 DeferredLightUniform_LightColor;
     float DeferredLightUniform_LightFalloffExponent;
     float3 DeferredLightUniform_NormalizedLightDirection;
+    float DeferredLightUniformsPading01;
     float3 DeferredLightUniform_NormalizedLightTangent;
+    float DeferredLightUniformsPading02;
     float2 DeferredLightUniform_SpotAngles;
     float DeferredLightUniform_SpecularScale;
     float DeferredLightUniform_SourceRadius;
     float DeferredLightUniform_SoftSourceRadius;
     float DeferredLightUniform_SourceLength;
     float DeferredLightUniform_ContactShadowLength;
+    float DeferredLightUniformsPading03;
     float2 DeferredLightUniform_DistanceFadeMAD;
+    float DeferredLightUniformsPading04;
+	float DeferredLightUniformsPading05;
     float4 DeferredLightUniform_ShadowMapChannelMask;
     uint DeferredLightUniform_ShadowedBits;
     uint DeferredLightUniform_LightingChannelMask;
     float DeferredLightUniform_VolumetricScatteringIntensity;
+    float DeferredLightUniformsPading06;
 };
 Texture2D DeferredLightUniform_VSourceTexture;
 static const struct

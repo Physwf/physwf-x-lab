@@ -149,7 +149,7 @@ float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData
 
             if(LightData.bRectLight)
             {
-
+                Lighting.Diffuse = 0.6f;
             }
             else
             {
@@ -169,10 +169,11 @@ float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData
 
             LA.EstimatedCost += 0.4f;	
         #endif
+
         }
 
     }
-
+    
     return LightAccumulator_GetResult(LA);
 }
 

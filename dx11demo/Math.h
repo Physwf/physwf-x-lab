@@ -644,6 +644,43 @@ public:
 	TranslationMatrix(const Vector& Delta);
 };
 
+class ReversedZPerspectiveMatrix : public Matrix
+{
+public:
+	ReversedZPerspectiveMatrix(float HalfFOVX, float HalfFOVY, float MultFOVX, float MultFOVY, float MinZ, float MaxZ);
+	ReversedZPerspectiveMatrix(float HalfFOV, float Width, float Height, float MinZ, float MaxZ);
+	ReversedZPerspectiveMatrix(float HalfFOV, float Width, float Height, float MinZ);
+};
+
+inline ReversedZPerspectiveMatrix::ReversedZPerspectiveMatrix(float HalfFOVX, float HalfFOVY, float MultFOVX, float MultFOVY, float MinZ, float MaxZ)
+	: Matrix(
+		Plane(MultFOVX / std::tan(HalfFOVX), 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, MultFOVY / std::tan(HalfFOVY), 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, ((MinZ == MaxZ) ? 0.0f : MinZ / (MinZ - MaxZ)), 1.0f),
+		Plane(0.0f, 0.0f, ((MinZ == MaxZ) ? MinZ : -MaxZ * MinZ / (MinZ - MaxZ)), 0.0f)
+	)
+{ }
+
+
+inline ReversedZPerspectiveMatrix::ReversedZPerspectiveMatrix(float HalfFOV, float Width, float Height, float MinZ, float MaxZ)
+	: Matrix(
+		Plane(1.0f / std::tan(HalfFOV), 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, Width / std::tan(HalfFOV) / Height, 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, ((MinZ == MaxZ) ? 0.0f : MinZ / (MinZ - MaxZ)), 1.0f),
+		Plane(0.0f, 0.0f, ((MinZ == MaxZ) ? MinZ : -MaxZ * MinZ / (MinZ - MaxZ)), 0.0f)
+	)
+{ }
+
+
+inline ReversedZPerspectiveMatrix::ReversedZPerspectiveMatrix(float HalfFOV, float Width, float Height, float MinZ)
+	: Matrix(
+		Plane(1.0f / std::tan(HalfFOV), 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, Width / std::tan(HalfFOV) / Height, 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, 0.0f, 1.0f),
+		Plane(0.0f, 0.0f, MinZ, 0.0f)
+	)
+{ }
+
 inline TranslationMatrix::TranslationMatrix(const Vector& Delta):
 	Matrix(
 		Plane(1.0f, 0.0f, 0.0f, 0.0f),
@@ -1085,7 +1122,7 @@ inline Matrix Matrix::DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRat
 	return Result;
 }
 
-inline Matrix Matrix::DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane)
+inline Matrix Matrix::DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float zNearPlane, float zFarPlane)
 {
 	/*
 	xScale     0          0               0
@@ -1099,12 +1136,12 @@ inline Matrix Matrix::DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float 
 	*/
 	Matrix Result;
 	float Cot = 1.0f / tanf(0.5f * fieldOfViewY);
-	float InverNF = znearPlane / (znearPlane - zfarPlane);
+	float InverNF = zNearPlane / (zNearPlane - zFarPlane);
 
 	Result.M[0][0] = Cot / aspectRatio;			Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
 	Result.M[1][0] = 0.0f;						Result.M[1][1] = Cot;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
-	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = InverNF;								Result.M[2][3] = 1.0f;
-	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = -InverNF * zfarPlane;					Result.M[3][3] = 0.0f;
+	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = InverNF; 								Result.M[2][3] = 1.0f;
+	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = -InverNF * zFarPlane;					Result.M[3][3] = 0.0f;
 	return Result;
 }
 

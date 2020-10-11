@@ -17,11 +17,10 @@ void Scene::Setup()
 
 }
 
-ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InProjectionMatrix)
+ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InViewMatrix, const Matrix& InProjectionMatrix)
 {
 	Vector LocalViewOrigin = InViewOrigin;
-	Matrix ViewRotationMatrix;
-	ViewRotationMatrix.SetIndentity();
+	Matrix ViewRotationMatrix = InViewMatrix;
 
 	ViewMatrix = TranslationMatrix(-LocalViewOrigin) * ViewProjectionMatrix;
 	ProjectionMatrix = InProjectionMatrix;
@@ -158,4 +157,37 @@ void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
 	TranslatedViewMatrix = ViewRotationMatrix;
 	InvTranslatedViewMatrix = TranslatedViewMatrix.GetTransposed();
 	OverriddenTranslatedViewMatrix = TranslationMatrix(-PreViewTranslation) * ViewMatrix;
+}
+
+Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix)
+{
+	float DepthMul = ProjMatrix.M[2][2];
+	float DepthAdd = ProjMatrix.M[3][2];
+
+	bool bIsPerspectiveProjection = ProjMatrix.M[3][3] < 1.0f;
+
+	if (bIsPerspectiveProjection)
+	{
+		float SubtractValue = DepthMul / DepthAdd;
+
+		// Subtract a tiny number to avoid divide by 0 errors in the shader when a very far distance is decided from the depth buffer.
+		// This fixes fog not being applied to the black background in the editor.
+		SubtractValue -= 0.00000001f;
+
+		return Vector4(
+			0.0f,
+			0.0f,
+			1.0f / DepthAdd,
+			SubtractValue
+		);
+	}
+	else
+	{
+		return Vector4(
+			1.0f / ProjMatrix.M[2][2],
+			-ProjMatrix.M[3][2] / ProjMatrix.M[2][2] + 1.0f,
+			0.0f,
+			1.0f
+		);
+	}
 }

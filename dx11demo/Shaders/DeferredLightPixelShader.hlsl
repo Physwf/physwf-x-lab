@@ -1,6 +1,7 @@
 #include "Common.hlsl"
 #include "DeferredShadingCommon.hlsl"
 #include "DeferredLightingCommon.hlsl"
+#include "UniformBuffers.hlsl"
 
 DeferredLightData SetupLightDataForStandardDeferred()
 {
@@ -54,6 +55,7 @@ void PS_Main(
 #endif
 
     ScreenSpaceData SSD = GetScreenSpaceData(ScreenUV);
+    SSD.AmbientOcclusion = 1.0f;
 
     [branch]
     if(SSD.GBuffer.ShadingModelID > 0
@@ -88,7 +90,7 @@ void PS_Main(
             uint2( SVPos.xy )
         );    
         //OutColor *= ComputeLightProfileMultiplier(WorldPosition, DeferredLightUniforms.LightPosition, -DeferredLightUniforms.NormalizedLightDirection, DeferredLightUniforms.NormalizedLightTangent);
-         //OutColor = float4(Dither,0.0f,0.0f,1.0f);
+        OutColor = float4(SSD.GBuffer.BaseColor,1.0f);
 // #if USE_PREEXPOSURE
 // 		OutColor *= View.PreExposure;
 // #endif

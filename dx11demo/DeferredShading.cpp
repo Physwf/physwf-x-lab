@@ -33,7 +33,7 @@ struct ScreenRectangle
 
 	ID3D11Buffer* VertexBuffer = NULL;
 	ID3D11Buffer* IndexBuffer = NULL;
-	ID3D11Buffer* UniformBuffer = NULL;
+	ID3D11Buffer* DrawRectangleParameters = NULL;
 
 	ScreenRectangle(float W, float H)
 	{
@@ -60,7 +60,7 @@ struct ScreenRectangle
 	{
 		VertexBuffer = CreateVertexBuffer(Vertices, sizeof(Vertices));
 		IndexBuffer = CreateIndexBuffer(Indices, sizeof(Indices));
-		UniformBuffer = CreateConstantBuffer(&UniformPrameters, sizeof(UniformPrameters));
+		DrawRectangleParameters = CreateConstantBuffer(&UniformPrameters, sizeof(UniformPrameters));
 	}
 
 	void ReleaseResource()
@@ -83,6 +83,8 @@ DeferredLightUniforms DLU;
 ID3D11Buffer* DeferredLightUniformBuffer;
 ID3D11Buffer* VSourceTexture;
 
+#pragma pack(push)
+#pragma pack(1)
 struct ViewUniform
 {
 	Matrix TranslatedWorldToClip;
@@ -103,21 +105,27 @@ struct ViewUniform
 	// half3 ViewRight;
 	// half3 HMDViewNoRollUp;
 	// half3 HMDViewNoRollRight;
-	// float4 InvDeviceZToWorldZTransform;
+	Vector4 InvDeviceZToWorldZTransform;
 	// half4 ScreenPositionScaleBias;
 	Vector WorldCameraOrigin;
+	float ViewPading01;
 	Vector TranslatedWorldCameraOrigin;
+	float ViewPading02;
 	Vector WorldViewOrigin;
+	float ViewPading03;
+
 
 	Vector PreViewTranslation;
-	//float Padding;
+	float ViewPading04;
 	Vector4 ViewRectMin;
 	Vector4 ViewSizeAndInvSize;
 
 	uint32 Random;
 	uint32 FrameNumber;
 	uint32 StateFrameIndexMod8;
+	uint32 ViewPading05;
 };
+#pragma pack(pop)
 ID3D11Buffer* ViewUniformBuffer;
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
@@ -190,8 +198,8 @@ void InitInput()
 	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
-	m1.SetPosition(0.0f, 0.0f, 500.0f);
-	m1.SetRotation(-3.14f / 2, 0, 0);
+	m1.SetPosition(0.0f, 0.0f, 400.0f);
+	m1.SetRotation(-3.14f , 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
 
@@ -201,15 +209,21 @@ void InitInput()
 	}
 
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ProjectionMatrix);
-
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 100.0f, 600.f);
+	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
+	Matrix ViewRotationMatrix = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
+	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ViewRotationMatrix, ProjectionMatrix);
+	Vector v = ProjectionMatrix.Transform(Vector(700, 700, 1.0f));
+	Vector v1 = ProjectionMatrix.Transform(Vector(700, 700, 1000.0f));
+	Vector v2 = ProjectionMatrix.Transform(Vector(700, 700, 100.0f));
+	Vector v3 = ProjectionMatrix.Transform(Vector(700, 700, 500.0f));
+	Vector v4 = ProjectionMatrix.Transform(Vector(700, -700, 50.0f));
 	ViewUniform VU;
 	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
-	VU.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
+	VU.TranslatedWorldToClip = ProjectionMatrix;// VMs.GetTranslatedViewProjectionMatrix();
 	VU.WorldToClip = VMs.GetViewProjectionMatrix();
 	VU.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
-	//VU.TranslatedWorldToView = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
+	//VU.TranslatedWorldToView = 
 	VU.TranslatedWorldToCameraView = VMs.GetTranslatedViewMatrix();
 	VU.CameraViewToTranslatedWorld = VMs.GetInvTranslatedViewMatrix();
 	VU.ViewToClip = VMs.GetProjectionMatrix();
@@ -224,16 +238,21 @@ void InitInput()
 	VU.PreViewTranslation = VMs.GetPreViewTranslation();
 
 	VU.WorldCameraOrigin = VMs.GetViewOrigin();
+	VU.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(VMs.GetProjectionMatrix());
 
-	VU.ViewToTranslatedWorld.Transpose();
 	VU.TranslatedWorldToClip.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
 	VU.WorldToClip.Transpose();
 	VU.TranslatedWorldToView.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
 	VU.TranslatedWorldToCameraView.Transpose();
 	VU.CameraViewToTranslatedWorld.Transpose();
 	VU.ViewToClip.Transpose();
+	VU.ViewToClipNoAA.Transpose();
 	VU.ClipToView.Transpose();
 	VU.ClipToTranslatedWorld.Transpose();
+	VU.SVPositionToTranslatedWorld.Transpose();
+	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
 
 	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
@@ -324,8 +343,8 @@ void InitInput()
 	LightPassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI();
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
 
-	DirLight.Color = Vector(1.0f,1.0f,1.0f);
-	DirLight.Direction = Vector(1.0f,0.f,0.f);
+	DirLight.Color = Vector(1.0f,0.0f,0.0f);
+	DirLight.Direction = Vector(0.0f,0.0f,1.0f);
 	DirLight.Intencity = 1000.f;
 	DirLight.LightSourceAngle = 0.5357f;
 	DirLight.LightSourceSoftAngle = 0.0f;
@@ -346,6 +365,7 @@ void InitInput()
 
 void RenderPrePass()
 {
+	//D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, SceneDepthDSV);
 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, SceneDepthDSV);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
@@ -397,6 +417,7 @@ void RenderBasePass()
 	{
 		if(RTV) D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
 	}
+	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 
 	D3D11DeviceContext->RSSetState(BasePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
@@ -426,13 +447,14 @@ void RenderBasePass()
 
 void RenderLight()
 {
+	D3D11DeviceContext->OMSetRenderTargets(0, NULL, NULL);
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 
 	D3D11DeviceContext->RSSetState(LightPassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
-	D3D11DeviceContext->OMSetDepthStencilState(LightPassDepthStencilState, 0);
+	//D3D11DeviceContext->OMSetDepthStencilState(LightPassDepthStencilState, 0);
 
 	D3D11DeviceContext->IASetInputLayout(RectangleInputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -442,19 +464,22 @@ void RenderLight()
 	D3D11DeviceContext->IASetVertexBuffers(0, 1, &ScreenRect.VertexBuffer, &Stride, &Offset);
 	D3D11DeviceContext->IASetIndexBuffer(ScreenRect.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
+	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
+	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
+
+	//D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
 	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
-	D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
+	//D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
 	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
 
 	D3D11DeviceContext->PSSetShaderResources(3, 3, LightPassGBufferSRV);
 	D3D11DeviceContext->PSSetSamplers(3, 3, LightPassGBufferSamplerState);
 
-	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
-	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
+	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(2, 1, &ScreenRect.DrawRectangleParameters);
 
-	D3D11DeviceContext->VSSetConstantBuffers(2, 1, &ScreenRect.UniformBuffer);
-	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &DeferredLightUniformBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(0, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(2, 1, &DeferredLightUniformBuffer);
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
 
 	//reset
