@@ -600,6 +600,8 @@ struct Matrix
 
 	void Transpose();
 
+	Matrix GetTransposed() const;
+
 	inline Matrix Inverse() const;
 
 	inline Vector GetScaledAxis(EAxis::Type Axis) const;
@@ -635,6 +637,21 @@ struct Matrix
 	static Matrix	DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
 	static Matrix	DXFromPerspectiveLH(float w, float h, float zn, float zf);
 };
+
+class TranslationMatrix : public Matrix
+{
+public:
+	TranslationMatrix(const Vector& Delta);
+};
+
+inline TranslationMatrix::TranslationMatrix(const Vector& Delta):
+	Matrix(
+		Plane(1.0f, 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, 1.0f, 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, 1.0f, 0.0f),
+		Plane(Delta.X, Delta.Y, Delta.Z, 1.0f)
+	)
+{ }
 
 inline void VectorMatrixInverse(void* DstMatrix, const void* SrcMatrix)
 {

@@ -16,6 +16,47 @@ void Scene::Setup()
 {
 
 }
+
+ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InProjectionMatrix)
+{
+	Vector LocalViewOrigin = InViewOrigin;
+	Matrix ViewRotationMatrix;
+	ViewRotationMatrix.SetIndentity();
+
+	ViewMatrix = TranslationMatrix(-LocalViewOrigin) * ViewProjectionMatrix;
+	ProjectionMatrix = InProjectionMatrix;
+	InvProjectionMatrix = ProjectionMatrix.Inverse();
+
+	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
+	
+	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(LocalViewOrigin);
+	InvViewProjectMatrix = InvProjectionMatrix * InvViewMatrix;
+
+	bool bApplyPreViewTranslation = true;
+
+	if (true)
+	{
+		ViewOrigin = LocalViewOrigin;
+	}
+
+	Matrix LocalTranslatedViewMatrix = ViewRotationMatrix;
+	Matrix LocalInvTranslatedViewMatrix = LocalTranslatedViewMatrix.GetTransposed();
+
+	if (bApplyPreViewTranslation)
+	{
+		PreViewTranslation = -Vector(LocalViewOrigin);
+	}
+
+	TranslatedViewMatrix = LocalTranslatedViewMatrix;
+	InvTranslatedViewMatrix = LocalInvTranslatedViewMatrix;
+
+	OverriddenTranslatedViewMatrix = TranslationMatrix(-GetPreViewTranslation()) * GetViewMatrix();
+	OverriddenInvTranslatedViewMatrix = GetInvViewMatrix() * TranslationMatrix(GetPreViewTranslation());
+
+	TranslatedViewProjectionMatrix = LocalTranslatedViewMatrix * ProjectionMatrix;
+	InvTranslatedViewProjectionMatrix = InvProjectionMatrix * LocalInvTranslatedViewMatrix;
+}
+
 // 
 // void Scene::OnKeyDown(unsigned int KeyCode)
 // {
@@ -97,3 +138,24 @@ void Scene::Setup()
 // 		CurrentCamera->Rotate(X, Y);
 // 	}
 // }
+
+void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
+{
+	ViewOrigin = ViewLocation;
+
+	Matrix ViewRotationMatrix;
+	ViewRotationMatrix.SetIndentity();
+
+	ViewMatrix = TranslationMatrix(-ViewLocation) * ViewRotationMatrix;
+
+	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
+
+	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(ViewLocation);
+	InvViewProjectMatrix = GetInvProjectionMatrix() * GetInvViewMatrix();
+
+	PreViewTranslation = -ViewOrigin;
+
+	TranslatedViewMatrix = ViewRotationMatrix;
+	InvTranslatedViewMatrix = TranslatedViewMatrix.GetTransposed();
+	OverriddenTranslatedViewMatrix = TranslationMatrix(-PreViewTranslation) * ViewMatrix;
+}

@@ -66,7 +66,7 @@ void PS_Main(
 
 #if LIGHT_SOURCE_SHAPE > 0//non-directional
         float2 ClipPosition = InScreenPosition.xy / InScreenPosition.w * (View.ViewToClip[3][3] ? SceneDepth : 1.0f);
-        float3 WorldPostion = mul(float4(ClipPosition,SceneDepth,1), View.ScreenToWorld).xyz;
+        float3 WorldPosition = mul(float4(ClipPosition,SceneDepth,1), View.ScreenToWorld).xyz;
         float3 CameraVector = normalize(WorldPosition - View.WorldCameraOrigin);
 #else
         float3 WorldPosition = ScreenVector * SceneDepth + View.WorldCameraOrigin;
@@ -88,10 +88,10 @@ void PS_Main(
             uint2( SVPos.xy )
         );    
         //OutColor *= ComputeLightProfileMultiplier(WorldPosition, DeferredLightUniforms.LightPosition, -DeferredLightUniforms.NormalizedLightDirection, DeferredLightUniforms.NormalizedLightTangent);
-        OutColor = float4(0.7f,0.4f,0.7f,1.0f);
+         //OutColor = float4(Dither,0.0f,0.0f,1.0f);
 // #if USE_PREEXPOSURE
 // 		OutColor *= View.PreExposure;
 // #endif
      }
-
+   
 }

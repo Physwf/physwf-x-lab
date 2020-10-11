@@ -23,6 +23,16 @@ float EncodeShadingModelIdAndSelectiveOutputMask(uint ShadingModelId, uint Selec
 	return (float)Value / (float)0xFF;
 }
 
+uint DecodeShadingModelId(float InPackedChannel)
+{
+	return ((uint)round(InPackedChannel * (float)0xFF)) & SHADINGMODELID_MASK;
+}
+
+uint DecodeSelectiveOutputMask(float InPackedChannel)
+{
+	return ((uint)round(InPackedChannel * (float)0xFF)) & ~SHADINGMODELID_MASK;
+}
+
 bool UseSubsurfaceProfile(int ShadingModel)
 {
 	return ShadingModel == SHADINGMODELID_SUBSURFACE_PROFILE || ShadingModel == SHADINGMODELID_EYE;
@@ -95,8 +105,8 @@ GBufferData DecodeGBufferData(
     GBuffer.Specular = InGBufferB.g;
     GBuffer.Roughness = InGBufferB.b;
 
-    //GBuffer.ShadingModelID = DecodeShadingModelId(InGBufferB.a);
-	//GBuffer.SelectiveOutputMask = DecodeSelectiveOutputMask(InGBufferB.a);
+    GBuffer.ShadingModelID = DecodeShadingModelId(InGBufferB.a);
+	GBuffer.SelectiveOutputMask = DecodeSelectiveOutputMask(InGBufferB.a);
 
     GBuffer.BaseColor = InGBufferC.rgb;
     GBuffer.GBufferAO = InGBufferC.a;

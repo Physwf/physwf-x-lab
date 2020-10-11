@@ -1,6 +1,7 @@
 #include "DeferredShading.h"
 #include "Mesh.h"
 #include "Light.h"
+#include "Scene.h"
 
 std::vector<Mesh> AllMeshes;
 std::vector<MeshBatch> AllBatches;
@@ -26,7 +27,7 @@ struct DrawRectangleParameters
 struct ScreenRectangle
 {
 	RectangleVertex Vertices[4];
-	int Indices[6] = { 0,1,2,1,3,2 };
+	int Indices[6] = { 0,1,2,2,1,3 };
 
 	DrawRectangleParameters UniformPrameters;
 
@@ -76,7 +77,6 @@ struct ScreenRectangle
 };
 
 ScreenRectangle ScreenRect((float)WindowWidth, (float)WindowHeight);
-
 
 DirectionalLight DirLight;
 DeferredLightUniforms DLU;
@@ -200,14 +200,42 @@ void InitInput()
 		m.DrawStaticElement();
 	}
 
+	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ProjectionMatrix);
+
 	ViewUniform VU;
-	VU.TranslatedWorldToView = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
-	//VU.ViewToClip = Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	VU.ViewToClip = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	VU.ViewToClip.Transpose();
+	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
+	VU.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
+	VU.WorldToClip = VMs.GetViewProjectionMatrix();
+	VU.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
+	//VU.TranslatedWorldToView = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
+	VU.TranslatedWorldToCameraView = VMs.GetTranslatedViewMatrix();
+	VU.CameraViewToTranslatedWorld = VMs.GetInvTranslatedViewMatrix();
+	VU.ViewToClip = VMs.GetProjectionMatrix();
+	VU.ClipToView = VMs.GetInvProjectionMatrix();
+	VU.ClipToTranslatedWorld = VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.ScreenToTranslatedWorld = Matrix(
+		Plane(1, 0, 0, 0),
+		Plane(0, 1, 0, 0),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0))
+		* VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.PreViewTranslation = VMs.GetPreViewTranslation();
+
+	VU.WorldCameraOrigin = VMs.GetViewOrigin();
+
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.TranslatedWorldToClip.Transpose();
+	VU.WorldToClip.Transpose();
 	VU.TranslatedWorldToView.Transpose();
-	VU.TranslatedWorldToClip = VU.ViewToClip *  VU.TranslatedWorldToView;
-	VU.PreViewTranslation = Vector(0.f, 0.f, 0.f);
+	VU.TranslatedWorldToCameraView.Transpose();
+	VU.CameraViewToTranslatedWorld.Transpose();
+	VU.ViewToClip.Transpose();
+	VU.ClipToView.Transpose();
+	VU.ClipToTranslatedWorld.Transpose();
+	VU.ScreenToTranslatedWorld.Transpose();
+
 	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
 
 	SceneDepthRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R24G8_TYPELESS, false, true, true);
@@ -299,11 +327,20 @@ void InitInput()
 	DirLight.Color = Vector(1.0f,1.0f,1.0f);
 	DirLight.Direction = Vector(1.0f,0.f,0.f);
 	DirLight.Intencity = 1000.f;
+	DirLight.LightSourceAngle = 0.5357f;
+	DirLight.LightSourceSoftAngle = 0.0f;
 
-	DirLight.Direction.Normalize();
-	DLU.NormalizedLightDirection = DirLight.Direction;
+	DLU.LightPosition = Vector(0.0f, 0.0f, 0.0f);
+	DLU.LightInvRadius = 0.0f;
 	DLU.LightColor = DirLight.Color;
-
+	DirLight.Direction.Normalize();
+	DLU.NormalizedLightDirection = -DirLight.Direction;
+	DLU.NormalizedLightTangent = -DirLight.Direction;
+	DLU.SpotAngles = Vector2(0.0f, 0.0f);
+	DLU.SpecularScale = 1.0f;
+	DLU.SourceRadius = std::sin(0.5f * DirLight.LightSourceAngle / 180.f * 3.14f);
+	DLU.SoftSourceRadius = std::sin(0.5f * DirLight.LightSourceSoftAngle / 180.f * 3.14f);
+	DLU.SourceLength = 0.0f;
 	DeferredLightUniformBuffer = CreateConstantBuffer(&DLU, sizeof(DLU));
 }
 
@@ -390,6 +427,8 @@ void RenderBasePass()
 void RenderLight()
 {
 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
+	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
+	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 
 	D3D11DeviceContext->RSSetState(LightPassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
@@ -418,6 +457,7 @@ void RenderLight()
 	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &DeferredLightUniformBuffer);
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
 
+	//reset
 	ID3D11ShaderResourceView* SRV = NULL;
 	ID3D11SamplerState* Sampler = NULL;
 	D3D11DeviceContext->PSSetShaderResources(0, 1, &SRV);

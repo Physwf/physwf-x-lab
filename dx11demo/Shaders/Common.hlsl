@@ -52,6 +52,8 @@ MaterialFloat Luminance( MaterialFloat3 LinearColor )
 	return dot( LinearColor, MaterialFloat3( 0.3, 0.59, 0.11 ) );
 }
 
+const static float PI = 3.1415926535897932f;
+
 // see PixelShaderOutputCommon
 struct PixelShaderIn
 {

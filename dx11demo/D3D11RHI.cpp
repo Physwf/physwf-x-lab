@@ -329,6 +329,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		"ALLOW_STATIC_LIGHTING",							"1",
 		"LIGHT_SOURCE_SHAPE",								"0",//directional 
+		"USE_LIGHTING_CHANNELS",							"0",
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -358,6 +359,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"INTERPOLATE_VERTEX_COLOR",							"0",//bUsesVertexColor
 		"ALLOW_STATIC_LIGHTING",							"1",
 		"LIGHT_SOURCE_SHAPE",								"0",
+		"USE_LIGHTING_CHANNELS",							"0",
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))

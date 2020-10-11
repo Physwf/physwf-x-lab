@@ -10,6 +10,33 @@ Matrix::Matrix(const Plane& InX, const Plane& InY, const Plane& InZ, const Plane
 	M[3][0] = InW.X; M[3][1] = InW.Y;  M[3][2] = InW.Z;  M[3][3] = InW.W;
 }
 
+Matrix Matrix::GetTransposed() const
+{
+	Matrix	Result;
+
+	Result.M[0][0] = M[0][0];
+	Result.M[0][1] = M[1][0];
+	Result.M[0][2] = M[2][0];
+	Result.M[0][3] = M[3][0];
+
+	Result.M[1][0] = M[0][1];
+	Result.M[1][1] = M[1][1];
+	Result.M[1][2] = M[2][1];
+	Result.M[1][3] = M[3][1];
+
+	Result.M[2][0] = M[0][2];
+	Result.M[2][1] = M[1][2];
+	Result.M[2][2] = M[2][2];
+	Result.M[2][3] = M[3][2];
+
+	Result.M[3][0] = M[0][3];
+	Result.M[3][1] = M[1][3];
+	Result.M[3][2] = M[2][3];
+	Result.M[3][3] = M[3][3];
+
+	return Result;
+}
+
 float Vector::SizeSquared() const
 {
 	return X * X + Y * Y + Z * Z;
