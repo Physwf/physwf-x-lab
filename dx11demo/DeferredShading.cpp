@@ -360,6 +360,7 @@ void InitInput()
 	DLU.SourceRadius = std::sin(0.5f * DirLight.LightSourceAngle / 180.f * 3.14f);
 	DLU.SoftSourceRadius = std::sin(0.5f * DirLight.LightSourceSoftAngle / 180.f * 3.14f);
 	DLU.SourceLength = 0.0f;
+	DLU.ShadowedBits = 2;
 	DeferredLightUniformBuffer = CreateConstantBuffer(&DLU, sizeof(DLU));
 }
 
@@ -401,7 +402,7 @@ void RenderPrePass()
 
 void RenderShadowPass()
 {
-	
+ 
 }
 
 void RenderBasePass()

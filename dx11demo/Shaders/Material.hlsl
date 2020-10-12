@@ -329,7 +329,7 @@ void CalcPixelMaterialInputs(in out MaterialPixelParameters Parameters, in out P
 	Inputs.Opacity = 1.00000000;
 	Inputs.OpacityMask = 1.00000000;
 	Inputs.BaseColor = float3(.5f, .6f, .7f);
-	Inputs.Metallic = 1.0f;
+	Inputs.Metallic = 0.20f;
 	Inputs.Specular = 0.50000000;
 	Inputs.Roughness = 0.5f;
 	Inputs.Subsurface = 0;

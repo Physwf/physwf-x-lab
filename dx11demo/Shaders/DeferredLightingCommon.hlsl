@@ -60,7 +60,7 @@ float GetLocalLightAttenuation(float3 WorldPosition, DeferredLightData LightData
     ToLight = LightData.LightPositionAndInvRadius.xyz - WorldPosition;
 
     float DistanceSqr = dot(ToLight,ToLight);
-    L = ToLight = rsqrt(DistanceSqr);//返回平方根倒数
+    L = ToLight * rsqrt(DistanceSqr);//返回平方根倒数
 
     float LightMask;
     if(LightData.bInverseSquared)
@@ -127,7 +127,7 @@ float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData
         LA.EstimatedCost += 0.3f;
 
         [branch]
-        if(Shadow.SurfaceShadow + Shadow.TransmissionShadow > 0)
+        //if(Shadow.SurfaceShadow + Shadow.TransmissionShadow > 0)
         {
             const bool bNeedsSeparateSubsurfaceLightAccumulation = UseSubsurfaceProfile(GBuffer.ShadingModelID);
             float3 LightColor = LightData.LightColorAndFalloffExponent.rgb;
@@ -163,7 +163,7 @@ float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData
             }
 
             Lighting.Specular *= LightData.SpecularScale;
-
+            
             LightAccumulator_Add(LA, Lighting.Diffuse + Lighting.Specular, Lighting.Diffuse,       LightColor*LightMask*Shadow.SurfaceShadow,          bNeedsSeparateSubsurfaceLightAccumulation);
             LightAccumulator_Add(LA, Lighting.Transmission,                Lighting.Transmission,  LightColor * LightMask * Shadow.TransmissionShadow, bNeedsSeparateSubsurfaceLightAccumulation);
 

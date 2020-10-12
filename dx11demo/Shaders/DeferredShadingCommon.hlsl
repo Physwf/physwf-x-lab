@@ -3,6 +3,7 @@
 
 #include "LightAccumulator.hlsl"
 #include "SceneTexturesCommon.hlsl"
+#include "SceneTexturesStruct.hlsl"
 
 #define SHADINGMODELID_UNLIT				0
 #define SHADINGMODELID_DEFAULT_LIT			1
@@ -123,6 +124,26 @@ GBufferData DecodeGBufferData(
     GBuffer.StoredBaseColor = GBuffer.BaseColor;
 	GBuffer.StoredMetallic = GBuffer.Metallic;
 	GBuffer.StoredSpecular = GBuffer.Specular;
+
+    // derived from BaseColor, Metalness, Specular
+	{
+		GBuffer.SpecularColor = lerp( 0.08 * GBuffer.Specular.xxx, GBuffer.BaseColor, GBuffer.Metallic );
+
+		// if (UseSubsurfaceProfile(GBuffer.ShadingModelID))
+		// {
+		// 	AdjustBaseColorAndSpecularColorForSubsurfaceProfileLighting(GBuffer.BaseColor, GBuffer.SpecularColor, GBuffer.Specular, bChecker);
+		// }
+
+		GBuffer.DiffuseColor = GBuffer.BaseColor - GBuffer.BaseColor * GBuffer.Metallic;
+
+		// #if USE_DEVELOPMENT_SHADERS
+		// {
+		// 	// this feature is only needed for development/editor - we can compile it out for a shipping build (see r.CompileShadersForDevelopment cvar help)
+		// 	GBuffer.DiffuseColor = GBuffer.DiffuseColor * View.DiffuseOverrideParameter.www + View.DiffuseOverrideParameter.xyz;
+		// 	GBuffer.SpecularColor = GBuffer.SpecularColor * View.SpecularOverrideParameter.w + View.SpecularOverrideParameter.xyz;
+		// }
+		// #endif //USE_DEVELOPMENT_SHADERS
+	}
 
     return GBuffer;
 }
