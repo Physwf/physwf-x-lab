@@ -126,7 +126,18 @@ struct ViewUniform
 	uint32 ViewPading05;
 };
 #pragma pack(pop)
+
+struct ShadowMapView
+{
+	Matrix View;
+	Matrix Projection;
+};
+
+Matrix ShadowMapProjectionMatrix;
+ID3D11Buffer* ShadowMapProjectionUniformBuffer;
+
 ID3D11Buffer* ViewUniformBuffer;
+ID3D11Buffer* DirecianlLightShadowMapViewUniformBuffer;
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
 ID3D11InputLayout* MeshInputLayout;
@@ -145,6 +156,7 @@ ID3D11DepthStencilState* PrePassDepthStencilState;
 
 ID3DBlob* ShadowPassVSBytecode;
 ID3DBlob* ShadowPassPSBytecode;
+ID3D11Texture2D* ShadowPassRT;
 ID3D11DepthStencilView* ShadowPassDSV;
 ID3D11VertexShader* ShadowPassVS;
 ID3D11PixelShader* ShadowPassPS;
@@ -198,7 +210,7 @@ void InitInput()
 	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
-	m1.SetPosition(0.0f, 0.0f, 400.0f);
+	m1.SetPosition(0.0f, 0.0f, 500.0f);
 	m1.SetRotation(-3.14f , 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
@@ -209,9 +221,9 @@ void InitInput()
 	}
 
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 2, 1.0, 100.0f, 600.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
-	Matrix ViewRotationMatrix = Matrix::DXLooAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
+	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
 	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ViewRotationMatrix, ProjectionMatrix);
 	Vector v = ProjectionMatrix.Transform(Vector(700, 700, 1.0f));
 	Vector v1 = ProjectionMatrix.Transform(Vector(700, 700, 1000.0f));
@@ -268,11 +280,27 @@ void InitInput()
 		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 	PositionOnlyMeshInputLayout = CreateInputLayout(PositionOnlyInputDesc, sizeof(PositionOnlyInputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), PrePassVSBytecode);
+	
+	
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
 	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
 	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_GREATER>::GetRHI();
 	PrePassBlendState = TStaticBlendState<>::GetRHI();
+
+	//shadow pass
+	ShadowPassVSBytecode = CompileVertexShader(TEXT("ShadowDepthVertexShader.hlsl"), "VS_Main");
+	ShadowPassPSBytecode = CompilePixelShader(TEXT("ShadowDepthPixelShader.hlsl"), "PS_Main");
+	ShadowPassVS = CreateVertexShader(ShadowPassVSBytecode);
+	ShadowPassPS = CreatePixelShader(ShadowPassPSBytecode);
+
+	ShadowPassRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32_TYPELESS, false, true, true);
+	ShadowPassDSV = CreateDepthStencilView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 0);
+
+	ShadowPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
+	ShadowPassBlendState = TStaticBlendState<>::GetRHI();
+	ShadowPassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_LESS>::GetRHI();
+
 	//Base Pass
 	BasePassVSBytecode = CompileVertexShader(TEXT("BasePassVertexShader.hlsl"), "VS_Main");
 	BasePassPSBytecode = CompilePixelShader(TEXT("BasePassPixelShader.hlsl"), "PS_Main");
@@ -362,6 +390,24 @@ void InitInput()
 	DLU.SourceLength = 0.0f;
 	DLU.ShadowedBits = 2;
 	DeferredLightUniformBuffer = CreateConstantBuffer(&DLU, sizeof(DLU));
+
+	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
+	DirectionalLightViewRotationMatrix.SetIndentity();
+	Frustum ViewFrustum(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
+	Box FrumstumBounds = ViewFrustum.GetBounds(DirectionalLightViewRotationMatrix);
+	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Min.Z, FrumstumBounds.Max.Z);
+	ViewMatrices VMs2(Vector(0.0f, 0.0f, 0.0f), DirectionalLightViewRotationMatrix, DirectionalLightProjectionMatrix);
+	ViewUniform DirectionalLightShadowMapViewUniform;
+	DirectionalLightShadowMapViewUniform.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
+	DirectionalLightShadowMapViewUniform.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
+	DirectionalLightShadowMapViewUniform.WorldToClip = VMs.GetViewProjectionMatrix();
+	DirectionalLightShadowMapViewUniform.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
+	
+	//DirecianlLightShadowMapViewUniformBuffer = CreateConstantBuffer(&DirectionalLightShadowMapViewUniform, sizeof(DirectionalLightShadowMapViewUniform));
+	
+	ShadowMapProjectionMatrix = DirectionalLightViewRotationMatrix * DirectionalLightProjectionMatrix;
+	ShadowMapProjectionMatrix.Transpose();
+	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(&ShadowMapProjectionMatrix, sizeof(ShadowMapProjectionMatrix));
 }
 
 void RenderPrePass()
@@ -400,9 +446,39 @@ void RenderPrePass()
 	}
 }
 
+
 void RenderShadowPass()
 {
- 
+	D3D11DeviceContext->OMSetRenderTargets(0, NULL, ShadowPassDSV);
+	D3D11DeviceContext->ClearDepthStencilView(ShadowPassDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &ShadowMapProjectionUniformBuffer);
+
+	//D3D11DeviceContext->RSSetState(PrePassRasterizerState);
+	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
+	D3D11DeviceContext->OMSetDepthStencilState(ShadowPassDepthStencilState, 0);
+
+
+	for (MeshBatch& MB : AllBatches)
+	{
+		D3D11DeviceContext->IASetInputLayout(PositionOnlyMeshInputLayout);
+		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		UINT Stride = sizeof(PositionOnlyLocalVertex);
+		UINT Offset = 0;
+		D3D11DeviceContext->IASetVertexBuffers(0, 1, &MB.PositionOnlyVertexBuffer, &Stride, &Offset);
+		D3D11DeviceContext->IASetIndexBuffer(MB.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		D3D11DeviceContext->VSSetShader(ShadowPassVS, 0, 0);
+		D3D11DeviceContext->PSSetShader(ShadowPassPS, 0, 0);
+
+		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
+		{
+			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
+		}
+	}
 }
 
 void RenderBasePass()

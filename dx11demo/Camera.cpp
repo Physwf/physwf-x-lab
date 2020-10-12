@@ -176,7 +176,7 @@ void Camera::Render()
 
 void Camera::UpdateViewMatrix()
 {
-	VSConstBuffer.ViewMatrix = Matrix::DXLooAtLH(Eye, Eye + FaceDir * 100.0f, Up);
+	VSConstBuffer.ViewMatrix = Matrix::DXLookAtLH(Eye, Eye + FaceDir * 100.0f, Up);
 	//VSConstBuffer.ViewMatrix.SetIndentity();
 }
 

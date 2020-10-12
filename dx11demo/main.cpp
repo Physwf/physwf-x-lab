@@ -98,6 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//GW.Draw();
 		//S.Draw();
 		RenderPrePass();
+		RenderShadowPass();
 		RenderBasePass();
 		RenderLight();
 		D3D11Present();

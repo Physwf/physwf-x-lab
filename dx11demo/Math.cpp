@@ -37,6 +37,45 @@ Matrix Matrix::GetTransposed() const
 	return Result;
 }
 
+Matrix Matrix::DXLookToLH(const Vector& To)
+{
+	srand(unsigned int(To.SizeSquared()));
+	Vector XDir = Vector((float)rand(), (float)rand(), (float)rand());
+	Vector ZDir = To;
+	XDir.Normalize();
+	ZDir.Normalize();
+	Vector YDir = ZDir ^ XDir;
+	XDir = YDir ^ ZDir;
+	//Vector::CreateOrthonormalBasis(XDir, YDir, ZDir);
+	return Matrix
+	(
+		Plane(XDir,0.0f),
+		Plane(YDir, 0.0f),
+		Plane(ZDir, 0.0f),
+		Plane(0.0f, 0.0f, 0.0f, 1.0f)
+	);
+}
+
+Matrix Matrix::DXFromOrthognalLH(float w, float h, float zn, float zf)
+{
+	Matrix Result;
+	Result.M[0][0] = 2 * zn / w;		Result.M[0][1] = 0.0f;				Result.M[0][2] = 0.0f;									Result.M[0][3] = -1.0f;
+	Result.M[1][0] = 0.0f;				Result.M[1][1] = 2.0f * zn / h;		Result.M[1][2] = 0.0f;									Result.M[1][3] = -1.0f;
+	Result.M[2][0] = 0.0f;				Result.M[2][1] = 0.0f;				Result.M[2][2] = 1 / (zf - zn);							Result.M[2][3] = 1.0f;
+	Result.M[3][0] = 0.0f;				Result.M[3][1] = 0.0f;				Result.M[3][2] = -zn  / (zn - zf);						Result.M[3][3] = 0.0f;
+	return Result;
+}
+
+Matrix Matrix::DXFromOrthognalLH(float r, float l, float t, float b, float zf, float zn)
+{
+	Matrix Result;
+	Result.M[0][0] = 2.0f / (r - l);		Result.M[0][1] = 0.0f;					Result.M[0][2] = 0.0f;							Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;					Result.M[1][1] = 2.0f / (t - b);		Result.M[1][2] = 0.0f;							Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;					Result.M[2][1] = 0.0f;					Result.M[2][2] = 1.0f / (zf - zn);				Result.M[2][3] = 0.0f;
+	Result.M[3][0] = -(r + l) / (r - l);	Result.M[3][1] = -(t + b) / (t - b);	Result.M[3][2] = -zn / (zf - zn);				Result.M[3][3] = 1.0f;
+	return Result;
+}
+
 float Vector::SizeSquared() const
 {
 	return X * X + Y * Y + Z * Z;
@@ -64,6 +103,11 @@ void Vector::CreateOrthonormalBasis(Vector& XAxis, Vector& YAxis, Vector& ZAxis)
 	XAxis.Normalize();
 	YAxis.Normalize();
 	ZAxis.Normalize();
+}
+
+struct Vector2 Vector::ToVector2() const
+{
+	return Vector2(X,Y);
 }
 
 static const float OneOver255 = 1.0f / 255.0f;
@@ -131,3 +175,27 @@ float LinearColor::sRGBToLinearTable[256] =
 	0.921581853023715, 0.930110855104312, 0.938685725169219, 0.947306533426946, 0.955973349925421,
 	0.964686244552961, 0.973445287039244, 0.982250546956257, 0.991102093719252, 1.0,
 };
+
+Box2D Frustum::GetBounds2D(const Matrix& ViewMatrix, const Vector& Axis1, const Vector& Axis2)
+{
+	Box2D Result;
+	for (Vector V : Vertices)
+	{
+		V = ViewMatrix.Transform(V);
+		Vector PrjectV1 = V * Axis1;
+		Vector PrjectV2 = V * Axis2;
+		Result += PrjectV1.ToVector2();
+		Result += PrjectV2.ToVector2();
+	}
+	return Result;
+}
+
+Box Frustum::GetBounds(const Matrix& TransformMatrix)
+{
+	Box Result;
+	for (const Vector& V : Vertices)
+	{
+		Result += TransformMatrix.Transform(V);
+	}
+	return Result;
+}

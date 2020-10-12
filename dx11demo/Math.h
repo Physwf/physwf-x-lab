@@ -223,6 +223,8 @@ struct Vector
 
 	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const;
 	Vector GetSafeNormal(float Tolerance = SMALL_NUMBER) const;
+
+	struct Vector2 ToVector2() const;
 };
 
 inline Vector::Vector(std::initializer_list<float> list)
@@ -632,10 +634,13 @@ struct Matrix
 	static Matrix	DXFromRoll(float fRoll);
 	static Matrix	DXFormRotation(Vector Rotation);
 	static Matrix	DXFromTranslation(Vector Translation);
-	static Matrix	DXLooAtLH(const Vector& Eye,const Vector& LookAtPosition, const Vector& Up);
+	static Matrix	DXLookAtLH(const Vector& Eye,const Vector& LookAtPosition, const Vector& Up);
+	static Matrix	DXLookToLH(const Vector& To);
 	static Matrix	DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
 	static Matrix	DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float znearPlane, float zfarPlane);
 	static Matrix	DXFromPerspectiveLH(float w, float h, float zn, float zf);
+	static Matrix	DXFromOrthognalLH(float w, float h, float zn, float zf);
+	static Matrix	DXFromOrthognalLH(float right, float left, float top, float bottom,float zFar, float zNear);
 };
 
 class TranslationMatrix : public Matrix
@@ -1083,7 +1088,7 @@ inline Matrix Matrix::DXFromTranslation(Vector Translation)
 	return Result;
 }
 
-inline Matrix Matrix::DXLooAtLH(const Vector& Eye, const Vector& LookAtPosition, const Vector& Up)
+inline Matrix Matrix::DXLookAtLH(const Vector& Eye, const Vector& LookAtPosition, const Vector& Up)
 {
 	Matrix Result;
 	Vector Z = LookAtPosition - Eye;
@@ -1198,7 +1203,7 @@ struct Box
 	Vector Max;
 	uint8 IsValid;
 
-	Box() {}
+	Box(): IsValid(0) {}
 
 	Box(const Vector& InMin, const Vector& InMax)
 		:Min(InMin)
@@ -1214,9 +1219,9 @@ struct Box
 			Min.Y = fminf(Min.Y, Other.Y);
 			Min.Z = fminf(Min.Z, Other.Z);
 
-			Max.X = fmaxf(Min.X, Other.X);
-			Max.Y = fmaxf(Min.Y, Other.Y);
-			Max.Z = fmaxf(Min.Z, Other.Z);
+			Max.X = fmaxf(Max.X, Other.X);
+			Max.Y = fmaxf(Max.Y, Other.Y);
+			Max.Z = fmaxf(Max.Z, Other.Z);
 		}
 		else
 		{
@@ -1234,9 +1239,9 @@ struct Box
 			Min.Y = fminf(Min.Y, Other.Min.Y);
 			Min.Z = fminf(Min.Z, Other.Min.Z);
 
-			Max.X = fmaxf(Min.X, Other.Max.X);
-			Max.Y = fmaxf(Min.Y, Other.Max.Y);
-			Max.Z = fmaxf(Min.Z, Other.Max.Z);
+			Max.X = fmaxf(Max.X, Other.Max.X);
+			Max.Y = fmaxf(Max.Y, Other.Max.Y);
+			Max.Z = fmaxf(Max.Z, Other.Max.Z);
 		}
 		else if (Other.IsValid)
 		{
@@ -1254,4 +1259,89 @@ struct Box
 	{
 		return Box(*this) += Other;
 	}
+};
+
+struct Box2D
+{
+	Vector2 Min;
+	Vector2 Max;
+	uint8 IsValid;
+
+	Box2D():IsValid(false) {}
+
+	Box2D(const Vector2& InMin, const Vector2& InMax)
+		:Min(InMin)
+		, Max(InMax)
+		, IsValid(1)
+	{ }
+
+	inline Box2D& operator+=(const Vector2& Other)
+	{
+		if (IsValid)
+		{
+			Min.X = fminf(Min.X, Other.X);
+			Min.Y = fminf(Min.Y, Other.Y);
+
+			Max.X = fmaxf(Min.X, Other.X);
+			Max.Y = fmaxf(Min.Y, Other.Y);
+		}
+		else
+		{
+			Min = Max = Other;
+			IsValid = 1;
+		}
+		return *this;
+	}
+
+	inline Box2D& operator+=(const Box2D& Other)
+	{
+		if (IsValid && Other.IsValid)
+		{
+			Min.X = fminf(Min.X, Other.Min.X);
+			Min.Y = fminf(Min.Y, Other.Min.Y);
+
+			Max.X = fmaxf(Min.X, Other.Max.X);
+			Max.Y = fmaxf(Min.Y, Other.Max.Y);
+		}
+		else if (Other.IsValid)
+		{
+			*this = Other;
+		}
+		return *this;
+	}
+
+	inline Box2D operator+(const Vector2& Other)
+	{
+		return Box2D(*this) += Other;
+	}
+
+	inline Box2D operator+(const Box2D& Other)
+	{
+		return Box2D(*this) += Other;
+	}
+};
+
+struct Frustum
+{
+	Vector Vertices[8];
+
+	Frustum(float fov, float aspect, float znear, float zfar)
+	{
+		float yNear = std::tan(0.5f*fov)  * znear;
+		float yFar = std::tan(0.5f*fov)  * zfar;
+		float xNear = yNear * aspect;
+		float xFar = yFar * aspect;
+
+		Vertices[0] = Vector(xNear, yNear, znear);
+		Vertices[1] = Vector(-xNear, yNear, znear);
+		Vertices[2] = Vector(-xNear, -yNear, znear);
+		Vertices[3] = Vector(xNear, -yNear, znear);
+		Vertices[4] = Vector(xFar, yFar, zfar);
+		Vertices[5] = Vector(-xFar, yFar, zfar);
+		Vertices[6] = Vector(-xFar, -yFar, zfar);
+		Vertices[7] = Vector(xFar, -yFar, zfar);
+	}
+
+	Box2D GetBounds2D(const Matrix& ViewMatrix, const Vector& Axis1, const Vector& Axis2);
+	Box GetBounds(const Matrix& TransformMatrix);
 };
