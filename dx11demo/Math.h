@@ -44,7 +44,7 @@ struct alignas(16) Vector4
 	Vector4(): X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
 	explicit Vector4(float V) : X(V), Y(V), Z(V), W(V) {}
 	explicit Vector4(const Vector& V,float InW);
-	Vector4(float InX, float InY, float InZ, float InW) : X(InX), Y(InY), Z(InZ), W(InW) {}
+	Vector4(float InX, float InY, float InZ, float InW = 1.0f) : X(InX), Y(InY), Z(InZ), W(InW) {}
 	Vector4(std::initializer_list<float> list);
 
 	Vector4 operator+(const Vector4& rhs) const;

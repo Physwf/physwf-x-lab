@@ -23,7 +23,7 @@ cbuffer View : register(b0)
     // half3 View_HMDViewNoRollUp;
     // half3 View_HMDViewNoRollRight;
     float4 View_InvDeviceZToWorldZTransform;
-    // half4 View_ScreenPositionScaleBias;
+    float4 View_ScreenPositionScaleBias;
     float3 View_WorldCameraOrigin;
     float View_Padding01;
     float3 View_TranslatedWorldCameraOrigin;
@@ -36,12 +36,15 @@ cbuffer View : register(b0)
     float View_Padding04;
     float4 View_ViewRectMin;
     float4 View_ViewSizeAndInvSize;
+    float4 View_BufferSizeAndInvSize;
 
 
     uint View_Random;
 	uint View_FrameNumber;
 	uint View_StateFrameIndexMod8;
     uint View_Padding05;
+
+
 };
 static const struct
 {
@@ -64,7 +67,7 @@ static const struct
     // half3 HMDViewNoRollUp;
     // half3 HMDViewNoRollRight;
     float4 InvDeviceZToWorldZTransform;
-    // half4 ScreenPositionScaleBias;
+    float4 ScreenPositionScaleBias;
     float3 WorldCameraOrigin;
     float3 TranslatedWorldCameraOrigin;
     float3 WorldViewOrigin;
@@ -73,10 +76,12 @@ static const struct
 
     float4 ViewRectMin;
     float4 ViewSizeAndInvSize;
+    float4 BufferSizeAndInvSize;
 
     uint Random;
 	uint FrameNumber;
 	uint StateFrameIndexMod8;
+
 } View = 
 {
     View_TranslatedWorldToClip,
@@ -98,7 +103,7 @@ static const struct
     // View_HMDViewNoRollUp,
     // View_HMDViewNoRollRight,
     View_InvDeviceZToWorldZTransform,
-    //View_ScreenPositionScaleBias,
+    View_ScreenPositionScaleBias,
     View_WorldCameraOrigin,
     View_TranslatedWorldCameraOrigin,
     View_WorldViewOrigin,
@@ -107,6 +112,7 @@ static const struct
 
     View_ViewRectMin,
     View_ViewSizeAndInvSize,
+    View_BufferSizeAndInvSize,
 
     View_Random,
 	View_FrameNumber,

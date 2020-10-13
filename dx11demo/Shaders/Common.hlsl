@@ -283,4 +283,18 @@ void DrawRectangle(in float4 InPosition, in float2 InTexCoord,out float4 OutPosi
     OutTexCoord.xy = (DrawRectangleParameters.UVScaleBias.zw + (InTexCoord.xy * DrawRectangleParameters.UVScaleBias.xy)) * DrawRectangleParameters.InvTargetSizeAndTextureSize.xy;
 }
 
+/** Converts a linear input value into a value to be stored in the light attenuation buffer. */
+MaterialFloat EncodeLightAttenuation(MaterialFloat InColor)
+{
+	// Apply a 1/2 power to the input, which allocates more bits for the darks and prevents banding
+	// Similar to storing colors in gamma space, except this uses less instructions than a pow(x, 1/2.2)
+	return sqrt(InColor);
+}
+
+/** Converts a linear input value into a value to be stored in the light attenuation buffer. */
+MaterialFloat4 EncodeLightAttenuation(MaterialFloat4 InColor)
+{
+	return sqrt(InColor);
+}
+
 #endif

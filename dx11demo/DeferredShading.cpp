@@ -58,9 +58,9 @@ struct ScreenRectangle
 
 	void InitResource()
 	{
-		VertexBuffer = CreateVertexBuffer(Vertices, sizeof(Vertices));
+		VertexBuffer = CreateVertexBuffer(false, sizeof(Vertices), Vertices);
 		IndexBuffer = CreateIndexBuffer(Indices, sizeof(Indices));
-		DrawRectangleParameters = CreateConstantBuffer(&UniformPrameters, sizeof(UniformPrameters));
+		DrawRectangleParameters = CreateConstantBuffer(false,sizeof(UniformPrameters), &UniformPrameters);
 	}
 
 	void ReleaseResource()
@@ -106,7 +106,7 @@ struct ViewUniform
 	// half3 HMDViewNoRollUp;
 	// half3 HMDViewNoRollRight;
 	Vector4 InvDeviceZToWorldZTransform;
-	// half4 ScreenPositionScaleBias;
+	Vector4 ScreenPositionScaleBias;
 	Vector WorldCameraOrigin;
 	float ViewPading01;
 	Vector TranslatedWorldCameraOrigin;
@@ -114,16 +114,17 @@ struct ViewUniform
 	Vector WorldViewOrigin;
 	float ViewPading03;
 
-
 	Vector PreViewTranslation;
 	float ViewPading04;
 	Vector4 ViewRectMin;
 	Vector4 ViewSizeAndInvSize;
+	Vector4 BufferSizeAndInvSize;
 
 	uint32 Random;
 	uint32 FrameNumber;
 	uint32 StateFrameIndexMod8;
 	uint32 ViewPading05;
+
 };
 #pragma pack(pop)
 
@@ -146,6 +147,8 @@ ID3D11InputLayout* RectangleInputLayout;
 ID3D11Texture2D* SceneDepthRT;
 ID3D11DepthStencilView* SceneDepthDSV;
 
+ID3D11Buffer* DynamicVertexBuffer;
+
 ID3DBlob* PrePassVSBytecode;
 ID3DBlob* PrePassPSBytecode;
 ID3D11VertexShader* PrePassVS;
@@ -163,6 +166,18 @@ ID3D11PixelShader* ShadowPassPS;
 ID3D11RasterizerState* ShadowPassRasterizerState;
 ID3D11BlendState* ShadowPassBlendState;
 ID3D11DepthStencilState* ShadowPassDepthStencilState;
+
+ID3D11ShaderResourceView* ShadowPassDepthSRV;
+ID3D11SamplerState* ShadowPassDepthSamplerState;
+ID3DBlob* ShadowProjectionVSBytecode;
+ID3DBlob* ShadowProjectionPSBytecode;
+ID3D11Texture2D* ShadowProjectionRT;
+ID3D11RenderTargetView* ShadowProjectionRTV;
+ID3D11VertexShader* ShadowProjectionVS;
+ID3D11PixelShader* ShadowProjectionPS;
+ID3D11RasterizerState* ShadowProjectionRasterizerState;
+ID3D11BlendState* ShadowProjectionBlendState;
+ID3D11DepthStencilState* ShadowProjectionDepthStencilState;
 
 ID3DBlob* BasePassVSBytecode;
 ID3DBlob* BasePassPSBytecode;
@@ -204,14 +219,20 @@ ID3D11RasterizerState* LightPassRasterizerState;
 ID3D11BlendState* LightPassBlendState;
 ID3D11DepthStencilState* LightPassDepthStencilState;
 
+
+std::map<std::string, ParameterAllocation> ShadowProjectionParams;
+ID3D11Buffer* ShadowProjectionGlobalConstantBuffer;
+char ShadowProjectionGlobalConstantBufferData[4096];
+std::map<std::string, ParameterAllocation> LightPassParams;
+
 void InitInput()
 {
 	Mesh m1;
 	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
-	m1.SetPosition(0.0f, 0.0f, 500.0f);
-	m1.SetRotation(-3.14f , 0, 0);
+	m1.SetPosition(0.0f, 0.0f, 400.0f);
+	m1.SetRotation(-3.14f / 2.0f, 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
 
@@ -252,6 +273,22 @@ void InitInput()
 	VU.WorldCameraOrigin = VMs.GetViewOrigin();
 	VU.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(VMs.GetProjectionMatrix());
 
+	const float InvBufferSizeX = 1.0f / WindowWidth;
+	const float InvBufferSizeY = 1.0f / WindowHeight;
+
+	//Vector4 EffectiveViewRect(0,0,WindowWidth,WindowHeight);
+
+	float GProjectionSignY = 1.0f;
+	VU.ScreenPositionScaleBias = Vector4(
+		WindowWidth * InvBufferSizeX / +2.0f,
+		WindowHeight * InvBufferSizeY / (-2.0f * GProjectionSignY),
+		(WindowHeight / 2.0f + 0.f) * InvBufferSizeY,
+		(WindowWidth / 2.0f + 0.f) * InvBufferSizeX
+	);
+	VU.ViewRectMin = Vector4();
+	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight,1.0f/ WindowWidth, 1.0f / WindowHeight);
+	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+
 	VU.TranslatedWorldToClip.Transpose();
 	VU.ViewToTranslatedWorld.Transpose();
 	VU.WorldToClip.Transpose();
@@ -267,7 +304,7 @@ void InitInput()
 	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
 
-	ViewUniformBuffer = CreateConstantBuffer(&VU, sizeof(VU));
+	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(VU),  &VU);
 
 	SceneDepthRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R24G8_TYPELESS, false, true, true);
 	SceneDepthDSV = CreateDepthStencilView2D(SceneDepthRT, DXGI_FORMAT_D24_UNORM_S8_UINT, 0);
@@ -281,7 +318,8 @@ void InitInput()
 	};
 	PositionOnlyMeshInputLayout = CreateInputLayout(PositionOnlyInputDesc, sizeof(PositionOnlyInputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), PrePassVSBytecode);
 	
-	
+	DynamicVertexBuffer = CreateVertexBuffer(true,4*sizeof(Vector4));
+
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
 	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
@@ -296,10 +334,22 @@ void InitInput()
 
 	ShadowPassRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32_TYPELESS, false, true, true);
 	ShadowPassDSV = CreateDepthStencilView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 0);
+	ShadowPassDepthSRV = CreateShaderResourceView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 1, 0);
 
 	ShadowPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
 	ShadowPassBlendState = TStaticBlendState<>::GetRHI();
 	ShadowPassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_LESS>::GetRHI();
+
+	ShadowProjectionVSBytecode = CompileVertexShader(TEXT("ShadowProjectionVertexShader.hlsl"), "Main");
+	ShadowProjectionPSBytecode = CompilePixelShader(TEXT("ShadowProjectionPixelShader.hlsl"), "Main");
+	ShadowProjectionRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);
+	ShadowProjectionRTV = CreateRenderTargetView2D(ShadowProjectionRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
+	ShadowProjectionVS = CreateVertexShader(ShadowProjectionVSBytecode);
+	ShadowProjectionPS = CreatePixelShader(ShadowProjectionPSBytecode);
+	ShadowProjectionGlobalConstantBuffer = CreateConstantBuffer(true,4096);
+	memset(ShadowProjectionGlobalConstantBufferData, 0, sizeof(ShadowProjectionGlobalConstantBufferData));
+
+	GetShaderParameterAllocations(ShadowProjectionPSBytecode, ShadowProjectionParams);
 
 	//Base Pass
 	BasePassVSBytecode = CompileVertexShader(TEXT("BasePassVertexShader.hlsl"), "VS_Main");
@@ -372,7 +422,7 @@ void InitInput()
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
 
 	DirLight.Color = Vector(1.0f,0.0f,0.0f);
-	DirLight.Direction = Vector(0.0f,0.0f,1.0f);
+	DirLight.Direction = Vector(1.0f,1.0f,1.0f);
 	DirLight.Intencity = 1000.f;
 	DirLight.LightSourceAngle = 0.5357f;
 	DirLight.LightSourceSoftAngle = 0.0f;
@@ -389,10 +439,10 @@ void InitInput()
 	DLU.SoftSourceRadius = std::sin(0.5f * DirLight.LightSourceSoftAngle / 180.f * 3.14f);
 	DLU.SourceLength = 0.0f;
 	DLU.ShadowedBits = 2;
-	DeferredLightUniformBuffer = CreateConstantBuffer(&DLU, sizeof(DLU));
+	DeferredLightUniformBuffer = CreateConstantBuffer(false, sizeof(DLU), &DLU);
 
-	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
-	DirectionalLightViewRotationMatrix.SetIndentity();
+	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(-DirLight.Direction);
+	//DirectionalLightViewRotationMatrix.SetIndentity();
 	Frustum ViewFrustum(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
 	Box FrumstumBounds = ViewFrustum.GetBounds(DirectionalLightViewRotationMatrix);
 	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Min.Z, FrumstumBounds.Max.Z);
@@ -407,7 +457,7 @@ void InitInput()
 	
 	ShadowMapProjectionMatrix = DirectionalLightViewRotationMatrix * DirectionalLightProjectionMatrix;
 	ShadowMapProjectionMatrix.Transpose();
-	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(&ShadowMapProjectionMatrix, sizeof(ShadowMapProjectionMatrix));
+	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
 }
 
 void RenderPrePass()
@@ -446,6 +496,58 @@ void RenderPrePass()
 	}
 }
 
+void RenderShadowProjection()
+{
+	D3D11DeviceContext->OMSetRenderTargets(1, &ShadowProjectionRTV, NULL);
+	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
+	D3D11DeviceContext->ClearRenderTargetView(ShadowProjectionRTV, ClearColor);
+
+	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &ShadowMapProjectionUniformBuffer);
+
+	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI());
+	D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0);
+	D3D11DeviceContext->OMSetDepthStencilState(TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI(), 0);
+
+	D3D11DeviceContext->IASetInputLayout(PositionOnlyMeshInputLayout);
+	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+
+	UINT Stride = sizeof(PositionOnlyLocalVertex);
+	UINT Offset = 0;
+	D3D11DeviceContext->IASetVertexBuffers(0,1,&DynamicVertexBuffer, &Stride, &Offset);
+
+	const ParameterAllocation& ShadowDepthTexture = ShadowProjectionParams["ShadowDepthTexture"];
+	D3D11DeviceContext->PSSetShaderResources(ShadowDepthTexture.BaseIndex, ShadowDepthTexture.Size, &ShadowPassDepthSRV);
+	const ParameterAllocation& ShadowDepthTextureSampler = ShadowProjectionParams["ShadowDepthTextureSampler"];
+	ShadowPassDepthSamplerState = TStaticSamplerState<>::GetRHI();
+	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &ShadowPassDepthSamplerState);
+	const ParameterAllocation& ShadowFadeFraction = ShadowProjectionParams["ShadowFadeFraction"];
+	const ParameterAllocation& ShadowSharpen = ShadowProjectionParams["ShadowSharpen"];
+	//memcpy(ShadowProjectionGlobalConstantBuffer + ShadowFadeFraction.BaseIndex, , ShadowFadeFraction.Size);
+	//memcpy(ShadowProjectionGlobalConstantBuffer + ShadowSharpen.BaseIndex, , ShadowSharpen.Size);
+	D3D11DeviceContext->UpdateSubresource(ShadowProjectionGlobalConstantBuffer,0,NULL, ShadowProjectionGlobalConstantBufferData, ShadowFadeFraction.Size, ShadowFadeFraction.Size);
+
+	
+	//float4x4 ScreenToShadowMatrix;
+	D3D11DeviceContext->VSSetShader(ShadowProjectionVS, 0, 0);
+	D3D11DeviceContext->PSSetShader(ShadowProjectionPS, 0, 0);
+
+	Vector4 Verts[4] = 
+	{
+		Vector4(-1.0f, 1.0f, 0.0f),
+		Vector4(1.0f, 1.0f, 0.0f),
+		Vector4(-1.0f, -1.0f, 0.0f),
+		Vector4(1.0f, -1.0f, 0.0f),
+	};
+	//https://docs.microsoft.com/en-us/windows/win32/direct3d11/how-to--use-dynamic-resources
+	D3D11_MAPPED_SUBRESOURCE SubResource;
+	ZeroMemory(&SubResource, sizeof(SubResource));
+	D3D11DeviceContext->Map(DynamicVertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0, &SubResource);
+	memcpy(SubResource.pData, Verts, sizeof(Verts));
+	D3D11DeviceContext->Unmap(DynamicVertexBuffer, 0);
+
+	D3D11DeviceContext->Draw(4, 0);
+}
 
 void RenderShadowPass()
 {
@@ -479,6 +581,8 @@ void RenderShadowPass()
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 	}
+
+	RenderShadowProjection();
 }
 
 void RenderBasePass()
@@ -544,9 +648,9 @@ void RenderLight()
 	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
 
-	//D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
+	D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
 	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
-	//D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
+	D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
 	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
 
 	D3D11DeviceContext->PSSetShaderResources(3, 3, LightPassGBufferSRV);

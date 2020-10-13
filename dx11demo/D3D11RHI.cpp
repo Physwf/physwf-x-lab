@@ -1,6 +1,7 @@
 #include "D3D11RHI.h"
 #include "log.h"
 #include <D3Dcompiler.h>
+#include <d3d11shader.h>
 #include <memory>
 #include <string>
 #include <stdio.h>
@@ -171,28 +172,38 @@ void D3D11Present()
 	DXGISwapChain->Present(0, 0);
 }
 
-ID3D11Buffer* CreateVertexBuffer(void* Data, unsigned int Size)
+ID3D11Buffer* CreateVertexBuffer(bool bDynamic, unsigned int Size, void* Data /*= NULL*/)
 {
 	D3D11_BUFFER_DESC VertexDesc;
 	ZeroMemory(&VertexDesc, sizeof(VertexDesc));
-	VertexDesc.Usage = D3D11_USAGE_DEFAULT;
 	VertexDesc.ByteWidth = Size;
 	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	VertexDesc.CPUAccessFlags = 0;
-	VertexDesc.MiscFlags = 0;
 
 	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory(&InitData, sizeof(InitData));
-	InitData.pSysMem = Data;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
+	if (bDynamic)
+	{
+		VertexDesc.Usage = D3D11_USAGE_DYNAMIC;
+		VertexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		VertexDesc.MiscFlags = 0;
+	}
+	else
+	{
+		VertexDesc.Usage = D3D11_USAGE_DEFAULT;
+		VertexDesc.CPUAccessFlags = 0;
+		VertexDesc.MiscFlags = 0;
+
+		ZeroMemory(&InitData, sizeof(InitData));
+		InitData.pSysMem = Data;
+		InitData.SysMemPitch = 0;
+		InitData.SysMemSlicePitch = 0;
+	}
 
 	ID3D11Buffer* Result;
-	if (S_OK == D3D11Device->CreateBuffer(&VertexDesc, &InitData, &Result))
+	if (S_OK == D3D11Device->CreateBuffer(&VertexDesc, Data != NULL ? &InitData : NULL, &Result))
 	{
 		return Result;
 	}
-	X_LOG("CreateVertexBuffer  failed!");
+	X_LOG("CreateVertexBuffer failed!");
 	return NULL;
 }
 
@@ -221,21 +232,29 @@ ID3D11Buffer* CreateIndexBuffer(void* Data, unsigned int Size)
 	return NULL;
 }
 
-ID3D11Buffer* CreateConstantBuffer(void* Data, unsigned int Size)
+ID3D11Buffer* CreateConstantBuffer(bool bDynamic, unsigned int Size, void* Data /*= NULL*/)
 {
 	D3D11_BUFFER_DESC Desc;
 	ZeroMemory(&Desc, sizeof(D3D11_BUFFER_DESC));
 	Desc.ByteWidth = Size;
-	Desc.Usage = D3D11_USAGE_DEFAULT;
 	Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 
 	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = Data;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
+	if (bDynamic)
+	{
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+	}
+	else
+	{
+		Desc.Usage = D3D11_USAGE_DEFAULT;
+
+		InitData.pSysMem = Data;
+		InitData.SysMemPitch = 0;
+		InitData.SysMemSlicePitch = 0;
+	}
 
 	ID3D11Buffer* Result;
-	if (S_OK == D3D11Device->CreateBuffer(&Desc, &InitData, &Result))
+	if (S_OK == D3D11Device->CreateBuffer(&Desc, Data != NULL ?  &InitData : NULL , &Result))
 	{
 		return Result;
 	}
@@ -368,6 +387,57 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 	}
 	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
 	return NULL;
+}
+
+void GetShaderParameterAllocations(ID3DBlob* Code, std::map<std::string, ParameterAllocation>& OutParams)
+{
+	//see UE4 D3D11ShaderCompiler.cpp CompileAndProcessD3DShader()
+	ID3D11ShaderReflection* pReflector = NULL;
+	D3DReflect(Code->GetBufferPointer(), Code->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pReflector);
+	D3D11_SHADER_DESC ShaderDesc;
+	pReflector->GetDesc(&ShaderDesc);
+	for (UINT ResourceIndex = 0; ResourceIndex < ShaderDesc.BoundResources; ResourceIndex++)
+	{
+		D3D11_SHADER_INPUT_BIND_DESC BindDesc;
+		pReflector->GetResourceBindingDesc(ResourceIndex, &BindDesc);
+		if (BindDesc.Type == D3D10_SIT_CBUFFER || BindDesc.Type == D3D10_SIT_TBUFFER)
+		{
+			const UINT CBIndex = BindDesc.BindPoint;
+			ID3D11ShaderReflectionConstantBuffer* ConstantBuffer = pReflector->GetConstantBufferByName(BindDesc.Name);
+			D3D11_SHADER_BUFFER_DESC CBDesc;
+			ConstantBuffer->GetDesc(&CBDesc);
+			bool bGlobalCB = (strcmp(CBDesc.Name, "$Globals") == 0);
+			if (bGlobalCB)
+			{
+				for (UINT ContantIndex = 0; ContantIndex < CBDesc.Variables; ContantIndex++)
+				{
+					ID3D11ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ContantIndex);
+					D3D11_SHADER_VARIABLE_DESC VariableDesc;
+					Variable->GetDesc(&VariableDesc);
+					if (VariableDesc.uFlags & D3D10_SVF_USED)
+					{
+						OutParams.insert(std::make_pair<std::string,ParameterAllocation>(VariableDesc.Name, { CBIndex ,VariableDesc.StartOffset,VariableDesc.Size }));
+					}
+				}
+			}
+			else
+			{
+				OutParams.insert(std::make_pair<std::string, ParameterAllocation>(CBDesc.Name, { CBIndex,0,0 }));
+			}
+		}
+		else if (BindDesc.Type == D3D10_SIT_TEXTURE || BindDesc.Type == D3D10_SIT_SAMPLER)
+		{
+			UINT BindCount = BindDesc.BindCount;
+
+			OutParams.insert(std::make_pair<std::string, ParameterAllocation>(BindDesc.Name, { 0,BindDesc.BindPoint,BindCount }));
+		}
+		else if (BindDesc.Type == D3D11_SIT_UAV_RWTYPED || BindDesc.Type == D3D11_SIT_UAV_RWSTRUCTURED ||
+			BindDesc.Type == D3D11_SIT_UAV_RWBYTEADDRESS || BindDesc.Type == D3D11_SIT_UAV_RWSTRUCTURED_WITH_COUNTER ||
+			BindDesc.Type == D3D11_SIT_UAV_APPEND_STRUCTURED)
+		{
+		}
+	}
+
 }
 
 ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode)

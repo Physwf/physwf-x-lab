@@ -4,6 +4,9 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+#include <map>
+#include <string>
+
 using namespace Microsoft::WRL;
 
 extern IDXGIFactory*	DXGIFactory;
@@ -27,11 +30,19 @@ bool D3D11Setup();
 void D3D11ClearViewTarget();
 void D3D11Present();
 
-ID3D11Buffer* CreateVertexBuffer(void* Data,unsigned int Size);
+struct ParameterAllocation
+{
+	UINT BufferIndex;
+	UINT BaseIndex;
+	UINT Size;
+};
+
+ID3D11Buffer* CreateVertexBuffer(bool bDynamic,unsigned int Size, void* Data = NULL);
 ID3D11Buffer* CreateIndexBuffer(void* Data, unsigned int Size);
-ID3D11Buffer* CreateConstantBuffer(void* Data, unsigned int Size);
+ID3D11Buffer* CreateConstantBuffer(bool bDynamic, unsigned int Size, void* Data = NULL);
 ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint);
 ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint);
+void GetShaderParameterAllocations(ID3DBlob* Code,std::map<std::string, ParameterAllocation>& OutParams);
 ID3D11VertexShader* CreateVertexShader(ID3DBlob* VSBytecode);
 ID3D11PixelShader* CreatePixelShader(ID3DBlob* PSBytecode);
 ID3D11InputLayout* CreateInputLayout(D3D11_INPUT_ELEMENT_DESC* InputDesc, unsigned int Count, ID3DBlob* VSBytecode);
@@ -39,7 +50,6 @@ ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT For
 ID3D11RenderTargetView* CreateRenderTargetView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice);
 ID3D11DepthStencilView* CreateDepthStencilView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipSlice);
 ID3D11ShaderResourceView* CreateShaderResourceView2D(ID3D11Texture2D* Resource, DXGI_FORMAT Format, UINT MipLevels, UINT MostDetailedMip);
-
 template<typename InitializerType, typename RHIRefType, typename RHIParamRefType>
 class TStaticStateRHI
 {
