@@ -243,6 +243,7 @@ ID3D11Buffer* CreateConstantBuffer(bool bDynamic, unsigned int Size, void* Data 
 	if (bDynamic)
 	{
 		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	}
 	else
 	{

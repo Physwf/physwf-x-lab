@@ -143,6 +143,7 @@ ID3D11Buffer* DirecianlLightShadowMapViewUniformBuffer;
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
 ID3D11InputLayout* MeshInputLayout;
 ID3D11InputLayout* RectangleInputLayout;
+ID3D11InputLayout* ShadowProjectionInputLayout;
 
 ID3D11Texture2D* SceneDepthRT;
 ID3D11DepthStencilView* SceneDepthDSV;
@@ -334,7 +335,7 @@ void InitInput()
 
 	ShadowPassRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32_TYPELESS, false, true, true);
 	ShadowPassDSV = CreateDepthStencilView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 0);
-	ShadowPassDepthSRV = CreateShaderResourceView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 1, 0);
+	ShadowPassDepthSRV = CreateShaderResourceView2D(ShadowPassRT, DXGI_FORMAT_R32_FLOAT, 1, 0);
 
 	ShadowPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
 	ShadowPassBlendState = TStaticBlendState<>::GetRHI();
@@ -342,11 +343,17 @@ void InitInput()
 
 	ShadowProjectionVSBytecode = CompileVertexShader(TEXT("ShadowProjectionVertexShader.hlsl"), "Main");
 	ShadowProjectionPSBytecode = CompilePixelShader(TEXT("ShadowProjectionPixelShader.hlsl"), "Main");
+	D3D11_INPUT_ELEMENT_DESC ShadowProjectionInputDesc[] =
+	{
+		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
+	};
+	ShadowProjectionInputLayout = CreateInputLayout(ShadowProjectionInputDesc, sizeof(ShadowProjectionInputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), ShadowProjectionVSBytecode);
+
 	ShadowProjectionRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R32G32B32A32_FLOAT, true, true, false);
 	ShadowProjectionRTV = CreateRenderTargetView2D(ShadowProjectionRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	ShadowProjectionVS = CreateVertexShader(ShadowProjectionVSBytecode);
 	ShadowProjectionPS = CreatePixelShader(ShadowProjectionPSBytecode);
-	ShadowProjectionGlobalConstantBuffer = CreateConstantBuffer(true,4096);
+	ShadowProjectionGlobalConstantBuffer = CreateConstantBuffer(false,4096);
 	memset(ShadowProjectionGlobalConstantBufferData, 0, sizeof(ShadowProjectionGlobalConstantBufferData));
 
 	GetShaderParameterAllocations(ShadowProjectionPSBytecode, ShadowProjectionParams);
@@ -499,6 +506,7 @@ void RenderPrePass()
 void RenderShadowProjection()
 {
 	D3D11DeviceContext->OMSetRenderTargets(1, &ShadowProjectionRTV, NULL);
+	//D3D11DeviceContext->OMSetDepthStencilState(NULL, 0);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	D3D11DeviceContext->ClearRenderTargetView(ShadowProjectionRTV, ClearColor);
 
@@ -506,28 +514,33 @@ void RenderShadowProjection()
 	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &ShadowMapProjectionUniformBuffer);
 
 	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI());
-	D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0);
+	//D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0);
 	D3D11DeviceContext->OMSetDepthStencilState(TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI(), 0);
 
-	D3D11DeviceContext->IASetInputLayout(PositionOnlyMeshInputLayout);
+	D3D11DeviceContext->IASetInputLayout(ShadowProjectionInputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	UINT Stride = sizeof(PositionOnlyLocalVertex);
-	UINT Offset = 0;
-	D3D11DeviceContext->IASetVertexBuffers(0,1,&DynamicVertexBuffer, &Stride, &Offset);
 
 	const ParameterAllocation& ShadowDepthTexture = ShadowProjectionParams["ShadowDepthTexture"];
 	D3D11DeviceContext->PSSetShaderResources(ShadowDepthTexture.BaseIndex, ShadowDepthTexture.Size, &ShadowPassDepthSRV);
 	const ParameterAllocation& ShadowDepthTextureSampler = ShadowProjectionParams["ShadowDepthTextureSampler"];
 	ShadowPassDepthSamplerState = TStaticSamplerState<>::GetRHI();
 	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &ShadowPassDepthSamplerState);
+
+	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
+	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
+
 	const ParameterAllocation& ShadowFadeFraction = ShadowProjectionParams["ShadowFadeFraction"];
 	const ParameterAllocation& ShadowSharpen = ShadowProjectionParams["ShadowSharpen"];
-	//memcpy(ShadowProjectionGlobalConstantBuffer + ShadowFadeFraction.BaseIndex, , ShadowFadeFraction.Size);
-	//memcpy(ShadowProjectionGlobalConstantBuffer + ShadowSharpen.BaseIndex, , ShadowSharpen.Size);
-	D3D11DeviceContext->UpdateSubresource(ShadowProjectionGlobalConstantBuffer,0,NULL, ShadowProjectionGlobalConstantBufferData, ShadowFadeFraction.Size, ShadowFadeFraction.Size);
+	float fShadowFadeFraction = 1.0f;
+	float fShadowSharpen = 1.0f;
+	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowFadeFraction.BaseIndex, &fShadowFadeFraction, ShadowFadeFraction.Size);
+	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowSharpen.BaseIndex, &fShadowSharpen, ShadowSharpen.Size);
+	//https://gamedev.stackexchange.com/questions/184702/direct3d-constant-buffer-not-updating
+	//https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-updatesubresource
+	D3D11DeviceContext->UpdateSubresource(ShadowProjectionGlobalConstantBuffer,0,NULL, ShadowProjectionGlobalConstantBufferData, 0, 0);
 
-	
+	D3D11DeviceContext->PSSetConstantBuffers(ShadowFadeFraction.BufferIndex, 1, &ShadowProjectionGlobalConstantBuffer);
+
 	//float4x4 ScreenToShadowMatrix;
 	D3D11DeviceContext->VSSetShader(ShadowProjectionVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(ShadowProjectionPS, 0, 0);
@@ -545,8 +558,18 @@ void RenderShadowProjection()
 	D3D11DeviceContext->Map(DynamicVertexBuffer,0,D3D11_MAP_WRITE_DISCARD,0, &SubResource);
 	memcpy(SubResource.pData, Verts, sizeof(Verts));
 	D3D11DeviceContext->Unmap(DynamicVertexBuffer, 0);
+	UINT Stride = sizeof(Vector4);
+	UINT Offset = 0;
+	D3D11DeviceContext->IASetVertexBuffers(0, 1, &DynamicVertexBuffer, &Stride, &Offset);
 
 	D3D11DeviceContext->Draw(4, 0);
+	//reset
+	ID3D11ShaderResourceView* SRV = NULL;
+	ID3D11SamplerState* Sampler = NULL;
+	D3D11DeviceContext->PSSetShaderResources(ShadowDepthTexture.BaseIndex, ShadowDepthTexture.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &Sampler);
+	D3D11DeviceContext->PSSetShaderResources(1, 1, &SRV);
+	D3D11DeviceContext->PSSetSamplers(1, 1, &Sampler);
 }
 
 void RenderShadowPass()

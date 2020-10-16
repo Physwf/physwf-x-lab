@@ -13,8 +13,8 @@ extern std::vector<MeshBatch> AllBatches;
 
 void MeshLODResources::InitResource()
 {
-	VertexBuffer = CreateVertexBuffer(Vertices.data(), sizeof(LocalVertex) * Vertices.size());
-	PositionOnlyVertexBuffer = CreateVertexBuffer(PositionOnlyVertices.data(), sizeof(PositionOnlyLocalVertex) * Vertices.size());
+	VertexBuffer = CreateVertexBuffer(false, sizeof(LocalVertex) * Vertices.size(), Vertices.data());
+	PositionOnlyVertexBuffer = CreateVertexBuffer(false, sizeof(PositionOnlyLocalVertex) * Vertices.size(), PositionOnlyVertices.data());
 	IndexBuffer = CreateIndexBuffer(Indices.data(), sizeof(unsigned int) * Indices.size());
 }
 
@@ -699,7 +699,7 @@ void Mesh::InitResource()
 	PrimitiveUniform PU;
 	PU.LocalToWorld = GetWorldMatrix();
 	PU.InvNonUniformScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-	PrimitiveUniformBuffer = CreateConstantBuffer(&PU, sizeof(PU));
+	PrimitiveUniformBuffer = CreateConstantBuffer(false,sizeof(PU),&PU);
 	
 }
 
