@@ -14,7 +14,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 
 #configure_file(${DIR_PROJECT}/Triangle.hlsl ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
-
+#copy $(SolutionDir)..\dx11demo\Shaders\*.hlsl  $(TargetDir)
 SET(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 
 MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
@@ -29,6 +29,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
 	target_link_libraries (dx11demo "dxgi.lib")
 	target_link_libraries (dx11demo "D3DCompiler.lib")
 	target_link_libraries (dx11demo ${FBXSDK_LIBRARY})
+	target_link_libraries (dx11demo dxguid.lib)
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	MESSAGE(STATUS "current platform: FreeBSD")
 ELSE ()

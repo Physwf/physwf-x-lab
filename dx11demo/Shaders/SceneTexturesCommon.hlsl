@@ -13,8 +13,7 @@ float3 CalcSceneColor(float2 ScreenUV)
 
 float CalcSceneDepth(float2 ScreenUV)
 {
-    float DeviceZ = SceneTexturesStruct.SceneDepthTexture.SampleLevel( SceneTexturesStruct.SceneDepthTextureSampler,ScreenUV,0).r;
-    return ConvertFromDeviceZ(DeviceZ);
+   return ConvertFromDeviceZ(Texture2DSampleLevel(SceneTexturesStruct.SceneDepthTexture, SceneTexturesStruct.SceneDepthTextureSampler, ScreenUV, 0).r);
 }
 
 

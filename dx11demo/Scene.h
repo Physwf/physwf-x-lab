@@ -24,7 +24,7 @@ private:
 	Matrix ViewMatrix;//WorldToView
 	Matrix InvViewMatrix;//ViewToWorld
 	Matrix ViewProjectionMatrix;//WorldToClip
-	Matrix InvViewProjectMatrix;//ClipToWorld
+	Matrix InvViewProjectionMatrix;//ClipToWorld
 
 	Matrix TranslatedViewMatrix;//
 	Matrix InvTranslatedViewMatrix;//
@@ -57,11 +57,11 @@ public:
 	}
 	inline const Matrix& GetViewProjectionMatrix() const
 	{
-		return InvViewProjectMatrix;
+		return ViewProjectionMatrix;
 	}
-	inline const Matrix& GetViewInvViewProjectMatrix() const
+	inline const Matrix& GetInvViewProjectionMatrix() const
 	{
-		return InvViewProjectMatrix;
+		return InvViewProjectionMatrix;
 	}
 
 	inline const Matrix& GetTranslatedViewMatrix() const

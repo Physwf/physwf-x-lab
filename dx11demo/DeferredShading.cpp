@@ -137,6 +137,8 @@ struct ShadowMapView
 Matrix ShadowMapProjectionMatrix;
 ID3D11Buffer* ShadowMapProjectionUniformBuffer;
 
+Matrix ScreenToShadowMatrix;
+
 ID3D11Buffer* ViewUniformBuffer;
 ID3D11Buffer* DirecianlLightShadowMapViewUniformBuffer;
 
@@ -226,13 +228,15 @@ ID3D11Buffer* ShadowProjectionGlobalConstantBuffer;
 char ShadowProjectionGlobalConstantBufferData[4096];
 std::map<std::string, ParameterAllocation> LightPassParams;
 
+ViewUniform VU;
+
 void InitInput()
 {
 	Mesh m1;
 	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
-	m1.SetPosition(0.0f, 0.0f, 400.0f);
+	m1.SetPosition(20.0f, -100.0f, 480.0f);
 	m1.SetRotation(-3.14f / 2.0f, 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
@@ -252,7 +256,6 @@ void InitInput()
 	Vector v2 = ProjectionMatrix.Transform(Vector(700, 700, 100.0f));
 	Vector v3 = ProjectionMatrix.Transform(Vector(700, 700, 500.0f));
 	Vector v4 = ProjectionMatrix.Transform(Vector(700, -700, 50.0f));
-	ViewUniform VU;
 	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
 	VU.TranslatedWorldToClip = ProjectionMatrix;// VMs.GetTranslatedViewProjectionMatrix();
 	VU.WorldToClip = VMs.GetViewProjectionMatrix();
@@ -289,6 +292,7 @@ void InitInput()
 	VU.ViewRectMin = Vector4();
 	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight,1.0f/ WindowWidth, 1.0f / WindowHeight);
 	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.ScreenToWorld = VMs.GetInvViewProjectionMatrix();
 
 	VU.TranslatedWorldToClip.Transpose();
 	VU.ViewToTranslatedWorld.Transpose();
@@ -355,6 +359,7 @@ void InitInput()
 	ShadowProjectionPS = CreatePixelShader(ShadowProjectionPSBytecode);
 	ShadowProjectionGlobalConstantBuffer = CreateConstantBuffer(false,4096);
 	memset(ShadowProjectionGlobalConstantBufferData, 0, sizeof(ShadowProjectionGlobalConstantBufferData));
+
 
 	GetShaderParameterAllocations(ShadowProjectionPSBytecode, ShadowProjectionParams);
 
@@ -429,7 +434,7 @@ void InitInput()
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
 
 	DirLight.Color = Vector(1.0f,0.0f,0.0f);
-	DirLight.Direction = Vector(1.0f,1.0f,1.0f);
+	DirLight.Direction = Vector(-1.0f,-1.0f,-1.0f);
 	DirLight.Intencity = 1000.f;
 	DirLight.LightSourceAngle = 0.5357f;
 	DirLight.LightSourceSoftAngle = 0.0f;
@@ -448,21 +453,61 @@ void InitInput()
 	DLU.ShadowedBits = 2;
 	DeferredLightUniformBuffer = CreateConstantBuffer(false, sizeof(DLU), &DLU);
 
-	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(-DirLight.Direction);
-	//DirectionalLightViewRotationMatrix.SetIndentity();
+	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
 	Frustum ViewFrustum(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
 	Box FrumstumBounds = ViewFrustum.GetBounds(DirectionalLightViewRotationMatrix);
-	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Min.Z, FrumstumBounds.Max.Z);
-	ViewMatrices VMs2(Vector(0.0f, 0.0f, 0.0f), DirectionalLightViewRotationMatrix, DirectionalLightProjectionMatrix);
-	ViewUniform DirectionalLightShadowMapViewUniform;
-	DirectionalLightShadowMapViewUniform.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
-	DirectionalLightShadowMapViewUniform.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
-	DirectionalLightShadowMapViewUniform.WorldToClip = VMs.GetViewProjectionMatrix();
-	DirectionalLightShadowMapViewUniform.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
-	
-	//DirecianlLightShadowMapViewUniformBuffer = CreateConstantBuffer(&DirectionalLightShadowMapViewUniform, sizeof(DirectionalLightShadowMapViewUniform));
-	
+	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Max.Z, FrumstumBounds.Min.Z);
+	//DirectionalLightProjectionMatrix = ProjectionMatrix;
 	ShadowMapProjectionMatrix = DirectionalLightViewRotationMatrix * DirectionalLightProjectionMatrix;
+	//Matrix  InvViewProjectionMatrix = VMs.GetInvViewProjectionMatrix();
+	//ScreenToShadowMatrix =  InvViewProjectionMatrix * ShadowMapProjectionMatrix;
+	//ScreenToShadowMatrix.Transpose();
+
+	
+	uint32 TileOffsetX = 0; uint32 TileOffsetY = 0;
+	uint32 BorderSize = 0;
+	float InvMaxSubjectDepth = 0.0f;
+	const Vector2 ShadowBufferResolution(WindowWidth,WindowHeight);
+	uint32 TileResolutionX = WindowWidth;
+	uint32 TileResolutionY = WindowHeight;
+	const float InvBufferResolutionX = 1.0f / (float)ShadowBufferResolution.X;
+	const float ShadowResolutionFractionX = 0.5f * (float)TileResolutionX * InvBufferResolutionX;
+	const float InvBufferResolutionY = 1.0f / (float)ShadowBufferResolution.Y;
+	const float ShadowResolutionFractionY = 0.5f * (float)TileResolutionY * InvBufferResolutionY;
+	// Calculate the matrix to transform a screenspace position into shadow map space
+	ScreenToShadowMatrix =
+		// Z of the position being transformed is actually view space Z, 
+		// Transform it into post projection space by applying the projection matrix,
+		// Which is the required space before applying View.InvTranslatedViewProjectionMatrix
+		Matrix(
+			Plane(1, 0, 0, 0),
+			Plane(0, 1, 0, 0),
+			Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+			Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0)) *
+		// Transform the post projection space position into translated world space
+		// Translated world space is normal world space translated to the view's origin, 
+		// Which prevents floating point imprecision far from the world origin.
+		VMs.GetInvTranslatedViewProjectionMatrix() *
+		// Translate to the origin of the shadow's translated world space
+		//FTranslationMatrix(PreShadowTranslation - View.ViewMatrices.GetPreViewTranslation()) *
+		// Transform into the shadow's post projection space
+		// This has to be the same transform used to render the shadow depths
+		ShadowMapProjectionMatrix *
+		// Scale and translate x and y to be texture coordinates into the ShadowInfo's rectangle in the shadow depth buffer
+		// Normalize z by MaxSubjectDepth, as was done when writing shadow depths
+		Matrix(
+			Plane(ShadowResolutionFractionX,		0,									0, 0),
+			Plane(0,								-ShadowResolutionFractionY,			0, 0),
+			Plane(0,								0,									InvMaxSubjectDepth, 0),
+			Plane(
+				(TileOffsetX + BorderSize) * InvBufferResolutionX + ShadowResolutionFractionX,
+				(TileOffsetY + BorderSize) * InvBufferResolutionY + ShadowResolutionFractionY,
+				0,
+				1
+			)
+		);
+	ScreenToShadowMatrix.Transpose();
+
 	ShadowMapProjectionMatrix.Transpose();
 	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
 }
@@ -529,19 +574,24 @@ void RenderShadowProjection()
 	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
 	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
 
-	const ParameterAllocation& ShadowFadeFraction = ShadowProjectionParams["ShadowFadeFraction"];
-	const ParameterAllocation& ShadowSharpen = ShadowProjectionParams["ShadowSharpen"];
+	const ParameterAllocation& ShadowFadeFractionParam = ShadowProjectionParams["ShadowFadeFraction"];
+	const ParameterAllocation& ShadowSharpenParam = ShadowProjectionParams["ShadowSharpen"];
+	const ParameterAllocation& ScreenToShadowMatrixParam = ShadowProjectionParams["ScreenToShadowMatrix"];
 	float fShadowFadeFraction = 1.0f;
 	float fShadowSharpen = 1.0f;
-	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowFadeFraction.BaseIndex, &fShadowFadeFraction, ShadowFadeFraction.Size);
-	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowSharpen.BaseIndex, &fShadowSharpen, ShadowSharpen.Size);
+
+	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowFadeFractionParam.BaseIndex, &fShadowFadeFraction, ShadowFadeFractionParam.Size);
+	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowSharpenParam.BaseIndex, &fShadowSharpen, ShadowSharpenParam.Size);
+	memcpy(ShadowProjectionGlobalConstantBufferData + ScreenToShadowMatrixParam.BaseIndex, &ScreenToShadowMatrix, ScreenToShadowMatrixParam.Size);
+
 	//https://gamedev.stackexchange.com/questions/184702/direct3d-constant-buffer-not-updating
 	//https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-updatesubresource
 	D3D11DeviceContext->UpdateSubresource(ShadowProjectionGlobalConstantBuffer,0,NULL, ShadowProjectionGlobalConstantBufferData, 0, 0);
 
-	D3D11DeviceContext->PSSetConstantBuffers(ShadowFadeFraction.BufferIndex, 1, &ShadowProjectionGlobalConstantBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(ShadowFadeFractionParam.BufferIndex, 1, &ShadowProjectionGlobalConstantBuffer);
 
-	//float4x4 ScreenToShadowMatrix;
+
+
 	D3D11DeviceContext->VSSetShader(ShadowProjectionVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(ShadowProjectionPS, 0, 0);
 

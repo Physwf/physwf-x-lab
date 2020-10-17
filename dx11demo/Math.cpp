@@ -41,19 +41,45 @@ Matrix Matrix::DXLookToLH(const Vector& To)
 {
 	srand(unsigned int(To.SizeSquared()));
 	Vector XDir = Vector((float)rand(), (float)rand(), (float)rand());
-	Vector ZDir = To;
 	XDir.Normalize();
+	Vector ZDir = To;
 	ZDir.Normalize();
-	Vector YDir = ZDir ^ XDir;
-	XDir = YDir ^ ZDir;
+	Vector YDir = -ZDir ^ XDir;
+	XDir = YDir ^ -ZDir;
+	XDir.Normalize();
+	YDir.Normalize();
+	ZDir.Normalize();
 	//Vector::CreateOrthonormalBasis(XDir, YDir, ZDir);
 	return Matrix
 	(
-		Plane(XDir,0.0f),
 		Plane(YDir, 0.0f),
 		Plane(ZDir, 0.0f),
+		Plane(XDir, 0.0f),
 		Plane(0.0f, 0.0f, 0.0f, 1.0f)
 	);
+}
+
+Matrix Matrix::DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float zNearPlane, float zFarPlane)
+{
+	/*
+	xScale     0          0               0
+	0        yScale       0               0
+	0          0       zn/(zn-zf)         1
+	0          0       -zn*zf/(zn-zf)     0
+	where:
+	yScale = cot(fovY/2)
+
+	xScale = yScale / aspect ratio
+	*/
+	Matrix Result;
+	float Cot = 1.0f / tanf(0.5f * fieldOfViewY);
+	float InverNF = zNearPlane / (zNearPlane - zFarPlane);
+
+	Result.M[0][0] = Cot / aspectRatio;			Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
+	Result.M[1][0] = 0.0f;						Result.M[1][1] = Cot;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
+	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = InverNF; 								Result.M[2][3] = 1.0f;
+	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = -InverNF * zFarPlane;					Result.M[3][3] = 0.0f;
+	return Result;
 }
 
 Matrix Matrix::DXFromOrthognalLH(float w, float h, float zn, float zf)
@@ -72,7 +98,7 @@ Matrix Matrix::DXFromOrthognalLH(float r, float l, float t, float b, float zf, f
 	Result.M[0][0] = 2.0f / (r - l);		Result.M[0][1] = 0.0f;					Result.M[0][2] = 0.0f;							Result.M[0][3] = 0.0f;
 	Result.M[1][0] = 0.0f;					Result.M[1][1] = 2.0f / (t - b);		Result.M[1][2] = 0.0f;							Result.M[1][3] = 0.0f;
 	Result.M[2][0] = 0.0f;					Result.M[2][1] = 0.0f;					Result.M[2][2] = 1.0f / (zf - zn);				Result.M[2][3] = 0.0f;
-	Result.M[3][0] = -(r + l) / (r - l);	Result.M[3][1] = -(t + b) / (t - b);	Result.M[3][2] = -zn / (zf - zn);				Result.M[3][3] = 1.0f;
+	Result.M[3][0] = -(r + l) / (r - l);	Result.M[3][1] = (t + b) / (t - b);		Result.M[3][2] = -zn / (zf - zn);				Result.M[3][3] = 1.0f;
 	return Result;
 }
 

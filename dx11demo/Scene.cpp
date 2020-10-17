@@ -29,7 +29,7 @@ ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InViewMatri
 	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
 	
 	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(LocalViewOrigin);
-	InvViewProjectMatrix = InvProjectionMatrix * InvViewMatrix;
+	InvViewProjectionMatrix = InvProjectionMatrix * InvViewMatrix;
 
 	bool bApplyPreViewTranslation = true;
 
@@ -150,7 +150,7 @@ void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
 	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
 
 	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(ViewLocation);
-	InvViewProjectMatrix = GetInvProjectionMatrix() * GetInvViewMatrix();
+	InvViewProjectionMatrix = GetInvProjectionMatrix() * GetInvViewMatrix();
 
 	PreViewTranslation = -ViewOrigin;
 
@@ -161,6 +161,12 @@ void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
 
 Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix)
 {
+	/*
+	00, 01, 02, 03
+	10, 11, 12, 13
+	20, 21, 22, 23
+	30, 31, 32, 33
+	*/
 	float DepthMul = ProjMatrix.M[2][2];
 	float DepthAdd = ProjMatrix.M[3][2];
 

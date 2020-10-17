@@ -1127,29 +1127,6 @@ inline Matrix Matrix::DXFromPerspectiveFovLH(float fieldOfViewY, float aspectRat
 	return Result;
 }
 
-inline Matrix Matrix::DXReversedZFromPerspectiveFovLH(float fieldOfViewY, float aspectRatio, float zNearPlane, float zFarPlane)
-{
-	/*
-	xScale     0          0               0
-	0        yScale       0               0
-	0          0       zn/(zn-zf)         1
-	0          0       -zn*zf/(zn-zf)     0
-	where:
-	yScale = cot(fovY/2)
-
-	xScale = yScale / aspect ratio
-	*/
-	Matrix Result;
-	float Cot = 1.0f / tanf(0.5f * fieldOfViewY);
-	float InverNF = zNearPlane / (zNearPlane - zFarPlane);
-
-	Result.M[0][0] = Cot / aspectRatio;			Result.M[0][1] = 0.0f;		Result.M[0][2] = 0.0f;									Result.M[0][3] = 0.0f;
-	Result.M[1][0] = 0.0f;						Result.M[1][1] = Cot;		Result.M[1][2] = 0.0f;									Result.M[1][3] = 0.0f;
-	Result.M[2][0] = 0.0f;						Result.M[2][1] = 0.0f;		Result.M[2][2] = InverNF; 								Result.M[2][3] = 1.0f;
-	Result.M[3][0] = 0.0f;						Result.M[3][1] = 0.0f;		Result.M[3][2] = -InverNF * zFarPlane;					Result.M[3][3] = 0.0f;
-	return Result;
-}
-
 inline Matrix Matrix::DXFromPerspectiveLH(float w, float h, float zn, float zf)
 {
 	/*
