@@ -14,9 +14,23 @@ public:
 	~AutoEclipse()
 	{
 		std::chrono::system_clock::duration TimeEclipse = std::chrono::system_clock::now() - Start;
-		printf("%s:%lldms", Name.c_str(), TimeEclipse.count()/10000);
+		printf("%s:%lld micro sec.\n", Name.c_str(), TimeEclipse.count()/10);
 	}
 private:
 	std::chrono::system_clock::time_point Start;
 	std::string Name;
+};
+
+class AutoCall
+{
+public:
+	AutoCall(std::function<void()> InCallee):Callee(InCallee)
+	{}
+
+	~AutoCall()
+	{
+		Callee();
+	}
+private:
+	std::function<void()> Callee;
 };
