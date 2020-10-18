@@ -17,6 +17,8 @@ DeferredLightData SetupLightDataForStandardDeferred()
     LightData.ContactShadowLengthInWS = DeferredLightUniform.ContactShadowLength < 0.0f;
     LightData.DistanceFadeMAD = DeferredLightUniform.DistanceFadeMAD;
     LightData.ShadowMapChannelMask = DeferredLightUniform.ShadowMapChannelMask;
+    //DeferredLightUniformsValue.ShadowedBits  = LightSceneInfo->Proxy->CastsStaticShadow() || bHasLightFunction ? 1 : 0;
+	//DeferredLightUniformsValue.ShadowedBits |= LightSceneInfo->Proxy->CastsDynamicShadow() && View.Family->EngineShowFlags.DynamicShadows ? 3 : 0;
     LightData.ShadowedBits = DeferredLightUniform.ShadowedBits;
 
     // enum class ELightSourceShape
@@ -28,7 +30,7 @@ DeferredLightData SetupLightDataForStandardDeferred()
     //     MAX
     // };
 
-    LightData.bInverseSquared = 1;//INVERSE_SQUARED_FALLOFF;
+    LightData.bInverseSquared = 0;//INVERSE_SQUARED_FALLOFF;
     LightData.bRadialLight = LIGHT_SOURCE_SHAPE > 0;
     LightData.bSpotLight = LIGHT_SOURCE_SHAPE > 0;
     LightData.bRectLight = LIGHT_SOURCE_SHAPE == 2;

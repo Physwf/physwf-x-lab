@@ -51,3 +51,8 @@ Win32
 Debug
 *.fbx
 build
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.tiff

@@ -172,7 +172,7 @@ void FPixelShaderInOut_PS_Main(
         //#endif
 
         //DiffuseColor += (DiffuseIndirectLighting * DiffuseColorForIndirect + SubsurfaceIndirectLighting * SubsurfaceColor) * AOMultiBounce( GBuffer.BaseColor, DiffOcclusion );
-		DiffuseColor += half3(0.5,0.9f,0.4f);
+		DiffuseColor += half3(0.05,0.09f,0.04f);
     // #if NEEDS_BASEPASS_PIXEL_VOLUMETRIC_FOGGING
     // #endif
 	#endif

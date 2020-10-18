@@ -221,7 +221,8 @@ ID3D11PixelShader* LightPassPS;
 ID3D11RasterizerState* LightPassRasterizerState;
 ID3D11BlendState* LightPassBlendState;
 ID3D11DepthStencilState* LightPassDepthStencilState;
-
+ID3D11ShaderResourceView* LightAttenuationSRV;
+ID3D11SamplerState* LightAttenuationSampleState;
 
 std::map<std::string, ParameterAllocation> ShadowProjectionParams;
 ID3D11Buffer* ShadowProjectionGlobalConstantBuffer;
@@ -404,6 +405,8 @@ void InitInput()
 	LightPassVSByteCode = CompileVertexShader(TEXT("DeferredLightVertexShader.hlsl"), "VS_Main");
 	LightPassPSByteCode = CompilePixelShader(TEXT("DeferredLightPixelShader.hlsl"), "PS_Main");
 
+	GetShaderParameterAllocations(LightPassPSByteCode, LightPassParams);
+
 	D3D11_INPUT_ELEMENT_DESC RectangleInputDesc[] =
 	{
 		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -433,6 +436,9 @@ void InitInput()
 	LightPassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI();
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
 
+	LightAttenuationSRV = CreateShaderResourceView2D(ShadowProjectionRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
+	LightAttenuationSampleState = TStaticSamplerState<>::GetRHI();
+
 	DirLight.Color = Vector(1.0f,0.0f,0.0f);
 	DirLight.Direction = Vector(-1.0f,-1.0f,-1.0f);
 	DirLight.Intencity = 1000.f;
@@ -450,6 +456,14 @@ void InitInput()
 	DLU.SourceRadius = std::sin(0.5f * DirLight.LightSourceAngle / 180.f * 3.14f);
 	DLU.SoftSourceRadius = std::sin(0.5f * DirLight.LightSourceSoftAngle / 180.f * 3.14f);
 	DLU.SourceLength = 0.0f;
+	DLU.ContactShadowLength;
+	//const FVector2D FadeParams = LightSceneInfo->Proxy->GetDirectionalLightDistanceFadeParameters(View.GetFeatureLevel(), LightSceneInfo->IsPrecomputedLightingValid(), View.MaxShadowCascades);
+	// use MAD for efficiency in the shader
+	//DeferredLightUniformsValue.DistanceFadeMAD = FVector2D(FadeParams.Y, -FadeParams.X * FadeParams.Y);
+	DLU.DistanceFadeMAD = Vector2(0.5f,0.5f);
+	//UE4 LightRender.h
+	//DeferredLightUniformsValue.ShadowedBits = LightSceneInfo->Proxy->CastsStaticShadow() || bHasLightFunction ? 1 : 0;
+	//DeferredLightUniformsValue.ShadowedBits |= LightSceneInfo->Proxy->CastsDynamicShadow() && View.Family->EngineShowFlags.DynamicShadows ? 3 : 0;
 	DLU.ShadowedBits = 2;
 	DeferredLightUniformBuffer = CreateConstantBuffer(false, sizeof(DLU), &DLU);
 
@@ -463,11 +477,11 @@ void InitInput()
 	//ScreenToShadowMatrix =  InvViewProjectionMatrix * ShadowMapProjectionMatrix;
 	//ScreenToShadowMatrix.Transpose();
 
-	
+	//UE4 ShadowRendering.cpp GetScreenToShadowMatrix
 	uint32 TileOffsetX = 0; uint32 TileOffsetY = 0;
 	uint32 BorderSize = 0;
-	float InvMaxSubjectDepth = 0.0f;
-	const Vector2 ShadowBufferResolution(WindowWidth,WindowHeight);
+	float InvMaxSubjectDepth = 1.0f/1.0f;
+	const Vector2 ShadowBufferResolution((float)WindowWidth, (float)WindowHeight);
 	uint32 TileResolutionX = WindowWidth;
 	uint32 TileResolutionY = WindowHeight;
 	const float InvBufferResolutionX = 1.0f / (float)ShadowBufferResolution.X;
@@ -577,8 +591,8 @@ void RenderShadowProjection()
 	const ParameterAllocation& ShadowFadeFractionParam = ShadowProjectionParams["ShadowFadeFraction"];
 	const ParameterAllocation& ShadowSharpenParam = ShadowProjectionParams["ShadowSharpen"];
 	const ParameterAllocation& ScreenToShadowMatrixParam = ShadowProjectionParams["ScreenToShadowMatrix"];
-	float fShadowFadeFraction = 1.0f;
-	float fShadowSharpen = 1.0f;
+	float fShadowFadeFraction = 0.8f;
+	float fShadowSharpen = 0.9f;
 
 	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowFadeFractionParam.BaseIndex, &fShadowFadeFraction, ShadowFadeFractionParam.Size);
 	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowSharpenParam.BaseIndex, &fShadowSharpen, ShadowSharpenParam.Size);
@@ -729,6 +743,11 @@ void RenderLight()
 	D3D11DeviceContext->PSSetShaderResources(3, 3, LightPassGBufferSRV);
 	D3D11DeviceContext->PSSetSamplers(3, 3, LightPassGBufferSamplerState);
 
+	const ParameterAllocation& LightAttenuationTextureParam = LightPassParams["LightAttenuationTexture"];
+	const ParameterAllocation& LightAttenuationTextureSamplerParam = LightPassParams["LightAttenuationTextureSampler"];
+	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &LightAttenuationSRV);
+	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &LightAttenuationSampleState );
+
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 	D3D11DeviceContext->VSSetConstantBuffers(2, 1, &ScreenRect.DrawRectangleParameters);
 
@@ -743,6 +762,8 @@ void RenderLight()
 	D3D11DeviceContext->PSSetShaderResources(1, 1, &SRV);
 	D3D11DeviceContext->PSSetSamplers(0, 1, &Sampler);
 	D3D11DeviceContext->PSSetSamplers(1, 1, &Sampler);
+	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &Sampler);
 
 	for (int i = 3; i < 6; ++i)
 	{

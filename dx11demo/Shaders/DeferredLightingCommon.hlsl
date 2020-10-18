@@ -29,6 +29,14 @@ struct DeferredLightData
 
 #define REFERENCE_QUALITY	0
 
+/** Returns 0 for positions closer than the fade near distance from the camera, and 1 for positions further than the fade far distance. */
+float DistanceFromCameraFade(float SceneDepth, DeferredLightData LightData, float3 WorldPosition, float3 CameraPosition)
+{
+	// depth (non radial) based fading over distance
+	float Fade = saturate(SceneDepth * LightData.DistanceFadeMAD.x + LightData.DistanceFadeMAD.y);
+	return Fade * Fade;
+}
+
 void GetShadowTerms(GBufferData GBuffer, DeferredLightData LightData, float3 WorldPosition, float3 L, float4 LightAttenuation,float Dither, inout ShadowTerms Shadow)
 {
     float ContactShadowLength = 0.0f;
@@ -48,7 +56,17 @@ void GetShadowTerms(GBufferData GBuffer, DeferredLightData LightData, float3 Wor
         }
         else
         {
+            float DynamicShadowFraction = DistanceFromCameraFade(GBuffer.Depth, LightData, WorldPosition, View.WorldCameraOrigin);
+            
+            Shadow.SurfaceShadow = lerp(LightAttenuation.x, StaticShadowing, DynamicShadowFraction);
+			// Fade between SSS dynamic shadowing and static shadowing based on distance
+			Shadow.TransmissionShadow = min(lerp(LightAttenuation.y, StaticShadowing, DynamicShadowFraction), LightAttenuation.w);
 
+			Shadow.SurfaceShadow *= LightAttenuation.z;
+			Shadow.TransmissionShadow *= LightAttenuation.z;
+
+			// Need this min or backscattering will leak when in shadow which cast by non perobject shadow(Only for directional light)
+			Shadow.TransmissionThickness = min(LightAttenuation.y, LightAttenuation.w);
         }
     }
 
@@ -127,7 +145,7 @@ float4 GetDynamicLighting(float3 WorldPosition, float3 CameraVector, GBufferData
         LA.EstimatedCost += 0.3f;
 
         [branch]
-        //if(Shadow.SurfaceShadow + Shadow.TransmissionShadow > 0)
+        if(Shadow.SurfaceShadow + Shadow.TransmissionShadow > 0)
         {
             const bool bNeedsSeparateSubsurfaceLightAccumulation = UseSubsurfaceProfile(GBuffer.ShadingModelID);
             float3 LightColor = LightData.LightColorAndFalloffExponent.rgb;

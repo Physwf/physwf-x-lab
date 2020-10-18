@@ -31,14 +31,14 @@ void Main(in float4 SVPos : SV_Position, out float4 OutColor : SV_Target0)
     float ShadowZ = ShadowPosition.z;
     ShadowPosition.xyz /= ShadowPosition.w;
 
-    float LightSpacePixelDepthForOpaque = max(ShadowZ,0.99999f);
+    float LightSpacePixelDepthForOpaque = min(ShadowZ,0.99999f);
     //float LightSpacePixelDepthForSSS = ShadowZ;
 
     float Shadow = 1;
-    float SSSTransmission = 1;
+    float SSSTransmission = 0.5f;
 
     float ShadowDepth = Texture2DSampleLevel(ShadowDepthTexture, ShadowDepthTextureSampler, ShadowPosition.xy, 0).r;
-    Shadow = LightSpacePixelDepthForOpaque < ShadowDepth;
+    Shadow = LightSpacePixelDepthForOpaque > ShadowDepth;
 
     Shadow = saturate( (Shadow - 0.5) * ShadowSharpen + 0.5 );
 
@@ -46,5 +46,5 @@ void Main(in float4 SVPos : SV_Position, out float4 OutColor : SV_Target0)
 
     float FadedSSSShadow = lerp(1.0f, Square(SSSTransmission), ShadowFadeFraction);
 
-    OutColor = EncodeLightAttenuation(half4(ShadowDepth, FadedSSSShadow, FadedShadow, FadedSSSShadow));
+    OutColor = EncodeLightAttenuation(half4(FadedShadow, FadedSSSShadow, FadedShadow, FadedSSSShadow));
 }
