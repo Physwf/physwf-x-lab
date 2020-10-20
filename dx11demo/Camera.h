@@ -35,15 +35,7 @@ public:
 	void StopRotate(int X, int Y);
 
 	void Rotate(const Vector& R);
-
-	void InitResource();
-	void ReleaseResource();
-	void Render();
-private:
-	void UpdateViewMatrix();
-	void UpdateProjMatrix();
-private:
-	CAMERA_CBUFFER VSConstBuffer;
+public:
 
 	Vector Eye;
 	Vector FaceDir;
@@ -51,8 +43,8 @@ private:
 
 	float Near;
 	float Far;
-	float fViewportWidth;
-	float fViewportHeight;
+	float fViewportWidth = 720.f;
+	float fViewportHeight = 720.f;
 
 	int DragStartX;
 	int DragStartY;
@@ -62,6 +54,4 @@ private:
 	int RotateStartX;
 	int RotateStartY;
 	bool bRotating;
-
-	ID3D11Buffer* ConstantBuffer;
 };

@@ -3,6 +3,7 @@
 #include "GameViewport.h"
 #include "Scene.h"
 #include "DeferredShading.h"
+#include "log.h"
 
 void OutputDebug(const char* Format)
 {
@@ -97,13 +98,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//RenderTest();
 		//GW.Draw();
 		//S.Draw();
+		UpdateView();
 		RenderPrePass();
 		RenderShadowPass();
 		RenderBasePass();
 		RenderLight();
 		D3D11Present();
 
-		Sleep(1);
+		Sleep(10);
 	}
 
 	//S.ReleaseResource();
@@ -122,6 +124,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 	case WM_KEYDOWN:
 	{
+		X_LOG("WM_KEYDOWN\n");
 		GW.OnKeyDown(wParam);
 		break;
 	}

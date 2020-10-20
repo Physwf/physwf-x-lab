@@ -2,9 +2,13 @@
 #include "Mesh.h"
 #include "Light.h"
 #include "Scene.h"
+#include "Camera.h"
 
 std::vector<Mesh> AllMeshes;
 std::vector<MeshBatch> AllBatches;
+
+Camera MainCamera;
+
 
 struct RectangleVertex
 {
@@ -247,16 +251,13 @@ void InitInput()
 		m.DrawStaticElement();
 	}
 
+	MainCamera.SetPostion(Vector(0, 0, 0));
+	MainCamera.LookAt(Vector(0, 0, 100));
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
 	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ViewRotationMatrix, ProjectionMatrix);
-	Vector v = ProjectionMatrix.Transform(Vector(700, 700, 1.0f));
-	Vector v1 = ProjectionMatrix.Transform(Vector(700, 700, 1000.0f));
-	Vector v2 = ProjectionMatrix.Transform(Vector(700, 700, 100.0f));
-	Vector v3 = ProjectionMatrix.Transform(Vector(700, 700, 500.0f));
-	Vector v4 = ProjectionMatrix.Transform(Vector(700, -700, 50.0f));
 	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
 	VU.TranslatedWorldToClip = ProjectionMatrix;// VMs.GetTranslatedViewProjectionMatrix();
 	VU.WorldToClip = VMs.GetViewProjectionMatrix();
@@ -524,6 +525,68 @@ void InitInput()
 
 	ShadowMapProjectionMatrix.Transpose();
 	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
+}
+
+void UpdateView()
+{
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
+	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0,0,0), MainCamera.FaceDir, MainCamera.Up);
+
+	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
+	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
+	VU.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
+	VU.WorldToClip = VMs.GetViewProjectionMatrix();
+	VU.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
+	//VU.TranslatedWorldToView = 
+	VU.TranslatedWorldToCameraView = VMs.GetTranslatedViewMatrix();
+	VU.CameraViewToTranslatedWorld = VMs.GetInvTranslatedViewMatrix();
+	VU.ViewToClip = VMs.GetProjectionMatrix();
+	VU.ClipToView = VMs.GetInvProjectionMatrix();
+	VU.ClipToTranslatedWorld = VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.ScreenToTranslatedWorld = Matrix(
+		Plane(1, 0, 0, 0),
+		Plane(0, 1, 0, 0),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0))
+		* VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.PreViewTranslation = VMs.GetPreViewTranslation();
+
+	VU.WorldCameraOrigin = VMs.GetViewOrigin();
+	VU.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(VMs.GetProjectionMatrix());
+
+	const float InvBufferSizeX = 1.0f / WindowWidth;
+	const float InvBufferSizeY = 1.0f / WindowHeight;
+
+	//Vector4 EffectiveViewRect(0,0,WindowWidth,WindowHeight);
+
+	float GProjectionSignY = 1.0f;
+	VU.ScreenPositionScaleBias = Vector4(
+		WindowWidth * InvBufferSizeX / +2.0f,
+		WindowHeight * InvBufferSizeY / (-2.0f * GProjectionSignY),
+		(WindowHeight / 2.0f + 0.f) * InvBufferSizeY,
+		(WindowWidth / 2.0f + 0.f) * InvBufferSizeX
+	);
+	VU.ViewRectMin = Vector4();
+	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.ScreenToWorld = VMs.GetInvViewProjectionMatrix();
+
+	VU.TranslatedWorldToClip.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.WorldToClip.Transpose();
+	VU.TranslatedWorldToView.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.TranslatedWorldToCameraView.Transpose();
+	VU.CameraViewToTranslatedWorld.Transpose();
+	VU.ViewToClip.Transpose();
+	VU.ViewToClipNoAA.Transpose();
+	VU.ClipToView.Transpose();
+	VU.ClipToTranslatedWorld.Transpose();
+	VU.SVPositionToTranslatedWorld.Transpose();
+	VU.ScreenToWorld.Transpose();
+	VU.ScreenToTranslatedWorld.Transpose();
+
+	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
 }
 
 void RenderPrePass()
