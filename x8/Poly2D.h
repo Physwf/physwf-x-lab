@@ -337,3 +337,48 @@ Vector2D CalcIntersection(const Vector2D& A, const Vector2D& B, const Vector2D& 
 	float k = std::fabs(CalcArea(A, B, C)) / std::fabs(CalcArea(A, B, D));
 	return Vector2D((C.X + k * D.X) / (1 + k), (C.Y + k * D.Y) / (1 + k));
 }
+/*
+ 给定三角形的三个顶点,求出外接圆
+*/
+//https://baike.baidu.com/item/外接圆半径公式/14818938
+void CalcBoundingCircle(const Vector2D& A, const Vector2D& B, const Vector2D& C, Circle& OutCircle)
+{
+	float a = (A - B).Size();
+	Vector2D AC = C - A;
+	Vector2D BC = C - B;
+	AC.Normalize();
+	BC.Normalize();
+	float cosa = AC | BC;
+	float sina = std::sqrtf(1.0f - cosa * cosa);
+	OutCircle.Radius = a / sina * 2.0f;
+
+	float x1 = A.X, y1 = A.Y;
+	float x2 = B.X, y2 = B.Y;
+	float x3 = C.X, y3 = C.Y;
+
+	float A1 = 2 * (x2 - x1);
+	float B1 = 2 * (y2 - y1);
+	float C1 = x2 * x2 + y2 * y2 - x1 * x1 - y1 * y1;
+	float A2 = 2 * (x3 - x2);
+	float B2 = 2 * (y3 - y2);
+	float C2 = x3 * x3 + y3 * y3 - x2 * x2 - y2 * y2;
+
+	OutCircle.Center.X = ((C1*B2) - (C2*B1)) / ((A1*B2) - (A2*B1));
+	OutCircle.Center.Y = ((A1*C2) - (A2*C1)) / ((A1*B2) - (A2*B1));
+}
+/*
+ 计算<P1PP2角的角度,以弧度为单位
+		P1
+	   /
+	  /
+   P /_________P2
+*/
+float CalcAngle(const Vector2D& P1, const Vector2D& P, const Vector2D& P2)
+{
+	Vector2D V1 = P1 - P;
+	Vector2D V2 = P2 - P;
+	V1.Normalize();
+	V2.Normalize();
+	float dot = V1 | V2;
+	return std::acosf(dot);
+}

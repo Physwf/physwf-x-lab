@@ -49,3 +49,120 @@ struct Matrix2D
 {
 	float M[2][2];
 };
+
+struct Bounds2D
+{
+	Vector2D Min;
+	Vector2D Max;
+	char IsValid;
+
+	Bounds2D() :IsValid(false) {}
+
+	Bounds2D(const Vector2D& InMin, const Vector2D& InMax)
+		:Min(InMin)
+		, Max(InMax)
+		, IsValid(1)
+	{ }
+
+	inline Bounds2D& operator+=(const Vector2D& Other)
+	{
+		if (IsValid)
+		{
+			Min.X = fminf(Min.X, Other.X);
+			Min.Y = fminf(Min.Y, Other.Y);
+
+			Max.X = fmaxf(Min.X, Other.X);
+			Max.Y = fmaxf(Min.Y, Other.Y);
+		}
+		else
+		{
+			Min = Max = Other;
+			IsValid = 1;
+		}
+		return *this;
+	}
+
+	inline Bounds2D& operator+=(const Bounds2D& Other)
+	{
+		if (IsValid && Other.IsValid)
+		{
+			Min.X = fminf(Min.X, Other.Min.X);
+			Min.Y = fminf(Min.Y, Other.Min.Y);
+
+			Max.X = fmaxf(Min.X, Other.Max.X);
+			Max.Y = fmaxf(Min.Y, Other.Max.Y);
+		}
+		else if (Other.IsValid)
+		{
+			*this = Other;
+		}
+		return *this;
+	}
+
+	inline Bounds2D operator+(const Vector2D& Other)
+	{
+		return Bounds2D(*this) += Other;
+	}
+
+	inline Bounds2D operator+(const Bounds2D& Other)
+	{
+		return Bounds2D(*this) += Other;
+	}
+
+	Bounds2D Offset(const Bounds2D& Other) const
+	{
+		Bounds2D Result;
+		Result.Min.X = Other.Min.X / (Max.X - Min.X);
+		Result.Min.Y = Other.Min.Y / (Max.X - Min.X);
+		Result.Max.X = Other.Max.X / (Max.X - Min.X);
+		Result.Max.Y = Other.Max.Y / (Max.X - Min.X);
+		return Result;
+	}
+	void Reset()
+	{
+		IsValid = 0;
+	}
+};
+
+struct Circle
+{
+	Vector2D Center;
+	float Radius;
+	char IsValid;
+
+	Circle() :IsValid(false) {}
+
+	Circle(const Vector2D& InCenter, float InRadius)
+		:Center(InCenter)
+		, Radius(InRadius)
+		, IsValid(1)
+	{ }
+
+	bool IsInside(const Circle& Other) const
+	{
+		return false;
+	}
+
+	inline Circle& operator+=(const Circle& Other)
+	{
+
+	}
+
+	inline Circle operator+(const Circle& Other)
+	{
+		return Circle(*this) += Other;
+	}
+
+	Bounds2D ToBounds2D() const
+	{
+		return Bounds2D(Center - Vector2D(Radius, Radius), Center + Vector2D(Radius, Radius));
+	}
+};
+
+template<typename T>
+T Clamp(T Value, T Min, T Max)
+{
+	if (Value < Min) return Min;
+	if (Value > Max) return Max;
+	return Value;
+}
