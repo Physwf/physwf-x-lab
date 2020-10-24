@@ -141,7 +141,7 @@ bool FindPath_AStar(const std::vector<GridType>& InGrids, GridIDType StartGridIn
 
 }
 
-int main()
+int _main()
 {
 	{
 		unsigned int Size = 512;
@@ -190,6 +190,6 @@ int main()
 		std::vector<Position2D> OutPath;
 		PF.FindPath(0, Size * Size - 1, OutPath);
 	}
-
+	return 0;
 }
 
