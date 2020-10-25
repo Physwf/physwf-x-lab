@@ -176,9 +176,11 @@ struct GridNode
 */
 void GridizePolys(
 	const std::vector<std::vector<Vector2D>>& InputPolys,
-	int GridWidth, int GridHeight,
+	int GridWidth, 
+	int GridHeight,
 	std::vector<GridNode>& OutGrids,
 	std::vector<Vector2D>& OutAllVertices,
+	std::vector<Vector2D>& OutRenderVertices,
 	std::vector<size_t>& OutAllIndices,
 	std::vector<size_t>& OutPolyBelongingTo,
 	Bounds2D& OutAllPolysBounds
@@ -193,11 +195,20 @@ void GridizePolys(
 	{
 		const std::vector<Vector2D>& Poly = InputPolys[PolyIndex];
 		OutAllVertices.insert(OutAllVertices.end(), Poly.begin(), Poly.end());
+		//if (PolyIndex == 0)
+		{
+			OutRenderVertices.insert(OutRenderVertices.end(), Poly.begin(), Poly.end());
+		}
+		//else
+		{
+			//OutRenderVertices.insert(OutRenderVertices.end(), Poly.rbegin(), Poly.rend());
+		}
 		size_t StartSize = OutAllIndices.size();
 		for (size_t i = 0; i < Poly.size(); ++i)
 		{
 			OutAllIndices.push_back(StartSize + i);
 			OutPolyBelongingTo.push_back(PolyIndex);
+			
 		}
 	}
 	//计算包含全部多边形的bounds
@@ -225,7 +236,6 @@ void GridizePolys(
 struct DelaunayEdge
 {
 	size_t VertexIndices[2];
-	size_t PolyIndex;//所属的poly索引
 	int AccessID;
 
 	bool operator==(const DelaunayEdge& rhs) const
@@ -300,7 +310,6 @@ void ConstructDelaunayTriangle(
 	for (size_t Index = 0; Index < InputAllVertices.size(); ++Index)
 	{
 		if (Index == InputEdge.VertexIndices[0] || Index == InputEdge.VertexIndices[1]) continue;
-		if (PolyBelongingTo[Index] == InputEdge.PolyIndex) continue;
 
 		const Vector2D& P3 = InputAllVertices[Index];
 		if (IsTriangleExist(AllConstructedTriangles, InputEdge.VertexIndices[0], InputEdge.VertexIndices[1], Index)) continue;
@@ -349,17 +358,18 @@ void ConstructDelaunayTriangle(
 				}
 			}
 
-			if (IsTriangleExist(AllConstructedTriangles, InputEdge.VertexIndices[0], InputEdge.VertexIndices[1], P3Index)) continue;
+			//if (IsTriangleExist(AllConstructedTriangles, InputEdge.VertexIndices[0], InputEdge.VertexIndices[1], P3Index)) continue;
 			//新的边
 			DelaunayEdge NewEdge1;
-			NewEdge1.VertexIndices[0] = InputEdge.VertexIndices[1];
-			NewEdge1.VertexIndices[1] = P3Index;
-			//NewEdge1.PolyIndex = NewPolyIndex;
+			NewEdge1.VertexIndices[0] = P3Index;
+			NewEdge1.VertexIndices[1] = InputEdge.VertexIndices[1];
+// 			NewEdge1.VertexIndices[0] = InputEdge.VertexIndices[1];
+// 			NewEdge1.VertexIndices[1] = P3Index;
 			DelaunayEdge NewEdge2;
-			NewEdge2.VertexIndices[0] = P3Index;
-			NewEdge2.VertexIndices[1] = InputEdge.VertexIndices[0];
-			//NewEdge2.PolyIndex = NewPolyIndex;
-			bool IsNewTriangle = false;
+			NewEdge2.VertexIndices[0] = InputEdge.VertexIndices[0];
+			NewEdge2.VertexIndices[1] = P3Index;
+// 			NewEdge2.VertexIndices[0] = P3Index;
+// 			NewEdge2.VertexIndices[1] = InputEdge.VertexIndices[0];
 
 			//如果新生成的边不是约束边,若已经在队列中则将其删除,否则将其放入队列
 			auto it = std::find(InOutAllEdges.begin(), InOutAllEdges.end(), NewEdge1);
@@ -374,7 +384,6 @@ void ConstructDelaunayTriangle(
 				{
 					InOutEdgeQueue.push_back(NewEdge1);
 				}
-				//IsNewTriangle = true;
 			}
 			it = std::find(InOutAllEdges.begin(), InOutAllEdges.end(), NewEdge2);
 			if (it == InOutAllEdges.end())//不是约束边
@@ -388,21 +397,11 @@ void ConstructDelaunayTriangle(
 				{
 					InOutEdgeQueue.push_back(NewEdge2);
 				}
-				//IsNewTriangle = true;
 			}
-			//if(!IsNewTriangle) continue;
 			//找到一个三角形
 			OutTriangle.push_back(InputEdge.VertexIndices[0]);
-			OutTriangle.push_back(InputEdge.VertexIndices[1]);
 			OutTriangle.push_back(P3Index);
-// 			//添加新的多边形
-// 			std::vector<Vector2D> NewPoly;
-// 			for (size_t Index : OutTriangle)
-// 			{
-// 				NewPoly.push_back(InputAllVertices[Index]);
-// 			}
-// 			size_t NewPolyIndex = AllPolys.size();
-// 			AllPolys.push_back(NewPoly);
+			OutTriangle.push_back(InputEdge.VertexIndices[1]);
 			
 			break;
 		}
@@ -411,7 +410,7 @@ void ConstructDelaunayTriangle(
 
 void ConstructTriangleMesh(
 	const std::vector<std::vector<Vector2D>>& InputPolys, 
-	std::vector<Vector2D>& AllVertices,
+	std::vector<Vector2D>& RenderVertices,
 	std::vector<size_t>& AllTrianglesIndices
 )
 {
@@ -427,7 +426,6 @@ void ConstructTriangleMesh(
 		for (size_t i = 0; i < Poly.size(); ++i,++VertexIndex)
 		{
 			DelaunayEdge Edge;
-			Edge.PolyIndex = PolyIndex;
 			Edge.VertexIndices[0] = VertexIndex;
 			Edge.VertexIndices[1] = (i + 1 < Poly.size()) ? VertexIndex + 1 : VertexStart;
 			AllEdges.push_back(Edge);
@@ -442,13 +440,17 @@ void ConstructTriangleMesh(
 	std::vector<size_t> PolyBelongingTo;
 	Bounds2D Bounds;
 	int GridWidth = 100, GridHeight = 100;
-	GridizePolys(InputPolys, GridWidth, GridHeight, Grids, AllVertices, AllVertexIndices, PolyBelongingTo, Bounds);
+	std::vector<Vector2D> AllVertices;
+	GridizePolys(InputPolys, GridWidth, GridHeight, Grids, AllVertices, RenderVertices, AllVertexIndices, PolyBelongingTo, Bounds);
 
 	//生成Delaunay三角网格
 	std::vector<DelaunayEdge> EdgeQueue(AllEdges.begin(), AllEdges.end());
 	std::vector<std::vector<size_t>> Triangles;
+	int breaknum = 0;
 	while (EdgeQueue.size() > 0)
 	{
+		breaknum++;
+
 		DelaunayEdge Edge = EdgeQueue.back();
 		EdgeQueue.pop_back();
 
@@ -471,7 +473,6 @@ void ConstructTriangleMesh(
 		{
 			Triangles.push_back(OutTriangleIndices);
 		}
-
 
 	}
 

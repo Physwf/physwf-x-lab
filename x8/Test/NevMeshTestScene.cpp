@@ -197,7 +197,7 @@ void CreateScene(std::vector<Poly2D>& OutPolys, std::vector<Vector2D>& ClipedPol
 	OutPolys.push_back(SceneBound);
 	Poly2D TriangleTemplate = CreateTriangle(Vector2D(100.0f, 0.0f), Vector2D(-100.0f, 0.0f), Vector2D(0.0f, 200.0f));
 	int i = 0;
-	while (i < 3)
+	while (i < 1)
 	{
 		i++;
 		Matrix3x3 Rotation;
@@ -551,8 +551,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 			D3D11DeviceContext->IASetIndexBuffer(MeshIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 			D3D11DeviceContext->IASetVertexBuffers(0, 1, &MeshVertexBuffer, &Stride, &Offset);
-
-			D3D11DeviceContext->IASetVertexBuffers(0, 1, &SceneVertexBuffer, &Stride, &Offset);
 			D3D11DeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			D3D11DeviceContext->VSSetShader(MeshVertexShader, 0, 0);
 			D3D11DeviceContext->PSSetShader(MeshPixelShader, 0, 0);
