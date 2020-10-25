@@ -3,6 +3,8 @@
 #include <stack>
 #include <queue>
 
+#include "Log.h"
+
 //forward declaration
 void TranvserCliper(std::vector<char>& bIsVisited, std::vector<size_t>& CombinedIndices, std::vector<char>& bIsIntersection, size_t StartIndex, size_t ClipedPolyVertexCount, size_t CliperVertexCount, std::vector<size_t>& ClipResult);
 
@@ -358,7 +360,7 @@ void ConstructDelaunayTriangle(
 				}
 			}
 
-			//if (IsTriangleExist(AllConstructedTriangles, InputEdge.VertexIndices[0], InputEdge.VertexIndices[1], P3Index)) continue;
+			if (IsTriangleExist(AllConstructedTriangles, InputEdge.VertexIndices[0], InputEdge.VertexIndices[1], P3Index)) continue;
 			//新的边
 			DelaunayEdge NewEdge1;
 			NewEdge1.VertexIndices[0] = P3Index;
@@ -382,7 +384,7 @@ void ConstructDelaunayTriangle(
 				}
 				else//否则将其放入队列
 				{
-					InOutEdgeQueue.push_back(NewEdge1);
+					InOutEdgeQueue.insert(InOutEdgeQueue.begin(), NewEdge1);
 				}
 			}
 			it = std::find(InOutAllEdges.begin(), InOutAllEdges.end(), NewEdge2);
@@ -395,7 +397,7 @@ void ConstructDelaunayTriangle(
 				}
 				else//否则将其放入队列
 				{
-					InOutEdgeQueue.push_back(NewEdge2);
+					InOutEdgeQueue.insert(InOutEdgeQueue.begin(), NewEdge2);
 				}
 			}
 			//找到一个三角形
@@ -403,6 +405,8 @@ void ConstructDelaunayTriangle(
 			OutTriangle.push_back(P3Index);
 			OutTriangle.push_back(InputEdge.VertexIndices[1]);
 			
+			std::vector<Vector2D> NewTriangle = { InputAllVertices[OutTriangle[0]] ,InputAllVertices[OutTriangle[1]] ,InputAllVertices[OutTriangle[2]] };
+			AllPolys.push_back(NewTriangle);
 			break;
 		}
 	}

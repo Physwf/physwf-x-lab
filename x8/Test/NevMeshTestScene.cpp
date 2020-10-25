@@ -3,10 +3,8 @@
 #include <d3dcompiler.h>
 #include <windows.h>
 
-#include <stdio.h>
-#include <stdarg.h>
-
 #include "../NevMesh.h"
+#include "../Log.h"
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;
@@ -28,17 +26,11 @@ LONG WindowHeight = 1080;
 
 HWND g_hWind;
 
-#define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
-
-inline void XLOG(const char* format, ...)
+void OutputDebug(const char* Format)
 {
-	char buffer[16 * 1024] = { 0 };
-	va_list v_list;
-	va_start(v_list, format);
-	vsprintf_s(buffer, format, v_list);
-	va_end(v_list);
-	OutputDebugStringA(buffer);;
+	OutputDebugStringA(Format);
 }
+
 
 bool D3D11Setup()
 {
@@ -197,7 +189,7 @@ void CreateScene(std::vector<Poly2D>& OutPolys, std::vector<Vector2D>& ClipedPol
 	OutPolys.push_back(SceneBound);
 	Poly2D TriangleTemplate = CreateTriangle(Vector2D(100.0f, 0.0f), Vector2D(-100.0f, 0.0f), Vector2D(0.0f, 200.0f));
 	int i = 0;
-	while (i < 1)
+	while (i <4)
 	{
 		i++;
 		Matrix3x3 Rotation;
@@ -530,14 +522,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
 			D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 			D3D11DeviceContext->OMSetDepthStencilState(DSState, 0);
-			D3D11DeviceContext->IASetIndexBuffer(SceneIndexBuffer, DXGI_FORMAT_R32_UINT,0);
 			UINT Stride = sizeof(Vector2D);
 			UINT Offset = 0;
+			D3D11DeviceContext->RSSetState(WireframeMode);
+			D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewConstant);
+			D3D11DeviceContext->IASetIndexBuffer(MeshIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+			D3D11DeviceContext->IASetVertexBuffers(0, 1, &MeshVertexBuffer, &Stride, &Offset);
+			D3D11DeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			D3D11DeviceContext->VSSetShader(MeshVertexShader, 0, 0);
+			D3D11DeviceContext->PSSetShader(MeshPixelShader, 0, 0);
+			D3D11DeviceContext->DrawIndexed(MeshIndeices.size(), 0, 0);
+
+			D3D11DeviceContext->IASetIndexBuffer(SceneIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 			D3D11DeviceContext->IASetVertexBuffers(0, 1, &SceneVertexBuffer, &Stride, &Offset);
 			D3D11DeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
 			D3D11DeviceContext->IASetInputLayout(SceneInputLayout);
-
-			D3D11DeviceContext->VSSetConstantBuffers(0,1, &ViewConstant);
 			D3D11DeviceContext->VSSetShader(SceneVertexShader, 0, 0);
 			D3D11DeviceContext->PSSetShader(ScenePixelShader, 0, 0);
 
@@ -546,16 +545,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				//D3D11DeviceContext->DrawIndexed(Section.Count - 1, Section.Start, 0);
 				D3D11DeviceContext->Draw(Section.Count, Section.Start);
 			}
-
-			D3D11DeviceContext->RSSetState(WireframeMode);
-
-			D3D11DeviceContext->IASetIndexBuffer(MeshIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			D3D11DeviceContext->IASetVertexBuffers(0, 1, &MeshVertexBuffer, &Stride, &Offset);
-			D3D11DeviceContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			D3D11DeviceContext->VSSetShader(MeshVertexShader, 0, 0);
-			D3D11DeviceContext->PSSetShader(MeshPixelShader, 0, 0);
-
-			D3D11DeviceContext->DrawIndexed(MeshIndeices.size(), 0, 0);
 
 			D3D11Present();
 		}
