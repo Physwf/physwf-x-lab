@@ -1,3 +1,4 @@
+#include "DirectXTex.h"
 #include "D3D11RHI.h"
 #include "log.h"
 #include <D3Dcompiler.h>
@@ -6,6 +7,10 @@
 #include <string>
 #include <stdio.h>
 #include <fstream>
+
+// #define STB_IMAGE_IMPLEMENTATION
+// #include "stb_image.h"// #include "WICTextureLoader.h"
+using namespace DirectX;
 
 IDXGIFactory*	DXGIFactory = NULL;
 IDXGIAdapter*	DXGIAdapter = NULL;
@@ -22,8 +27,8 @@ ID3D11Texture2D* DepthStencialTexture = NULL;
 D3D11_VIEWPORT Viewport;
 ID3D11RasterizerState* RasterState;
 
-LONG WindowWidth = 720;
-LONG WindowHeight = 720;
+LONG WindowWidth = 1920;
+LONG WindowHeight = 1080;
 
 bool D3D11Setup()
 {
@@ -339,7 +344,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 	ShaderIncludeHandler IncludeHandler;
 	D3D_SHADER_MACRO Macros[] =
 	{
-		"PIXELSHADER",										"1",
+		"PIXELSHADER",										"0",
 		"COMPILER_HLSL",									"1",
 		"MATERIAL_TANGENTSPACENORMAL",						"1",
 		"LIGHTMAP_UV_ACCESS",								"0",
@@ -350,6 +355,24 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"ALLOW_STATIC_LIGHTING",							"1",
 		"LIGHT_SOURCE_SHAPE",								"0",//directional 
 		"USE_LIGHTING_CHANNELS",							"0",
+		"METAL_PROFILE",									"1",
+		"GPUSKIN_PASS_THROUGH",								"0",
+		"USE_PARTICLE_SUBUVS",								"0",
+		"MAX_NUM_LIGHTMAP_COEF",							"2",
+		"HQ_TEXTURE_LIGHTMAP",								"1",
+		"LQ_TEXTURE_LIGHTMAP",								"0",
+		"USES_AO_MATERIAL_MASK",							"0",
+		"PRECOMPUTED_IRRADIANCE_VOLUME_LIGHTING",			"0",
+		"CACHED_VOLUME_INDIRECT_LIGHTING",					"0",
+		"CACHED_POINT_INDIRECT_LIGHTING",					"0",
+		"STATICLIGHTING_TEXTUREMASK",						"0",
+		"STATICLIGHTING_SIGNEDDISTANCEFIELD",				"0",
+		"ALLOW_STATIC_LIGHTING",							"1",
+		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
+		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
+		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
+		"ENABLE_SKY_LIGHT",									"1",
+		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -357,7 +380,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		return Bytecode;
 	}
 	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
-	return NULL;
+	return NULL; 
 }
 
 ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)  
@@ -380,11 +403,29 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"ALLOW_STATIC_LIGHTING",							"1",
 		"LIGHT_SOURCE_SHAPE",								"0",
 		"USE_LIGHTING_CHANNELS",							"0",
+		"METAL_PROFILE",									"1",
+		"GPUSKIN_PASS_THROUGH",								"0",
+		"USE_PARTICLE_SUBUVS",								"0",
+		"MAX_NUM_LIGHTMAP_COEF",							"2",
+		"HQ_TEXTURE_LIGHTMAP",								"1",
+		"LQ_TEXTURE_LIGHTMAP",								"0",
+		"USES_AO_MATERIAL_MASK",							"0",
+		"PRECOMPUTED_IRRADIANCE_VOLUME_LIGHTING",			"0",
+		"CACHED_VOLUME_INDIRECT_LIGHTING",					"0",
+		"CACHED_POINT_INDIRECT_LIGHTING",					"0",
+		"STATICLIGHTING_TEXTUREMASK",						"0",
+		"STATICLIGHTING_SIGNEDDISTANCEFIELD",				"0",
+		"ALLOW_STATIC_LIGHTING",							"1",
+		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
+		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
+		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
+		"ENABLE_SKY_LIGHT",									"1",
+		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
-		return Bytecode;
+		return Bytecode;   
 	}
 	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
 	return NULL;
@@ -503,17 +544,61 @@ ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT For
 	Desc.CPUAccessFlags = 0;
 	Desc.MiscFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA Data;
-	Data.pSysMem = nullptr;
-	Data.SysMemPitch = 0;
-	Data.SysMemSlicePitch = 0;
-
 	ID3D11Texture2D* Result;
 	if (S_OK == D3D11Device->CreateTexture2D(&Desc,NULL, &Result))
 	{
 		return Result;
 	}
 	X_LOG("CreateTexture2D failed!");
+	return NULL;
+}
+
+ID3D11Texture2D* CreateTexture2D(unsigned int W, unsigned int H, DXGI_FORMAT Format, UINT MipMapCount, void* InitData)
+{
+	D3D11_TEXTURE2D_DESC Desc;
+	ZeroMemory(&Desc, sizeof(Desc));
+	Desc.Width = W;
+	Desc.Height = H;
+	Desc.Format = Format;
+	Desc.ArraySize = 1;
+	Desc.MipLevels = MipMapCount;
+	Desc.SampleDesc.Count = 1;
+	Desc.SampleDesc.Quality = 0;
+	Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+	Desc.Usage = D3D11_USAGE_DEFAULT;
+	Desc.CPUAccessFlags = 0;
+	Desc.MiscFlags = 0;
+
+	unsigned int PixelSize = 0;
+	switch (Format)
+	{
+	case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		PixelSize = 4;
+		break;
+	}
+	D3D11_SUBRESOURCE_DATA Data;
+	Data.pSysMem = InitData;
+	Data.SysMemPitch = W * PixelSize;
+	Data.SysMemSlicePitch = W * H * PixelSize;
+
+	ID3D11Texture2D* Result;
+	if (S_OK == D3D11Device->CreateTexture2D(&Desc, &Data, &Result))
+	{
+		return Result;
+	}
+	X_LOG("CreateTexture2D failed!");
+	return NULL;
+}
+
+
+bool CreateTexture2DFromTGA(const wchar_t* FileName)
+{
+	TexMetadata Metadata;
+	ScratchImage sImage;
+	if (S_OK == LoadFromTGAFile(FileName, TGA_FLAGS_FORCE_SRGB, &Metadata, sImage))
+	{
+
+	}
 	return NULL;
 }
 

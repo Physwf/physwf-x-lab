@@ -815,6 +815,7 @@ void Mesh::Build()
 		LV.Position = Vector4(V.Position,1.0f);
 		LV.TangentX = V.TangentX;
 		LV.TangentZ = Vector4(V.TangentZ, V.TangentYSign);
+		LV.TexCoords = V.UVs;
 		LODResource.Vertices.push_back(LV);
 
 		PositionOnlyLocalVertex PLV;
@@ -887,12 +888,14 @@ void Mesh::BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector
 				const Vector& VertexNormal = VertexInstanceNormals[VertexInstanceID];
 				const Vector& VertexTangent = VertexInstanceTangents[VertexInstanceID];
 				const float VertexInstanceBinormalSign = VertexInstanceBinormalSigns[VertexInstanceID];
+				Vector2 UVs = VertexInstanceUVs[0][VertexInstanceID];
 
 				StaticMeshBuildVertex StaticMeshVertex;
 				StaticMeshVertex.Position = VertexPosition;
 				StaticMeshVertex.TangentX = VertexTangent;
 				StaticMeshVertex.TangentYSign =  VertexInstanceBinormalSign;
 				StaticMeshVertex.TangentZ = VertexNormal;
+				StaticMeshVertex.UVs = UVs;
 
 				StaticMeshBuildVertices.push_back(StaticMeshVertex);
 				SectionIndices.push_back(StaticMeshBuildVertices.size() - 1) ;

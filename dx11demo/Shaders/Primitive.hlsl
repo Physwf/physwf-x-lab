@@ -11,9 +11,9 @@ cbuffer	Primitive : register(b1)
 	// float3 Primitive_ActorWorldPosition;
 	// half Primitive_DecalReceiverMask;
 	float Primitive_PerObjectGBufferData;
-	// half Primitive_UseSingleSampleShadowFromStationaryLights;
-	// half Primitive_UseVolumetricLightmapShadowFromStationaryLights;
-	// half Primitive_UseEditorDepthTest;
+	float Primitive_UseSingleSampleShadowFromStationaryLights;
+	float Primitive_UseVolumetricLightmapShadowFromStationaryLights;
+	float Primitive_UseEditorDepthTest;
 	// half4 Primitive_ObjectOrientation;
 	// half4 Primitive_NonUniformScale;
 	float4 Primitive_InvNonUniformScale;
@@ -28,6 +28,8 @@ static const struct
     float4x4 LocalToWorld;
 	float4x4 WorldToLocal;
     float PerObjectGBufferData;
+	float UseSingleSampleShadowFromStationaryLights;
+	float UseVolumetricLightmapShadowFromStationaryLights;
     float4 InvNonUniformScale;
-} Primitive = { Primitive_LocalToWorld, Primitive_WorldToLocal, Primitive_PerObjectGBufferData, Primitive_InvNonUniformScale };
+} Primitive = { Primitive_LocalToWorld, Primitive_WorldToLocal, Primitive_PerObjectGBufferData, Primitive_UseSingleSampleShadowFromStationaryLights,Primitive_UseVolumetricLightmapShadowFromStationaryLights, Primitive_InvNonUniformScale };
 #endif

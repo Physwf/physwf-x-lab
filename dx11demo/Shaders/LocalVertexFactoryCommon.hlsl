@@ -8,9 +8,14 @@ struct VertexFactoryInterpolantsVSToPS
 
 #if NUM_TEX_COORD_INTERPOLATORS
 	float4	TexCoords[(NUM_TEX_COORD_INTERPOLATORS+1)/2]	: TEXCOORD0;
-// #elif USE_PARTICLE_SUBUVS
-// 	float4	TexCoords[1] : TEXCOORD0;
+#elif USE_PARTICLE_SUBUVS
+	float4	TexCoords[1] : TEXCOORD0;
 #endif
+
+#if NEEDS_LIGHTMAP_COORDINATE
+	float4	LightMapCoordinate : TEXCOORD4;
+#endif
+
 };
 
 #if NUM_TEX_COORD_INTERPOLATORS /*|| USE_PARTICLE_SUBUVS*/
@@ -64,3 +69,22 @@ void SetColor(inout VertexFactoryInterpolantsVSToPS Interpolants, float4 InValue
 	Interpolants.Color = InValue;
 #endif
 }
+
+#if NEEDS_LIGHTMAP_COORDINATE
+void GetLightMapCoordinates(VertexFactoryInterpolantsVSToPS Interpolants, out float2 LightmapUV0, out float2 LightmapUV1)
+{
+	LightmapUV0 = Interpolants.LightMapCoordinate.xy * float2( 1, 0.5 );
+	LightmapUV1 = LightmapUV0 + float2( 0, 0.5 );
+}
+
+float2 GetShadowMapCoordinate(VertexFactoryInterpolantsVSToPS Interpolants)
+{
+	return Interpolants.LightMapCoordinate.zw;
+}
+
+void SetLightMapCoordinate(inout VertexFactoryInterpolantsVSToPS Interpolants, float2 InLightMapCoordinate, float2 InShadowMapCoordinate)
+{
+	Interpolants.LightMapCoordinate.xy = InLightMapCoordinate;
+	Interpolants.LightMapCoordinate.zw = InShadowMapCoordinate;
+}
+#endif

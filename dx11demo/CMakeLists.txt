@@ -1,14 +1,30 @@
-﻿file(GLOB_RECURSE DIR_SRC
+﻿set(DIR_PROJECT "${CMAKE_CURRENT_SOURCE_DIR}/")
+file(GLOB_RECURSE DIR_SRC
     "./*.cpp"
     "./*.h"
 )
-add_executable(dx11demo ${DIR_SRC})
+file(GLOB_RECURSE SHADER_SRC
+    "./*.hlsl"
+)
+foreach(_source IN ITEMS ${SHADER_SRC})
+    get_filename_component(_source_path "${_source}" PATH)
+	file(RELATIVE_PATH _source_path_rel "${DIR_PROJECT}" "${_source_path}")
+    string(REPLACE "/" "\\" _group_path "${_source_path_rel}")
+    source_group("${_group_path}" FILES "${_source}")
+endforeach()
 
+add_executable(dx11demo ${DIR_SRC} ${SHADER_SRC})
+set(DirectXTexDir "D:/DirectXTex/")
+MESSAGE(STATUS "FBX_SDK_HOME=$ENV{FBX_SDK_HOME}")
 MESSAGE(STATUS "FBX_SDK_HOME=$ENV{FBX_SDK_HOME}")
 target_include_directories(dx11demo PRIVATE "../x6/Include")
 target_include_directories(dx11demo PRIVATE "../MikkTSpace/inc")
+target_include_directories(dx11demo PRIVATE "../MikkTSpace/inc")
 target_include_directories(dx11demo PRIVATE $ENV{FBX_SDK_HOME}/include)
 find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
+target_include_directories(dx11demo PRIVATE ${DirectXTexDir}DirectXTex)
+find_library(DirectXTexLib DirectXTex HINTS ${DirectXTexDir}DirectXTex/Bin/Desktop_2017_Win10/Win32/Debug/)
+
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
@@ -29,6 +45,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
 	target_link_libraries (dx11demo "dxgi.lib")
 	target_link_libraries (dx11demo "D3DCompiler.lib")
 	target_link_libraries (dx11demo ${FBXSDK_LIBRARY})
+	target_link_libraries (dx11demo ${DirectXTexLib})
 	target_link_libraries (dx11demo dxguid.lib)
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	MESSAGE(STATUS "current platform: FreeBSD")

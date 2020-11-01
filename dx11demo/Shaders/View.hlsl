@@ -31,7 +31,7 @@ cbuffer View : register(b0)
     float3 View_WorldViewOrigin;
     float View_Padding03;
 
-
+    
     float3 View_PreViewTranslation;
     float View_Padding04;
     float4 View_ViewRectMin;
@@ -45,7 +45,76 @@ cbuffer View : register(b0)
     uint View_Padding05;
 
 
+    float View_DemosaicVposOffset;
+    float3 View_IndirectLightingColorScale;
+
+    float View_AmbientCubemapIntensity;
+	float View_SkyLightParameters;
+	float PrePadding_View_2472;
+	float PrePadding_View_2476;
+	float4 View_SkyLightColor;
+    float4 View_SkyIrradianceEnvironmentMap[7];
+
+    float PrePadding_View_2862;
+    float3 View_VolumetricLightmapWorldToUVScale;
+    float PrePadding_View_2861;
+	float3 View_VolumetricLightmapWorldToUVAdd;
+    float PrePadding_View_2876;
+    float3 View_VolumetricLightmapIndirectionTextureSize;
+
+    float View_VolumetricLightmapBrickSize;
+	float3 View_VolumetricLightmapBrickTexelSize;
 };
+
+SamplerState View_MaterialTextureBilinearWrapedSampler;
+SamplerState View_MaterialTextureBilinearClampedSampler;
+Texture3D<uint4> View_VolumetricLightmapIndirectionTexture;
+Texture3D View_VolumetricLightmapBrickAmbientVector;
+Texture3D View_VolumetricLightmapBrickSHCoefficients0;
+Texture3D View_VolumetricLightmapBrickSHCoefficients1;
+Texture3D View_VolumetricLightmapBrickSHCoefficients2;
+Texture3D View_VolumetricLightmapBrickSHCoefficients3;
+Texture3D View_VolumetricLightmapBrickSHCoefficients4;
+Texture3D View_VolumetricLightmapBrickSHCoefficients5;
+Texture3D View_SkyBentNormalBrickTexture;
+Texture3D View_DirectionalLightShadowingBrickTexture;
+SamplerState View_VolumetricLightmapBrickAmbientVectorSampler;
+SamplerState View_VolumetricLightmapTextureSampler0;
+SamplerState View_VolumetricLightmapTextureSampler1;
+SamplerState View_VolumetricLightmapTextureSampler2;
+SamplerState View_VolumetricLightmapTextureSampler3;
+SamplerState View_VolumetricLightmapTextureSampler4;
+SamplerState View_VolumetricLightmapTextureSampler5;
+SamplerState View_SkyBentNormalTextureSampler;
+SamplerState View_DirectionalLightShadowingTextureSampler;
+Texture3D View_GlobalDistanceFieldTexture0;
+SamplerState View_GlobalDistanceFieldSampler0;
+Texture3D View_GlobalDistanceFieldTexture1;
+SamplerState View_GlobalDistanceFieldSampler1;
+Texture3D View_GlobalDistanceFieldTexture2;
+SamplerState View_GlobalDistanceFieldSampler2;
+Texture3D View_GlobalDistanceFieldTexture3;
+SamplerState View_GlobalDistanceFieldSampler3;
+Texture2D View_AtmosphereTransmittanceTexture;
+SamplerState View_AtmosphereTransmittanceTextureSampler;
+Texture2D View_AtmosphereIrradianceTexture;
+SamplerState View_AtmosphereIrradianceTextureSampler;
+Texture3D View_AtmosphereInscatterTexture;
+SamplerState View_AtmosphereInscatterTextureSampler;
+Texture2D View_PerlinNoiseGradientTexture;
+SamplerState View_PerlinNoiseGradientTextureSampler;
+Texture3D View_PerlinNoise3DTexture;
+SamplerState View_PerlinNoise3DTextureSampler;
+Texture2D<uint> View_SobolSamplingTexture;
+SamplerState View_SharedPointWrappedSampler;
+SamplerState View_SharedPointClampedSampler;
+SamplerState View_SharedBilinearWrappedSampler;
+SamplerState View_SharedBilinearClampedSampler;
+SamplerState View_SharedTrilinearWrappedSampler;
+SamplerState View_SharedTrilinearClampedSampler;
+Texture2D View_PreIntegratedBRDF;
+SamplerState View_PreIntegratedBRDFSampler;
+
 static const struct
 {
     float4x4 TranslatedWorldToClip;
@@ -82,6 +151,25 @@ static const struct
 	uint FrameNumber;
 	uint StateFrameIndexMod8;
 
+    float DemosaicVposOffset;
+    float3 IndirectLightingColorScale;
+
+    float AmbientCubemapIntensity;
+    float SkyLightParameters;
+	float4 SkyLightColor;
+    float4 SkyIrradianceEnvironmentMap[7];
+
+    float3 VolumetricLightmapWorldToUVScale;
+	float3 VolumetricLightmapWorldToUVAdd;
+    float3 VolumetricLightmapIndirectionTextureSize;
+
+    float VolumetricLightmapBrickSize;
+	float3 VolumetricLightmapBrickTexelSize;
+
+    Texture3D<uint4> VolumetricLightmapIndirectionTexture;
+
+    Texture3D DirectionalLightShadowingBrickTexture;
+    SamplerState DirectionalLightShadowingTextureSampler;
 } View = 
 {
     View_TranslatedWorldToClip,
@@ -117,5 +205,33 @@ static const struct
     View_Random,
 	View_FrameNumber,
 	View_StateFrameIndexMod8,
+
+    View_DemosaicVposOffset,
+    View_IndirectLightingColorScale,
+
+
+    View_AmbientCubemapIntensity,
+	View_SkyLightParameters,
+	View_SkyLightColor,
+    {
+        View_SkyIrradianceEnvironmentMap[0],
+        View_SkyIrradianceEnvironmentMap[1],
+        View_SkyIrradianceEnvironmentMap[2],
+        View_SkyIrradianceEnvironmentMap[3],
+        View_SkyIrradianceEnvironmentMap[4],
+        View_SkyIrradianceEnvironmentMap[5],
+        View_SkyIrradianceEnvironmentMap[6],
+    },
+    View_VolumetricLightmapWorldToUVScale,
+	View_VolumetricLightmapWorldToUVAdd,
+    View_VolumetricLightmapIndirectionTextureSize,
+
+    View_VolumetricLightmapBrickSize,
+	View_VolumetricLightmapBrickTexelSize,
+
+    View_VolumetricLightmapIndirectionTexture,
+    
+    View_DirectionalLightShadowingBrickTexture,
+    View_DirectionalLightShadowingTextureSampler,
 };
 #endif

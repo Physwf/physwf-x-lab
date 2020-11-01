@@ -2,7 +2,7 @@
 #define __Common_H__
 
 
-//#include "/Engine/Public/Platform.ush"
+#include "Platform.hlsl"
 
 // These types are used for material translator generated code, or any functions the translated code can call
 #if PIXELSHADER
@@ -217,12 +217,32 @@ float4 Pow6( float4 x )
 	float4 xx = x*x;
 	return xx * xx * xx;
 }
-
+// This would need to be a #define in GLSL to ignore the SamplerState, however, it is currently a function call in HLSL
+// for type checking of the parameters - ironically the type checking is really only needed in GLSL!
+MaterialFloat4 Texture1DSample(Texture1D Tex, SamplerState Sampler, float UV)
+{
+#if COMPUTESHADER
+	return Tex.SampleLevel(Sampler, UV, 0);
+#else
+	return Tex.Sample(Sampler, UV);
+#endif
+}
+MaterialFloat4 Texture2DSample(Texture2D Tex, SamplerState Sampler, float2 UV)
+{
+#if COMPUTESHADER
+	return Tex.SampleLevel(Sampler, UV, 0);
+#else
+	return Tex.Sample(Sampler, UV);
+#endif
+}
 MaterialFloat4 Texture2DSampleLevel(Texture2D Tex, SamplerState Sampler, float2 UV, MaterialFloat Mip)
 {
 	return Tex.SampleLevel(Sampler, UV, Mip);
 }
-
+MaterialFloat4 Texture3DSampleLevel(Texture3D Tex, SamplerState Sampler, float3 UV, MaterialFloat Mip)
+{
+	return Tex.SampleLevel(Sampler, UV, Mip);
+}
 // Used for vertex factory shaders which need to use the resolved view
 float3 SvPositionToResolvedTranslatedWorld(float4 SvPosition)
 {

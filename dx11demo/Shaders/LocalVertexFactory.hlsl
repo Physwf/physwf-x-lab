@@ -1,14 +1,62 @@
 #include "VertexFactoryCommon.hlsl"
 #include "LocalVertexFactoryCommon.hlsl"
 
+#include "PrecomputedLightingBuffer.hlsl"
+
+#ifndef MANUAL_VERTEX_FETCH
+#define MANUAL_VERTEX_FETCH 0
+#endif
+
 struct VertexFactoryInput
 {
     float4 Position 	        : ATTRIBUTE0;
-    float3 TangentX 		    : ATTRIBUTE1;
-    float4 TangentZ 		    : ATTRIBUTE2;
-	float4 Color 		        : ATTRIBUTE3;
-    float2 TexCoords[1]         : ATTRIBUTE4;
-    float2	LightMapCoordinate  : ATTRIBUTE5;
+#if !MANUAL_VERTEX_FETCH
+	#if METAL_PROFILE
+		float3	TangentX	: ATTRIBUTE1;
+		// TangentZ.w contains sign of tangent basis determinant
+		float4	TangentZ	: ATTRIBUTE2;
+
+		float4	Color		: ATTRIBUTE3;
+	#else
+		half3	TangentX	: ATTRIBUTE1;
+		// TangentZ.w contains sign of tangent basis determinant
+		half4	TangentZ	: ATTRIBUTE2;
+
+		half4	Color		: ATTRIBUTE3;
+	#endif
+#endif//!MANUAL_VERTEX_FETCH
+
+#if NUM_MATERIAL_TEXCOORDS_VERTEX
+	#if !MANUAL_VERTEX_FETCH
+		#if GPUSKIN_PASS_THROUGH
+			// These must match GPUSkinVertexFactory.usf
+			float2	TexCoords[NUM_MATERIAL_TEXCOORDS_VERTEX] : ATTRIBUTE4;
+			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 4
+				#error Too many texture coordinate sets defined on GPUSkin vertex input. Max: 4.
+			#endif
+		#else
+			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 1
+				float4	PackedTexCoords4[NUM_MATERIAL_TEXCOORDS_VERTEX/2] : ATTRIBUTE4;
+			#endif
+			#if NUM_MATERIAL_TEXCOORDS_VERTEX == 1
+				float2	PackedTexCoords2 : ATTRIBUTE4;
+			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 3
+				float2	PackedTexCoords2 : ATTRIBUTE5;
+			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 5
+				float2	PackedTexCoords2 : ATTRIBUTE6;
+			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 7
+				float2	PackedTexCoords2 : ATTRIBUTE7;
+			#endif
+		#endif
+	#endif
+#elif USE_PARTICLE_SUBUVS && !MANUAL_VERTEX_FETCH
+	float2	TexCoords[1] : ATTRIBUTE4;
+#endif
+
+#if NEEDS_LIGHTMAP_COORDINATE && !MANUAL_VERTEX_FETCH
+	float2	LightMapCoordinate : ATTRIBUTE15;
+#endif
+
 };
 
 struct PositionOnlyVertexFactoryInput
@@ -123,6 +171,39 @@ MaterialVertexParameters GetMaterialVertexParameters(VertexFactoryInput Input, V
     Result.PreSkinnedPosition = Input.Position.xyz;
 	Result.PreSkinnedNormal = TangentToLocal[2]; //TangentBias(Input.TangentZ.xyz);
 
+#if MANUAL_VERTEX_FETCH && NUM_MATERIAL_TEXCOORDS_VERTEX
+		const uint NumFetchTexCoords = LocalVF.VertexFetch_Parameters[VF_NumTexcoords_Index];
+		[unroll]
+		for (uint CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX; CoordinateIndex++)
+		{
+			// Clamp coordinates to mesh's maximum as materials can request more than are available
+			uint ClampedCoordinateIndex = min(CoordinateIndex, NumFetchTexCoords-1);
+			Result.TexCoords[CoordinateIndex] = LocalVF.VertexFetch_TexCoordBuffer[NumFetchTexCoords * (VertexOffset + Input.VertexId) + ClampedCoordinateIndex];
+		}
+#elif NUM_MATERIAL_TEXCOORDS_VERTEX
+		#if GPUSKIN_PASS_THROUGH
+			[unroll] 
+			for (int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX; CoordinateIndex++)
+			{
+				Result.TexCoords[CoordinateIndex] = Input.TexCoords[CoordinateIndex].xy;
+			}
+		#else
+			#if (NUM_MATERIAL_TEXCOORDS_VERTEX > 1)
+				[unroll]
+				for(int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX-1; CoordinateIndex+=2)
+				{
+					Result.TexCoords[CoordinateIndex] = Input.PackedTexCoords4[CoordinateIndex/2].xy;
+					if( CoordinateIndex+1 < NUM_MATERIAL_TEXCOORDS_VERTEX )
+					{
+						Result.TexCoords[CoordinateIndex+1] = Input.PackedTexCoords4[CoordinateIndex/2].zw;
+					}
+				}
+			#endif	// NUM_MATERIAL_TEXCOORDS_VERTEX > 1
+            #if 1//NUM_MATERIAL_TEXCOORDS_VERTEX % 2 == 1
+				Result.TexCoords[NUM_MATERIAL_TEXCOORDS_VERTEX-1] = Input.PackedTexCoords2;
+            #endif	// NUM_MATERIAL_TEXCOORDS_VERTEX % 2 == 1
+		#endif
+#endif  //MANUAL_VERTEX_FETCH && NUM_MATERIAL_TEXCOORDS_VERTEX
     return Result;
 }
 
@@ -146,12 +227,35 @@ VertexFactoryInterpolantsVSToPS VertexFactoryGetInterpolantsVSToPS(VertexFactory
 	{
 		SetUV(Interpolants, CoordinateIndex, CustomizedUVs[CoordinateIndex]);
 	}
-//#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 0 && USE_PARTICLE_SUBUVS
+    //Interpolants.TexCoords[0].xy = VertexParameters.TexCoords[0];
+
+#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 0 && USE_PARTICLE_SUBUVS
 
 #endif
 
-// #if NEEDS_LIGHTMAP_COORDINATE
-// #endif	// NEEDS_LIGHTMAP_COORDINATE
+#if NEEDS_LIGHTMAP_COORDINATE
+	float2 LightMapCoordinate = 0;
+	float2 ShadowMapCoordinate = 0;
+	#if MANUAL_VERTEX_FETCH
+		float2 LightMapCoordinateInput = LocalVF.VertexFetch_TexCoordBuffer[LocalVF.VertexFetch_Parameters[VF_NumTexcoords_Index] * (VertexOffset + Input.VertexId) + LocalVF.VertexFetch_Parameters[FV_LightMapIndex_Index]];
+	#else
+		float2 LightMapCoordinateInput = Input.LightMapCoordinate;
+	#endif
+
+	#if USE_INSTANCING
+		LightMapCoordinate = LightMapCoordinateInput * PrecomputedLightingBuffer.LightMapCoordinateScaleBias.xy + GetInstanceLightMapBias(Intermediates);
+	#else
+		LightMapCoordinate = LightMapCoordinateInput * PrecomputedLightingBuffer.LightMapCoordinateScaleBias.xy + PrecomputedLightingBuffer.LightMapCoordinateScaleBias.zw;
+	#endif
+	#if STATICLIGHTING_TEXTUREMASK
+		#if USE_INSTANCING
+			ShadowMapCoordinate = LightMapCoordinateInput * PrecomputedLightingBuffer.ShadowMapCoordinateScaleBias.xy + GetInstanceShadowMapBias(Intermediates);
+		#else
+			ShadowMapCoordinate = LightMapCoordinateInput * PrecomputedLightingBuffer.ShadowMapCoordinateScaleBias.xy + PrecomputedLightingBuffer.ShadowMapCoordinateScaleBias.zw;
+		#endif
+	#endif	// STATICLIGHTING_TEXTUREMASK
+	SetLightMapCoordinate(Interpolants, LightMapCoordinate, ShadowMapCoordinate);
+#endif	// NEEDS_LIGHTMAP_COORDINATE
 
 	SetTangents(Interpolants, Intermediates.TangentToWorld[0], Intermediates.TangentToWorld[2], Intermediates.TangentToWorldSign);
 	SetColor(Interpolants, Intermediates.Color);

@@ -3,6 +3,8 @@
 #include "Light.h"
 #include "Scene.h"
 #include "Camera.h"
+#include "DirectXTex.h"
+using namespace DirectX;
 
 std::vector<Mesh> AllMeshes;
 std::vector<MeshBatch> AllBatches;
@@ -231,7 +233,14 @@ ID3D11SamplerState* LightAttenuationSampleState;
 std::map<std::string, ParameterAllocation> ShadowProjectionParams;
 ID3D11Buffer* ShadowProjectionGlobalConstantBuffer;
 char ShadowProjectionGlobalConstantBufferData[4096];
+
+std::map<std::string, ParameterAllocation> BasePassParams;
 std::map<std::string, ParameterAllocation> LightPassParams;
+
+
+//material
+ID3D11Texture2D* BaseColor;
+ID3D11ShaderResourceView* BaseColorSRV;
 
 ViewUniform VU;
 
@@ -239,10 +248,10 @@ void InitInput()
 {
 	Mesh m1;
 	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
-	m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
-	//m1.GeneratePlane(100.f, 100.f, 1, 1);
-	m1.SetPosition(20.0f, -100.0f, 480.0f);
-	m1.SetRotation(-3.14f / 2.0f, 0, 0);
+	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
+	m1.GeneratePlane(100.f, 100.f, 1, 1);
+	//m1.SetPosition(20.0f, -100.0f, 480.0f);
+	//m1.SetRotation(-3.14f / 2.0f, 0, 0);
 	m1.InitResource();
 	AllMeshes.push_back(m1);
 
@@ -251,10 +260,10 @@ void InitInput()
 		m.DrawStaticElement();
 	}
 
-	MainCamera.SetPostion(Vector(0, 0, 0));
-	MainCamera.LookAt(Vector(0, 0, 100));
+	MainCamera.SetPostion(Vector(0, 200, 400));
+	MainCamera.LookAt(Vector(0, 100, -100));
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
 	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ViewRotationMatrix, ProjectionMatrix);
@@ -368,6 +377,7 @@ void InitInput()
 	//Base Pass
 	BasePassVSBytecode = CompileVertexShader(TEXT("BasePassVertexShader.hlsl"), "VS_Main");
 	BasePassPSBytecode = CompilePixelShader(TEXT("BasePassPixelShader.hlsl"), "PS_Main");
+	GetShaderParameterAllocations(BasePassPSBytecode, BasePassParams);
 
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] =
 	{
@@ -376,7 +386,7 @@ void InitInput()
 		{ "ATTRIBUTE",	2,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 32, D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "ATTRIBUTE",	3,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 48, D3D11_INPUT_PER_VERTEX_DATA,0 },
 		{ "ATTRIBUTE",	4,	DXGI_FORMAT_R32G32_FLOAT,		0, 64, D3D11_INPUT_PER_VERTEX_DATA,0 },
-		{ "ATTRIBUTE",	5,	DXGI_FORMAT_R32G32_FLOAT,		0, 72, D3D11_INPUT_PER_VERTEX_DATA,0 },
+		{ "ATTRIBUTE",	15,	DXGI_FORMAT_R32G32_FLOAT,		0, 72, D3D11_INPUT_PER_VERTEX_DATA,0 },
 	};
 
 	MeshInputLayout = CreateInputLayout(InputDesc, sizeof(InputDesc) / sizeof(D3D11_INPUT_ELEMENT_DESC), BasePassVSBytecode);
@@ -525,11 +535,30 @@ void InitInput()
 
 	ShadowMapProjectionMatrix.Transpose();
 	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
+
+	{
+		//CreateWICTextureFromFile(D3D11Device, D3D11DeviceContext, TEXT("./shaderBallNoCrease/checkerA.tga"), (ID3D11Resource**)&BaseColor, &BaseColorSRV);
+// 		int Width, Height, nChanels;
+// 		unsigned char* Data = stbi_load("./shaderBallNoCrease/checkerA.tga", &Width, &Height, &nChanels, 4);
+// 		if (Data)
+// 		{
+// 			CreateWICTextureFromMemory(D3D11Device, D3D11DeviceContext, Data, Width*Height*nChanels,(ID3D11Resource**)&BaseColor, &BaseColorSRV);
+// 			//BaseColor = CreateTexture2D(Width, Height, DXGI_FORMAT_,1,Data);
+// 		}
+
+		TexMetadata Metadata;
+		ScratchImage sImage;
+		if (S_OK == LoadFromTGAFile(TEXT("./shaderBallNoCrease/checkerA.tga"), TGA_FLAGS_FORCE_SRGB, &Metadata, sImage))
+		{
+			CreateTexture(D3D11Device, sImage.GetImages(), 1, Metadata, (ID3D11Resource **)&BaseColor);
+			CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &BaseColorSRV);
+		}
+	}
 }
 
 void UpdateView()
 {
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0,0,0), MainCamera.FaceDir, MainCamera.Up);
 
 	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
@@ -753,6 +782,13 @@ void RenderBasePass()
 	D3D11DeviceContext->RSSetState(BasePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
 	D3D11DeviceContext->OMSetDepthStencilState(BasePassDepthStencilState,0);
+
+	const ParameterAllocation& BaseColorParam = BasePassParams["Material_BaseColor"];
+	const ParameterAllocation& BaseColorSamplerParam = BasePassParams["Material_BaseColorSampler"];
+
+	D3D11DeviceContext->PSSetShaderResources(BaseColorParam.BaseIndex, BaseColorParam.Size, &BaseColorSRV);
+	ID3D11SamplerState* BaseColorSampler = TStaticSamplerState<>::GetRHI();
+	D3D11DeviceContext->PSSetSamplers(BaseColorSamplerParam.BaseIndex, BaseColorSamplerParam.Size, &BaseColorSampler);
 
 	for (MeshBatch& MB : AllBatches)
 	{

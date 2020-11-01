@@ -5,8 +5,8 @@
 
 #include "Common.hlsl"
 
-#define NUM_MATERIAL_TEXCOORDS_VERTEX 1
-#define NUM_TEX_COORD_INTERPOLATORS 1
+#define NUM_MATERIAL_TEXCOORDS_VERTEX 	(1)
+#define NUM_TEX_COORD_INTERPOLATORS 	(1)
 
 /** 
  * Parameters calculated from the pixel material inputs.
@@ -178,8 +178,7 @@ struct MaterialVertexParameters
 #if NUM_TEX_COORD_INTERPOLATORS
 void GetMaterialCustomizedUVs(MaterialVertexParameters Parameters, inout float2 OutTexCoords[NUM_TEX_COORD_INTERPOLATORS])
 {
-	OutTexCoords[0] = Parameters.TexCoords[0].xy.rg.rg.rg.rg;
-
+	OutTexCoords[0] = Parameters.TexCoords[0].xy;
 }
 
 void GetCustomInterpolators(MaterialVertexParameters Parameters, inout float2 OutTexCoords[NUM_TEX_COORD_INTERPOLATORS])
@@ -328,7 +327,7 @@ void CalcPixelMaterialInputs(in out MaterialPixelParameters Parameters, in out P
     Inputs.EmissiveColor = 0;//Material.VectorExpressions[2].rgb;
 	Inputs.Opacity = 1.00000000;
 	Inputs.OpacityMask = 1.00000000;
-	Inputs.BaseColor = float3(.6f, .6f, .6f);
+	Inputs.BaseColor = Texture2DSampleLevel(Material.BaseColor,Material.BaseColorSampler,Parameters.TexCoords[0],0).rgb;
 	Inputs.Metallic = 0.20f;
 	Inputs.Specular = 0.50000000;
 	Inputs.Roughness = 0.5f;

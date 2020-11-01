@@ -18,6 +18,11 @@
 #define SHADINGMODELID_NUM					10
 #define SHADINGMODELID_MASK					0xF		
 
+#define SKIP_CUSTOMDATA_MASK			(1 << 4)	// TODO remove. Can be inferred from shading model.
+#define SKIP_PRECSHADOW_MASK			(1 << 5)
+#define ZERO_PRECSHADOW_MASK			(1 << 6)
+#define SKIP_VELOCITY_MASK				(1 << 7)
+
 float EncodeShadingModelIdAndSelectiveOutputMask(uint ShadingModelId, uint SelectiveOutputMask)
 {
 	uint Value = (ShadingModelId & SHADINGMODELID_MASK) | SelectiveOutputMask;

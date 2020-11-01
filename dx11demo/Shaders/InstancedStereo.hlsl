@@ -113,9 +113,9 @@ struct ViewState
 	// float RenderingReflectionCaptureMask;
 	// float4 AmbientCubemapTint;
 	// float AmbientCubemapIntensity;
-	// float SkyLightParameters;
-	// float4 SkyLightColor;
-	// float4 SkyIrradianceEnvironmentMap[7];
+	float SkyLightParameters;
+	float4 SkyLightColor;
+	float4 SkyIrradianceEnvironmentMap[7];
 	// float MobilePreviewMode;
 	// float HMDEyePaddingOffset;
 	// half ReflectionCubemapMaxMip;
@@ -256,9 +256,9 @@ ViewState GetPrimaryView()
 	// Result.RenderingReflectionCaptureMask = View.RenderingReflectionCaptureMask;
 	// Result.AmbientCubemapTint = View.AmbientCubemapTint;
 	// Result.AmbientCubemapIntensity = View.AmbientCubemapIntensity;
-	// Result.SkyLightParameters = View.SkyLightParameters;
-	// Result.SkyLightColor = View.SkyLightColor;
-	// Result.SkyIrradianceEnvironmentMap = View.SkyIrradianceEnvironmentMap;
+	Result.SkyLightParameters = View.SkyLightParameters;
+	Result.SkyLightColor = View.SkyLightColor;
+	Result.SkyIrradianceEnvironmentMap = View.SkyIrradianceEnvironmentMap;
 	// Result.MobilePreviewMode = View.MobilePreviewMode;
 	// Result.HMDEyePaddingOffset = View.HMDEyePaddingOffset;
 	// Result.ReflectionCubemapMaxMip = View.ReflectionCubemapMaxMip;
