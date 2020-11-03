@@ -131,9 +131,19 @@ void Vector::CreateOrthonormalBasis(Vector& XAxis, Vector& YAxis, Vector& ZAxis)
 	ZAxis.Normalize();
 }
 
+bool Vector::Equals(const Vector& V, float Tolerance /*= KINDA_SMALL_NUMBER*/) const
+{
+	return Math::Abs(X - V.X) <= Tolerance && Math::Abs(Y - V.Y) <= Tolerance && Math::Abs(Z - V.Z) <= Tolerance;
+}
+
 struct Vector2 Vector::ToVector2() const
 {
 	return Vector2(X,Y);
+}
+
+float Vector::Size() const
+{
+	return Math::Sqrt(X*X + Y * Y + Z * Z);
 }
 
 static const float OneOver255 = 1.0f / 255.0f;
@@ -224,4 +234,14 @@ Box Frustum::GetBounds(const Matrix& TransformMatrix)
 		Result += TransformMatrix.Transform(V);
 	}
 	return Result;
+}
+
+bool Vector2::Equals(const Vector2& V, float Tolerance /*= KINDA_SMALL_NUMBER*/) const
+{
+	return Math::Abs(X - V.X) <= Tolerance && Math::Abs(Y - V.Y) <= Tolerance;
+}
+
+bool Vector2::IsNearlyZero(float Tolerance /*= KINDA_SMALL_NUMBER*/) const
+{
+	return	Math::Abs(X) <= Tolerance && Math::Abs(Y) <= Tolerance;
 }

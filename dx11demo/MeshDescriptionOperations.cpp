@@ -3,6 +3,37 @@
 #include "Math.h"
 #include "MeshDescription.h"
 #include "mikktspace.h"
+#include "LayoutUV.h"
+#include "Allocator2D.h"
+#include <algorithm>
+
+/** Helper struct for building acceleration structures. */
+namespace MeshDescriptionOperationNamespace
+{
+	struct FIndexAndZ
+	{
+		float Z;
+		int32 Index;
+		const Vector *OriginalVector;
+
+		/** Default constructor. */
+		FIndexAndZ() {}
+
+		/** Initialization constructor. */
+		FIndexAndZ(int32 InIndex, const Vector& V)
+		{
+			Z = 0.30f * V.X + 0.33f * V.Y + 0.37f * V.Z;
+			Index = InIndex;
+			OriginalVector = &V;
+		}
+	};
+	/** Sorting function for vertex Z/index pairs. */
+	struct FCompareIndexAndZ
+	{
+		inline bool operator()(FIndexAndZ const& A, FIndexAndZ const& B) const { return A.Z < B.Z; }
+	};
+}
+
 
 void MeshDescriptionOperations::CreatePolygonNTB(MeshDescription& MD, float ComparisonThreshold)
 {
@@ -121,6 +152,53 @@ void MeshDescriptionOperations::CreateMikktTangents(MeshDescription& MD, ETangen
 	genTangSpaceDefault(&MikkTContext);
 }
 
+void MeshDescriptionOperations::FindOverlappingCorners(std::multimap<int, int>& OverlappingCorners, const MeshDescription& MD, float ComparisonThreshold)
+{
+	//Empty the old data
+	OverlappingCorners.clear();
+
+	const TMeshElementArray<MeshVertexInstance>& VertexInstanceArray = MD.VertexInstances();
+	const TMeshElementArray<MeshVertex>& VertexArray = MD.Vertices();
+
+	const int32 NumWedges = VertexInstanceArray.Num();
+
+	// Create a list of vertex Z/index pairs
+	std::vector<MeshDescriptionOperationNamespace::FIndexAndZ> VertIndexAndZ;
+	VertIndexAndZ.reserve(NumWedges);
+
+	const std::vector<Vector>& VertexPositions = MD.VertexAttributes().GetAttributes<Vector>(MeshAttribute::Vertex::Position);
+
+	for (const int VertexInstanceID : VertexInstanceArray.GetElementIDs())
+	{
+		VertIndexAndZ.push_back(MeshDescriptionOperationNamespace::FIndexAndZ(VertexInstanceID, VertexPositions[MD.GetVertexInstanceVertex(VertexInstanceID)]));
+		//new(VertIndexAndZ)MeshDescriptionOperationNamespace::FIndexAndZ(VertexInstanceID, VertexPositions[MD.GetVertexInstanceVertex(VertexInstanceID)]);
+	}
+
+	// Sort the vertices by z value
+	std::sort(VertIndexAndZ.begin(), VertIndexAndZ.end(), MeshDescriptionOperationNamespace::FCompareIndexAndZ());
+	//VertIndexAndZ.Sort(MeshDescriptionOperationNamespace::FCompareIndexAndZ());
+
+	// Search for duplicates, quickly!
+	for (size_t i = 0; i < VertIndexAndZ.size(); i++)
+	{
+		// only need to search forward, since we add pairs both ways
+		for (size_t j = i + 1; j < VertIndexAndZ.size(); j++)
+		{
+			if (Math::Abs(VertIndexAndZ[j].Z - VertIndexAndZ[i].Z) > ComparisonThreshold)
+				break; // can't be any more dups
+
+			const Vector& PositionA = *(VertIndexAndZ[i].OriginalVector);
+			const Vector& PositionB = *(VertIndexAndZ[j].OriginalVector);
+
+			if (PositionA.Equals(PositionB, ComparisonThreshold))
+			{
+				OverlappingCorners.insert(std::make_pair(VertIndexAndZ[i].Index, VertIndexAndZ[j].Index));
+				OverlappingCorners.insert(std::make_pair(VertIndexAndZ[j].Index, VertIndexAndZ[i].Index));
+			}
+		}
+	}
+}
+
 namespace MeshDescriptionMikktSpaceInterface
 {
 	int MikkGetNumFaces(const SMikkTSpaceContext* Context)
@@ -183,6 +261,14 @@ namespace MeshDescriptionMikktSpaceInterface
 
 void MeshDescriptionOperations::CreateLightMapUVLayout(MeshDescription& MD, int SrcLightmapIndex, int DstLightmapIndex, int MinLightmapResolution, ELightmapUVVersion LightmapUVVersion, const std::multimap<int, int>& OverlappingCorners)
 {
+	MeshDescriptionOp::FLayoutUV Packer(MD, SrcLightmapIndex, DstLightmapIndex, MinLightmapResolution);
+	Packer.SetVersion(LightmapUVVersion);
 
+	Packer.FindCharts(OverlappingCorners);
+	bool bPackSuccess = Packer.FindBestPacking();
+	if (bPackSuccess)
+	{
+		Packer.CommitPackedUVs();
+	}
 }
 

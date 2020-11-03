@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 
 class MeshDescription;
 
@@ -26,6 +27,8 @@ public:
 	static void CreatePolygonNTB(MeshDescription& MD, float ComparisonThreshold);
 
 	static void CreateMikktTangents(MeshDescription& MD, ETangentOptions TangentOptions);
+
+	static void FindOverlappingCorners(std::multimap<int, int>& OverlappingCorners, const MeshDescription& MD, float ComparisonThreshold);
 
 	static void CreateLightMapUVLayout(MeshDescription& MD,
 		int SrcLightmapIndex,

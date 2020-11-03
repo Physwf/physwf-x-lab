@@ -131,8 +131,70 @@ struct ViewUniform
 	uint32 StateFrameIndexMod8;
 	uint32 ViewPading05;
 
+	float DemosaicVposOffset;
+	Vector IndirectLightingColorScale;
+
+	float View_AmbientCubemapIntensity;
+	float View_SkyLightParameters;
+	float PrePadding_View_2472;
+	float PrePadding_View_2476;
+	Vector4 SkyLightColor;
+	Vector4 SkyIrradianceEnvironmentMap[7];
+
+	float PrePadding_View_2862;
+	Vector VolumetricLightmapWorldToUVScale;
+	float PrePadding_View_2861;
+	Vector VolumetricLightmapWorldToUVAdd;
+	float PrePadding_View_2876;
+	Vector VolumetricLightmapIndirectionTextureSize;
+
+	float VolumetricLightmapBrickSize;
+	Vector VolumetricLightmapBrickTexelSize;
 };
+
+#define MAX_NUM_LIGHTMAP_COEF 2
+
+struct PrecomputedLightingUniform
+{
+	Vector PrecomputedLighting_IndirectLightingCachePrimitiveAdd;// FCachedVolumeIndirectLightingPolicy
+	float Pading01;
+	Vector PrecomputedLighting_IndirectLightingCachePrimitiveScale;// FCachedVolumeIndirectLightingPolicy
+	float Pading02;
+	Vector PrecomputedLighting_IndirectLightingCacheMinUV;// FCachedVolumeIndirectLightingPolicy
+	float Pading03;
+	Vector PrecomputedLighting_IndirectLightingCacheMaxUV;// FCachedVolumeIndirectLightingPolicy
+	float Pading04;
+	Vector4 PrecomputedLighting_PointSkyBentNormal;// FCachedPointIndirectLightingPolicy
+	float PrecomputedLighting_DirectionalLightShadowing;// FCachedPointIndirectLightingPolicy
+	Vector Pading05;
+	Vector4 PrecomputedLighting_StaticShadowMapMasks;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 PrecomputedLighting_InvUniformPenumbraSizes;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients0[3]; // FCachedPointIndirectLightingPolicy
+	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients1[3]; // FCachedPointIndirectLightingPolicy
+	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients2;// FCachedPointIndirectLightingPolicy
+	Vector4 PrecomputedLighting_IndirectLightingSHSingleCoefficient;// FCachedPointIndirectLightingPolicy
+	Vector4 PrecomputedLighting_LightMapCoordinateScaleBias; // TLightMapPolicy
+	Vector4 PrecomputedLighting_ShadowMapCoordinateScaleBias;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 PrecomputedLighting_LightMapScale[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
+	Vector4 PrecomputedLighting_LightMapAdd[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
+};
+
 #pragma pack(pop)
+//PrecomputedLightParameters
+ID3D11ShaderResourceView* PrecomputedLighting_LightMapTexture;
+ID3D11ShaderResourceView* PrecomputedLighting_SkyOcclusionTexture;
+ID3D11ShaderResourceView* PrecomputedLighting_AOMaterialMaskTexture;
+ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture0;
+ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture1;
+ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture2;
+ID3D11ShaderResourceView* PrecomputedLighting_StaticShadowTexture;
+ID3D11SamplerState* PrecomputedLighting_LightMapSampler;
+ID3D11SamplerState* PrecomputedLighting_SkyOcclusionSampler;
+ID3D11SamplerState* PrecomputedLighting_AOMaterialMaskSampler;
+ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler0;
+ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler1;
+ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler2;
+ID3D11SamplerState* PrecomputedLighting_StaticShadowTextureSampler;
 
 struct ShadowMapView
 {
@@ -146,6 +208,7 @@ ID3D11Buffer* ShadowMapProjectionUniformBuffer;
 Matrix ScreenToShadowMatrix;
 
 ID3D11Buffer* ViewUniformBuffer;
+ID3D11Buffer* PrecomputedLightUniformBuffer;
 ID3D11Buffer* DirecianlLightShadowMapViewUniformBuffer;
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
@@ -239,17 +302,18 @@ std::map<std::string, ParameterAllocation> LightPassParams;
 
 
 //material
-ID3D11Texture2D* BaseColor;
 ID3D11ShaderResourceView* BaseColorSRV;
+ID3D11SamplerState* BaseColorSampler;
 
 ViewUniform VU;
+PrecomputedLightingUniform PrecomputedLightingParameters;
 
 void InitInput()
 {
 	Mesh m1;
-	//m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
-	m1.GeneratePlane(100.f, 100.f, 1, 1);
+	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	//m1.SetPosition(20.0f, -100.0f, 480.0f);
 	//m1.SetRotation(-3.14f / 2.0f, 0, 0);
 	m1.InitResource();
@@ -260,8 +324,8 @@ void InitInput()
 		m.DrawStaticElement();
 	}
 
-	MainCamera.SetPostion(Vector(0, 200, 400));
-	MainCamera.LookAt(Vector(0, 100, -100));
+	MainCamera.SetPostion(Vector(0,0 , 400));
+	MainCamera.LookAt(Vector(0, 0, -100));
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
@@ -320,7 +384,8 @@ void InitInput()
 	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
 
-	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(VU),  &VU);
+	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(VU), &VU);
+	PrecomputedLightUniformBuffer = CreateConstantBuffer(false, sizeof(PrecomputedLightingParameters), &PrecomputedLightingParameters);
 
 	SceneDepthRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R24G8_TYPELESS, false, true, true);
 	SceneDepthDSV = CreateDepthStencilView2D(SceneDepthRT, DXGI_FORMAT_D24_UNORM_S8_UINT, 0);
@@ -550,9 +615,40 @@ void InitInput()
 		ScratchImage sImage;
 		if (S_OK == LoadFromTGAFile(TEXT("./shaderBallNoCrease/checkerA.tga"), TGA_FLAGS_FORCE_SRGB, &Metadata, sImage))
 		{
-			CreateTexture(D3D11Device, sImage.GetImages(), 1, Metadata, (ID3D11Resource **)&BaseColor);
 			CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &BaseColorSRV);
+			BaseColorSampler = TStaticSamplerState<>::GetRHI();
 		}
+	}
+
+	{
+		{
+			TexMetadata Metadata;
+			ScratchImage sImage;
+			if (S_OK == LoadFromHDRFile(TEXT("./dx11demo/PrecomputedLightingBuffer_LightMapTexture.hdr"), &Metadata, sImage))
+			{
+				CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &PrecomputedLighting_LightMapTexture);
+				PrecomputedLighting_LightMapSampler = TStaticSamplerState<>::GetRHI();
+			}
+		}
+		{
+			TexMetadata Metadata;
+			ScratchImage sImage;
+			if (S_OK == LoadFromHDRFile(TEXT("./dx11demo/PrecomputedLightingBuffer_StaticShadowTexture.hdr"), &Metadata, sImage))
+			{
+				CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &PrecomputedLighting_StaticShadowTexture);
+				PrecomputedLighting_StaticShadowTextureSampler = TStaticSamplerState<>::GetRHI();
+			}
+		}
+// 		ID3D11ShaderResourceView* PrecomputedLighting_SkyOcclusionTexture;
+// 		ID3D11ShaderResourceView* PrecomputedLighting_AOMaterialMaskTexture;
+// 		ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture0;
+// 		ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture1;
+// 		ID3D11ShaderResourceView* PrecomputedLighting_IndirectLightingCacheTexture2;
+// 		ID3D11SamplerState* PrecomputedLighting_SkyOcclusionSampler;
+// 		ID3D11SamplerState* PrecomputedLighting_AOMaterialMaskSampler;
+// 		ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler0;
+// 		ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler1;
+// 		ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler2;
 	}
 }
 
@@ -779,16 +875,26 @@ void RenderBasePass()
 	}
 	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
 
+	const ParameterAllocation& PrecomputedLightingBuffer = BasePassParams["PrecomputedLightingParameters"];
+	D3D11DeviceContext->VSSetConstantBuffers(PrecomputedLightingBuffer.BufferIndex, 1, &PrecomputedLightUniformBuffer);
+
 	D3D11DeviceContext->RSSetState(BasePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
 	D3D11DeviceContext->OMSetDepthStencilState(BasePassDepthStencilState,0);
 
 	const ParameterAllocation& BaseColorParam = BasePassParams["Material_BaseColor"];
 	const ParameterAllocation& BaseColorSamplerParam = BasePassParams["Material_BaseColorSampler"];
+	const ParameterAllocation& LightMapTextureParam = BasePassParams["PrecomputedLighting_LightMapTexture"];
+	const ParameterAllocation& LightMapSamplerParam = BasePassParams["PrecomputedLighting_LightMapSampler"];
+// 	const ParameterAllocation& StaticShadowTextureParam = BasePassParams["PrecomputedLighting_StaticShadowTexture"];
+// 	const ParameterAllocation& StaticShadowTextureSamplerParam = BasePassParams["PrecomputedLighting_StaticShadowTextureSampler"];
 
 	D3D11DeviceContext->PSSetShaderResources(BaseColorParam.BaseIndex, BaseColorParam.Size, &BaseColorSRV);
-	ID3D11SamplerState* BaseColorSampler = TStaticSamplerState<>::GetRHI();
 	D3D11DeviceContext->PSSetSamplers(BaseColorSamplerParam.BaseIndex, BaseColorSamplerParam.Size, &BaseColorSampler);
+	D3D11DeviceContext->PSSetShaderResources(LightMapTextureParam.BaseIndex, LightMapTextureParam.Size, &PrecomputedLighting_LightMapTexture);
+	D3D11DeviceContext->PSSetSamplers(LightMapSamplerParam.BaseIndex, LightMapSamplerParam.Size, &PrecomputedLighting_LightMapSampler);
+// 	D3D11DeviceContext->PSSetShaderResources(StaticShadowTextureParam.BaseIndex, StaticShadowTextureParam.Size, &PrecomputedLighting_StaticShadowTexture);
+// 	D3D11DeviceContext->PSSetSamplers(StaticShadowTextureSamplerParam.BaseIndex, StaticShadowTextureSamplerParam.Size, &PrecomputedLighting_StaticShadowTextureSampler);
 
 	for (MeshBatch& MB : AllBatches)
 	{

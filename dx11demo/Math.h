@@ -34,7 +34,61 @@ public:
 		A = B;
 		B = Temp;
 	}
+
+	template< class T >
+	static constexpr inline T Max(const T A, const T B)
+	{
+		return (A >= B) ? A : B;
+	}
+
+	/** Returns lower value in a generic way */
+	template< class T >
+	static constexpr inline T Min(const T A, const T B)
+	{
+		return (A <= B) ? A : B;
+	}
+	/** Returns lowest of 3 values */
+	template< class T >
+	static inline T Min3(const T A, const T B, const T C)
+	{
+		return Min(Min(A, B), C);
+	}
+	/** Returns highest of 3 values */
+	template< class T >
+	static inline T Max3(const T A, const T B, const T C)
+	{
+		return Max(Max(A, B), C);
+	}
+	/** Clamps X to be between Min and Max, inclusive */
+	template< class T >
+	static inline T Clamp(const T X, const T Min, const T Max)
+	{
+		return X < Min ? Min : X < Max ? X : Max;
+	}
+	static constexpr inline int32 TruncToInt(float F)
+	{
+		return (int32)F;
+	}
+	static inline int32 CeilToInt(float F)
+	{
+		return TruncToInt(ceilf(F));
+	}
+	/** Computes absolute value in a generic way */
+	template< class T >
+	static constexpr inline T Abs(const T A)
+	{
+		return (A >= (T)0) ? A : -A;
+	}
+	static inline float Sqrt(float Value) { return sqrtf(Value); }
 };
+
+
+template <typename T>
+inline void Exchange(T& A, T& B)
+{
+	Math::Swap(A, B);
+}
+
 struct Vector;
 
 struct alignas(16) Vector4
@@ -223,8 +277,10 @@ struct Vector
 
 	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const;
 	Vector GetSafeNormal(float Tolerance = SMALL_NUMBER) const;
-
+	bool Equals(const Vector& V, float Tolerance = KINDA_SMALL_NUMBER) const;
 	struct Vector2 ToVector2() const;
+
+	float Size() const;
 };
 
 inline Vector::Vector(std::initializer_list<float> list)
@@ -396,14 +452,26 @@ struct Vector2
 	float& operator[](int32 Index);
 	float operator[](int32 Index) const;
 
+	inline Vector2 operator+(float A) const
+	{
+		return Vector2(X + A, Y + A);
+	}
+	inline Vector2 operator-(float A) const
+	{
+		return Vector2(X - A, Y - A);
+	}
 	void Normalize();
 	float Size();
 	float SizeSquared();
+
+	bool Equals(const Vector2& V, float Tolerance = KINDA_SMALL_NUMBER) const;
 
 	friend inline Vector2 operator*(float Value, const Vector2& rhs)
 	{
 		return rhs.operator*(Value);
 	}
+
+	bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const;
 };
 
 
@@ -642,6 +710,7 @@ struct Matrix
 	static Matrix	DXFromOrthognalLH(float w, float h, float zn, float zf);
 	static Matrix	DXFromOrthognalLH(float right, float left, float top, float bottom,float zFar, float zNear);
 };
+
 
 class TranslationMatrix : public Matrix
 {

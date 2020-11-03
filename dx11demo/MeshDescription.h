@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <tuple>
 #include <set>
+#include <algorithm>
 
 #include "Math.h"
 
@@ -204,6 +205,7 @@ public:
 		{
 			Keys.push_back(kv.first);
 		}
+		std::sort(Keys.begin(), Keys.end());
 		return Keys;
 	}
 private:
@@ -303,11 +305,15 @@ public:
 		return Map.at(AttributeName);
 	}
 
-	int GetAttibuteIndexCount(const std::string& AttributeName) const
+	template <typename AttributeType>
+	int GetAttributeIndexCount(const std::string& AttributeName) const
 	{
-		return 0;
+		//return Container.template Get<TTupleIndex<AttributeType, AttributeTypes>::Value>().GetAttributeIndexCount(AttributeName);
+		auto& Map = std::get<TTupleIndex<AttributeType, AttributeTypes>::Value>(Containers);
+		return (int)Map.at(AttributeName).size();
 	}
 
+	template <typename AttributeType>
 	void SetAttributeIndexCount(const std::string& AttributeName, int NumIndices)
 	{
 

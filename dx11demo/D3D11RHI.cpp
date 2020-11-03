@@ -371,13 +371,13 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
 		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
-		"ENABLE_SKY_LIGHT",									"1",
+		"ENABLE_SKY_LIGHT",									"0",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
-		return Bytecode;
+		return Bytecode; 
 	}
 	X_LOG("D3DCompileFromFile failed! %s", (const char*)OutErrorMsg->GetBufferPointer());
 	return NULL; 
@@ -419,7 +419,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
 		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
-		"ENABLE_SKY_LIGHT",									"1",
+		"ENABLE_SKY_LIGHT",									"0",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		NULL,NULL
 	};

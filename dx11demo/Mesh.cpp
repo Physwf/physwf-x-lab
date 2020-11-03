@@ -238,8 +238,8 @@ Vector ConvertPos(FbxVector4 pPos)
 {
 	Vector Result;
 	Result.X = (float)pPos[0];
-	Result.Y = (float)pPos[1];
-	Result.Z = (float)pPos[2];
+	Result.Y = (float)pPos[2];
+	Result.Z = (float)pPos[1];
 	return Result;
 }
 
@@ -816,6 +816,7 @@ void Mesh::Build()
 		LV.TangentX = V.TangentX;
 		LV.TangentZ = Vector4(V.TangentZ, V.TangentYSign);
 		LV.TexCoords = V.UVs;
+		LV.LightMapCoordinate = V.LightMapCoordinate;
 		LODResource.Vertices.push_back(LV);
 
 		PositionOnlyLocalVertex PLV;
@@ -889,6 +890,7 @@ void Mesh::BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector
 				const Vector& VertexTangent = VertexInstanceTangents[VertexInstanceID];
 				const float VertexInstanceBinormalSign = VertexInstanceBinormalSigns[VertexInstanceID];
 				Vector2 UVs = VertexInstanceUVs[0][VertexInstanceID];
+				Vector2 LightMapCoordinate = VertexInstanceUVs[1][VertexInstanceID];
 
 				StaticMeshBuildVertex StaticMeshVertex;
 				StaticMeshVertex.Position = VertexPosition;
@@ -896,6 +898,7 @@ void Mesh::BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector
 				StaticMeshVertex.TangentYSign =  VertexInstanceBinormalSign;
 				StaticMeshVertex.TangentZ = VertexNormal;
 				StaticMeshVertex.UVs = UVs;
+				StaticMeshVertex.LightMapCoordinate = LightMapCoordinate;
 
 				StaticMeshBuildVertices.push_back(StaticMeshVertex);
 				SectionIndices.push_back(StaticMeshBuildVertices.size() - 1) ;
@@ -909,12 +912,16 @@ void Mesh::GetRenderMeshDescription(const MeshDescription& InOriginalMeshDescrip
 {
 	OutRenderMeshDescription = InOriginalMeshDescription;
 
+	float ComparisonThreshold = 0.00002f;//BuildSettings->bRemoveDegenerates ? THRESH_POINTS_ARE_SAME : 0.0f;
+
 	MeshDescriptionOperations::CreatePolygonNTB(OutRenderMeshDescription, 0.f);
 
 	TMeshElementArray<MeshVertexInstance>& VertexInstanceArray = OutRenderMeshDescription.VertexInstances();
 	std::vector<Vector>& Normals = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Normal);
 	std::vector<Vector>& Tangents = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<Vector>(MeshAttribute::VertexInstance::Tangent);
 	std::vector<float>& BinormalSigns = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributes<float>(MeshAttribute::VertexInstance::BinormalSign);
+
+	MeshDescriptionOperations::FindOverlappingCorners(OverlappingCorners, OutRenderMeshDescription, ComparisonThreshold);
 
 	uint32 TangentOptions = MeshDescriptionOperations::ETangentOptions::BlendOverlappingNormals;
 
@@ -933,4 +940,34 @@ void Mesh::GetRenderMeshDescription(const MeshDescription& InOriginalMeshDescrip
 	}
 
 	MeshDescriptionOperations::CreateMikktTangents(OutRenderMeshDescription, (MeshDescriptionOperations::ETangentOptions)TangentOptions);
+
+	
+	std::vector<std::vector<Vector2>>& VertexInstanceUVs = OutRenderMeshDescription.VertexInstanceAttributes().GetAttributesSet<Vector2>(MeshAttribute::VertexInstance::TextureCoordinate);
+	int32 NumIndices = (int32)VertexInstanceUVs.size();
+	//Verify the src light map channel
+// 	if (BuildSettings->SrcLightmapIndex >= NumIndices)
+// 	{
+// 		BuildSettings->SrcLightmapIndex = 0;
+// 	}
+	//Verify the destination light map channel
+// 	if (BuildSettings->DstLightmapIndex >= NumIndices)
+// 	{
+// 		//Make sure we do not add illegal UV Channel index
+// 		if (BuildSettings->DstLightmapIndex >= MAX_MESH_TEXTURE_COORDS_MD)
+// 		{
+// 			BuildSettings->DstLightmapIndex = MAX_MESH_TEXTURE_COORDS_MD - 1;
+// 		}
+// 
+// 		//Add some unused UVChannel to the mesh description for the lightmapUVs
+// 		VertexInstanceUVs.SetNumIndices(BuildSettings->DstLightmapIndex + 1);
+// 		BuildSettings->DstLightmapIndex = NumIndices;
+// 	}
+	VertexInstanceUVs.resize(2);
+	VertexInstanceUVs[1].resize(VertexInstanceUVs[0].size());
+	MeshDescriptionOperations::CreateLightMapUVLayout(OutRenderMeshDescription,
+		/*BuildSettings->SrcLightmapIndex,*/0,
+		/*BuildSettings->DstLightmapIndex,*/1,
+		/*BuildSettings->MinLightmapResolution,*/64,
+		/*(MeshDescriptionOperations::ELightmapUVVersion)(StaticMesh->LightmapUVVersion),*/(MeshDescriptionOperations::ELightmapUVVersion)4,
+		OverlappingCorners);
 }

@@ -6,6 +6,7 @@
 #include "Math.h"
 #include "MeshDescription.h"
 #include "fbxsdk.h"
+#include <unordered_map>
 
 struct StaticMeshBuildVertex
 {
@@ -17,7 +18,7 @@ struct StaticMeshBuildVertex
 
 	Color C;
 	Vector2 UVs;
-	//Vector2 LightMapCoordinate;
+	Vector2 LightMapCoordinate;
 };
 
 struct LocalVertex
@@ -138,6 +139,7 @@ private:
 	ID3D11InputLayout* InputLayout = NULL;
 	ID3D11Buffer* PrimitiveUniformBuffer = NULL;
 	std::vector<MeshMaterial> Materials;
+	std::multimap<int32, int32> OverlappingCorners;
 };
 
 static void RegisterMeshAttributes(MeshDescription& MD);

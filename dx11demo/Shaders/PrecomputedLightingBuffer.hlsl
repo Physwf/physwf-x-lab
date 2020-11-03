@@ -40,11 +40,16 @@ END_UNIFORM_BUFFER_STRUCT( FPrecomputedLightingParameters )
 cbuffer PrecomputedLightingParameters
 {
     float3 PrecomputedLighting_IndirectLightingCachePrimitiveAdd;// FCachedVolumeIndirectLightingPolicy
+    float Pading01;
     float3 PrecomputedLighting_IndirectLightingCachePrimitiveScale;// FCachedVolumeIndirectLightingPolicy
+    float Pading02;
     float3 PrecomputedLighting_IndirectLightingCacheMinUV;// FCachedVolumeIndirectLightingPolicy
+    float Pading03;
     float3 PrecomputedLighting_IndirectLightingCacheMaxUV;// FCachedVolumeIndirectLightingPolicy
+    float Pading04;
     float4 PrecomputedLighting_PointSkyBentNormal;// FCachedPointIndirectLightingPolicy
     float PrecomputedLighting_DirectionalLightShadowing;// FCachedPointIndirectLightingPolicy
+    float3 Pading05;
     float4 PrecomputedLighting_StaticShadowMapMasks;// TDistanceFieldShadowsAndLightMapPolicy
     float4 PrecomputedLighting_InvUniformPenumbraSizes;// TDistanceFieldShadowsAndLightMapPolicy
     float4 PrecomputedLighting_IndirectLightingSHCoefficients0[3]; // FCachedPointIndirectLightingPolicy
@@ -55,21 +60,22 @@ cbuffer PrecomputedLightingParameters
     float4 PrecomputedLighting_ShadowMapCoordinateScaleBias;// TDistanceFieldShadowsAndLightMapPolicy
     float4 PrecomputedLighting_LightMapScale[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
     float4 PrecomputedLighting_LightMapAdd[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
-    Texture2D PrecomputedLighting_LightMapTexture;// TLightMapPolicy
-    Texture2D PrecomputedLighting_SkyOcclusionTexture;// TLightMapPolicy
-    Texture2D PrecomputedLighting_AOMaterialMaskTexture;// TLightMapPolicy
-    Texture2D PrecomputedLighting_IndirectLightingCacheTexture0;// FCachedVolumeIndirectLightingPolicy
-    Texture2D PrecomputedLighting_IndirectLightingCacheTexture1;// FCachedVolumeIndirectLightingPolicy
-    Texture2D PrecomputedLighting_IndirectLightingCacheTexture2;// FCachedVolumeIndirectLightingPolicy
-    Texture2D PrecomputedLighting_StaticShadowTexture;
-    SamplerState PrecomputedLighting_LightMapSampler;// TLightMapPolicy
-    SamplerState PrecomputedLighting_SkyOcclusionSampler;// TLightMapPolicy
-    SamplerState PrecomputedLighting_AOMaterialMaskSampler;// TLightMapPolicy
-    SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler0;// FCachedVolumeIndirectLightingPolicy
-    SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler1;// FCachedVolumeIndirectLightingPolicy
-    SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler2;// FCachedVolumeIndirectLightingPolicy
-    SamplerState PrecomputedLighting_StaticShadowTextureSampler;// TDistanceFieldShadowsAndLightMapPolicy
 };
+
+Texture2D PrecomputedLighting_LightMapTexture;// TLightMapPolicy
+Texture2D PrecomputedLighting_SkyOcclusionTexture;// TLightMapPolicy
+Texture2D PrecomputedLighting_AOMaterialMaskTexture;// TLightMapPolicy
+Texture2D PrecomputedLighting_IndirectLightingCacheTexture0;// FCachedVolumeIndirectLightingPolicy
+Texture2D PrecomputedLighting_IndirectLightingCacheTexture1;// FCachedVolumeIndirectLightingPolicy
+Texture2D PrecomputedLighting_IndirectLightingCacheTexture2;// FCachedVolumeIndirectLightingPolicy
+Texture2D PrecomputedLighting_StaticShadowTexture;
+SamplerState PrecomputedLighting_LightMapSampler;// TLightMapPolicy
+SamplerState PrecomputedLighting_SkyOcclusionSampler;// TLightMapPolicy
+SamplerState PrecomputedLighting_AOMaterialMaskSampler;// TLightMapPolicy
+SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler0;// FCachedVolumeIndirectLightingPolicy
+SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler1;// FCachedVolumeIndirectLightingPolicy
+SamplerState PrecomputedLighting_IndirectLightingCacheTextureSampler2;// FCachedVolumeIndirectLightingPolicy
+SamplerState PrecomputedLighting_StaticShadowTextureSampler;// TDistanceFieldShadowsAndLightMapPolicy
 
 static const struct 
 {
