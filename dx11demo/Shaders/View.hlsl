@@ -2,7 +2,7 @@
 #ifndef __UniformBuffer_View_Definition__
 #define __UniformBuffer_View_Definition__
 
-cbuffer View : register(b0)
+cbuffer View 
 {
     float4x4 View_TranslatedWorldToClip;
     float4x4 View_WorldToClip;

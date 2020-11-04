@@ -1390,4 +1390,16 @@ struct Frustum
 
 	Box2D GetBounds2D(const Matrix& ViewMatrix, const Vector& Axis1, const Vector& Axis2);
 	Box GetBounds(const Matrix& TransformMatrix);
+	Box GetBounds();
 };
+
+inline float GetBasisDeterminantSign(const Vector& XAxis, const Vector& YAxis, const Vector& ZAxis)
+{
+	Matrix Basis(
+		Plane(XAxis, 0),
+		Plane(YAxis, 0),
+		Plane(ZAxis, 0),
+		Plane(0, 0, 0, 1)
+	);
+	return (Basis.Determinant() < 0) ? -1.0f : +1.0f;
+}

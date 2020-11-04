@@ -17,6 +17,7 @@ public:
 	~Camera() {};
 
 	void SetPostion(Vector Position);
+	const Vector& GetPosition() const;
 	void LookAt(Vector Target);
 	void SetViewport(float fWidth, float fHeight);
 	void SetLen(float fNear, float fFar);

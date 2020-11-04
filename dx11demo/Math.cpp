@@ -236,6 +236,16 @@ Box Frustum::GetBounds(const Matrix& TransformMatrix)
 	return Result;
 }
 
+Box Frustum::GetBounds()
+{
+	Box Result;
+	for (const Vector& V : Vertices)
+	{
+		Result += V;
+	}
+	return Result;
+}
+
 bool Vector2::Equals(const Vector2& V, float Tolerance /*= KINDA_SMALL_NUMBER*/) const
 {
 	return Math::Abs(X - V.X) <= Tolerance && Math::Abs(Y - V.Y) <= Tolerance;

@@ -238,8 +238,8 @@ Vector ConvertPos(FbxVector4 pPos)
 {
 	Vector Result;
 	Result.X = (float)pPos[0];
-	Result.Y = (float)pPos[2];
-	Result.Z = (float)pPos[1];
+	Result.Y = -(float)pPos[1];
+	Result.Z = (float)pPos[2];
 	return Result;
 }
 
@@ -247,7 +247,7 @@ Vector ConvertDir(FbxVector4 Vec)
 {
 	Vector Result;
 	Result.X = (float)Vec[0];
-	Result.Y = (float)Vec[1];
+	Result.Y = -(float)Vec[1];
 	Result.Z = (float)Vec[2];
 	return Result;
 }
@@ -304,6 +304,26 @@ void Mesh::ImportFromFBX(const char* pFileName)
 	FbxScene* lScene = FbxScene::Create(lFbxManager, "Mesh");
 	lImporter->Import(lScene);
 	lImporter->Destroy();
+
+	FbxAxisSystem::ECoordSystem CoordSystem = FbxAxisSystem::eRightHanded;
+	FbxAxisSystem::EUpVector UpVector = FbxAxisSystem::eZAxis;
+	FbxAxisSystem::EFrontVector FrontVector = (FbxAxisSystem::EFrontVector) - FbxAxisSystem::eParityOdd;
+
+	FbxAxisSystem UnrealImportAxis(UpVector, FrontVector, CoordSystem);
+	FbxAxisSystem SourceSetup = lScene->GetGlobalSettings().GetAxisSystem();
+
+	if (SourceSetup != UnrealImportAxis)
+	{
+		FbxRootNodeUtility::RemoveAllFbxRoots(lScene);
+		UnrealImportAxis.ConvertScene(lScene);
+// 		FbxAMatrix JointOrientationMatrix;
+// 		JointOrientationMatrix.SetIdentity();
+// 		if (GetImportOptions()->bForceFrontXAxis)
+// 		{
+// 			JointOrientationMatrix.SetR(FbxVector4(-90.0, -90.0, 0.0));
+// 		}
+		//FFbxDataConverter::SetJointPostConversionMatrix(JointOrientationMatrix);
+	}
 
 	std::vector<FbxNode*> lOutMeshArray;
 	FillFbxArray(lScene->GetRootNode(), lOutMeshArray);
@@ -555,7 +575,7 @@ void Mesh::ImportFromFBX(const char* pFileName)
 							TempValue = LayerElementBinormal->GetDirectArray().GetAt(BinormalValueIndex);
 							TempValue = TotalMatrixForNormal.MultT(TempValue);
 							Vector TangentY = -ConvertDir(TempValue);
-							VertexInstanceBinormalSigns[AddedVertexInstanceId] = 1.0f;// GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
+							VertexInstanceBinormalSigns[AddedVertexInstanceId] = GetBasisDeterminantSign(TangentX.GetSafeNormal(), TangentY.GetSafeNormal(), TangentZ.GetSafeNormal());
 						}
 					}
 				}

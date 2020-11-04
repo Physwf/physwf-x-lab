@@ -4,31 +4,31 @@
 
 //FSceneTexturesUniformParameters
 
-Texture2D<float4> SceneTexturesStruct_SceneColorTexture : register(t0);
-SamplerState SceneTexturesStruct_SceneColorTextureSampler : register(s0);
+Texture2D<float4> SceneTexturesStruct_SceneColorTexture ;
+SamplerState SceneTexturesStruct_SceneColorTextureSampler;
 
-Texture2D<float> SceneTexturesStruct_SceneDepthTexture : register(t1);
-SamplerState SceneTexturesStruct_SceneDepthTextureSampler: register(s1);
-Texture2D<float> SceneTexturesStruct_SceneDepthTextureNonMS: register(t2);
+Texture2D<float> SceneTexturesStruct_SceneDepthTexture ;
+SamplerState SceneTexturesStruct_SceneDepthTextureSampler;
+Texture2D<float> SceneTexturesStruct_SceneDepthTextureNonMS;
 
-Texture2D<float4> SceneTexturesStruct_GBufferATexture: register(t3);
-Texture2D<float4> SceneTexturesStruct_GBufferBTexture: register(t4);
-Texture2D<float4> SceneTexturesStruct_GBufferCTexture: register(t5);
-Texture2D<float4> SceneTexturesStruct_GBufferDTexture: register(t6);
-Texture2D<float4> SceneTexturesStruct_GBufferETexture: register(t7);
-Texture2D<float4> SceneTexturesStruct_GBufferVelocityTexture: register(t8);
-Texture2D<float4> SceneTexturesStruct_GBufferATextureNonMS: register(t9);
-Texture2D<float4> SceneTexturesStruct_GBufferBTextureNonMS: register(t10);
-Texture2D<float4> SceneTexturesStruct_GBufferCTextureNonMS: register(t11);
-Texture2D<float4> SceneTexturesStruct_GBufferDTextureNonMS: register(t12);
-Texture2D<float4> SceneTexturesStruct_GBufferETextureNonMS: register(t13);
-Texture2D<float4> SceneTexturesStruct_GBufferVelocityTextureNonMS : register(t14);
-SamplerState SceneTexturesStruct_GBufferATextureSampler : register(s3);
-SamplerState SceneTexturesStruct_GBufferBTextureSampler : register(s4);
-SamplerState SceneTexturesStruct_GBufferCTextureSampler : register(s5);
-SamplerState SceneTexturesStruct_GBufferDTextureSampler : register(s6);
-SamplerState SceneTexturesStruct_GBufferETextureSampler : register(s7);
-SamplerState SceneTexturesStruct_GBufferVelocityTextureSampler : register(s8);
+Texture2D<float4> SceneTexturesStruct_GBufferATexture;
+Texture2D<float4> SceneTexturesStruct_GBufferBTexture;
+Texture2D<float4> SceneTexturesStruct_GBufferCTexture;
+Texture2D<float4> SceneTexturesStruct_GBufferDTexture;
+Texture2D<float4> SceneTexturesStruct_GBufferETexture;
+Texture2D<float4> SceneTexturesStruct_GBufferVelocityTexture;
+Texture2D<float4> SceneTexturesStruct_GBufferATextureNonMS;
+Texture2D<float4> SceneTexturesStruct_GBufferBTextureNonMS;
+Texture2D<float4> SceneTexturesStruct_GBufferCTextureNonMS;
+Texture2D<float4> SceneTexturesStruct_GBufferDTextureNonMS;
+Texture2D<float4> SceneTexturesStruct_GBufferETextureNonMS;
+Texture2D<float4> SceneTexturesStruct_GBufferVelocityTextureNonMS;
+SamplerState SceneTexturesStruct_GBufferATextureSampler;
+SamplerState SceneTexturesStruct_GBufferBTextureSampler;
+SamplerState SceneTexturesStruct_GBufferCTextureSampler;
+SamplerState SceneTexturesStruct_GBufferDTextureSampler;
+SamplerState SceneTexturesStruct_GBufferETextureSampler;
+SamplerState SceneTexturesStruct_GBufferVelocityTextureSampler;
 Texture2D<float4> SceneTexturesStruct_ScreenSpaceAOTexture;
 SamplerState SceneTexturesStruct_ScreenSpaceAOTextureSampler;
 Texture2D<float> SceneTexturesStruct_CustomDepthTextureNonMS;

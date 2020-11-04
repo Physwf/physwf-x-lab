@@ -152,31 +152,44 @@ struct ViewUniform
 	Vector VolumetricLightmapBrickTexelSize;
 };
 
-#define MAX_NUM_LIGHTMAP_COEF 2
+/** The number of coefficients that are stored for each light sample. */
+static const int32 NUM_STORED_LIGHTMAP_COEF = 4;
+
+/** The number of directional coefficients which the lightmap stores for each light sample. */
+static const int32 NUM_HQ_LIGHTMAP_COEF = 2;
+
+/** The number of simple coefficients which the lightmap stores for each light sample. */
+static const int32 NUM_LQ_LIGHTMAP_COEF = 2;
+
+/** The index at which simple coefficients are stored in any array containing all NUM_STORED_LIGHTMAP_COEF coefficients. */
+static const int32 LQ_LIGHTMAP_COEF_INDEX = 2;
+
+/** The maximum value between NUM_LQ_LIGHTMAP_COEF and NUM_HQ_LIGHTMAP_COEF. */
+static const int32 MAX_NUM_LIGHTMAP_COEF = 2;
 
 struct PrecomputedLightingUniform
 {
-	Vector PrecomputedLighting_IndirectLightingCachePrimitiveAdd;// FCachedVolumeIndirectLightingPolicy
+	Vector IndirectLightingCachePrimitiveAdd;// FCachedVolumeIndirectLightingPolicy
 	float Pading01;
-	Vector PrecomputedLighting_IndirectLightingCachePrimitiveScale;// FCachedVolumeIndirectLightingPolicy
+	Vector IndirectLightingCachePrimitiveScale;// FCachedVolumeIndirectLightingPolicy
 	float Pading02;
-	Vector PrecomputedLighting_IndirectLightingCacheMinUV;// FCachedVolumeIndirectLightingPolicy
+	Vector IndirectLightingCacheMinUV;// FCachedVolumeIndirectLightingPolicy
 	float Pading03;
-	Vector PrecomputedLighting_IndirectLightingCacheMaxUV;// FCachedVolumeIndirectLightingPolicy
+	Vector IndirectLightingCacheMaxUV;// FCachedVolumeIndirectLightingPolicy
 	float Pading04;
-	Vector4 PrecomputedLighting_PointSkyBentNormal;// FCachedPointIndirectLightingPolicy
-	float PrecomputedLighting_DirectionalLightShadowing;// FCachedPointIndirectLightingPolicy
+	Vector4 PointSkyBentNormal;// FCachedPointIndirectLightingPolicy
+	float DirectionalLightShadowing;// FCachedPointIndirectLightingPolicy
 	Vector Pading05;
-	Vector4 PrecomputedLighting_StaticShadowMapMasks;// TDistanceFieldShadowsAndLightMapPolicy
-	Vector4 PrecomputedLighting_InvUniformPenumbraSizes;// TDistanceFieldShadowsAndLightMapPolicy
-	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients0[3]; // FCachedPointIndirectLightingPolicy
-	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients1[3]; // FCachedPointIndirectLightingPolicy
-	Vector4 PrecomputedLighting_IndirectLightingSHCoefficients2;// FCachedPointIndirectLightingPolicy
-	Vector4 PrecomputedLighting_IndirectLightingSHSingleCoefficient;// FCachedPointIndirectLightingPolicy
-	Vector4 PrecomputedLighting_LightMapCoordinateScaleBias; // TLightMapPolicy
-	Vector4 PrecomputedLighting_ShadowMapCoordinateScaleBias;// TDistanceFieldShadowsAndLightMapPolicy
-	Vector4 PrecomputedLighting_LightMapScale[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
-	Vector4 PrecomputedLighting_LightMapAdd[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
+	Vector4 StaticShadowMapMasks;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 InvUniformPenumbraSizes;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 IndirectLightingSHCoefficients0[3]; // FCachedPointIndirectLightingPolicy
+	Vector4 IndirectLightingSHCoefficients1[3]; // FCachedPointIndirectLightingPolicy
+	Vector4 IndirectLightingSHCoefficients2;// FCachedPointIndirectLightingPolicy
+	Vector4 IndirectLightingSHSingleCoefficient;// FCachedPointIndirectLightingPolicy
+	Vector4 LightMapCoordinateScaleBias; // TLightMapPolicy LightmapCoordinateScale = {X=0.484375000 Y=0.968750000 } LightmapCoordinateBias = {X=0.00781250000 Y=0.0156250000 }
+	Vector4 ShadowMapCoordinateScaleBias;// TDistanceFieldShadowsAndLightMapPolicy
+	Vector4 LightMapScale[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
+	Vector4 LightMapAdd[MAX_NUM_LIGHTMAP_COEF];// TLightMapPolicy
 };
 
 #pragma pack(pop)
@@ -293,12 +306,19 @@ ID3D11DepthStencilState* LightPassDepthStencilState;
 ID3D11ShaderResourceView* LightAttenuationSRV;
 ID3D11SamplerState* LightAttenuationSampleState;
 
-std::map<std::string, ParameterAllocation> ShadowProjectionParams;
-ID3D11Buffer* ShadowProjectionGlobalConstantBuffer;
-char ShadowProjectionGlobalConstantBufferData[4096];
+std::map<std::string, ParameterAllocation> PrePassVSParams;
+std::map<std::string, ParameterAllocation> PrePassPSParams;
+std::map<std::string, ParameterAllocation> ShadowPassVSParams;
+std::map<std::string, ParameterAllocation> ShadowPassPSParams;
+std::map<std::string, ParameterAllocation> ShadowProjectionVSParams;
+std::map<std::string, ParameterAllocation> ShadowProjectionPSParams;
+ID3D11Buffer* GlobalConstantBuffer;
+char GlobalConstantBufferData[4096];
 
-std::map<std::string, ParameterAllocation> BasePassParams;
-std::map<std::string, ParameterAllocation> LightPassParams;
+std::map<std::string, ParameterAllocation> BasePassVSParams;
+std::map<std::string, ParameterAllocation> BasePassPSParams;
+std::map<std::string, ParameterAllocation> LightPassVSParams;
+std::map<std::string, ParameterAllocation> LightPassPSParams;
 
 
 //material
@@ -313,6 +333,7 @@ void InitInput()
 	Mesh m1;
 	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
+	//m1.ImportFromFBX("Primitives/Sphere.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	//m1.SetPosition(20.0f, -100.0f, 480.0f);
 	//m1.SetRotation(-3.14f / 2.0f, 0, 0);
@@ -329,8 +350,8 @@ void InitInput()
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
-	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), Vector(0, 0, 100), Vector(0, 1, 0));
-	ViewMatrices VMs(Vector(0.0f, 0.0f, 0.0f), ViewRotationMatrix, ProjectionMatrix);
+	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), MainCamera.FaceDir, MainCamera.Up);
+	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
 	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
 	VU.TranslatedWorldToClip = ProjectionMatrix;// VMs.GetTranslatedViewProjectionMatrix();
 	VU.WorldToClip = VMs.GetViewProjectionMatrix();
@@ -368,6 +389,7 @@ void InitInput()
 	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight,1.0f/ WindowWidth, 1.0f / WindowHeight);
 	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
 	VU.ScreenToWorld = VMs.GetInvViewProjectionMatrix();
+	VU.IndirectLightingColorScale = Vector(1.0f, 1.0f, 1.0f); //SceneRendering.cpp void FViewInfo::SetupUniformBufferParameters(
 
 	VU.TranslatedWorldToClip.Transpose();
 	VU.ViewToTranslatedWorld.Transpose();
@@ -383,7 +405,25 @@ void InitInput()
 	VU.SVPositionToTranslatedWorld.Transpose();
 	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
+	
+	//LightMapRendering.cpp
+	const Vector2 LightmapCoordinateScale = { 0.484375000 ,0.968750000 };// LightMapInteraction.GetCoordinateScale();// LightmapCoordinateScale = { X = 0.484375000 Y = 0.968750000 } LightmapCoordinateBias = { X = 0.00781250000 Y = 0.0156250000 }
+	const Vector2 LightmapCoordinateBias = { 0.00781250000 ,0156250000 }; //LightMapInteraction.GetCoordinateBias();
+	PrecomputedLightingParameters.LightMapCoordinateScaleBias = Vector4(LightmapCoordinateScale.X, LightmapCoordinateScale.Y, LightmapCoordinateBias.X, LightmapCoordinateBias.Y);
 
+	PrecomputedLightingParameters.ShadowMapCoordinateScaleBias = Vector4(0.968750000, 0.968750000, 0.0156250000, 0.0156250000);//{ X = 0.968750000 Y = 0.968750000 Z = 0.0156250000 W = 0.0156250000 }
+
+	bool bAllowHighQualityLightMaps = true;
+	const uint32 NumCoef = bAllowHighQualityLightMaps ? NUM_HQ_LIGHTMAP_COEF : NUM_LQ_LIGHTMAP_COEF;
+	//const FVector4* Scales = LightMapInteraction.GetScaleArray();Scales = 0x0000006554e6b040 {X=0.0207918882 Y=0.0144486427 Z=0.0207914710 W=6.19691181} Scales[CoefIndex] = {X=0.915465474 Y=0.976352394 Z=0.944339991 W = 0.00000000}
+	//const FVector4* Adds = LightMapInteraction.GetAddArray();//Adds = 0x0000006554e6b060 {X=0.986185253 Y=0.995151460 Z=0.986185730 W = -5.75000048} Adds[CoefIndex] = {X=-0.465408266 Y=-0.519816577 Z=-0.434536219 W = 0.282094985}
+	Vector4 Scales[] = { { 0.0207918882f ,0.0144486427f ,0.0207914710f ,6.19691181f }, { 0.915465474f , 0.976352394f , 0.944339991f , 0.00000000f } };
+	Vector4 Adds[] = { { 0.986185253f , 0.995151460f, 0.986185730f , -5.75000048f }, {-0.465408266f , -0.519816577f , -0.434536219f , 0.282094985f} };
+	for (uint32 CoefIndex = 0; CoefIndex < NumCoef; ++CoefIndex)
+	{
+		PrecomputedLightingParameters.LightMapScale[CoefIndex] = Scales[CoefIndex];
+		PrecomputedLightingParameters.LightMapAdd[CoefIndex] = Adds[CoefIndex];
+	}
 	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(VU), &VU);
 	PrecomputedLightUniformBuffer = CreateConstantBuffer(false, sizeof(PrecomputedLightingParameters), &PrecomputedLightingParameters);
 
@@ -392,7 +432,9 @@ void InitInput()
 	//Prepass
 	PrePassVSBytecode = CompileVertexShader(TEXT("DepthOnlyPass.hlsl"), "VS_Main");
 	PrePassPSBytecode = CompilePixelShader(TEXT("DepthOnlyPass.hlsl"), "PS_Main");
-	
+	GetShaderParameterAllocations(PrePassVSBytecode, PrePassVSParams);
+	GetShaderParameterAllocations(PrePassPSBytecode, PrePassPSParams);
+
 	D3D11_INPUT_ELEMENT_DESC PositionOnlyInputDesc[] =
 	{
 		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -403,13 +445,16 @@ void InitInput()
 
 	PrePassVS = CreateVertexShader(PrePassVSBytecode);
 	PrePassPS = CreatePixelShader(PrePassPSBytecode);
-	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
+
+	PrePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_FRONT, FALSE, FALSE>::GetRHI();
 	PrePassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_GREATER>::GetRHI();
 	PrePassBlendState = TStaticBlendState<>::GetRHI();
 
 	//shadow pass
 	ShadowPassVSBytecode = CompileVertexShader(TEXT("ShadowDepthVertexShader.hlsl"), "VS_Main");
 	ShadowPassPSBytecode = CompilePixelShader(TEXT("ShadowDepthPixelShader.hlsl"), "PS_Main");
+	GetShaderParameterAllocations(ShadowPassVSBytecode, ShadowPassVSParams);
+	GetShaderParameterAllocations(ShadowPassPSBytecode, ShadowPassPSParams);
 	ShadowPassVS = CreateVertexShader(ShadowPassVSBytecode);
 	ShadowPassPS = CreatePixelShader(ShadowPassPSBytecode);
 
@@ -417,12 +462,15 @@ void InitInput()
 	ShadowPassDSV = CreateDepthStencilView2D(ShadowPassRT, DXGI_FORMAT_D32_FLOAT, 0);
 	ShadowPassDepthSRV = CreateShaderResourceView2D(ShadowPassRT, DXGI_FORMAT_R32_FLOAT, 1, 0);
 
-	ShadowPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI();
+	ShadowPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_FRONT, FALSE>::GetRHI();
 	ShadowPassBlendState = TStaticBlendState<>::GetRHI();
 	ShadowPassDepthStencilState = TStaticDepthStencilState<true, D3D11_COMPARISON_LESS>::GetRHI();
 
 	ShadowProjectionVSBytecode = CompileVertexShader(TEXT("ShadowProjectionVertexShader.hlsl"), "Main");
 	ShadowProjectionPSBytecode = CompilePixelShader(TEXT("ShadowProjectionPixelShader.hlsl"), "Main");
+	GetShaderParameterAllocations(ShadowProjectionVSBytecode, ShadowProjectionVSParams);
+	GetShaderParameterAllocations(ShadowProjectionPSBytecode, ShadowProjectionPSParams);
+
 	D3D11_INPUT_ELEMENT_DESC ShadowProjectionInputDesc[] =
 	{
 		{ "ATTRIBUTE",	0,	DXGI_FORMAT_R32G32_FLOAT,	0, 0,  D3D11_INPUT_PER_VERTEX_DATA,0 },
@@ -433,16 +481,14 @@ void InitInput()
 	ShadowProjectionRTV = CreateRenderTargetView2D(ShadowProjectionRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 	ShadowProjectionVS = CreateVertexShader(ShadowProjectionVSBytecode);
 	ShadowProjectionPS = CreatePixelShader(ShadowProjectionPSBytecode);
-	ShadowProjectionGlobalConstantBuffer = CreateConstantBuffer(false,4096);
-	memset(ShadowProjectionGlobalConstantBufferData, 0, sizeof(ShadowProjectionGlobalConstantBufferData));
-
-
-	GetShaderParameterAllocations(ShadowProjectionPSBytecode, ShadowProjectionParams);
+	GlobalConstantBuffer = CreateConstantBuffer(false,4096);
+	memset(GlobalConstantBufferData, 0, sizeof(GlobalConstantBufferData));
 
 	//Base Pass
 	BasePassVSBytecode = CompileVertexShader(TEXT("BasePassVertexShader.hlsl"), "VS_Main");
 	BasePassPSBytecode = CompilePixelShader(TEXT("BasePassPixelShader.hlsl"), "PS_Main");
-	GetShaderParameterAllocations(BasePassPSBytecode, BasePassParams);
+	GetShaderParameterAllocations(BasePassVSBytecode, BasePassVSParams);
+	GetShaderParameterAllocations(BasePassPSBytecode, BasePassPSParams);
 
 	D3D11_INPUT_ELEMENT_DESC InputDesc[] =
 	{
@@ -474,14 +520,14 @@ void InitInput()
 // 	BasePassGBufferRTV[4] = CreateRenderTargetView2D(BasePassGBufferRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 // 	BasePassGBufferRTV[5] = CreateRenderTargetView2D(BasePassGBufferRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
-	BasePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID,D3D11_CULL_BACK,FALSE, FALSE>::GetRHI();
+	BasePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_FRONT,FALSE, FALSE>::GetRHI();
 	BasePassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_GREATER_EQUAL>::GetRHI();
 	BasePassBlendState = TStaticBlendState<>::GetRHI();
 
 	LightPassVSByteCode = CompileVertexShader(TEXT("DeferredLightVertexShader.hlsl"), "VS_Main");
 	LightPassPSByteCode = CompilePixelShader(TEXT("DeferredLightPixelShader.hlsl"), "PS_Main");
-
-	GetShaderParameterAllocations(LightPassPSByteCode, LightPassParams);
+	GetShaderParameterAllocations(LightPassVSByteCode, LightPassVSParams);
+	GetShaderParameterAllocations(LightPassPSByteCode, LightPassPSParams);
 
 	D3D11_INPUT_ELEMENT_DESC RectangleInputDesc[] =
 	{
@@ -508,7 +554,7 @@ void InitInput()
 	LightPassGBufferSamplerState[1] = TStaticSamplerState<>::GetRHI();
 	LightPassGBufferSamplerState[2] = TStaticSamplerState<>::GetRHI();
 
-	LightPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_NONE, FALSE>::GetRHI();
+	LightPassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_NONE, FALSE, FALSE>::GetRHI();
 	LightPassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI();
 	LightPassBlendState = TStaticBlendState<>::GetRHI();
 
@@ -544,11 +590,14 @@ void InitInput()
 	DeferredLightUniformBuffer = CreateConstantBuffer(false, sizeof(DLU), &DLU);
 
 	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
-	Frustum ViewFrustum(3.1415926f / 3.f, 1.0, 100.0f, 600.f);
-	Box FrumstumBounds = ViewFrustum.GetBounds(DirectionalLightViewRotationMatrix);
+	Frustum ViewFrustum(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, 100.0f, 600.f);
+	Box FrumstumBounds = ViewFrustum.GetBounds();
+	Vector FrumstumWorldPosition = MainCamera.GetPosition() + MainCamera.FaceDir * (600.f - 100.f);
+	Vector FrumstumViewPosition = DirectionalLightViewRotationMatrix.Transform(FrumstumWorldPosition);
 	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Max.Z, FrumstumBounds.Min.Z);
 	//DirectionalLightProjectionMatrix = ProjectionMatrix;
-	ShadowMapProjectionMatrix = DirectionalLightViewRotationMatrix * DirectionalLightProjectionMatrix;
+	//ShadowMapProjectionMatrix = DirectionalLightViewRotationMatrix * Matrix::DXFromTranslation(-FrumstumViewPosition) * DirectionalLightProjectionMatrix;
+	ShadowMapProjectionMatrix = Matrix::DXFromTranslation(-FrumstumWorldPosition) * DirectionalLightViewRotationMatrix *  DirectionalLightProjectionMatrix;
 	//Matrix  InvViewProjectionMatrix = VMs.GetInvViewProjectionMatrix();
 	//ScreenToShadowMatrix =  InvViewProjectionMatrix * ShadowMapProjectionMatrix;
 	//ScreenToShadowMatrix.Transpose();
@@ -599,7 +648,7 @@ void InitInput()
 	ScreenToShadowMatrix.Transpose();
 
 	ShadowMapProjectionMatrix.Transpose();
-	ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
+	//ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
 
 	{
 		//CreateWICTextureFromFile(D3D11Device, D3D11DeviceContext, TEXT("./shaderBallNoCrease/checkerA.tga"), (ID3D11Resource**)&BaseColor, &BaseColorSRV);
@@ -712,6 +761,62 @@ void UpdateView()
 	VU.ScreenToTranslatedWorld.Transpose();
 
 	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
+
+
+	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
+	Frustum ViewFrustum(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, 100.0f, 600.f);
+	Box FrumstumBounds = ViewFrustum.GetBounds();
+	Vector FrumstumWorldPosition = MainCamera.GetPosition() + MainCamera.FaceDir * (600.f - 100.f);
+	Vector FrumstumViewPosition = DirectionalLightViewRotationMatrix.Transform(FrumstumWorldPosition);
+	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Max.Z, FrumstumBounds.Min.Z);
+	ShadowMapProjectionMatrix = Matrix::DXFromTranslation(-FrumstumWorldPosition) * DirectionalLightViewRotationMatrix *  DirectionalLightProjectionMatrix;
+
+	//UE4 ShadowRendering.cpp GetScreenToShadowMatrix
+	uint32 TileOffsetX = 0; uint32 TileOffsetY = 0;
+	uint32 BorderSize = 0;
+	float InvMaxSubjectDepth = 1.0f / 1.0f;
+	const Vector2 ShadowBufferResolution((float)WindowWidth, (float)WindowHeight);
+	uint32 TileResolutionX = WindowWidth;
+	uint32 TileResolutionY = WindowHeight;
+	const float InvBufferResolutionX = 1.0f / (float)ShadowBufferResolution.X;
+	const float ShadowResolutionFractionX = 0.5f * (float)TileResolutionX * InvBufferResolutionX;
+	const float InvBufferResolutionY = 1.0f / (float)ShadowBufferResolution.Y;
+	const float ShadowResolutionFractionY = 0.5f * (float)TileResolutionY * InvBufferResolutionY;
+	// Calculate the matrix to transform a screenspace position into shadow map space
+	ScreenToShadowMatrix =
+		// Z of the position being transformed is actually view space Z, 
+		// Transform it into post projection space by applying the projection matrix,
+		// Which is the required space before applying View.InvTranslatedViewProjectionMatrix
+		Matrix(
+			Plane(1, 0, 0, 0),
+			Plane(0, 1, 0, 0),
+			Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+			Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0)) *
+		// Transform the post projection space position into translated world space
+		// Translated world space is normal world space translated to the view's origin, 
+		// Which prevents floating point imprecision far from the world origin.
+		VMs.GetInvTranslatedViewProjectionMatrix() *
+		// Translate to the origin of the shadow's translated world space
+		//FTranslationMatrix(PreShadowTranslation - View.ViewMatrices.GetPreViewTranslation()) *
+		// Transform into the shadow's post projection space
+		// This has to be the same transform used to render the shadow depths
+		ShadowMapProjectionMatrix *
+		// Scale and translate x and y to be texture coordinates into the ShadowInfo's rectangle in the shadow depth buffer
+		// Normalize z by MaxSubjectDepth, as was done when writing shadow depths
+		Matrix(
+			Plane(ShadowResolutionFractionX, 0, 0, 0),
+			Plane(0, -ShadowResolutionFractionY, 0, 0),
+			Plane(0, 0, InvMaxSubjectDepth, 0),
+			Plane(
+			(TileOffsetX + BorderSize) * InvBufferResolutionX + ShadowResolutionFractionX,
+				(TileOffsetY + BorderSize) * InvBufferResolutionY + ShadowResolutionFractionY,
+				0,
+				1
+			)
+		);
+	ScreenToShadowMatrix.Transpose();
+
+	ShadowMapProjectionMatrix.Transpose();
 }
 
 void RenderPrePass()
@@ -722,9 +827,12 @@ void RenderPrePass()
 	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
 	D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
 
-	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
+	const ParameterAllocation& ViewParams = PrePassVSParams.at("View");
+	const ParameterAllocation& PrimitiveParams = PrePassVSParams.at("Primitive");
 
-	//D3D11DeviceContext->RSSetState(PrePassRasterizerState);
+	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &ViewUniformBuffer);
+
+	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
 	D3D11DeviceContext->OMSetDepthStencilState(PrePassDepthStencilState, 0);
 
@@ -744,7 +852,7 @@ void RenderPrePass()
 
 		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
 		{
-			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->VSSetConstantBuffers(PrimitiveParams.BufferIndex, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 	}
@@ -757,42 +865,39 @@ void RenderShadowProjection()
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	D3D11DeviceContext->ClearRenderTargetView(ShadowProjectionRTV, ClearColor);
 
-	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
-	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &ShadowMapProjectionUniformBuffer);
-
-	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE>::GetRHI());
+	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_FRONT, FALSE, FALSE>::GetRHI());
 	//D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0);
 	D3D11DeviceContext->OMSetDepthStencilState(TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI(), 0);
 
 	D3D11DeviceContext->IASetInputLayout(ShadowProjectionInputLayout);
 	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	const ParameterAllocation& ShadowDepthTexture = ShadowProjectionParams["ShadowDepthTexture"];
+	const ParameterAllocation& ShadowDepthTexture = ShadowProjectionPSParams.at("ShadowDepthTexture");
+	const ParameterAllocation& ShadowDepthTextureSampler = ShadowProjectionPSParams.at("ShadowDepthTextureSampler");
+	const ParameterAllocation& SceneDepthTextureParam = ShadowProjectionPSParams.at("SceneTexturesStruct_SceneDepthTexture");
+	const ParameterAllocation& SceneDepthTextureSamplerParam = ShadowProjectionPSParams.at("SceneTexturesStruct_SceneDepthTextureSampler");
+	const ParameterAllocation& ViewParam = ShadowProjectionPSParams.at("View");
 	D3D11DeviceContext->PSSetShaderResources(ShadowDepthTexture.BaseIndex, ShadowDepthTexture.Size, &ShadowPassDepthSRV);
-	const ParameterAllocation& ShadowDepthTextureSampler = ShadowProjectionParams["ShadowDepthTextureSampler"];
 	ShadowPassDepthSamplerState = TStaticSamplerState<>::GetRHI();
 	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &ShadowPassDepthSamplerState);
+	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &LightPassSceneDepthSRV);
+	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &LightPassSceneDepthSamplerState);
+	D3D11DeviceContext->PSSetConstantBuffers(ViewParam.BufferIndex, 1, &ViewUniformBuffer);
 
-	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
-	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
-
-	const ParameterAllocation& ShadowFadeFractionParam = ShadowProjectionParams["ShadowFadeFraction"];
-	const ParameterAllocation& ShadowSharpenParam = ShadowProjectionParams["ShadowSharpen"];
-	const ParameterAllocation& ScreenToShadowMatrixParam = ShadowProjectionParams["ScreenToShadowMatrix"];
+	const ParameterAllocation& ShadowFadeFractionParam = ShadowProjectionPSParams.at("ShadowFadeFraction");
+	const ParameterAllocation& ShadowSharpenParam = ShadowProjectionPSParams.at("ShadowSharpen");
+	const ParameterAllocation& ScreenToShadowMatrixParam = ShadowProjectionPSParams.at("ScreenToShadowMatrix");
 	float fShadowFadeFraction = 0.8f;
 	float fShadowSharpen = 0.9f;
 
-	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowFadeFractionParam.BaseIndex, &fShadowFadeFraction, ShadowFadeFractionParam.Size);
-	memcpy(ShadowProjectionGlobalConstantBufferData + ShadowSharpenParam.BaseIndex, &fShadowSharpen, ShadowSharpenParam.Size);
-	memcpy(ShadowProjectionGlobalConstantBufferData + ScreenToShadowMatrixParam.BaseIndex, &ScreenToShadowMatrix, ScreenToShadowMatrixParam.Size);
+	memcpy(GlobalConstantBufferData + ShadowFadeFractionParam.BaseIndex, &fShadowFadeFraction, ShadowFadeFractionParam.Size);
+	memcpy(GlobalConstantBufferData + ShadowSharpenParam.BaseIndex, &fShadowSharpen, ShadowSharpenParam.Size);
+	memcpy(GlobalConstantBufferData + ScreenToShadowMatrixParam.BaseIndex, &ScreenToShadowMatrix, ScreenToShadowMatrixParam.Size);
 
 	//https://gamedev.stackexchange.com/questions/184702/direct3d-constant-buffer-not-updating
 	//https://docs.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-id3d11devicecontext-updatesubresource
-	D3D11DeviceContext->UpdateSubresource(ShadowProjectionGlobalConstantBuffer,0,NULL, ShadowProjectionGlobalConstantBufferData, 0, 0);
-
-	D3D11DeviceContext->PSSetConstantBuffers(ShadowFadeFractionParam.BufferIndex, 1, &ShadowProjectionGlobalConstantBuffer);
-
-
+	D3D11DeviceContext->UpdateSubresource(GlobalConstantBuffer,0,NULL, GlobalConstantBufferData, 0, 0);
+	D3D11DeviceContext->PSSetConstantBuffers(ShadowFadeFractionParam.BufferIndex, 1, &GlobalConstantBuffer);
 
 	D3D11DeviceContext->VSSetShader(ShadowProjectionVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(ShadowProjectionPS, 0, 0);
@@ -820,22 +925,29 @@ void RenderShadowProjection()
 	ID3D11SamplerState* Sampler = NULL;
 	D3D11DeviceContext->PSSetShaderResources(ShadowDepthTexture.BaseIndex, ShadowDepthTexture.Size, &SRV);
 	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &Sampler);
-	D3D11DeviceContext->PSSetShaderResources(1, 1, &SRV);
-	D3D11DeviceContext->PSSetSamplers(1, 1, &Sampler);
+	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
 }
 
 void RenderShadowPass()
 {
+
 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, ShadowPassDSV);
 	D3D11DeviceContext->ClearDepthStencilView(ShadowPassDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
-	D3D11DeviceContext->VSSetConstantBuffers(3, 1, &ShadowMapProjectionUniformBuffer);
+	const ParameterAllocation& ViewParams = ShadowPassVSParams.at("View");
+	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &ViewUniformBuffer);
 
-	//D3D11DeviceContext->RSSetState(PrePassRasterizerState);
+	const ParameterAllocation& ProjectionMatrixParams = ShadowPassVSParams.at("ProjectionMatrix");
+	memcpy(GlobalConstantBufferData + ProjectionMatrixParams.BaseIndex, &ShadowMapProjectionMatrix, ProjectionMatrixParams.Size);
+	D3D11DeviceContext->UpdateSubresource(GlobalConstantBuffer, 0, NULL, GlobalConstantBufferData, 0, 0);
+	D3D11DeviceContext->VSSetConstantBuffers(ProjectionMatrixParams.BufferIndex, 1, &GlobalConstantBuffer);
+
+	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
 	D3D11DeviceContext->OMSetDepthStencilState(ShadowPassDepthStencilState, 0);
 
+	const ParameterAllocation& PrimitiveParams = ShadowPassVSParams.at("Primitive");
 
 	for (MeshBatch& MB : AllBatches)
 	{
@@ -852,7 +964,7 @@ void RenderShadowPass()
 
 		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
 		{
-			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->VSSetConstantBuffers(PrimitiveParams.BufferIndex, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 	}
@@ -873,28 +985,36 @@ void RenderBasePass()
 	{
 		if(RTV) D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
 	}
-	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
-
-	const ParameterAllocation& PrecomputedLightingBuffer = BasePassParams["PrecomputedLightingParameters"];
-	D3D11DeviceContext->VSSetConstantBuffers(PrecomputedLightingBuffer.BufferIndex, 1, &PrecomputedLightUniformBuffer);
+	//D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
+	const ParameterAllocation& VSViewParam = BasePassVSParams.at("View");
+	const ParameterAllocation& VSPrecomputedLightingParameters = BasePassVSParams.at("PrecomputedLightingParameters");
+	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(VSPrecomputedLightingParameters.BufferIndex, 1, &PrecomputedLightUniformBuffer);
 
 	D3D11DeviceContext->RSSetState(BasePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState();
 	D3D11DeviceContext->OMSetDepthStencilState(BasePassDepthStencilState,0);
 
-	const ParameterAllocation& BaseColorParam = BasePassParams["Material_BaseColor"];
-	const ParameterAllocation& BaseColorSamplerParam = BasePassParams["Material_BaseColorSampler"];
-	const ParameterAllocation& LightMapTextureParam = BasePassParams["PrecomputedLighting_LightMapTexture"];
-	const ParameterAllocation& LightMapSamplerParam = BasePassParams["PrecomputedLighting_LightMapSampler"];
+	const ParameterAllocation& PSViewParam = BasePassPSParams.at("View");
+	const ParameterAllocation& PrecomputedLightingBuffer = BasePassPSParams.at("PrecomputedLightingParameters");
+	const ParameterAllocation& BaseColorParam = BasePassPSParams.at("Material_BaseColor");
+	const ParameterAllocation& BaseColorSamplerParam = BasePassPSParams.at("Material_BaseColorSampler");
+	const ParameterAllocation& LightMapTextureParam = BasePassPSParams.at("PrecomputedLighting_LightMapTexture");
+	const ParameterAllocation& LightMapSamplerParam = BasePassPSParams.at("PrecomputedLighting_LightMapSampler");
 // 	const ParameterAllocation& StaticShadowTextureParam = BasePassParams["PrecomputedLighting_StaticShadowTexture"];
 // 	const ParameterAllocation& StaticShadowTextureSamplerParam = BasePassParams["PrecomputedLighting_StaticShadowTextureSampler"];
 
+	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(PrecomputedLightingBuffer.BufferIndex, 1, &PrecomputedLightUniformBuffer);
 	D3D11DeviceContext->PSSetShaderResources(BaseColorParam.BaseIndex, BaseColorParam.Size, &BaseColorSRV);
 	D3D11DeviceContext->PSSetSamplers(BaseColorSamplerParam.BaseIndex, BaseColorSamplerParam.Size, &BaseColorSampler);
 	D3D11DeviceContext->PSSetShaderResources(LightMapTextureParam.BaseIndex, LightMapTextureParam.Size, &PrecomputedLighting_LightMapTexture);
 	D3D11DeviceContext->PSSetSamplers(LightMapSamplerParam.BaseIndex, LightMapSamplerParam.Size, &PrecomputedLighting_LightMapSampler);
 // 	D3D11DeviceContext->PSSetShaderResources(StaticShadowTextureParam.BaseIndex, StaticShadowTextureParam.Size, &PrecomputedLighting_StaticShadowTexture);
 // 	D3D11DeviceContext->PSSetSamplers(StaticShadowTextureSamplerParam.BaseIndex, StaticShadowTextureSamplerParam.Size, &PrecomputedLighting_StaticShadowTextureSampler);
+
+	const ParameterAllocation& PrimitiveParam = BasePassVSParams.at("Primitive");
+	const ParameterAllocation& PSPrimitiveParam = BasePassPSParams.at("Primitive");
 
 	for (MeshBatch& MB : AllBatches)
 	{
@@ -911,7 +1031,8 @@ void RenderBasePass()
 
 		for (size_t Element = 0; Element < MB.Elements.size(); ++Element)
 		{
-			D3D11DeviceContext->VSSetConstantBuffers(1, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->VSSetConstantBuffers(PrimitiveParam.BufferIndex, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
+			D3D11DeviceContext->PSSetConstantBuffers(PSPrimitiveParam.BufferIndex, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 
@@ -940,40 +1061,55 @@ void RenderLight()
 	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
 
-	D3D11DeviceContext->PSSetShaderResources(0, 1, &LightPassSceneColorSRV);
-	D3D11DeviceContext->PSSetShaderResources(1, 1, &LightPassSceneDepthSRV);
-	D3D11DeviceContext->PSSetSamplers(0, 1, &LightPassSceneColorSamplerState);
-	D3D11DeviceContext->PSSetSamplers(1, 1, &LightPassSceneDepthSamplerState);
 
-	D3D11DeviceContext->PSSetShaderResources(3, 3, LightPassGBufferSRV);
-	D3D11DeviceContext->PSSetSamplers(3, 3, LightPassGBufferSamplerState);
+	const ParameterAllocation& VSViewParam = LightPassVSParams.at("View");
+	const ParameterAllocation& DrawRectangleParametersParam = LightPassVSParams.at("DrawRectangleParameters");
+	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(DrawRectangleParametersParam.BufferIndex, 1, &ScreenRect.DrawRectangleParameters);
 
-	const ParameterAllocation& LightAttenuationTextureParam = LightPassParams["LightAttenuationTexture"];
-	const ParameterAllocation& LightAttenuationTextureSamplerParam = LightPassParams["LightAttenuationTextureSampler"];
+	const ParameterAllocation& LightAttenuationTextureParam = LightPassPSParams.at("LightAttenuationTexture");
+	const ParameterAllocation& LightAttenuationTextureSamplerParam = LightPassPSParams.at("LightAttenuationTextureSampler");
+	const ParameterAllocation& SceneColorTextureParam = LightPassPSParams.at("SceneTexturesStruct_SceneColorTexture");
+	const ParameterAllocation& SceneColorTextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_SceneColorTextureSampler");
+	const ParameterAllocation& SceneDepthTextureParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTexture");
+	const ParameterAllocation& SceneDepthTextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTextureSampler");
+	const ParameterAllocation& GBufferATextureParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATexture");
+	const ParameterAllocation& GBufferATextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATextureSampler");
+	const ParameterAllocation& DeferredLightUniformParam = LightPassPSParams.at("DeferredLightUniform");
+	const ParameterAllocation& PSViewParam = LightPassPSParams.at("View");
+
+	D3D11DeviceContext->PSSetShaderResources(SceneColorTextureParam.BaseIndex, SceneColorTextureParam.Size, &LightPassSceneColorSRV);
+	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &LightPassSceneDepthSRV);
+	D3D11DeviceContext->PSSetSamplers(SceneColorTextureSamplerParam.BaseIndex, SceneColorTextureSamplerParam.Size, &LightPassSceneColorSamplerState);
+	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &LightPassSceneDepthSamplerState);
+
+	D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex, 3, LightPassGBufferSRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex, 3, LightPassGBufferSamplerState);
+
 	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &LightAttenuationSRV);
 	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &LightAttenuationSampleState );
+	D3D11DeviceContext->PSSetConstantBuffers(DeferredLightUniformParam.BufferIndex, 1, &DeferredLightUniformBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &ViewUniformBuffer);
 
-	D3D11DeviceContext->VSSetConstantBuffers(0, 1, &ViewUniformBuffer);
-	D3D11DeviceContext->VSSetConstantBuffers(2, 1, &ScreenRect.DrawRectangleParameters);
 
-	D3D11DeviceContext->PSSetConstantBuffers(0, 1, &ViewUniformBuffer);
-	D3D11DeviceContext->PSSetConstantBuffers(2, 1, &DeferredLightUniformBuffer);
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
 
 	//reset
 	ID3D11ShaderResourceView* SRV = NULL;
 	ID3D11SamplerState* Sampler = NULL;
-	D3D11DeviceContext->PSSetShaderResources(0, 1, &SRV);
-	D3D11DeviceContext->PSSetShaderResources(1, 1, &SRV);
-	D3D11DeviceContext->PSSetSamplers(0, 1, &Sampler);
-	D3D11DeviceContext->PSSetSamplers(1, 1, &Sampler);
+
+	D3D11DeviceContext->PSSetShaderResources(SceneColorTextureParam.BaseIndex, SceneColorTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(SceneColorTextureSamplerParam.BaseIndex, SceneColorTextureSamplerParam.Size, &Sampler);
+	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
+
 	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &SRV);
 	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &Sampler);
 
-	for (int i = 3; i < 6; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
-		D3D11DeviceContext->PSSetShaderResources(i, 1, &SRV);
-		D3D11DeviceContext->PSSetSamplers(i, 1, &Sampler);
+		D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex + i, 1, &SRV);
+		D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex + i, 1, &Sampler);
 	}
 }
 

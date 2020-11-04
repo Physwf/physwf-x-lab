@@ -3,7 +3,7 @@
 #include "LocalVertexFactory.hlsl"
 #include "ShadowDepthCommon.hlsl"
 
-float4x4 ProjectionMatrix : register(b3);
+float4x4 ProjectionMatrix;
 
 void SetShadowDepthOutputs(float4 WorldPosition, out float4 OutPosition, out float ShadowDepth)
 {

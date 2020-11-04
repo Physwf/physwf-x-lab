@@ -480,6 +480,7 @@ void FPixelShaderInOut_PS_Main(
 	#define PIXELSHADEROUTPUT_MRT7 0
 #endif
 
+[earlydepthstencil]
 void PS_Main(
     VertexFactoryInterpolantsVSToPS Interpolants, 
     BasePassInterpolantsVSToPS BasePassInterpolants,

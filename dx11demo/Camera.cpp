@@ -14,6 +14,11 @@ void Camera::SetPostion(Vector Position)
 	//UpdateViewMatrix();
 }
 
+const Vector& Camera::GetPosition() const
+{
+	return Eye;
+}
+
 void Camera::LookAt(Vector Target)
 {
 	FaceDir = Target - Eye;
