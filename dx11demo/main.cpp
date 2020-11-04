@@ -81,9 +81,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	InitInput();
 
 	MSG msg;
+	
 	while (true)
 	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -92,20 +93,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
+		{
 
-		//D3D11ClearViewTarget();
-		//RenderTriangle();
-		//RenderTest();
-		//GW.Draw();
-		//S.Draw();
-		UpdateView();
-		RenderPrePass();
-		RenderShadowPass();
-		RenderBasePass();
-		RenderLight();
-		D3D11Present();
+			static DWORD LastTickCount = 0;
+			DWORD TimeEclipse = GetTickCount() - LastTickCount;
+			if (TimeEclipse > 30) TimeEclipse = 30;
+			LastTickCount = GetTickCount();
 
-		Sleep(10);
+			GW.Tick(TimeEclipse / 1000.f);
+
+			extern std::vector<Mesh*> AllMeshes;
+			for (Mesh* m : AllMeshes)
+			{
+				m->Tick(TimeEclipse / 1000.f);
+			}
+
+			//D3D11ClearViewTarget();
+			//RenderTriangle();
+			//RenderTest();
+			//GW.Draw();
+			//S.Draw();
+			UpdateView();
+			RenderPrePass();
+			RenderShadowPass();
+			RenderBasePass();
+			RenderLight();
+			D3D11Present();
+
+			//Sleep(10);
+		}
+
 	}
 
 	//S.ReleaseResource();

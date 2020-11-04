@@ -5,6 +5,7 @@ Camera::Camera():Near(1.0f), Far(1000.0f)
 {
 	bDraging = false;
 	bRotating = false;
+	IsMoving = false;
 	Up = { 0, 1, 0 };
 }
 
@@ -70,6 +71,28 @@ void Camera::Lift(float fStep)
 	//UpdateViewMatrix();
 }
 
+void Camera::StartMove(Vector Direction)
+{
+	MoveDirection = Direction;
+	MoveDirection.Normalize();
+	IsMoving = true;
+}
+
+void Camera::TryMove(float fDeltaTime)
+{
+	const float fSpeed = 25.0f;
+	if (IsMoving)
+	{
+		float fMoveDist = fDeltaTime * fSpeed;
+		Eye += fMoveDist * MoveDirection;
+	}
+}
+
+void Camera::StopMove()
+{
+	IsMoving = false;
+}
+
 void Camera::StartDrag(int X, int Y)
 {
 	bDraging = true;
@@ -84,7 +107,7 @@ void Camera::Drag(int X, int Y)
 	{
 		int Dx = X - DragStartX;
 		int Dy = Y - DragStartY;
-		float fDx = Dx / fViewportWidth;
+		float fDx = -Dx / fViewportWidth;
 		float fDy = Dy / fViewportHeight;
 		Matrix Rotation = Matrix::DXFormRotation({ fDy, fDx, 0.0f});
 		FaceDir = Rotation.Transform(StartFaceDir);
@@ -98,7 +121,7 @@ void Camera::StopDrag(int X, int Y)
 	{
 		int Dx = X - DragStartX;
 		int Dy = Y - DragStartY;
-		float fDx = Dx / fViewportWidth;
+		float fDx = -Dx / fViewportWidth;
 		float fDy = Dy / fViewportHeight;
 		Matrix Rotation = Matrix::DXFormRotation({ fDy, fDx, 0.0f });
 		FaceDir = Rotation.Transform(StartFaceDir);

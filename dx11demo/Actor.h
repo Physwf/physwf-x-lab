@@ -14,6 +14,10 @@ public:
 	void Yall(float fValue);
 	void Roll(float fValue);
 	
+	void StartDrag(int X, int Y);
+	void Drag(int X, int Y);
+	void StopDrag(int X, int Y);
+
 protected:
 	Matrix GetWorldMatrix() 
 	{ 
@@ -26,4 +30,8 @@ protected:
 
 	Vector Position;
 	Vector Rotation;
+
+	int DragStartX;
+	int DragStartY;
+	bool bDraging;
 };

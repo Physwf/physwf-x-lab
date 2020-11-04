@@ -27,6 +27,10 @@ public:
 	void Back(float fStep);
 	void Lift(float fStep);
 
+	void StartMove(Vector Direction);
+	void TryMove(float fDeltaTime);
+	void StopMove();
+
 	void StartDrag(int X, int Y);
 	void Drag(int X, int Y);
 	void StopDrag(int X, int Y);
@@ -55,4 +59,7 @@ public:
 	int RotateStartX;
 	int RotateStartY;
 	bool bRotating;
+
+	bool IsMoving;
+	Vector MoveDirection;
 };

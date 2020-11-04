@@ -3,7 +3,7 @@
 class GameViewport
 {
 public:
-	void Draw();
+	void Tick(float fDeltaTime);
 
 	void OnKeyDown(unsigned int KeyCode);
 	void OnKeyUp(unsigned int KeyCode);

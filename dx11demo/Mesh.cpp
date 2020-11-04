@@ -728,6 +728,14 @@ void Mesh::ReleaseResource()
 	LODResource.ReleaseResource();
 }
 
+void Mesh::Tick(float fDeltaTime)
+{
+	PrimitiveUniform PU;
+	PU.LocalToWorld = GetWorldMatrix();
+	PU.InvNonUniformScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	D3D11DeviceContext->UpdateSubresource(PrimitiveUniformBuffer, 0, 0, &PU, 0, 0);
+}
+
 bool Mesh::GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBatch)
 {
 	const StaticMeshSection& Section = LODResource.Sections[SectionIndex];

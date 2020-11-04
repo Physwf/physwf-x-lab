@@ -6,11 +6,11 @@
 #include "DirectXTex.h"
 using namespace DirectX;
 
-std::vector<Mesh> AllMeshes;
+std::vector<Mesh*> AllMeshes;
 std::vector<MeshBatch> AllBatches;
 
 Camera MainCamera;
-
+Actor* SelectedActor;
 
 struct RectangleVertex
 {
@@ -330,21 +330,22 @@ PrecomputedLightingUniform PrecomputedLightingParameters;
 
 void InitInput()
 {
-	Mesh m1;
-	m1.ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	Mesh* m1 = new Mesh();
+	m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1.ImportFromFBX("Primitives/Sphere.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	//m1.SetPosition(20.0f, -100.0f, 480.0f);
 	//m1.SetRotation(-3.14f / 2.0f, 0, 0);
-	m1.InitResource();
+	m1->InitResource();
 	AllMeshes.push_back(m1);
-
-	for (Mesh& m : AllMeshes)
+	SelectedActor = m1;
+	for (Mesh* m : AllMeshes)
 	{
-		m.DrawStaticElement();
+		m->DrawStaticElement();
 	}
 
+	MainCamera.SetViewport((float)WindowWidth, (float)WindowHeight);
 	MainCamera.SetPostion(Vector(0,0 , 400));
 	MainCamera.LookAt(Vector(0, 0, -100));
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);

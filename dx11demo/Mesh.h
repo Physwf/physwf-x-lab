@@ -125,6 +125,8 @@ public:
 	void InitResource();
 	void ReleaseResource();
 
+	void Tick(float fDeltaTime);
+
 	int GetNumberBatches() { return 1; }
 	bool GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBatch);
 	void Draw(ID3D11DeviceContext* Context, const MeshRenderState& ShaderState);
