@@ -140,7 +140,7 @@ public:
 		Desc.SlopeScaledDepthBias = 0;
 		Desc.AntialiasedLineEnable = bEnableLineAA;
 		Desc.MultisampleEnable = bEnableMSAA;
-		//Desc.FrontCounterClockwise 
+		Desc.FrontCounterClockwise = TRUE;
 		ID3D11RasterizerState* Result;
 		if (S_OK == D3D11Device->CreateRasterizerState(&Desc, &Result))
 		{
