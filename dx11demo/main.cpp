@@ -78,13 +78,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 // 	S.InitResource();
 // 	S.Setup();
 	
-	InitInput();
+	InitShading();
 
 	MSG msg;
 	
 	while (true)
 	{
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -92,6 +92,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				break;
 			}
+			continue;
 		}
 		{
 
@@ -113,11 +114,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//RenderTest();
 			//GW.Draw();
 			//S.Draw();
-			UpdateView();
-			RenderPrePass();
-			RenderShadowPass();
-			RenderBasePass();
-			RenderLight();
+			Render();
 			D3D11Present();
 
 			//Sleep(10);

@@ -99,18 +99,14 @@ public:
 	}
 };
 
-class Scene
-{
-public:
-	void InitResource();
-	void ReleaseResource();
-	void Setup();
-
-private:
-	std::vector<Camera*> Cameras;
-	std::vector<Mesh*> Meshes;
-	Camera* CurrentCamera;
-
-};
 
 Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix);
+
+extern std::vector<MeshBatch> AllBatches;
+extern ID3D11Buffer* ViewUniformBuffer;
+extern DirectionalLight DirLight;
+extern Camera MainCamera;
+extern ViewMatrices VMs;
+
+void InitScene();
+void UpdateView();

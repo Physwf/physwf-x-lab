@@ -2,14 +2,13 @@
 #include "fbxsdk.h"
 #include "log.h"
 #include "D3D11RHI.h"
-#include <d3dcompiler.h>
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <assert.h>
 #include "MeshDescriptionOperations.h"
+#include "Scene.h"
 
-extern std::vector<MeshBatch> AllBatches;
 
 void MeshLODResources::InitResource()
 {

@@ -154,6 +154,22 @@ static const struct
     float DemosaicVposOffset;
     float3 IndirectLightingColorScale;
 
+    float3 AtmosphericFogSunDirection;
+	float AtmosphericFogSunPower;
+	float AtmosphericFogPower;
+	float AtmosphericFogDensityScale;
+	float AtmosphericFogDensityOffset;
+	float AtmosphericFogGroundOffset;
+	float AtmosphericFogDistanceScale;
+	float AtmosphericFogAltitudeScale;
+	float AtmosphericFogHeightScaleRayleigh;
+	float AtmosphericFogStartDistance;
+	float AtmosphericFogDistanceOffset;
+	float AtmosphericFogSunDiscScale;
+	uint AtmosphericFogRenderMask;
+	uint AtmosphericFogInscatterAltitudeSampleNum;
+	float4 AtmosphericFogSunColor;
+
     float AmbientCubemapIntensity;
     float SkyLightParameters;
 	float4 SkyLightColor;

@@ -2,9 +2,8 @@
 
 #include "D3D11RHI.h"
 
-void InitInput();
-void UpdateView();
-void RenderPrePass();
-void RenderShadowPass();
-void RenderBasePass();
-void RenderLight();
+extern ID3D11Buffer* GlobalConstantBuffer;
+extern char GlobalConstantBufferData[4096];
+
+void InitShading();
+void Render();

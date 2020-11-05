@@ -2,21 +2,6 @@
 #include "log.h"
 #include "D3D11RHI.h"
 
-void Scene::InitResource()
-{
-
-}
-
-void Scene::ReleaseResource()
-{
-
-}
-
-void Scene::Setup()
-{
-
-}
-
 ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InViewMatrix, const Matrix& InProjectionMatrix)
 {
 	Vector LocalViewOrigin = InViewOrigin;
@@ -55,88 +40,6 @@ ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InViewMatri
 	TranslatedViewProjectionMatrix = LocalTranslatedViewMatrix * ProjectionMatrix;
 	InvTranslatedViewProjectionMatrix = InvProjectionMatrix * LocalInvTranslatedViewMatrix;
 }
-
-// 
-// void Scene::OnKeyDown(unsigned int KeyCode)
-// {
-// 	switch (KeyCode)
-// 	{
-// 	case 'W':
-// 	case 'w':
-// 		if (CurrentCamera)
-// 		{
-// 			CurrentCamera->Walk(20.0f);
-// 		}
-// 		break;
-// 	case 'A':
-// 	case 'a':
-// 		if (CurrentCamera)
-// 		{
-// 			CurrentCamera->Side(20.0f);
-// 		}
-// 		break;
-// 	case 'D':
-// 	case 'd':
-// 		if (CurrentCamera)
-// 		{
-// 			CurrentCamera->Side(-20.0f);
-// 		}
-// 		break;
-// 	case 'S':
-// 	case 's':
-// 		if (CurrentCamera)
-// 		{
-// 			CurrentCamera->Back(20.0f);
-// 		}
-// 		break;
-// 	}
-// }
-// 
-// void Scene::OnKeyUp(unsigned int KeyCode)
-// {
-// 
-// }
-// 
-// void Scene::OnMouseDown(int X, int Y)
-// {
-// 	if (CurrentCamera)
-// 	{
-// 		CurrentCamera->StartDrag(X,Y);
-// 	}
-// }
-// 
-// void Scene::OnMouseUp(int X, int Y)
-// {
-// 	if (CurrentCamera)
-// 	{
-// 		CurrentCamera->StopDrag(X, Y);
-// 	}
-// }
-// 
-// void Scene::OnRightMouseDown(int X, int Y)
-// {
-// 	if (CurrentCamera)
-// 	{
-// 		CurrentCamera->StartRotate(X, Y);
-// 	}
-// }
-// 
-// void Scene::OnRightMouseUp(int X, int Y)
-// {
-// 	if (CurrentCamera)
-// 	{
-// 		CurrentCamera->StopRotate(X, Y);
-// 	}
-// }
-// 
-// void Scene::OnMouseMove(int X, int Y)
-// {
-// 	if (CurrentCamera)
-// 	{
-// 		CurrentCamera->Drag(X, Y);
-// 		CurrentCamera->Rotate(X, Y);
-// 	}
-// }
 
 void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
 {
@@ -196,4 +99,246 @@ Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix)
 			1.0f
 		);
 	}
+}
+
+#pragma pack(push)
+#pragma pack(1)
+struct ViewUniform
+{
+	Matrix TranslatedWorldToClip;
+	Matrix WorldToClip;
+	Matrix TranslatedWorldToView;
+	Matrix ViewToTranslatedWorld;
+	Matrix TranslatedWorldToCameraView;
+	Matrix CameraViewToTranslatedWorld;
+	Matrix ViewToClip;
+	Matrix ViewToClipNoAA;
+	Matrix ClipToView;
+	Matrix ClipToTranslatedWorld;
+	Matrix SVPositionToTranslatedWorld;
+	Matrix ScreenToWorld;
+	Matrix ScreenToTranslatedWorld;
+	// half3 ViewForward;
+	// half3 ViewUp;
+	// half3 ViewRight;
+	// half3 HMDViewNoRollUp;
+	// half3 HMDViewNoRollRight;
+	Vector4 InvDeviceZToWorldZTransform;
+	Vector4 ScreenPositionScaleBias;
+	Vector WorldCameraOrigin;
+	float ViewPading01;
+	Vector TranslatedWorldCameraOrigin;
+	float ViewPading02;
+	Vector WorldViewOrigin;
+	float ViewPading03;
+
+	Vector PreViewTranslation;
+	float ViewPading04;
+	Vector4 ViewRectMin;
+	Vector4 ViewSizeAndInvSize;
+	Vector4 BufferSizeAndInvSize;
+
+	uint32 Random;
+	uint32 FrameNumber;
+	uint32 StateFrameIndexMod8;
+	uint32 ViewPading05;
+
+	float DemosaicVposOffset;
+	Vector IndirectLightingColorScale;
+
+	Vector AtmosphericFogSunDirection;
+	float AtmosphericFogSunPower;
+	float AtmosphericFogPower;
+	float AtmosphericFogDensityScale;
+	float AtmosphericFogDensityOffset;
+	float AtmosphericFogGroundOffset;
+	float AtmosphericFogDistanceScale;
+	float AtmosphericFogAltitudeScale;
+	float AtmosphericFogHeightScaleRayleigh;
+	float AtmosphericFogStartDistance;
+	float AtmosphericFogDistanceOffset;
+	float AtmosphericFogSunDiscScale;
+	uint32 AtmosphericFogRenderMask;
+	uint32 AtmosphericFogInscatterAltitudeSampleNum;
+	LinearColor AtmosphericFogSunColor;
+
+	float View_AmbientCubemapIntensity;
+	float View_SkyLightParameters;
+	float PrePadding_View_2472;
+	float PrePadding_View_2476;
+	Vector4 SkyLightColor;
+	Vector4 SkyIrradianceEnvironmentMap[7];
+
+	float PrePadding_View_2862;
+	Vector VolumetricLightmapWorldToUVScale;
+	float PrePadding_View_2861;
+	Vector VolumetricLightmapWorldToUVAdd;
+	float PrePadding_View_2876;
+	Vector VolumetricLightmapIndirectionTextureSize;
+
+	float VolumetricLightmapBrickSize;
+	Vector VolumetricLightmapBrickTexelSize;
+};
+#pragma pack(pop)
+
+ViewUniform VU;
+
+ID3D11Buffer* ViewUniformBuffer;
+
+std::vector<Mesh*> AllMeshes;
+std::vector<MeshBatch> AllBatches;
+DirectionalLight DirLight;
+
+Camera MainCamera;
+Actor* SelectedActor;
+ViewMatrices VMs;
+
+float ViewZNear = 100.f;
+float ViewZFar = 400.f;
+
+void InitScene()
+{
+	Mesh* m1 = new Mesh();
+	//m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	//m1->ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
+	m1->ImportFromFBX("Primitives/Sphere.fbx");
+	//m1->GeneratePlane(100.f, 100.f, 1, 1);
+	//m1->SetPosition(20.0f, -100.0f, 480.0f);
+	//m1->SetRotation(-3.14f / 2.0f, 0, 0);
+	m1->InitResource();
+	AllMeshes.push_back(m1);
+	SelectedActor = m1;
+	for (Mesh* m : AllMeshes)
+	{
+		m->DrawStaticElement();
+	}
+
+	MainCamera.SetViewport((float)WindowWidth, (float)WindowHeight);
+	MainCamera.SetPostion(Vector(0, -400, 0));
+	MainCamera.LookAt(Vector(0, 0, 0));
+	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, ViewZNear, ViewZFar);
+	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
+	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), MainCamera.FaceDir, MainCamera.Up);
+	VMs = ViewMatrices(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
+	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
+	VU.TranslatedWorldToClip = ProjectionMatrix;// VMs.GetTranslatedViewProjectionMatrix();
+	VU.WorldToClip = VMs.GetViewProjectionMatrix();
+	VU.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
+	//VU.TranslatedWorldToView = 
+	VU.TranslatedWorldToCameraView = VMs.GetTranslatedViewMatrix();
+	VU.CameraViewToTranslatedWorld = VMs.GetInvTranslatedViewMatrix();
+	VU.ViewToClip = VMs.GetProjectionMatrix();
+	VU.ClipToView = VMs.GetInvProjectionMatrix();
+	VU.ClipToTranslatedWorld = VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.ScreenToTranslatedWorld = Matrix(
+		Plane(1, 0, 0, 0),
+		Plane(0, 1, 0, 0),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0))
+		* VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.PreViewTranslation = VMs.GetPreViewTranslation();
+
+	VU.WorldCameraOrigin = VMs.GetViewOrigin();
+	VU.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(VMs.GetProjectionMatrix());
+
+	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(VU), &VU);
+
+	const float InvBufferSizeX = 1.0f / WindowWidth;
+	const float InvBufferSizeY = 1.0f / WindowHeight;
+
+	//Vector4 EffectiveViewRect(0,0,WindowWidth,WindowHeight);
+
+	float GProjectionSignY = 1.0f;
+	VU.ScreenPositionScaleBias = Vector4(
+		WindowWidth * InvBufferSizeX / +2.0f,
+		WindowHeight * InvBufferSizeY / (-2.0f * GProjectionSignY),
+		(WindowHeight / 2.0f + 0.f) * InvBufferSizeY,
+		(WindowWidth / 2.0f + 0.f) * InvBufferSizeX
+	);
+	VU.ViewRectMin = Vector4();
+	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.ScreenToWorld = VMs.GetInvViewProjectionMatrix();
+	VU.IndirectLightingColorScale = Vector(1.0f, 1.0f, 1.0f); //SceneRendering.cpp void FViewInfo::SetupUniformBufferParameters(
+
+	VU.TranslatedWorldToClip.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.WorldToClip.Transpose();
+	VU.TranslatedWorldToView.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.TranslatedWorldToCameraView.Transpose();
+	VU.CameraViewToTranslatedWorld.Transpose();
+	VU.ViewToClip.Transpose();
+	VU.ViewToClipNoAA.Transpose();
+	VU.ClipToView.Transpose();
+	VU.ClipToTranslatedWorld.Transpose();
+	VU.SVPositionToTranslatedWorld.Transpose();
+	VU.ScreenToWorld.Transpose();
+	VU.ScreenToTranslatedWorld.Transpose();
+}
+
+void UpdateView()
+{
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, ViewZNear, ViewZFar);
+	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), MainCamera.FaceDir, MainCamera.Up);
+
+	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
+	VU.ViewToTranslatedWorld = VMs.GetOverriddenInvTranslatedViewMatrix();
+	VU.TranslatedWorldToClip = VMs.GetTranslatedViewProjectionMatrix();
+	VU.WorldToClip = VMs.GetViewProjectionMatrix();
+	VU.TranslatedWorldToView = VMs.GetOverriddenTranslatedViewMatrix();
+	//VU.TranslatedWorldToView = 
+	VU.TranslatedWorldToCameraView = VMs.GetTranslatedViewMatrix();
+	VU.CameraViewToTranslatedWorld = VMs.GetInvTranslatedViewMatrix();
+	VU.ViewToClip = VMs.GetProjectionMatrix();
+	VU.ClipToView = VMs.GetInvProjectionMatrix();
+	VU.ClipToTranslatedWorld = VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.ScreenToTranslatedWorld = Matrix(
+		Plane(1, 0, 0, 0),
+		Plane(0, 1, 0, 0),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[2][2], 1),
+		Plane(0, 0, VMs.GetProjectionMatrix().M[3][2], 0))
+		* VMs.GetInvTranslatedViewProjectionMatrix();
+	VU.PreViewTranslation = VMs.GetPreViewTranslation();
+
+	VU.WorldCameraOrigin = VMs.GetViewOrigin();
+	VU.InvDeviceZToWorldZTransform = CreateInvDeviceZToWorldZTransform(VMs.GetProjectionMatrix());
+
+	const float InvBufferSizeX = 1.0f / WindowWidth;
+	const float InvBufferSizeY = 1.0f / WindowHeight;
+
+	//Vector4 EffectiveViewRect(0,0,WindowWidth,WindowHeight);
+
+	float GProjectionSignY = 1.0f;
+	VU.ScreenPositionScaleBias = Vector4(
+		WindowWidth * InvBufferSizeX / +2.0f,
+		WindowHeight * InvBufferSizeY / (-2.0f * GProjectionSignY),
+		(WindowHeight / 2.0f + 0.f) * InvBufferSizeY,
+		(WindowWidth / 2.0f + 0.f) * InvBufferSizeX
+	);
+	VU.ViewRectMin = Vector4();
+	VU.ViewSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.BufferSizeAndInvSize = Vector4((float)WindowWidth, (float)WindowHeight, 1.0f / WindowWidth, 1.0f / WindowHeight);
+	VU.ScreenToWorld = VMs.GetInvViewProjectionMatrix();
+
+	VU.TranslatedWorldToClip.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.WorldToClip.Transpose();
+	VU.TranslatedWorldToView.Transpose();
+	VU.ViewToTranslatedWorld.Transpose();
+	VU.TranslatedWorldToCameraView.Transpose();
+	VU.CameraViewToTranslatedWorld.Transpose();
+	VU.ViewToClip.Transpose();
+	VU.ViewToClipNoAA.Transpose();
+	VU.ClipToView.Transpose();
+	VU.ClipToTranslatedWorld.Transpose();
+	VU.SVPositionToTranslatedWorld.Transpose();
+	VU.ScreenToWorld.Transpose();
+	VU.ScreenToTranslatedWorld.Transpose();
+
+	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
+
+
+	
 }

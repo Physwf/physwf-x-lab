@@ -6,7 +6,7 @@ Camera::Camera():Near(1.0f), Far(1000.0f)
 	bDraging = false;
 	bRotating = false;
 	IsMoving = false;
-	Up = { 0, 1, 0 };
+	Up = { 0, 0, 1 };
 }
 
 void Camera::SetPostion(Vector Position)
