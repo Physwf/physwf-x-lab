@@ -27,7 +27,7 @@ void VS_Main(VertexFactoryInput Input, out BasePassVSOutput Output)
 	}
 
     float4 RasterizedWorldPosition = VertexFactoryGetRasterizedWorldPosition(Input, VFIntermediates, WorldPosition);
-    ClipSpacePosition = mul(RasterizedWorldPosition, ResolvedView.TranslatedWorldToClip);
+    ClipSpacePosition = mul(WorldPositionExcludingWPO, ResolvedView.TranslatedWorldToClip);
     
     Output.Position = ClipSpacePosition; //INVARIANT(ClipSpacePosition);
 

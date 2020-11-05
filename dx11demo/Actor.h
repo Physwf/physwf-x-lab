@@ -34,4 +34,6 @@ protected:
 	int DragStartX;
 	int DragStartY;
 	bool bDraging;
+
+	bool bTransformDirty;
 };

@@ -12,6 +12,9 @@ std::vector<MeshBatch> AllBatches;
 Camera MainCamera;
 Actor* SelectedActor;
 
+float ViewZNear = 100.f;
+float ViewZFar = 400.f;
+
 struct RectangleVertex
 {
 	Vector2 Position;
@@ -331,9 +334,9 @@ PrecomputedLightingUniform PrecomputedLightingParameters;
 void InitInput()
 {
 	Mesh* m1 = new Mesh();
-	m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	//m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1.ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
-	//m1.ImportFromFBX("Primitives/Sphere.fbx");
+	m1->ImportFromFBX("Primitives/Sphere.fbx");
 	//m1.GeneratePlane(100.f, 100.f, 1, 1);
 	//m1.SetPosition(20.0f, -100.0f, 480.0f);
 	//m1.SetRotation(-3.14f / 2.0f, 0, 0);
@@ -349,7 +352,7 @@ void InitInput()
 	MainCamera.SetPostion(Vector(0,0 , 400));
 	MainCamera.LookAt(Vector(0, 0, -100));
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, ViewZNear, ViewZFar);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), MainCamera.FaceDir, MainCamera.Up);
 	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
@@ -522,7 +525,7 @@ void InitInput()
 // 	BasePassGBufferRTV[5] = CreateRenderTargetView2D(BasePassGBufferRT[5], DXGI_FORMAT_R32G32B32A32_FLOAT, 0);
 
 	BasePassRasterizerState = TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK,FALSE, FALSE>::GetRHI();
-	BasePassDepthStencilState = TStaticDepthStencilState<false, D3D11_COMPARISON_GREATER_EQUAL>::GetRHI();
+	BasePassDepthStencilState = TStaticDepthStencilState<TRUE, D3D11_COMPARISON_GREATER>::GetRHI();
 	BasePassBlendState = TStaticBlendState<>::GetRHI();
 
 	LightPassVSByteCode = CompileVertexShader(TEXT("DeferredLightVertexShader.hlsl"), "VS_Main");
@@ -704,7 +707,7 @@ void InitInput()
 
 void UpdateView()
 {
-	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, 100.0f, 600.f);
+	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth/WindowHeight, ViewZNear, ViewZFar);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0,0,0), MainCamera.FaceDir, MainCamera.Up);
 
 	ViewMatrices VMs(MainCamera.Eye, ViewRotationMatrix, ProjectionMatrix);
@@ -932,9 +935,10 @@ void RenderShadowProjection()
 
 void RenderShadowPass()
 {
-
 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, ShadowPassDSV);
 	D3D11DeviceContext->ClearDepthStencilView(ShadowPassDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	return;
 
 	const ParameterAllocation& ViewParams = ShadowPassVSParams.at("View");
 	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &ViewUniformBuffer);
@@ -986,7 +990,7 @@ void RenderBasePass()
 	{
 		if(RTV) D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
 	}
-	//D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH, 1.f, 0);
+	D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH, 0.f, 0);
 	const ParameterAllocation& VSViewParam = BasePassVSParams.at("View");
 	const ParameterAllocation& VSPrecomputedLightingParameters = BasePassVSParams.at("PrecomputedLightingParameters");
 	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);

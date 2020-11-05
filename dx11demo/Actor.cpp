@@ -5,6 +5,7 @@ Actor::Actor()
 	Position = { 0, 0, 0 };
 	Rotation = { 0, 0, 0 };
 	bDraging = false;
+	bTransformDirty = false;
 }
 
 Actor::~Actor()
@@ -62,6 +63,7 @@ void Actor::Drag(int X, int Y)
 		float fDx = -Dx / 10000.f;
 		float fDy = Dy / 10000.f;
 		Rotation += { fDy, fDx, 0.0f };
+		bTransformDirty = true;
 // 		Matrix Rotation = Matrix::DXFormRotation();
 // 		FaceDir = Rotation.Transform(StartFaceDir);
 	}
@@ -86,6 +88,7 @@ void Actor::StopDrag(int X, int Y)
 // 		Matrix Rotation = Matrix::DXFormRotation({ fDy, fDx, 0.0f });
 // 		FaceDir = Rotation.Transform(StartFaceDir);
 		Rotation += { fDy, fDx, 0.0f };
+		bTransformDirty = true;
 	}
 	bDraging = false;
 }
