@@ -194,7 +194,7 @@ Actor* SelectedActor;
 ViewMatrices VMs;
 
 float ViewZNear = 100.f;
-float ViewZFar = 400.f;
+float ViewZFar = 600.f;
 
 void InitScene()
 {
@@ -212,6 +212,13 @@ void InitScene()
 	{
 		m->DrawStaticElement();
 	}
+
+	DirLight.Color = Vector(1.0f, 1.0f, 1.0f);
+	DirLight.Direction = Vector(1.0f, 1.0f, 1.0f);
+	DirLight.Intencity = 1000.f;
+	DirLight.LightSourceAngle = 0.5357f;
+	DirLight.LightSourceSoftAngle = 0.0f;
+	DirLight.Direction.Normalize();
 
 	MainCamera.SetViewport((float)WindowWidth, (float)WindowHeight);
 	MainCamera.SetPostion(Vector(0, -400, 0));

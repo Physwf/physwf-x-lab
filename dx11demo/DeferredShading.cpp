@@ -5,6 +5,7 @@
 #include "ShadowRendering.h"
 #include "LightRendering.h"
 #include "AtmosphereRendering.h"
+#include "RenderTargets.h"
 
 ID3D11Buffer* GlobalConstantBuffer;
 char GlobalConstantBufferData[4096];
@@ -13,6 +14,9 @@ void InitShading()
 {
 	GlobalConstantBuffer = CreateConstantBuffer(false,4096);
 	memset(GlobalConstantBufferData, 0, sizeof(GlobalConstantBufferData));
+
+	RenderTargets& SceneContex = RenderTargets::Get();
+	SceneContex.Allocate();
 
 	InitScene();
 	InitPrePass();
@@ -29,6 +33,9 @@ void Render()
 	RenderBasePass();
 	RenderShadowPass();
 	RenderLight();
+
+	RenderTargets& SceneContex = RenderTargets::Get();
+	SceneContex.FinishRendering();
 }
 
 

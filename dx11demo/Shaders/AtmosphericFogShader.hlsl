@@ -1,7 +1,7 @@
 #include "Common.hlsl"
-#include "SceneTextureCommon.hlsl"
+#include "SceneTexturesCommon.hlsl"
 //#include "SHCommon.ush"
-#include "AtomosphereCommon.hlsl"
+#include "AtmosphereCommon.hlsl"
 
 #ifndef ATMOSPHERIC_NO_LIGHT_SHAFT
 #define ATMOSPHERIC_NO_LIGHT_SHAFT	0
@@ -25,7 +25,7 @@ void VS_Main(
 {
     OutPosition = float4(InPosition,0,1);
 
-    OutTexCoord = InPosition * View.ScreenPositionScaleBias.xy + View.OutScreenVector.wz;
+    OutTexCoord = InPosition * View.ScreenPositionScaleBias.xy + View.ScreenPositionScaleBias.wz;
 
     OutScreenVector = mul(float4(InPosition,1,0),View.ScreenToTranslatedWorld);
 
@@ -38,7 +38,7 @@ void PS_Main(
     out float4 OutColor : SV_Target0
 )
 {
-    OutColor = GetAtomosphericFog(View.WorldCameraOrigin,ScreenVector.xyz,CalcSceneDepth(TexCoord),float3(0,0,0));
+    OutColor = GetAtmosphericFog(View.WorldCameraOrigin,ScreenVector.xyz,CalcSceneDepth(TexCoord),float3(0,0,0));
 #if !ATMOSPHERIC_NO_LIGHT_SHAFT
     float LightShaftMask = Texture2DSample(OcclusionTexture, OcclusionTextureSampler, TexCoord).x;
     OutColor.rgb = OutColor.rgb * LightShaftMask;

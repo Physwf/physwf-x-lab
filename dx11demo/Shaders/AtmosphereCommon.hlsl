@@ -529,7 +529,7 @@ float4 GetAtmosphericFog(float3 ViewPosition, float3 ViewVector, float SceneDept
     float3 InscatterColor = GetInscatterColor(FogDepth, ViewPosition, T, V, View.AtmosphericFogSunDirection, Radius, Mu, Attenuation, bIsSceneGeometry); //S[L]-T(ViewPosition,xs)S[l]|xs
 #if BASEPASS_ATMOSPHERIC_FOG // Transluceny rendering just follows normal render flag
 	float3 GroundColor = 0.f;
-	BRANCH
+	[branch]
 	if ((View.AtmosphericFogRenderMask & RENDERFLAG_DISABLE_GROUND_SCATTERING) == 0)
 	{
 		GroundColor = GetGroundColor(float4(SceneColor.xyz, 1.f), ViewPosition, T, V, View.AtmosphericFogSunDirection, Radius, Attenuation, bIsSceneGeometry); //R[L0]+R[L*]
@@ -544,7 +544,7 @@ float4 GetAtmosphericFog(float3 ViewPosition, float3 ViewVector, float SceneDept
 
 #if BASEPASS_ATMOSPHERIC_FOG // Transluceny rendering just follows normal render flag
 	float3 Sun = 0.f;
-	BRANCH
+	[branch]
 	if ((View.AtmosphericFogRenderMask & RENDERFLAG_DISABLE_SUN_DISK) == 0)
 	{
 		Sun = GetSunColor(ViewPosition, T, V, View.AtmosphericFogSunDirection, Radius, Mu); //L0

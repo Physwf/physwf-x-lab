@@ -48,6 +48,22 @@ cbuffer View
     float View_DemosaicVposOffset;
     float3 View_IndirectLightingColorScale;
 
+    float3 View_AtmosphericFogSunDirection;
+	float View_AtmosphericFogSunPower;
+	float View_AtmosphericFogPower;
+	float View_AtmosphericFogDensityScale;
+	float View_AtmosphericFogDensityOffset;
+	float View_AtmosphericFogGroundOffset;
+	float View_AtmosphericFogDistanceScale;
+	float View_AtmosphericFogAltitudeScale;
+	float View_AtmosphericFogHeightScaleRayleigh;
+	float View_AtmosphericFogStartDistance;
+	float View_AtmosphericFogDistanceOffset;
+	float View_AtmosphericFogSunDiscScale;
+	uint View_AtmosphericFogRenderMask;
+	uint View_AtmosphericFogInscatterAltitudeSampleNum;
+	float4 View_AtmosphericFogSunColor;
+
     float View_AmbientCubemapIntensity;
 	float View_SkyLightParameters;
 	float PrePadding_View_2472;
@@ -225,6 +241,21 @@ static const struct
     View_DemosaicVposOffset,
     View_IndirectLightingColorScale,
 
+    View_AtmosphericFogSunDirection,
+	View_AtmosphericFogSunPower,
+	View_AtmosphericFogPower,
+	View_AtmosphericFogDensityScale,
+	View_AtmosphericFogDensityOffset,
+	View_AtmosphericFogGroundOffset,
+	View_AtmosphericFogDistanceScale,
+	View_AtmosphericFogAltitudeScale,
+	View_AtmosphericFogHeightScaleRayleigh,
+	View_AtmosphericFogStartDistance,
+	View_AtmosphericFogDistanceOffset,
+	View_AtmosphericFogSunDiscScale,
+	View_AtmosphericFogRenderMask,
+	View_AtmosphericFogInscatterAltitudeSampleNum,
+	View_AtmosphericFogSunColor,
 
     View_AmbientCubemapIntensity,
 	View_SkyLightParameters,

@@ -92,7 +92,7 @@ void PS_Main(
             uint2( SVPos.xy )
         );  
         //OutColor *= ComputeLightProfileMultiplier(WorldPosition, DeferredLightUniforms.LightPosition, -DeferredLightUniforms.NormalizedLightDirection, DeferredLightUniforms.NormalizedLightTangent);
-        OutColor.xyz += CalcSceneColor(ScreenUV);
+        //OutColor.xyz += CalcSceneColor(ScreenUV);
         //OutColor += float4(SSD.GBuffer.ShadingModelID,0,0,1.0f);
 // #if USE_PREEXPOSURE
 // 		OutColor *= View.PreExposure;

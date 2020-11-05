@@ -213,6 +213,8 @@ public:
 };
 
 template<
+	BOOL AlphaToCoverageEnable = FALSE,
+	BOOL IndependentBlendEnable = FALSE,
 	UINT8 RT0ColorWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
 	D3D11_BLEND_OP RT0ColorBlendOp = D3D11_BLEND_OP_ADD,
 	D3D11_BLEND    RT0ColorSrcBlend = D3D11_BLEND_ONE,
@@ -272,6 +274,7 @@ template<
 >
 class TStaticBlendState : public TStaticStateRHI<
 	TStaticBlendState<
+	AlphaToCoverageEnable, IndependentBlendEnable,
 	RT0ColorWriteMask, RT0ColorBlendOp, RT0ColorSrcBlend, RT0ColorDestBlend, RT0AlphaBlendOp, RT0AlphaSrcBlend, RT0AlphaDestBlend,
 	RT1ColorWriteMask, RT1ColorBlendOp, RT1ColorSrcBlend, RT1ColorDestBlend, RT1AlphaBlendOp, RT1AlphaSrcBlend, RT1AlphaDestBlend,
 	RT2ColorWriteMask, RT2ColorBlendOp, RT2ColorSrcBlend, RT2ColorDestBlend, RT2AlphaBlendOp, RT2AlphaSrcBlend, RT2AlphaDestBlend,
@@ -289,8 +292,8 @@ public:
 	static ID3D11BlendState* CreateRHI()
 	{
 		D3D11_BLEND_DESC Desc;
-		Desc.AlphaToCoverageEnable = FALSE;
-		Desc.IndependentBlendEnable = FALSE;
+		Desc.AlphaToCoverageEnable = AlphaToCoverageEnable;
+		Desc.IndependentBlendEnable = IndependentBlendEnable;
 		Desc.RenderTarget[0].BlendEnable =
 			RT0ColorBlendOp != D3D11_BLEND_OP_ADD || RT0ColorDestBlend != D3D11_BLEND_ZERO || RT0ColorSrcBlend != D3D11_BLEND_ONE ||
 			RT0AlphaBlendOp != D3D11_BLEND_OP_ADD || RT0AlphaDestBlend != D3D11_BLEND_ZERO || RT0AlphaSrcBlend != D3D11_BLEND_ONE;

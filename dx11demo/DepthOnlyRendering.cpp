@@ -1,10 +1,8 @@
 #include "DepthOnlyRendering.h"
 #include "Scene.h"
+#include "RenderTargets.h"
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
-
-ID3D11Texture2D* SceneDepthRT;
-ID3D11DepthStencilView* SceneDepthDSV;
 
 ID3DBlob* PrePassVSBytecode;
 ID3DBlob* PrePassPSBytecode;
@@ -20,8 +18,6 @@ std::map<std::string, ParameterAllocation> PrePassPSParams;
 
 void InitPrePass()
 {
-	SceneDepthRT = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R24G8_TYPELESS, false, true, true);
-	SceneDepthDSV = CreateDepthStencilView2D(SceneDepthRT, DXGI_FORMAT_D24_UNORM_S8_UINT, 0);
 	//Prepass
 	PrePassVSBytecode = CompileVertexShader(TEXT("DepthOnlyPass.hlsl"), "VS_Main");
 	PrePassPSBytecode = CompilePixelShader(TEXT("DepthOnlyPass.hlsl"), "PS_Main");
@@ -46,10 +42,13 @@ void InitPrePass()
 void RenderPrePass()
 {
 	//D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, SceneDepthDSV);
-	D3D11DeviceContext->OMSetRenderTargets(0, NULL, SceneDepthDSV);
-	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
+	//D3D11DeviceContext->OMSetRenderTargets(0, NULL, SceneDepthDSV);
+	//const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+	//D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
+
+	RenderTargets& SceneContex = RenderTargets::Get();
+	SceneContex.BeginRenderingPrePass(true);
 
 	const ParameterAllocation& ViewParams = PrePassVSParams.at("View");
 	const ParameterAllocation& PrimitiveParams = PrePassVSParams.at("Primitive");

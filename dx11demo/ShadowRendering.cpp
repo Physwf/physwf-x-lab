@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "DeferredShading.h"
 #include "Mesh.h"
+#include "RenderTargets.h"
 
 struct ShadowMapView
 {
@@ -86,10 +87,12 @@ void InitShadowPass()
 	ShadowProjectionVS = CreateVertexShader(ShadowProjectionVSBytecode);
 	ShadowProjectionPS = CreatePixelShader(ShadowProjectionPSBytecode);
 
+	extern float ViewZNear;
+	extern float ViewZFar;
 	Matrix DirectionalLightViewRotationMatrix = Matrix::DXLookToLH(DirLight.Direction);
-	Frustum ViewFrustum(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, 100.0f, 600.f);
+	Frustum ViewFrustum(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, ViewZNear, ViewZFar);
 	Box FrumstumBounds = ViewFrustum.GetBounds();
-	Vector FrumstumWorldPosition = MainCamera.GetPosition() + MainCamera.FaceDir * (600.f - 100.f);
+	Vector FrumstumWorldPosition = MainCamera.GetPosition() + MainCamera.FaceDir * (ViewZFar - ViewZNear);
 	Vector FrumstumViewPosition = DirectionalLightViewRotationMatrix.Transform(FrumstumWorldPosition);
 	Matrix DirectionalLightProjectionMatrix = Matrix::DXFromOrthognalLH(FrumstumBounds.Max.X, FrumstumBounds.Min.X, FrumstumBounds.Max.Y, FrumstumBounds.Min.Y, FrumstumBounds.Max.Z, FrumstumBounds.Min.Z);
 	//DirectionalLightProjectionMatrix = ProjectionMatrix;
@@ -157,7 +160,7 @@ void RenderShadowProjection()
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
 	D3D11DeviceContext->ClearRenderTargetView(ShadowProjectionRTV, ClearColor);
 
-	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_BACK, FALSE, FALSE>::GetRHI());
+	D3D11DeviceContext->RSSetState(TStaticRasterizerState<D3D11_FILL_SOLID, D3D11_CULL_NONE, FALSE, FALSE>::GetRHI());
 	//D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0);
 	D3D11DeviceContext->OMSetDepthStencilState(TStaticDepthStencilState<false, D3D11_COMPARISON_ALWAYS>::GetRHI(), 0);
 
@@ -227,8 +230,6 @@ void RenderShadowPass()
 {
 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, ShadowPassDSV);
 	D3D11DeviceContext->ClearDepthStencilView(ShadowPassDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-	return;
 
 	const ParameterAllocation& ViewParams = ShadowPassVSParams.at("View");
 	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &ViewUniformBuffer);
