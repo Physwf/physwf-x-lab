@@ -194,7 +194,7 @@ Actor* SelectedActor;
 ViewMatrices VMs;
 
 float ViewZNear = 100.f;
-float ViewZFar = 600.f;
+float ViewZFar = 2000000000.f;
 
 void InitScene()
 {
@@ -343,6 +343,23 @@ void UpdateView()
 	VU.SVPositionToTranslatedWorld.Transpose();
 	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
+
+
+	VU.AtmosphericFogSunDirection = { -0.39815f, -0.05403f, 0.91573f };
+	VU.AtmosphericFogSunPower = 1.0f;
+	VU.AtmosphericFogPower = 1.0f;
+	VU.AtmosphericFogDensityScale = 1.0f;
+	VU.AtmosphericFogDensityOffset = 0.0f;
+	VU.AtmosphericFogGroundOffset = -98975.89844f;
+	VU.AtmosphericFogDistanceScale = 1.0f;
+	VU.AtmosphericFogAltitudeScale = 1.0f;
+	VU.AtmosphericFogHeightScaleRayleigh = 8.0f;
+	VU.AtmosphericFogStartDistance = 0.15f;
+	VU.AtmosphericFogDistanceOffset = 0.0f;
+	VU.AtmosphericFogSunDiscScale = 1.0f;
+	VU.AtmosphericFogRenderMask = 0;
+	VU.AtmosphericFogInscatterAltitudeSampleNum = 32;
+	VU.AtmosphericFogSunColor = { 2.75f, 2.75f, 2.75f, 2.75f };
 
 	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
 

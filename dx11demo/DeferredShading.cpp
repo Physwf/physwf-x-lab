@@ -33,6 +33,7 @@ void Render()
 	RenderBasePass();
 	RenderShadowPass();
 	RenderLight();
+	RenderAtmosphereFog();
 
 	RenderTargets& SceneContex = RenderTargets::Get();
 	SceneContex.FinishRendering();

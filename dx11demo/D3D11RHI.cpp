@@ -373,6 +373,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
 		"ENABLE_SKY_LIGHT",									"0",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
+		"ATMOSPHERIC_NO_LIGHT_SHAFT",						"1",
 		 NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
@@ -421,6 +422,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
 		"ENABLE_SKY_LIGHT",									"0",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
+		"ATMOSPHERIC_NO_LIGHT_SHAFT",						"1",
 		NULL,NULL
 	};
 	if (S_OK == D3DCompileFromFile(File, Macros, &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
