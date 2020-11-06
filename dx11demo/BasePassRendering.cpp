@@ -158,19 +158,28 @@ void InitBasePass()
 		{
 			TexMetadata Metadata;
 			ScratchImage sImage;
-			if (S_OK == LoadFromHDRFile(TEXT("./dx11demo/PrecomputedLightingBuffer_LightMapTextureSphere.hdr"), &Metadata, sImage))
+			if (S_OK == LoadFromDDSFile(TEXT("./dx11demo/PrecomputedLightingBuffer_LightMapTexture.dds"), DDS_FLAGS_NONE, &Metadata, sImage))
 			{
-				CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &PrecomputedLighting_LightMapTexture);
+				CreateShaderResourceView(D3D11Device, sImage.GetImages(), Metadata.mipLevels, Metadata, &PrecomputedLighting_LightMapTexture);
 				PrecomputedLighting_LightMapSampler = TStaticSamplerState<>::GetRHI();
 			}
 		}
 		{
 			TexMetadata Metadata;
 			ScratchImage sImage;
-			if (S_OK == LoadFromHDRFile(TEXT("./dx11demo/PrecomputedLightingBuffer_StaticShadowTexture.hdr"), &Metadata, sImage))
+			if (S_OK == LoadFromDDSFile(TEXT("./dx11demo/PrecomputedLightingBuffer_StaticShadowTexture.dds"), DDS_FLAGS_NONE, &Metadata, sImage))
 			{
-				CreateShaderResourceView(D3D11Device, sImage.GetImages(), 1, Metadata, &PrecomputedLighting_StaticShadowTexture);
+				CreateShaderResourceView(D3D11Device, sImage.GetImages(), Metadata.mipLevels, Metadata, &PrecomputedLighting_StaticShadowTexture);
 				PrecomputedLighting_StaticShadowTextureSampler = TStaticSamplerState<>::GetRHI();
+			}
+		}
+		{
+			TexMetadata Metadata;
+			ScratchImage sImage;
+			if (S_OK == LoadFromDDSFile(TEXT("./dx11demo/PrecomputedLightingBuffer_SkyOcclusionTexture.dds"), DDS_FLAGS_NONE, &Metadata, sImage))
+			{
+				CreateShaderResourceView(D3D11Device, sImage.GetImages(), Metadata.mipLevels, Metadata, &PrecomputedLighting_SkyOcclusionTexture);
+				PrecomputedLighting_SkyOcclusionSampler = TStaticSamplerState<>::GetRHI();
 			}
 		}
 		// 		ID3D11ShaderResourceView* PrecomputedLighting_SkyOcclusionTexture;
@@ -220,6 +229,8 @@ void RenderBasePass()
 	const ParameterAllocation& BaseColorSamplerParam = BasePassPSParams.at("Material_BaseColorSampler");
 	const ParameterAllocation& LightMapTextureParam = BasePassPSParams.at("PrecomputedLighting_LightMapTexture");
 	const ParameterAllocation& LightMapSamplerParam = BasePassPSParams.at("PrecomputedLighting_LightMapSampler");
+	const ParameterAllocation& SkyOcclusionTextureParam = BasePassPSParams.at("PrecomputedLighting_SkyOcclusionTexture");
+	const ParameterAllocation& SkyOcclusionSamplerParam = BasePassPSParams.at("PrecomputedLighting_SkyOcclusionSampler");
 	// 	const ParameterAllocation& StaticShadowTextureParam = BasePassParams["PrecomputedLighting_StaticShadowTexture"];
 	// 	const ParameterAllocation& StaticShadowTextureSamplerParam = BasePassParams["PrecomputedLighting_StaticShadowTextureSampler"];
 
@@ -229,6 +240,8 @@ void RenderBasePass()
 	D3D11DeviceContext->PSSetSamplers(BaseColorSamplerParam.BaseIndex, BaseColorSamplerParam.Size, &BaseColorSampler);
 	D3D11DeviceContext->PSSetShaderResources(LightMapTextureParam.BaseIndex, LightMapTextureParam.Size, &PrecomputedLighting_LightMapTexture);
 	D3D11DeviceContext->PSSetSamplers(LightMapSamplerParam.BaseIndex, LightMapSamplerParam.Size, &PrecomputedLighting_LightMapSampler);
+	D3D11DeviceContext->PSSetShaderResources(SkyOcclusionTextureParam.BaseIndex, SkyOcclusionTextureParam.Size, &PrecomputedLighting_SkyOcclusionTexture);
+	D3D11DeviceContext->PSSetSamplers(SkyOcclusionSamplerParam.BaseIndex, SkyOcclusionSamplerParam.Size, &PrecomputedLighting_SkyOcclusionSampler);
 	// 	D3D11DeviceContext->PSSetShaderResources(StaticShadowTextureParam.BaseIndex, StaticShadowTextureParam.Size, &PrecomputedLighting_StaticShadowTexture);
 	// 	D3D11DeviceContext->PSSetSamplers(StaticShadowTextureSamplerParam.BaseIndex, StaticShadowTextureSamplerParam.Size, &PrecomputedLighting_StaticShadowTextureSampler);
 

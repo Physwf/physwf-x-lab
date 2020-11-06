@@ -162,8 +162,8 @@ struct ViewUniform
 	uint32 AtmosphericFogInscatterAltitudeSampleNum;
 	LinearColor AtmosphericFogSunColor;
 
-	float View_AmbientCubemapIntensity;
-	float View_SkyLightParameters;
+	float AmbientCubemapIntensity;
+	float SkyLightParameters;
 	float PrePadding_View_2472;
 	float PrePadding_View_2476;
 	Vector4 SkyLightColor;
@@ -199,9 +199,9 @@ float ViewZFar = 2000000000.f;
 void InitScene()
 {
 	Mesh* m1 = new Mesh();
-	//m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
+	m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
 	//m1->ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
-	m1->ImportFromFBX("Primitives/Sphere.fbx");
+	//m1->ImportFromFBX("Primitives/Sphere.fbx");
 	//m1->GeneratePlane(100.f, 100.f, 1, 1);
 	//m1->SetPosition(20.0f, -100.0f, 480.0f);
 	//m1->SetRotation(-3.14f / 2.0f, 0, 0);
@@ -360,6 +360,16 @@ void UpdateView()
 	VU.AtmosphericFogRenderMask = 0;
 	VU.AtmosphericFogInscatterAltitudeSampleNum = 32;
 	VU.AtmosphericFogSunColor = { 2.75f, 2.75f, 2.75f, 2.75f };
+
+	VU.SkyLightParameters = 1.f;
+	VU.SkyLightColor = {1.0f,1.0f, 1.0f, 1.0f };
+	VU.SkyIrradianceEnvironmentMap[0] = { 0.00155f, -0.0033f,  0.06505f,  0.14057f };
+	VU.SkyIrradianceEnvironmentMap[1] = { 0.00003f, -0.00304f,  0.09185f, 0.17386f };
+	VU.SkyIrradianceEnvironmentMap[2] = { -0.00289f, -0.00268f, 0.1612f,  0.25372f };
+	VU.SkyIrradianceEnvironmentMap[3] = { 0.00864f, -0.0024f,  -0.05994f, -0.00767f };
+	VU.SkyIrradianceEnvironmentMap[4] = { 0.00792f, -0.00237f, -0.06537f, -0.00857f };
+	VU.SkyIrradianceEnvironmentMap[5] = { 0.00666f, -0.00231f, -0.07398f, -0.01038f };
+	VU.SkyIrradianceEnvironmentMap[6] = { -0.00346f, -0.00294f, -0.00201f, 1.00f };
 
 	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
 

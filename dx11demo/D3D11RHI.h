@@ -17,7 +17,7 @@ extern IDXGISwapChain* DXGISwapChain;
 extern ID3D11Device*			D3D11Device;
 extern ID3D11DeviceContext*	D3D11DeviceContext;
 
-extern ID3D11Texture2D* RenderTargetTexture;
+extern ID3D11Texture2D* BackBuffer;
 extern ID3D11Texture2D* DepthStencialTexture;
 extern ID3D11RenderTargetView* RenderTargetView;
 extern ID3D11DepthStencilView* DepthStencialView;

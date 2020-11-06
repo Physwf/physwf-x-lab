@@ -22,7 +22,7 @@ ID3D11DeviceContext*	D3D11DeviceContext = NULL;
 
 ID3D11RenderTargetView* RenderTargetView = NULL;
 ID3D11DepthStencilView* DepthStencialView = NULL;
-ID3D11Texture2D* RenderTargetTexture = NULL; 
+ID3D11Texture2D* BackBuffer = NULL; 
 ID3D11Texture2D* DepthStencialTexture = NULL;
 D3D11_VIEWPORT Viewport;
 ID3D11RasterizerState* RasterState;
@@ -138,13 +138,13 @@ bool D3D11Setup()
 		}
 	}
 
-	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&RenderTargetTexture);
+	hr = DXGISwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&BackBuffer);
 	if (FAILED(hr))
 	{
 		X_LOG("GetBuffer failed!");
 		return false;
 	}
-	hr = D3D11Device->CreateRenderTargetView(RenderTargetTexture, NULL, &RenderTargetView);
+	hr = D3D11Device->CreateRenderTargetView(BackBuffer, NULL, &RenderTargetView);
 	if (FAILED(hr))
 	{
 		X_LOG("CreateRenderTargetView failed!");
@@ -371,7 +371,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint)
 		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
 		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
-		"ENABLE_SKY_LIGHT",									"0",
+		"ENABLE_SKY_LIGHT",									"1",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		"ATMOSPHERIC_NO_LIGHT_SHAFT",						"1",
 		 NULL,NULL
@@ -420,7 +420,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint)
 		"SELECTIVE_BASEPASS_OUTPUTS",						"1",
 		"NEEDS_BASEPASS_VERTEX_FOGGING",					"0",
 		"NEEDS_BASEPASS_PIXEL_FOGGING",						"0",
-		"ENABLE_SKY_LIGHT",									"0",
+		"ENABLE_SKY_LIGHT",									"1",
 		"MATERIAL_SHADINGMODEL_TWOSIDED_FOLIAGE",			"0",
 		"ATMOSPHERIC_NO_LIGHT_SHAFT",						"1",
 		NULL,NULL

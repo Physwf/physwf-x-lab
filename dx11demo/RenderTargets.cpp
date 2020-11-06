@@ -58,7 +58,7 @@ void RenderTargets::FinishRenderingGBuffer()
 
 void RenderTargets::FinishRendering()
 {
-	D3D11DeviceContext->CopyResource(RenderTargetTexture, SceneColorRT);
+	D3D11DeviceContext->CopyResource(BackBuffer, SceneColorRT);
 }
 
 void RenderTargets::Allocate()
