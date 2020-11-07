@@ -54,6 +54,19 @@ MaterialFloat Luminance( MaterialFloat3 LinearColor )
 
 const static float PI = 3.1415926535897932f;
 
+MaterialFloat length2(MaterialFloat2 v)
+{
+	return dot(v, v);
+}
+MaterialFloat length2(MaterialFloat3 v)
+{
+	return dot(v, v);
+}
+MaterialFloat length2(MaterialFloat4 v)
+{
+	return dot(v, v);
+}
+
 // see PixelShaderOutputCommon
 struct PixelShaderIn
 {
@@ -289,6 +302,29 @@ float ConvertFromDeviceZ(float DeviceZ)
     return DeviceZ * View.InvDeviceZToWorldZTransform[0] + View.InvDeviceZToWorldZTransform[1] + 1.0f / (DeviceZ * View.InvDeviceZToWorldZTransform[2] - View.InvDeviceZToWorldZTransform[3]);
 }
 
+float2 ScreenPositionToBufferUV(float4 ScreenPosition)
+{
+	return float2(ScreenPosition.xy / ScreenPosition.w * ResolvedView.ScreenPositionScaleBias.xy + ResolvedView.ScreenPositionScaleBias.wz);
+}
+
+float2 SvPositionToBufferUV(float4 SvPosition)
+{
+	return SvPosition.xy * View.BufferSizeAndInvSize.zw;
+}
+
+// Used for post process shaders which don't need to resolve the view	
+float3 SvPositionToTranslatedWorld(float4 SvPosition)
+{
+	float4 HomWorldPos = mul(float4(SvPosition.xyz, 1), View.SVPositionToTranslatedWorld);
+
+	return HomWorldPos.xyz / HomWorldPos.w;
+}
+
+// prefer to use SvPositionToTranslatedWorld() for better quality
+float3 SvPositionToWorld(float4 SvPosition)
+{
+	return SvPositionToTranslatedWorld(SvPosition) - View.PreViewTranslation;
+}
 
 float4 GetPerPixelLightAttenuation(float2 UV)
 {

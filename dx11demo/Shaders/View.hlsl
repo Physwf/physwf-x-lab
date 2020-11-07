@@ -37,7 +37,7 @@ cbuffer View
     float4 View_ViewRectMin;
     float4 View_ViewSizeAndInvSize;
     float4 View_BufferSizeAndInvSize;
-
+	float4 View_BufferBilinearUVMinMax;
 
     uint View_Random;
 	uint View_FrameNumber;
@@ -162,7 +162,7 @@ static const struct
     float4 ViewRectMin;
     float4 ViewSizeAndInvSize;
     float4 BufferSizeAndInvSize;
-
+	float4 BufferBilinearUVMinMax;
     uint Random;
 	uint FrameNumber;
 	uint StateFrameIndexMod8;
@@ -233,7 +233,8 @@ static const struct
     View_ViewRectMin,
     View_ViewSizeAndInvSize,
     View_BufferSizeAndInvSize,
-
+    View_BufferBilinearUVMinMax,
+    
     View_Random,
 	View_FrameNumber,
 	View_StateFrameIndexMod8,

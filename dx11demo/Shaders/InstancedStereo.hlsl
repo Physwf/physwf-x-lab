@@ -23,7 +23,7 @@ struct ViewState
 	// half3 HMDViewNoRollUp;
 	// half3 HMDViewNoRollRight;
 	// float4 InvDeviceZToWorldZTransform;
-	// half4 ScreenPositionScaleBias;
+	float4 ScreenPositionScaleBias;
 	// float3 WorldCameraOrigin;
 	// float3 TranslatedWorldCameraOrigin;
 	// float3 WorldViewOrigin;
@@ -166,7 +166,7 @@ ViewState GetPrimaryView()
 	// Result.HMDViewNoRollUp = View.HMDViewNoRollUp;
 	// Result.HMDViewNoRollRight = View.HMDViewNoRollRight;
 	// Result.InvDeviceZToWorldZTransform = View.InvDeviceZToWorldZTransform;
-	// Result.ScreenPositionScaleBias = View.ScreenPositionScaleBias;
+	Result.ScreenPositionScaleBias = View.ScreenPositionScaleBias;
 	// Result.WorldCameraOrigin = View.WorldCameraOrigin;
 	// Result.TranslatedWorldCameraOrigin = View.TranslatedWorldCameraOrigin;
 	// Result.WorldViewOrigin = View.WorldViewOrigin;
