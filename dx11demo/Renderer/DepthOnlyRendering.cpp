@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "RenderTargets.h"
 #include "DeferredShading.h"
+#include "GPUProfiler.h"
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
 
@@ -41,6 +42,8 @@ void InitPrePass()
 
 void RenderPrePassView(ViewInfo& View)
 {
+	SCOPED_DRAW_EVENT_FORMAT(EventPrePass, TEXT("PrePass"));
+
 	RenderTargets& SceneContex = RenderTargets::Get();
 	SceneContex.BeginRenderingPrePass(true);
 

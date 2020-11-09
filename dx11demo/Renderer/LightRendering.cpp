@@ -2,6 +2,7 @@
 #include "Scene.h"
 #include "RenderTargets.h"
 #include "DeferredShading.h"
+#include "GPUProfiler.h"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -282,9 +283,10 @@ void SceneRenderer::RenderLight()
 
 void SceneRenderer::RenderLights()
 {
+	SCOPED_DRAW_EVENT_FORMAT(RenderLights, TEXT("Lights"));
+
 	RenderTargets& SceneContext = RenderTargets::Get();
 	SceneContext.BeginRenderingSceneColor();
-
 	RenderLight();
 }
 

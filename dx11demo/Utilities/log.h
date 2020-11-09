@@ -15,3 +15,5 @@ inline void XLOG(const char* format, ...)
 	extern void OutputDebug(const char* Format);
 	OutputDebug(buffer);
 }
+
+

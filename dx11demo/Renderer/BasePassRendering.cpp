@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include "RenderTargets.h"
 #include "DeferredShading.h"
+#include "GPUProfiler.h"
 #include "DirectXTex.h"
 using namespace DirectX;
 
@@ -260,6 +261,7 @@ void RenderBasePassView(ViewInfo& View)
 
 void SceneRenderer::RenderBasePass()
 {
+	SCOPED_DRAW_EVENT_FORMAT(RenderBasePass, TEXT("BasePass"));
 	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ViewIndex++)
 	{
 		//SCOPED_CONDITIONAL_DRAW_EVENTF(RHICmdList, EventView, Views.Num() > 1, TEXT("View%d"), ViewIndex);

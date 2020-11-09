@@ -2,6 +2,7 @@
 #include "SceneFilterRendering.h"
 #include "RenderTargets.h"
 #include "DeferredShading.h"
+#include "GPUProfiler.h"
 
 ID3D11Texture2D* HZBTexture;
 ID3D11RenderTargetView* HZBRTVs[MAXNumMips];
@@ -155,6 +156,7 @@ void SceneRenderer::RenderHzb()
 {
 	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ViewIndex++)
 	{
+		SCOPED_DRAW_EVENT_FORMAT(RenderHzb, TEXT("Views %d"), ViewIndex);
 		ViewInfo& View = Views[ViewIndex];
 		BuildHZB(View);
 	}

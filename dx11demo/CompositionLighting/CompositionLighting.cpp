@@ -2,6 +2,7 @@
 #include "RenderTargets.h"
 #include "PostProcessAmbientOcclution.h"
 #include "SceneOcclusion.h"
+#include "GPUProfiler.h"
 
 RCPassPostProcessAmbientOcclusionSetup AOSetup1;
 RCPassPostProcessAmbientOcclusionSetup AOSetup2;
@@ -64,6 +65,7 @@ void CompositionLighting::ProcessBeforeBasePass(ViewInfo& View)
 
 void CompositionLighting::ProcessAfterBasePass(ViewInfo& View)
 {
+	SCOPED_DRAW_EVENT_FORMAT(ProcessAfterBasePass,TEXT("ProcessAfterBasePass"));
 	int Levels = 2;
 
 	if (Levels >= 3)

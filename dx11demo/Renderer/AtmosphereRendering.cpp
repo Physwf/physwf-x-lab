@@ -2,6 +2,7 @@
 #include "RenderTargets.h"
 #include "Scene.h"
 #include "DeferredShading.h"
+#include "GPUProfiler.h"
 #include "DirectXTex.h"
 using namespace DirectX;
 
@@ -102,6 +103,8 @@ void InitAtomosphereFog()
 
 void SceneRenderer::RenderAtmosphereFog()
 {
+	SCOPED_DRAW_EVENT_FORMAT(RenderAtmosphereFog, TEXT("AtmosphereFog"));
+
 	RenderTargets& SceneContext = RenderTargets::Get();
 	SceneContext.BeginRenderingSceneColor();
 
