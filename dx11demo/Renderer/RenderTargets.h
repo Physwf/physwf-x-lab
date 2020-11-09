@@ -59,6 +59,7 @@ public:
 	ID3D11Texture2D* GetGBufferETexture() { return GBufferERT; }
 	ID3D11Texture2D* GetGBufferVelocityTexture() { return NULL; }
 
+	ID3D11Texture2D* GetScreenSpaceAO() { return ScreenSpaceAO; }
 	void Allocate();
 private:
 	void AllocRenderTargets();
@@ -93,6 +94,7 @@ private:
 	ID3D11RenderTargetView* GBufferDRTV = NULL;
 	ID3D11RenderTargetView* GBufferERTV = NULL;
 
+	ID3D11Texture2D* ScreenSpaceAO;
 	//G-Buffer
 	ID3D11ShaderResourceView* GBufferSRV[6] = { NULL };
 	ID3D11SamplerState* GBufferSamplerState[6] = { NULL };

@@ -361,7 +361,7 @@ ID3DBlob* CompileVertexShader(const wchar_t* File, const char* EntryPoint, const
 	};
 	std::vector<D3D_SHADER_MACRO> CombinedMacros(std::begin(Macros), std::end(Macros));
 	if (OtherMacrosCount > 0)
-		CombinedMacros.insert(CombinedMacros.end(), OtherMacros, OtherMacros + OtherMacrosCount);
+		CombinedMacros.insert(CombinedMacros.begin(), OtherMacros, OtherMacros + OtherMacrosCount);
 	if (S_OK == D3DCompileFromFile(File, CombinedMacros.data(), &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode; 
@@ -414,7 +414,7 @@ ID3DBlob* CompilePixelShader(const wchar_t* File, const char* EntryPoint, const 
 	};
 	std::vector<D3D_SHADER_MACRO> CombinedMacros(std::begin(Macros), std::end(Macros));
 	if(OtherMacrosCount > 0)
-		CombinedMacros.insert(CombinedMacros.end(), OtherMacros, OtherMacros + OtherMacrosCount);
+		CombinedMacros.insert(CombinedMacros.begin(), OtherMacros, OtherMacros + OtherMacrosCount);
 	if (S_OK == D3DCompileFromFile(File, CombinedMacros.data(), &IncludeHandler, EntryPoint, VSTarget, VSFlags, 0, &Bytecode, &OutErrorMsg))
 	{
 		return Bytecode;   

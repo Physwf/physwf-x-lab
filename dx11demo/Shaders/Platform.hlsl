@@ -95,3 +95,14 @@
 #ifndef MAC
 #define MAC 0
 #endif
+
+
+// Values of FEATURE_LEVEL.
+#define FEATURE_LEVEL_ES2	1
+#define FEATURE_LEVEL_ES3_1	2
+#define FEATURE_LEVEL_SM3	3
+#define FEATURE_LEVEL_SM4	4
+#define FEATURE_LEVEL_SM5	5
+#define FEATURE_LEVEL_MAX	6
+
+#define FEATURE_LEVEL FEATURE_LEVEL_SM5

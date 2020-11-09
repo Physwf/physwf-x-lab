@@ -8,8 +8,8 @@ void World::InitWorld()
 	extern Scene* GScene;
 	GScene = mScene;
 
-	Mesh* m1 = SpawnActor<Mesh>("Primitives/Sphere.fbx");
-	//Mesh* m1 = SpawnActor<Mesh>("shaderBallNoCrease/shaderBall.fbx");
+	//Mesh* m1 = SpawnActor<Mesh>("Primitives/Sphere.fbx");
+	Mesh* m1 = SpawnActor<Mesh>("shaderBallNoCrease/shaderBall.fbx");
 	//Mesh* m1 = SpawnActor<Mesh>("k526efluton4-House_15/247_House 15_fbx.fbx");
 	//m1->SetPosition(20.0f, -100.0f, 480.0f);
 	//m1->SetRotation(-3.14f / 2.0f, 0, 0);

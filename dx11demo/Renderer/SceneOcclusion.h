@@ -3,7 +3,6 @@
 #include "D3D11RHI.h"
 #include "UnrealMath.h"
 
-#define MAXNumMips 10
-extern ID3D11ShaderResourceView* HZBSRVs[MAXNumMips];
+extern ID3D11ShaderResourceView* HZBSRV;
 
 void InitHZB();

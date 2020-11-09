@@ -23,8 +23,7 @@ public:
 	ID3D11RasterizerState* RasterState;
 	ID3D11BlendState* BlendState;
 
-	ID3D11Texture2D* Input0;
-	ID3D11Texture2D* Input1;
+	ID3D11Texture2D* Inputs[2];
 
 	IntPoint OutputExtent;
 	ID3D11Texture2D* Output;
@@ -39,7 +38,7 @@ public:
 	void Init(bool InAOSetupAsInput=true);
 	void Process(ViewInfo& View);
 private:
-	void ProcessPS(ID3D11RenderTargetView* DestRenderTarget, const IntRect& ViewRect, const IntPoint& TexSize, int32 ShaderQuality, bool bDoUpsample);
+	void ProcessPS(ID3D11RenderTargetView* DestRenderTarget, ViewInfo& View, const IntRect& ViewRect, const IntPoint& TexSize, int32 ShaderQuality, bool bDoUpsample);
 public:
 	ID3DBlob * PSBytecode;
 	ID3D11PixelShader* PS;
@@ -53,15 +52,16 @@ public:
 	ID3D11SamplerState* GBufferBSamplerState;
 	ID3D11ShaderResourceView* SceneDepthSRV;
 	ID3D11SamplerState* SceneDepthSamplerState;
+	ID3D11ShaderResourceView* PostprocessInput0;
+	ID3D11SamplerState* PostprocessInput0Sampler;
 	ID3D11ShaderResourceView* PostprocessInput1;
-	ID3D11ShaderResourceView* PostprocessInput1Sampler;
+	ID3D11SamplerState* PostprocessInput1Sampler;
+	ID3D11ShaderResourceView* PostprocessInput2;
+	ID3D11SamplerState* PostprocessInput2Sampler;
 	ID3D11ShaderResourceView* PostprocessInput3;
-	ID3D11ShaderResourceView* PostprocessInput3Sampler;
+	ID3D11SamplerState* PostprocessInput3Sampler;
 
-	ID3D11Texture2D* Input0;
-	ID3D11Texture2D* Input1;
-	ID3D11Texture2D* Input2;
-	ID3D11Texture2D* Input3;
+	ID3D11Texture2D* Inputs[4];
 
 	ID3D11Texture2D* Output;
 	IntPoint OutputExtent;

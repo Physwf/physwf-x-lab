@@ -19,15 +19,15 @@ void CompositionLighting::Init()
 
 	if (Levels >= 2)
 	{
-		AOSetup1.Input0 = SceneContext.GetSceneDepthTexture();
-		AOSetup1.Input1 = NULL;
+		AOSetup1.Inputs[0] = SceneContext.GetSceneDepthTexture();
+		AOSetup1.Inputs[1] = NULL;
 		AOSetup1.Init();
 	}
 
 	if (Levels >= 3)
 	{
-		AOSetup2.Input0 = NULL;
-		AOSetup2.Input1 = AOSetup1.Output;
+		AOSetup2.Inputs[0] = NULL;
+		AOSetup2.Inputs[1] = AOSetup1.Output;
 		AOSetup2.Init();
 	}
 
@@ -35,27 +35,27 @@ void CompositionLighting::Init()
 
 	if (Levels >= 3)
 	{
-		AO2.Input0 = AOSetup2.Output;
-		AO2.Input1 = AOSetup2.Output;
-		AO2.Input2 = NULL;
-		//AO2.Input3 = HZBSRVs[0];
+		AO2.Inputs[0] = AOSetup2.Output;
+		AO2.Inputs[1] = AOSetup2.Output;
+		AO2.Inputs[2] = NULL;
+		//AO2.Inputs[3] = HZBSRV;
 		AO2.Init();
 	}
 
 	if (Levels >= 2)
 	{
-		AO1.Input0 = AOSetup1.Output;
-		AO1.Input1 = AOSetup1.Output;
-		AO1.Input2 = AO2.Output;
-		//AO1.Input3 = HZBSRVs[0];
+		AO1.Inputs[0] = AOSetup1.Output;
+		AO1.Inputs[1] = AOSetup1.Output;
+		AO1.Inputs[2] = AO2.Output;
+		//AO1.Inputs[3] = HZBSRV;
 		AO1.Init();
 	}
 
-	AO0.Input0 = SceneContext.GetGBufferATexture();
-	AO0.Input1 = AOSetup1.Output;
-	AO0.Input2 = AO1.Output;
-	//AO0.Input3 = HZBSRVs[0];
-	AO0.Init();
+	AO0.Inputs[0] = SceneContext.GetGBufferATexture();
+	AO0.Inputs[1] = AOSetup1.Output;
+	AO0.Inputs[2] = AO1.Output;
+	//AO0.Inputs[3] = HZBSRV;
+	AO0.Init(false);
 }
 
 void CompositionLighting::ProcessBeforeBasePass(ViewInfo& View)

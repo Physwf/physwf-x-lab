@@ -70,6 +70,8 @@ void RenderTargets::Allocate()
 {
 	AllocRenderTargets();
 	AllocGBuffer();
+
+	ScreenSpaceAO = CreateTexture2D(WindowWidth, WindowHeight, DXGI_FORMAT_R8_UNORM, true, true, false);
 }
 
 void RenderTargets::AllocRenderTargets()

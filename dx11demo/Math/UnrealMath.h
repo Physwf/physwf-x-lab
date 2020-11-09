@@ -1905,7 +1905,6 @@ public:
 	IntPoint Size() const;
 	int32 Width() const;
 	bool IsEmpty() const;
-
 public:
 	static IntRect DivideAndRoundUp(IntRect lhs, int32 Div);
 	static IntRect DivideAndRoundUp(IntRect lhs, IntPoint Div);

@@ -4,8 +4,11 @@
 #include "DeferredShading.h"
 #include "GPUProfiler.h"
 
-ID3D11Texture2D* HZBTexture;
+#define MAXNumMips 10
+ID3D11Texture2D* HZBRTVTexture;
+ID3D11Texture2D* HZBSRVTexture;
 ID3D11RenderTargetView* HZBRTVs[MAXNumMips];
+ID3D11ShaderResourceView* HZBSRV;
 ID3D11ShaderResourceView* HZBSRVs[MAXNumMips];
 ID3D11SamplerState* HZBSamplers[MAXNumMips];
 uint32 NumMips;
@@ -32,14 +35,15 @@ void InitHZB()
 	NumMips = Math::Max(NumMipsX, NumMipsY);
 
 	HZBSize = IntPoint(1 << NumMipsX, 1 << NumMipsY);
-
-	HZBTexture = CreateTexture2D(HZBSize.X, HZBSize.Y, DXGI_FORMAT_R16_FLOAT,true,true,false, NumMips);
+	
+	HZBRTVTexture = CreateTexture2D(HZBSize.X, HZBSize.Y, DXGI_FORMAT_R16_FLOAT, true, true, false, NumMips);
+	HZBSRVTexture = CreateTexture2D(HZBSize.X, HZBSize.Y, DXGI_FORMAT_R16_FLOAT, true, true, false, NumMips);
 	for (uint32 i = 0; i < NumMips; ++i)
 	{
-		HZBRTVs[i] = CreateRenderTargetView2D(HZBTexture, DXGI_FORMAT_R16_FLOAT, i);
-		HZBSRVs[i] = CreateShaderResourceView2D(HZBTexture, DXGI_FORMAT_R16_FLOAT, NumMips, i);
-		
+		HZBRTVs[i] = CreateRenderTargetView2D(HZBRTVTexture, DXGI_FORMAT_R16_FLOAT, i);
+		HZBSRVs[i] = CreateShaderResourceView2D(HZBSRVTexture, DXGI_FORMAT_R16_FLOAT, NumMips, i);
 	}
+	HZBSRV = HZBSRVs[0];
 	D3D_SHADER_MACRO Macro0 = { "STAGE","0" };
 	D3D_SHADER_MACRO Macro1 = { "STAGE","1" };
 	PSBytecode0 = CompilePixelShader(TEXT("HZBOcclusion.hlsl"), "HZBBuildPS", &Macro0, 1);
@@ -70,6 +74,8 @@ void BuildHZB(ViewInfo& View)
 
 	D3D11DeviceContext->VSSetShader(GCommonPostProcessVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(PS0, 0, 0);
+
+	View.HZBMipmap0Size = HZBSize;
 
 	const ParameterAllocation& InvSizeParam = PSParams0["InvSize"];
 	const ParameterAllocation& InputUvFactorAndOffsetParam = PSParams0["InputUvFactorAndOffset"];
@@ -113,6 +119,8 @@ void BuildHZB(ViewInfo& View)
 
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
 
+	D3D11DeviceContext->CopyResource(HZBSRVTexture, HZBRTVTexture);
+
 	IntPoint SrcSize = HZBSize;
 	IntPoint DstSize = SrcSize / 2;
 
@@ -133,7 +141,7 @@ void BuildHZB(ViewInfo& View)
 		D3D11DeviceContext->UpdateSubresource(GlobalConstantBuffer, 0, NULL, GlobalConstantBufferData, 0, 0);
 		D3D11DeviceContext->PSSetConstantBuffers(InvSizeParam.BufferIndex, 1, &GlobalConstantBuffer);
 
-		D3D11DeviceContext->PSSetShaderResources(TextureParam.BufferIndex, TextureParam.Size, &HZBSRVs[i - 1]);
+		D3D11DeviceContext->PSSetShaderResources(TextureParam.BufferIndex, TextureParam.Size, &HZBSRVs[i-1]);
 		ID3D11SamplerState* TextureSampler = TStaticSamplerState<D3D11_FILTER_MIN_MAG_MIP_POINT, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_CLAMP>::GetRHI();
 		D3D11DeviceContext->PSSetSamplers(TextureSamplerParam.BufferIndex, TextureSamplerParam.Size, &TextureSampler);
 
@@ -141,6 +149,8 @@ void BuildHZB(ViewInfo& View)
 		D3D11DeviceContext->RSSetViewports(1, &Viewport);
 
 		D3D11DeviceContext->DrawIndexed(6, 0, 0);
+
+		D3D11DeviceContext->CopyResource(HZBSRVTexture, HZBRTVTexture);
 
 		SrcSize /= 2;
 		DstSize /= 2;
