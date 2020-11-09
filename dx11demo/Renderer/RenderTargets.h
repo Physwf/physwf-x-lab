@@ -32,6 +32,7 @@ public:
 
 	void FinishRendering();
 
+	int32 GetMSAACount() const { return CurrentMSAACount; }
 
 	void SetBufferSize(int32 InBufferSizeX, int32 InBufferSizeY);
 	/** Returns the size of most screen space render targets e.g. SceneColor, SceneDepth, GBuffer, ... might be different from final RT or output Size because of ScreenPercentage use. */
@@ -68,6 +69,9 @@ private:
 
 	int32 GetGBufferRenderTargets(ID3D11RenderTargetView* OutRenderTargets[8], int& OutVelocityRTIndex);
 private:
+	/** To detect a change of the CVar r.MobileMSAA or r.MSAA */
+	int32 CurrentMSAACount;
+
 	ID3D11Texture2D * SceneColorRT = NULL;
 	ID3D11RenderTargetView* SceneColorRTV = NULL;
 	ID3D11Texture2D* SceneDepthRT = NULL;

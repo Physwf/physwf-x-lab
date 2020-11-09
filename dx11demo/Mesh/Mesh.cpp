@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "MeshDescriptionOperations.h"
 #include "Scene.h"
-
+#include "World.h"
 
 void MeshLODResources::InitResource()
 {
@@ -283,6 +283,12 @@ struct A
 	A(int i) { j = i; }
 	int j;
 };
+
+Mesh::Mesh(const char* ResourcePath)
+{
+	ImportFromFBX(ResourcePath);
+}
+
 void Mesh::ImportFromFBX(const char* pFileName)
 {
 	FbxManager* lFbxManager = FbxManager::Create();
@@ -711,13 +717,77 @@ void Mesh::GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSect
 {
 
 }
+/** Initializes the primitive uniform shader parameters. */
+inline PrimitiveUniform GetPrimitiveUniformShaderParameters(
+	const Matrix& LocalToWorld,
+	Vector ActorPosition,
+	//const FBoxSphereBounds& WorldBounds,
+	//const FBoxSphereBounds& LocalBounds,
+	bool bReceivesDecals,
+	bool bHasDistanceFieldRepresentation,
+	bool bHasCapsuleRepresentation,
+	bool bUseSingleSampleShadowFromStationaryLights,
+	bool bUseVolumetricLightmap,
+	bool bUseEditorDepthTest,
+	uint32 LightingChannelMask,
+	float LpvBiasMultiplier = 1.0f
+)
+{
+	PrimitiveUniform Result;
+	Result.LocalToWorld = LocalToWorld;
+	Result.WorldToLocal = LocalToWorld.Inverse();
+	//Result.ObjectWorldPositionAndRadius = Vector4(WorldBounds.Origin, WorldBounds.SphereRadius);
+	//Result.ObjectBounds = WorldBounds.BoxExtent;
+	//Result.LocalObjectBoundsMin = LocalBounds.GetBoxExtrema(0); // 0 == minimum
+	//Result.LocalObjectBoundsMax = LocalBounds.GetBoxExtrema(1); // 1 == maximum
+	//Result.ObjectOrientation = LocalToWorld.GetUnitAxis(EAxis::Z);
+	Result.ActorWorldPosition = ActorPosition;
+	Result.LightingChannelMask = LightingChannelMask;
+	Result.LpvBiasMultiplier = LpvBiasMultiplier;
+
+	{
+		// Extract per axis scales from LocalToWorld transform
+		Vector4 WorldX = Vector4(LocalToWorld.M[0][0], LocalToWorld.M[0][1], LocalToWorld.M[0][2], 0);
+		Vector4 WorldY = Vector4(LocalToWorld.M[1][0], LocalToWorld.M[1][1], LocalToWorld.M[1][2], 0);
+		Vector4 WorldZ = Vector4(LocalToWorld.M[2][0], LocalToWorld.M[2][1], LocalToWorld.M[2][2], 0);
+		float ScaleX = Vector4(WorldX).Size();
+		float ScaleY = Vector4(WorldY).Size();
+		float ScaleZ = Vector4(WorldZ).Size();
+		Result.NonUniformScale = Vector4(ScaleX, ScaleY, ScaleZ, 0);
+		Result.InvNonUniformScale = Vector4(
+			ScaleX > KINDA_SMALL_NUMBER ? 1.0f / ScaleX : 0.0f,
+			ScaleY > KINDA_SMALL_NUMBER ? 1.0f / ScaleY : 0.0f,
+			ScaleZ > KINDA_SMALL_NUMBER ? 1.0f / ScaleZ : 0.0f,
+			0.0f
+		);
+	}
+
+	//Result.LocalToWorldDeterminantSign = Math::FloatSelect(LocalToWorld.RotDeterminant(), 1, -1);
+	Result.DecalReceiverMask = bReceivesDecals ? 1 : 0;
+	Result.PerObjectGBufferData = (2 * (int32)bHasCapsuleRepresentation + (int32)bHasDistanceFieldRepresentation) / 3.0f;
+	Result.UseSingleSampleShadowFromStationaryLights = bUseSingleSampleShadowFromStationaryLights ? 1.0f : 0.0f;
+	Result.UseVolumetricLightmapShadowFromStationaryLights = bUseVolumetricLightmap && bUseSingleSampleShadowFromStationaryLights ? 1.0f : 0.0f;
+	Result.UseEditorDepthTest = bUseEditorDepthTest ? 1 : 0;
+	return Result;
+}
 
 void Mesh::InitResource()
 {
 	LODResource.InitResource();
-	PrimitiveUniform PU;
-	PU.LocalToWorld = GetWorldMatrix();
-	PU.InvNonUniformScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	PrimitiveUniform PU = GetPrimitiveUniformShaderParameters(
+		GetWorldMatrix(),
+		Position,
+		//Bounds,
+		//LocalBounds,
+		/*bReceivesDecals*/false,
+		/*HasDistanceFieldRepresentation()*/false,
+		/*HasDynamicIndirectShadowCasterRepresentation()*/false,
+		/*UseSingleSampleShadowFromStationaryLights()*/false,
+		/*Scene->HasPrecomputedVolumetricLightmap_RenderThread()*/false,
+		/*UseEditorDepthTest()*/false,
+		/*GetLightingChannelMask()*/0,
+		/*LpvBiasMultiplier*/ 1.f
+	);;
 	PrimitiveUniformBuffer = CreateConstantBuffer(false,sizeof(PU),&PU);
 	
 }
@@ -725,20 +795,47 @@ void Mesh::InitResource()
 void Mesh::ReleaseResource()
 {
 	LODResource.ReleaseResource();
+	if(PrimitiveUniformBuffer) PrimitiveUniformBuffer->Release();
 }
+
+void Mesh::Register()
+{
+	InitResource();
+	DrawStaticElement(GetWorld()->mScene);
+}
+
+void Mesh::UnRegister()
+{
+	ReleaseResource();
+}
+
 
 void Mesh::Tick(float fDeltaTime)
 {
+	UpdateUniformBuffer();
+}
+
+void Mesh::UpdateUniformBuffer()
+{
 	if (bTransformDirty)
 	{
-		PrimitiveUniform PU;
-		PU.LocalToWorld = GetWorldMatrix();
-		PU.InvNonUniformScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-		PU.PerObjectGBufferData = 0;
+		PrimitiveUniform PU = GetPrimitiveUniformShaderParameters(
+			GetWorldMatrix(),
+			Position,
+			//Bounds,
+			//LocalBounds,
+			/*bReceivesDecals*/false,
+			/*HasDistanceFieldRepresentation()*/false,
+			/*HasDynamicIndirectShadowCasterRepresentation()*/false,
+			/*UseSingleSampleShadowFromStationaryLights()*/false,
+			/*Scene->HasPrecomputedVolumetricLightmap_RenderThread()*/false,
+			/*UseEditorDepthTest()*/false,
+			/*GetLightingChannelMask()*/0,
+			/*LpvBiasMultiplier*/ 1.f
+		);
 		D3D11DeviceContext->UpdateSubresource(PrimitiveUniformBuffer, 0, 0, &PU, 0, 0);
 		bTransformDirty = false;
 	}
-
 }
 
 bool Mesh::GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBatch)
@@ -753,32 +850,7 @@ bool Mesh::GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBa
 	return true;
 }
 
-void Mesh::Draw(ID3D11DeviceContext* Context, const MeshRenderState& RenderState)
-{
-	Context->IASetInputLayout(RenderState.InputLayout);
-	Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	UINT Stride = sizeof(StaticMeshBuildVertex);
-	UINT Offset = 0;
-	Context->IASetVertexBuffers(0, 1, &LODResource.VertexBuffer, &Stride, &Offset);
-	Context->IASetIndexBuffer(LODResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	Context->VSSetShader(RenderState.VertexShader, 0, 0);
-	Context->PSSetShader(RenderState.PixelShader, 0, 0);
-
-	Context->VSSetConstantBuffers(1, 1, &PrimitiveUniformBuffer);
-	PrimitiveUniform PU;
-	PU.LocalToWorld = GetWorldMatrix();
-	Context->UpdateSubresource(PrimitiveUniformBuffer, 0, 0, &PU, 0, 0);
-
-
-	for (const auto& Section : LODResource.Sections)
-	{
-		Context->DrawIndexed(Section.NumTriangles * 3, Section.FirstIndex, 0);
-	}
-}
-
-void Mesh::DrawStaticElement()
+void Mesh::DrawStaticElement(class Scene* InScene)
 {
 	for (size_t SectionIndex = 0; SectionIndex < LODResource.Sections.size();++SectionIndex)
 	{
@@ -791,7 +863,7 @@ void Mesh::DrawStaticElement()
 		{
 			if (GetMeshElement(BatchIndex, SectionIndex, MB))
 			{
-				AllBatches.emplace_back(MB);
+				InScene->AllBatches.emplace_back(MB);
 			}
 		}
 	}

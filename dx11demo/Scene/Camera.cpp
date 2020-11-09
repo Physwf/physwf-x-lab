@@ -1,168 +1,76 @@
 #include "Camera.h"
 #include "log.h"
+#include "Viewport.h"
+
+float					GNearClippingPlane = 10.0f;				/* Near clipping plane */
 
 Camera::Camera():Near(1.0f), Far(1000.0f)
 {
-	bDraging = false;
-	bRotating = false;
-	IsMoving = false;
+	Position = { 0,0,0 };
 	Up = { 0, 0, 1 };
-}
-
-void Camera::SetPostion(Vector Position)
-{
-	Eye = Position;
-	//UpdateViewMatrix();
-}
-
-const Vector& Camera::GetPosition() const
-{
-	return Eye;
+	FaceDir = { 1,0,0 };
+	Origin = { 0,0 };
+	Size = { 1.f,1.f };
 }
 
 void Camera::LookAt(Vector Target)
 {
-	FaceDir = Target - Eye;
+	FaceDir = Target - Position;
 	FaceDir.Normalize();
-	//UpdateViewMatrix();
-}
-
-void Camera::SetViewport(float fWidth, float fHeight)
-{
-	fViewportWidth = fWidth;
-	fViewportHeight = fHeight;
-	//UpdateProjMatrix();
 }
 
 void Camera::SetLen(float fNear, float fFar)
 {
 	Near = fNear;
 	Far = fFar;
-	//UpdateProjMatrix();
 }
 
-void Camera::Walk(float fStep)
+SceneView* Camera::CalcSceneView(SceneViewFamily& ViewFamily, Viewport& VP)
 {
-	Vector Step = fStep * FaceDir;
-	Eye += Step;
-	//UpdateViewMatrix();
+	ViewInitOptions InitOptions;
+
+	int32 X = Math::TruncToInt(Origin.X * VP.GetSizeXY().X);
+	int32 Y = Math::TruncToInt(Origin.Y * VP.GetSizeXY().Y);
+
+	X += VP.GetInitialPositionXY().X;
+	Y += VP.GetInitialPositionXY().Y;
+
+	uint32 SizeX = Math::TruncToInt(Size.X * VP.GetSizeXY().X);
+	uint32 SizeY = Math::TruncToInt(Size.Y * VP.GetSizeXY().Y);
+
+	IntRect UnconstrainedRectangle = IntRect(X, Y, X + SizeX, Y + SizeY);
+
+	InitOptions.SetViewRectangle(UnconstrainedRectangle);
+
+	InitOptions.ViewOrigin = Position;
+	InitOptions.ViewRotationMatrix = InverseRotationMatrix(Rotation) * Matrix(
+		Plane(0, 0, 1, 0),
+		Plane(1, 0, 0, 0),
+		Plane(0, 1, 0, 0),
+		Plane(0, 0, 0, 1));
+
+	float AspectRatio = (float)VP.GetSizeXY().X / (float)VP.GetSizeXY().Y;
+	InitOptions.ProjectionMatrix = ReversedZPerspectiveMatrix(
+		Math::Max(0.001f, FOV) * (float)PI / 360.0f,
+		AspectRatio,
+		1.0f,
+		GNearClippingPlane);
+
+	InitOptions.ViewActor = this;
+
+	InitOptions.FOV = FOV;
+	InitOptions.DesiredFOV = FOV;
+	InitOptions.ViewOrigin = Position;
+	//InitOptions.ViewRotation = Rotation;
+
+	SceneView* const View = new SceneView(InitOptions);
+	ViewFamily.Views.push_back(View);
+
+	return View;
 }
 
-void Camera::Side(float fStep)
+void Camera::Tick(float fDeltaSeconds)
 {
-	Vector SideDir = FaceDir ^ Up;
-	SideDir.Normalize();
-	Vector Step = fStep * SideDir;
-	Eye += Step;
-	//UpdateViewMatrix();
-}
 
-void Camera::Back(float fStep)
-{
-	Vector Step = fStep * (-FaceDir);
-	Eye += Step;
-	//UpdateViewMatrix();
-}
-
-void Camera::Lift(float fStep)
-{
-	Vector Step = fStep * Up;
-	Eye += Step;
-	//UpdateViewMatrix();
-}
-
-void Camera::StartMove(Vector Direction)
-{
-	MoveDirection = Direction;
-	MoveDirection.Normalize();
-	IsMoving = true;
-}
-
-void Camera::TryMove(float fDeltaTime)
-{
-	const float fSpeed = 25.0f;
-	if (IsMoving)
-	{
-		float fMoveDist = fDeltaTime * fSpeed;
-		Eye += fMoveDist * MoveDirection;
-	}
-}
-
-void Camera::StopMove()
-{
-	IsMoving = false;
-}
-
-void Camera::StartDrag(int X, int Y)
-{
-	bDraging = true;
-	DragStartX = X;
-	DragStartY = Y;
-	StartFaceDir = FaceDir;
-}
-
-void Camera::Drag(int X, int Y)
-{
-	if (bDraging)
-	{
-		int Dx = X - DragStartX;
-		int Dy = Y - DragStartY;
-		float fDx = -Dx / fViewportWidth;
-		float fDy = Dy / fViewportHeight;
-		Matrix Rotation = Matrix::DXFormRotation({ fDy, fDx, 0.0f});
-		FaceDir = Rotation.Transform(StartFaceDir);
-		//UpdateViewMatrix();
-	}
-}
-
-void Camera::StopDrag(int X, int Y)
-{
-	if (bDraging)
-	{
-		int Dx = X - DragStartX;
-		int Dy = Y - DragStartY;
-		float fDx = -Dx / fViewportWidth;
-		float fDy = Dy / fViewportHeight;
-		Matrix Rotation = Matrix::DXFormRotation({ fDy, fDx, 0.0f });
-		FaceDir = Rotation.Transform(StartFaceDir);
-		//UpdateViewMatrix();
-	}
-	bDraging = false;
-}
-
-void Camera::StartRotate(int X, int Y)
-{
-	if (bRotating) return;
-	bRotating = true;
-	RotateStartX = X;
-	RotateStartY = Y;
-	StartFaceDir = FaceDir;
-}
-
-void Camera::Rotate(const Vector& R)
-{
-	Matrix Rotation = Matrix::DXFormRotation(R);
-	FaceDir = Rotation.Transform(StartFaceDir);
-	//UpdateViewMatrix();
-}
-
-void Camera::Rotate(int X, int Y)
-{
-	if (bRotating)
-	{
-		int Dx = X - RotateStartX;
-		int Dy = Y - RotateStartY;
-		float fDy = -Dx / fViewportWidth;
-		float fDx = Dy / fViewportHeight;
-		Rotate({ fDx ,fDy, 0.0f });
-	}
-}
-
-void Camera::StopRotate(int X, int Y)
-{
-	if (!bRotating) return;
-	bRotating = false;
-	RotateStartX = X;
-	RotateStartY = Y;
 }
 

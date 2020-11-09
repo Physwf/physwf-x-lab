@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "D3D11RHI.h"
-#include "GameViewport.h"
-#include "Scene.h"
+#include "Viewport.h"
+#include "World.h"
 #include "DeferredShading.h"
 #include "log.h"
 
@@ -16,8 +16,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 	LPARAM lParam);
 
 HWND g_hWind = NULL;
-
-GameViewport GW;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -56,29 +54,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShowWindow(g_hWind, nCmdShow);
 
-
-
-	//extern void EnumAdapters();
-	//EnumAdapters();
-	extern void CreateTriangleBuffer();
-	extern void RenderTriangle();
-
-	extern void CreateTestBuffer();
-	extern void RenderTest();
-
-	if (!D3D11Setup())
+	if (!InitRHI())
 	{
 		return 1;
 	}
 
-	//CreateTriangleBuffer();
-	//CreateTestBuffer();
-	
-// 	Scene S;
-// 	S.InitResource();
-// 	S.Setup();
-	
 	InitShading();
+	GWorld.InitWorld();
+	GWindowViewport.SetSizeXY(WindowWidth, WindowHeight);
 
 	MSG msg;
 	
@@ -101,28 +84,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (TimeEclipse > 30) TimeEclipse = 30;
 			LastTickCount = GetTickCount();
 
-			GW.Tick(TimeEclipse / 1000.f);
+			GWorld.Tick(TimeEclipse / 1000.f);
+			GWindowViewport.Draw();
 
-			extern std::vector<Mesh*> AllMeshes;
-			for (Mesh* m : AllMeshes)
-			{
-				m->Tick(TimeEclipse / 1000.f);
-			}
-
-			//D3D11ClearViewTarget();
-			//RenderTriangle();
-			//RenderTest();
-			//GW.Draw();
-			//S.Draw();
-			Render();
-			D3D11Present();
-
-			//Sleep(10);
+			Sleep(1);
 		}
 
 	}
-
-	//S.ReleaseResource();
 
 	return msg.wParam;
 }
@@ -139,37 +107,37 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	case WM_KEYDOWN:
 	{
 		X_LOG("WM_KEYDOWN\n");
-		GW.OnKeyDown(wParam);
+		GWindowViewport.OnKeyDown(wParam);
 		break;
 	}
 	case WM_KEYUP:
 	{
-		GW.OnKeyUp(wParam);
+		GWindowViewport.OnKeyUp(wParam);
 		break;
 	}
 	case WM_LBUTTONDOWN:
 	{
-		GW.OnMouseDown(LOWORD(lParam), HIWORD(lParam));
+		GWindowViewport.OnMouseDown(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_LBUTTONUP:
 	{
-		GW.OnMouseUp(LOWORD(lParam), HIWORD(lParam));
+		GWindowViewport.OnMouseUp(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_RBUTTONDOWN:
 	{
-		GW.OnRightMouseDown(LOWORD(lParam), HIWORD(lParam));
+		GWindowViewport.OnRightMouseDown(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_RBUTTONUP:
 	{
-		GW.OnRightMouseUp(LOWORD(lParam), HIWORD(lParam));
+		GWindowViewport.OnRightMouseUp(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	case WM_MOUSEMOVE:
 	{
-		GW.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+		GWindowViewport.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
 		break;
 	}
 	}

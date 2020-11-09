@@ -4,4 +4,3 @@
 #include "UnrealMath.h"
 
 void InitPrePass();
-void RenderPrePass();

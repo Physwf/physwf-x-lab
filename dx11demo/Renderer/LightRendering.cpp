@@ -1,6 +1,7 @@
 #include "LightRendering.h"
 #include "Scene.h"
 #include "RenderTargets.h"
+#include "DeferredShading.h"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -185,7 +186,7 @@ void InitLightPass()
 	LightAttenuationSRV = CreateShaderResourceView2D(ShadowProjectionRT, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0);
 	LightAttenuationSampleState = TStaticSamplerState<>::GetRHI();
 
-	
+	/*
 
 	DLU.LightPosition = Vector(0.0f, 0.0f, 0.0f);
 	DLU.LightInvRadius = 0.0f;
@@ -207,78 +208,83 @@ void InitLightPass()
 	//DeferredLightUniformsValue.ShadowedBits |= LightSceneInfo->Proxy->CastsDynamicShadow() && View.Family->EngineShowFlags.DynamicShadows ? 3 : 0;
 	DLU.ShadowedBits = 2;
 	DeferredLightUniformBuffer = CreateConstantBuffer(false, sizeof(DLU), &DLU);
+	*/
 }
 
-
-void RenderLight()
+void SceneRenderer::RenderLight()
 {
-// 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, NULL);
-// 	D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, NULL);
-// 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
-// 	D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
+	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ViewIndex++)
+	{
+		ViewInfo& View = Views[ViewIndex];
 
+		D3D11DeviceContext->RSSetState(LightPassRasterizerState);
+		D3D11DeviceContext->RSSetViewports(1, &GViewport);
+		D3D11DeviceContext->OMSetDepthStencilState(LightPassDepthStencilState, 0);
+		D3D11DeviceContext->OMSetBlendState(LightPassBlendState, NULL, 0xffffffff);
+
+		D3D11DeviceContext->IASetInputLayout(RectangleInputLayout);
+		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		UINT Stride = sizeof(RectangleVertex);
+		UINT Offset = 0;
+		D3D11DeviceContext->IASetVertexBuffers(0, 1, &ScreenRect.VertexBuffer, &Stride, &Offset);
+		D3D11DeviceContext->IASetIndexBuffer(ScreenRect.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
+		D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
+
+		const ParameterAllocation& VSViewParam = LightPassVSParams.at("View");
+		const ParameterAllocation& DrawRectangleParametersParam = LightPassVSParams.at("DrawRectangleParameters");
+		D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
+		D3D11DeviceContext->VSSetConstantBuffers(DrawRectangleParametersParam.BufferIndex, 1, &ScreenRect.DrawRectangleParameters);
+
+		const ParameterAllocation& LightAttenuationTextureParam = LightPassPSParams.at("LightAttenuationTexture");
+		const ParameterAllocation& LightAttenuationTextureSamplerParam = LightPassPSParams.at("LightAttenuationTextureSampler");
+		const ParameterAllocation& SceneDepthTextureParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTexture");
+		const ParameterAllocation& SceneDepthTextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTextureSampler");
+		const ParameterAllocation& GBufferATextureParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATexture");
+		const ParameterAllocation& GBufferATextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATextureSampler");
+		const ParameterAllocation& DeferredLightUniformParam = LightPassPSParams.at("DeferredLightUniform");
+		const ParameterAllocation& PSViewParam = LightPassPSParams.at("View");
+
+		D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &LightPassSceneDepthSRV);
+		D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &LightPassSceneDepthSamplerState);
+
+		D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex, 3, LightPassGBufferSRV);
+		D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex, 3, LightPassGBufferSamplerState);
+
+		D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &LightAttenuationSRV);
+		D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &LightAttenuationSampleState);
+
+		D3D11DeviceContext->PSSetConstantBuffers(DeferredLightUniformParam.BufferIndex, 1, &DeferredLightUniformBuffer);
+		D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
+
+
+		D3D11DeviceContext->DrawIndexed(6, 0, 0);
+
+		//reset
+		ID3D11ShaderResourceView* SRV = NULL;
+		ID3D11SamplerState* Sampler = NULL;
+
+		D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
+		D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
+
+		D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &SRV);
+		D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &Sampler);
+
+		for (int i = 0; i < 3; ++i)
+		{
+			D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex + i, 1, &SRV);
+			D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex + i, 1, &Sampler);
+		}
+	}
+}
+
+void SceneRenderer::RenderLights()
+{
 	RenderTargets& SceneContext = RenderTargets::Get();
 	SceneContext.BeginRenderingSceneColor();
 
-	D3D11DeviceContext->RSSetState(LightPassRasterizerState);
-	D3D11DeviceContext->RSSetViewports(1, &GViewport);
-	D3D11DeviceContext->OMSetDepthStencilState(LightPassDepthStencilState,0);
-	D3D11DeviceContext->OMSetBlendState(LightPassBlendState, NULL, 0xffffffff);
-
-	D3D11DeviceContext->IASetInputLayout(RectangleInputLayout);
-	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	UINT Stride = sizeof(RectangleVertex);
-	UINT Offset = 0;
-	D3D11DeviceContext->IASetVertexBuffers(0, 1, &ScreenRect.VertexBuffer, &Stride, &Offset);
-	D3D11DeviceContext->IASetIndexBuffer(ScreenRect.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	D3D11DeviceContext->VSSetShader(LightPassVS, 0, 0);
-	D3D11DeviceContext->PSSetShader(LightPassPS, 0, 0);
-
-	const ParameterAllocation& VSViewParam = LightPassVSParams.at("View");
-	const ParameterAllocation& DrawRectangleParametersParam = LightPassVSParams.at("DrawRectangleParameters");
-	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);
-	D3D11DeviceContext->VSSetConstantBuffers(DrawRectangleParametersParam.BufferIndex, 1, &ScreenRect.DrawRectangleParameters);
-
-	const ParameterAllocation& LightAttenuationTextureParam = LightPassPSParams.at("LightAttenuationTexture");
-	const ParameterAllocation& LightAttenuationTextureSamplerParam = LightPassPSParams.at("LightAttenuationTextureSampler");
-	const ParameterAllocation& SceneDepthTextureParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTexture");
-	const ParameterAllocation& SceneDepthTextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_SceneDepthTextureSampler");
-	const ParameterAllocation& GBufferATextureParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATexture");
-	const ParameterAllocation& GBufferATextureSamplerParam = LightPassPSParams.at("SceneTexturesStruct_GBufferATextureSampler");
-	const ParameterAllocation& DeferredLightUniformParam = LightPassPSParams.at("DeferredLightUniform");
-	const ParameterAllocation& PSViewParam = LightPassPSParams.at("View");
-
-	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &LightPassSceneDepthSRV);
-	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &LightPassSceneDepthSamplerState);
-
-	D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex, 3, LightPassGBufferSRV);
-	D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex, 3, LightPassGBufferSamplerState);
-
-	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &LightAttenuationSRV);
-	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &LightAttenuationSampleState);
-
-	D3D11DeviceContext->PSSetConstantBuffers(DeferredLightUniformParam.BufferIndex, 1, &DeferredLightUniformBuffer);
-	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &ViewUniformBuffer);
-
-
-	D3D11DeviceContext->DrawIndexed(6, 0, 0);
-
-	//reset
-	ID3D11ShaderResourceView* SRV = NULL;
-	ID3D11SamplerState* Sampler = NULL;
-
-	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
-	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
-
-	D3D11DeviceContext->PSSetShaderResources(LightAttenuationTextureParam.BaseIndex, LightAttenuationTextureParam.Size, &SRV);
-	D3D11DeviceContext->PSSetSamplers(LightAttenuationTextureSamplerParam.BaseIndex, LightAttenuationTextureSamplerParam.Size, &Sampler);
-
-	for (int i = 0; i < 3; ++i)
-	{
-		D3D11DeviceContext->PSSetShaderResources(GBufferATextureParam.BaseIndex + i, 1, &SRV);
-		D3D11DeviceContext->PSSetSamplers(GBufferATextureSamplerParam.BaseIndex + i, 1, &Sampler);
-	}
+	RenderLight();
 }
 

@@ -7,4 +7,3 @@
 extern ID3D11ShaderResourceView* HZBSRVs[MAXNumMips];
 
 void InitHZB();
-void BuildHZB();

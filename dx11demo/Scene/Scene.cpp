@@ -1,229 +1,427 @@
 #include "Scene.h"
 #include "log.h"
 #include "D3D11RHI.h"
+#include "RenderTargets.h"
+#include "AtmosphereRendering.h"
 
-ViewMatrices::ViewMatrices(const Vector& InViewOrigin, const Matrix& InViewMatrix, const Matrix& InProjectionMatrix)
+ViewInfo::ViewInfo(const ViewInitOptions& InitOptions)
+	: SceneView(InitOptions),
+	CachedViewUniformShaderParameters(NULL)
 {
-	Vector LocalViewOrigin = InViewOrigin;
-	Matrix ViewRotationMatrix = InViewMatrix;
 
-	ViewMatrix = TranslationMatrix(-LocalViewOrigin) * ViewProjectionMatrix;
-	ProjectionMatrix = InProjectionMatrix;
-	InvProjectionMatrix = ProjectionMatrix.Inverse();
-
-	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
-	
-	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(LocalViewOrigin);
-	InvViewProjectionMatrix = InvProjectionMatrix * InvViewMatrix;
-
-	bool bApplyPreViewTranslation = true;
-
-	if (true)
-	{
-		ViewOrigin = LocalViewOrigin;
-	}
-
-	Matrix LocalTranslatedViewMatrix = ViewRotationMatrix;
-	Matrix LocalInvTranslatedViewMatrix = LocalTranslatedViewMatrix.GetTransposed();
-
-	if (bApplyPreViewTranslation)
-	{
-		PreViewTranslation = -Vector(LocalViewOrigin);
-	}
-
-	TranslatedViewMatrix = LocalTranslatedViewMatrix;
-	InvTranslatedViewMatrix = LocalInvTranslatedViewMatrix;
-
-	OverriddenTranslatedViewMatrix = TranslationMatrix(-GetPreViewTranslation()) * GetViewMatrix();
-	OverriddenInvTranslatedViewMatrix = GetInvViewMatrix() * TranslationMatrix(GetPreViewTranslation());
-
-	TranslatedViewProjectionMatrix = LocalTranslatedViewMatrix * ProjectionMatrix;
-	InvTranslatedViewProjectionMatrix = InvProjectionMatrix * LocalInvTranslatedViewMatrix;
 }
 
-void ViewMatrices::UpdateViewMatrix(const Vector& ViewLocation)
+ViewInfo::ViewInfo(const SceneView* InView)
+	: SceneView(*InView),
+	CachedViewUniformShaderParameters(NULL)
 {
-	ViewOrigin = ViewLocation;
 
-	Matrix ViewRotationMatrix;
-	ViewRotationMatrix.SetIndentity();
-
-	ViewMatrix = TranslationMatrix(-ViewLocation) * ViewRotationMatrix;
-
-	ViewProjectionMatrix = GetViewMatrix() * GetProjectionMatrix();
-
-	InvViewMatrix = ViewRotationMatrix.GetTransposed() * TranslationMatrix(ViewLocation);
-	InvViewProjectionMatrix = GetInvProjectionMatrix() * GetInvViewMatrix();
-
-	PreViewTranslation = -ViewOrigin;
-
-	TranslatedViewMatrix = ViewRotationMatrix;
-	InvTranslatedViewMatrix = TranslatedViewMatrix.GetTransposed();
-	OverriddenTranslatedViewMatrix = TranslationMatrix(-PreViewTranslation) * ViewMatrix;
 }
 
-Vector4 CreateInvDeviceZToWorldZTransform(const Matrix& ProjMatrix)
+ViewInfo::~ViewInfo()
 {
-	/*
-	00, 01, 02, 03
-	10, 11, 12, 13
-	20, 21, 22, 23
-	30, 31, 32, 33
-	*/
-	float DepthMul = ProjMatrix.M[2][2];
-	float DepthAdd = ProjMatrix.M[3][2];
+	if(CachedViewUniformShaderParameters) 
+		delete CachedViewUniformShaderParameters;
+}
 
-	bool bIsPerspectiveProjection = ProjMatrix.M[3][3] < 1.0f;
+void ViewInfo::SetupUniformBufferParameters(
+	RenderTargets& SceneContext, 
+	const ViewMatrices& InViewMatrices, 
+	const ViewMatrices& InPrevViewMatrices, 
+	Box* OutTranslucentCascadeBoundsArray, 
+	int32 NumTranslucentCascades, 
+	ViewUniformShaderParameters& ViewUniformParameters) const
+{
+	//check(Family);
 
-	if (bIsPerspectiveProjection)
+	// Create the view's uniform buffer.
+	bool bIsMobileMultiViewEnabled = false;
+	// Mobile multi-view is not side by side
+	const IntRect EffectiveViewRect = (bIsMobileMultiViewEnabled) ? IntRect(0, 0, ViewRect.Width(), ViewRect.Height()) : ViewRect;
+
+	// TODO: We should use a view and previous view uniform buffer to avoid code duplication and keep consistency
+	SetupCommonViewUniformBufferParameters(
+		ViewUniformParameters,
+		SceneContext.GetBufferSizeXY(),
+		SceneContext.GetMSAACount(),
+		EffectiveViewRect,
+		InViewMatrices,
+		InPrevViewMatrices
+	);
+
+	//const bool bCheckerboardSubsurfaceRendering = FRCPassPostProcessSubsurface::RequiresCheckerboardSubsurfaceRendering(SceneContext.GetSceneColorFormat());
+	//ViewUniformParameters.bCheckerboardSubsurfaceProfileRendering = bCheckerboardSubsurfaceRendering ? 1.0f : 0.0f;
+
+	extern Scene* GScene;
+	if (GScene)
 	{
-		float SubtractValue = DepthMul / DepthAdd;
+// 		if (Scene->SimpleDirectionalLight)
+// 		{
+// 			ViewUniformParameters.DirectionalLightColor = Scene->SimpleDirectionalLight->Proxy->GetColor() / PI;
+// 			ViewUniformParameters.DirectionalLightDirection = -Scene->SimpleDirectionalLight->Proxy->GetDirection();
+// 		}
+// 		else
+// 		{
+// 			ViewUniformParameters.DirectionalLightColor = FLinearColor::Black;
+// 			ViewUniformParameters.DirectionalLightDirection = FVector::ZeroVector;
+// 		}
 
-		// Subtract a tiny number to avoid divide by 0 errors in the shader when a very far distance is decided from the depth buffer.
-		// This fixes fog not being applied to the black background in the editor.
-		SubtractValue -= 0.00000001f;
-
-		return Vector4(
-			0.0f,
-			0.0f,
-			1.0f / DepthAdd,
-			SubtractValue
-		);
+		// Atmospheric fog parameters
+		if (/*ShouldRenderAtmosphere(*Family) &&*/ GScene->AtmosphericFog)
+		{
+			ViewUniformParameters.AtmosphericFogSunPower = GScene->AtmosphericFog->SunMultiplier;
+			ViewUniformParameters.AtmosphericFogPower = GScene->AtmosphericFog->FogMultiplier;
+			ViewUniformParameters.AtmosphericFogDensityScale = GScene->AtmosphericFog->InvDensityMultiplier;
+			ViewUniformParameters.AtmosphericFogDensityOffset = GScene->AtmosphericFog->DensityOffset;
+			ViewUniformParameters.AtmosphericFogGroundOffset = GScene->AtmosphericFog->GroundOffset;
+			ViewUniformParameters.AtmosphericFogDistanceScale = GScene->AtmosphericFog->DistanceScale;
+			ViewUniformParameters.AtmosphericFogAltitudeScale = GScene->AtmosphericFog->AltitudeScale;
+			ViewUniformParameters.AtmosphericFogHeightScaleRayleigh = GScene->AtmosphericFog->RHeight;
+			ViewUniformParameters.AtmosphericFogStartDistance = GScene->AtmosphericFog->StartDistance;
+			ViewUniformParameters.AtmosphericFogDistanceOffset = GScene->AtmosphericFog->DistanceOffset;
+			ViewUniformParameters.AtmosphericFogSunDiscScale = GScene->AtmosphericFog->SunDiscScale;
+			ViewUniformParameters.AtmosphericFogSunColor = /*GScene->SunLight ? GScene->SunLight->Proxy->GetColor() :*/ GScene->AtmosphericFog->DefaultSunColor;
+			ViewUniformParameters.AtmosphericFogSunDirection = /*GScene->SunLight ? -GScene->SunLight->Proxy->GetDirection() :*/ -GScene->AtmosphericFog->DefaultSunDirection;
+			ViewUniformParameters.AtmosphericFogRenderMask = GScene->AtmosphericFog->RenderFlag /*& (EAtmosphereRenderFlag::E_DisableGroundScattering | EAtmosphereRenderFlag::E_DisableSunDisk)*/;
+			ViewUniformParameters.AtmosphericFogInscatterAltitudeSampleNum = GScene->AtmosphericFog->InscatterAltitudeSampleNum;
+		}
+		else
+		{
+			ViewUniformParameters.AtmosphericFogSunPower = 0.f;
+			ViewUniformParameters.AtmosphericFogPower = 0.f;
+			ViewUniformParameters.AtmosphericFogDensityScale = 0.f;
+			ViewUniformParameters.AtmosphericFogDensityOffset = 0.f;
+			ViewUniformParameters.AtmosphericFogGroundOffset = 0.f;
+			ViewUniformParameters.AtmosphericFogDistanceScale = 0.f;
+			ViewUniformParameters.AtmosphericFogAltitudeScale = 0.f;
+			ViewUniformParameters.AtmosphericFogHeightScaleRayleigh = 0.f;
+			ViewUniformParameters.AtmosphericFogStartDistance = 0.f;
+			ViewUniformParameters.AtmosphericFogDistanceOffset = 0.f;
+			ViewUniformParameters.AtmosphericFogSunDiscScale = 1.f;
+			//Added check so atmospheric light color and vector can use a directional light without needing an atmospheric fog actor in the scene
+// 			ViewUniformParameters.AtmosphericFogSunColor = GScene->SunLight ? GScene->SunLight->Proxy->GetColor() : FLinearColor::Black;
+// 			ViewUniformParameters.AtmosphericFogSunDirection = GScene->SunLight ? -GScene->SunLight->Proxy->GetDirection() : FVector::ZeroVector;
+// 			ViewUniformParameters.AtmosphericFogRenderMask = EAtmosphereRenderFlag::E_EnableAll;
+// 			ViewUniformParameters.AtmosphericFogInscatterAltitudeSampleNum = 0;
+		}
 	}
 	else
 	{
-		return Vector4(
-			1.0f / ProjMatrix.M[2][2],
-			-ProjMatrix.M[3][2] / ProjMatrix.M[2][2] + 1.0f,
-			0.0f,
-			1.0f
-		);
+		// Atmospheric fog parameters
+		ViewUniformParameters.AtmosphericFogSunPower = 0.f;
+		ViewUniformParameters.AtmosphericFogPower = 0.f;
+		ViewUniformParameters.AtmosphericFogDensityScale = 0.f;
+		ViewUniformParameters.AtmosphericFogDensityOffset = 0.f;
+		ViewUniformParameters.AtmosphericFogGroundOffset = 0.f;
+		ViewUniformParameters.AtmosphericFogDistanceScale = 0.f;
+		ViewUniformParameters.AtmosphericFogAltitudeScale = 0.f;
+		ViewUniformParameters.AtmosphericFogHeightScaleRayleigh = 0.f;
+		ViewUniformParameters.AtmosphericFogStartDistance = 0.f;
+		ViewUniformParameters.AtmosphericFogDistanceOffset = 0.f;
+		ViewUniformParameters.AtmosphericFogSunDiscScale = 1.f;
+// 		ViewUniformParameters.AtmosphericFogSunColor = LinearColor::Black;
+// 		ViewUniformParameters.AtmosphericFogSunDirection = Vector::ZeroVector;
+// 		ViewUniformParameters.AtmosphericFogRenderMask = EAtmosphereRenderFlag::E_EnableAll;
+// 		ViewUniformParameters.AtmosphericFogInscatterAltitudeSampleNum = 0;
 	}
+
+	//ViewUniformParameters.AtmosphereTransmittanceTexture = OrBlack2DIfNull(AtmosphereTransmittanceTexture);
+	//ViewUniformParameters.AtmosphereIrradianceTexture = OrBlack2DIfNull(AtmosphereIrradianceTexture);
+	//ViewUniformParameters.AtmosphereInscatterTexture = OrBlack3DIfNull(AtmosphereInscatterTexture);
+
+	//ViewUniformParameters.AtmosphereTransmittanceTextureSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();
+	//ViewUniformParameters.AtmosphereIrradianceTextureSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();
+	//ViewUniformParameters.AtmosphereInscatterTextureSampler = TStaticSamplerState<SF_Bilinear>::GetRHI();
+
+	// This should probably be in SetupCommonViewUniformBufferParameters, but drags in too many dependencies
+	//UpdateNoiseTextureParameters(ViewUniformParameters);
+
+	//SetupDefaultGlobalDistanceFieldUniformBufferParameters(ViewUniformParameters);
+
+	//SetupVolumetricFogUniformBufferParameters(ViewUniformParameters);
+
+	//SetupPrecomputedVolumetricLightmapUniformBufferParameters(Scene, ViewUniformParameters);
+
+	// Setup view's shared sampler for material texture sampling.
+// 	{
+// 		const float GlobalMipBias = UTexture2D::GetGlobalMipMapLODBias();
+// 
+// 		float FinalMaterialTextureMipBias = GlobalMipBias;
+// 
+// 		if (bIsValidWorldTextureGroupSamplerFilter && PrimaryScreenPercentageMethod == EPrimaryScreenPercentageMethod::TemporalUpscale)
+// 		{
+// 			ViewUniformParameters.MaterialTextureMipBias = MaterialTextureMipBias;
+// 			ViewUniformParameters.MaterialTextureDerivativeMultiply = FMath::Pow(2.0f, MaterialTextureMipBias);
+// 
+// 			FinalMaterialTextureMipBias += MaterialTextureMipBias;
+// 		}
+// 
+// 		FSamplerStateRHIRef WrappedSampler = nullptr;
+// 		FSamplerStateRHIRef ClampedSampler = nullptr;
+// 
+// 		if (FMath::Abs(FinalMaterialTextureMipBias - GlobalMipBias) < KINDA_SMALL_NUMBER)
+// 		{
+// 			WrappedSampler = Wrap_WorldGroupSettings->SamplerStateRHI;
+// 			ClampedSampler = Clamp_WorldGroupSettings->SamplerStateRHI;
+// 		}
+// 		else if (ViewState && FMath::Abs(ViewState->MaterialTextureCachedMipBias - FinalMaterialTextureMipBias) < KINDA_SMALL_NUMBER)
+// 		{
+// 			WrappedSampler = ViewState->MaterialTextureBilinearWrapedSamplerCache;
+// 			ClampedSampler = ViewState->MaterialTextureBilinearClampedSamplerCache;
+// 		}
+// 		else
+// 		{
+// 			check(bIsValidWorldTextureGroupSamplerFilter);
+// 
+// 			WrappedSampler = RHICreateSamplerState(FSamplerStateInitializerRHI(WorldTextureGroupSamplerFilter, AM_Wrap, AM_Wrap, AM_Wrap, FinalMaterialTextureMipBias));
+// 			ClampedSampler = RHICreateSamplerState(FSamplerStateInitializerRHI(WorldTextureGroupSamplerFilter, AM_Clamp, AM_Clamp, AM_Clamp, FinalMaterialTextureMipBias));
+// 		}
+// 
+// 		// At this point, a sampler must be set.
+// 		check(WrappedSampler.IsValid());
+// 		check(ClampedSampler.IsValid());
+// 
+// 		ViewUniformParameters.MaterialTextureBilinearWrapedSampler = WrappedSampler;
+// 		ViewUniformParameters.MaterialTextureBilinearClampedSampler = ClampedSampler;
+// 
+// 		// Update view state's cached sampler.
+// 		if (ViewState && ViewState->MaterialTextureBilinearWrapedSamplerCache != WrappedSampler)
+// 		{
+// 			ViewState->MaterialTextureCachedMipBias = FinalMaterialTextureMipBias;
+// 			ViewState->MaterialTextureBilinearWrapedSamplerCache = WrappedSampler;
+// 			ViewState->MaterialTextureBilinearClampedSamplerCache = ClampedSampler;
+// 		}
+// 	}
+
+	uint32 StateFrameIndexMod8 = 0;
+
+// 	if (State)
+// 	{
+// 		ViewUniformParameters.TemporalAAParams = FVector4(
+// 			ViewState->GetCurrentTemporalAASampleIndex(),
+// 			ViewState->GetCurrentTemporalAASampleCount(),
+// 			TemporalJitterPixels.X,
+// 			TemporalJitterPixels.Y);
+// 
+// 		StateFrameIndexMod8 = ViewState->GetFrameIndexMod8();
+// 	}
+// 	else
+// 	{
+// 		ViewUniformParameters.TemporalAAParams = FVector4(0, 1, 0, 0);
+// 	}
+// 
+// 	ViewUniformParameters.StateFrameIndexMod8 = StateFrameIndexMod8;
+// 
+// 	{
+// 		// If rendering in stereo, the other stereo passes uses the left eye's translucency lighting volume.
+// 		const FViewInfo* PrimaryView = this;
+// 		if (IStereoRendering::IsASecondaryView(StereoPass))
+// 		{
+// 			if (Family->Views.IsValidIndex(0))
+// 			{
+// 				const FSceneView* LeftEyeView = Family->Views[0];
+// 				if (LeftEyeView->bIsViewInfo && LeftEyeView->StereoPass == eSSP_LEFT_EYE)
+// 				{
+// 					PrimaryView = static_cast<const FViewInfo*>(LeftEyeView);
+// 				}
+// 			}
+// 		}
+// 		PrimaryView->CalcTranslucencyLightingVolumeBounds(OutTranslucentCascadeBoundsArray, NumTranslucentCascades);
+// 	}
+// 
+// 	for (int32 CascadeIndex = 0; CascadeIndex < NumTranslucentCascades; CascadeIndex++)
+// 	{
+// 		const float VolumeVoxelSize = (OutTranslucentCascadeBoundsArray[CascadeIndex].Max.X - OutTranslucentCascadeBoundsArray[CascadeIndex].Min.X) / GTranslucencyLightingVolumeDim;
+// 		const FVector VolumeSize = OutTranslucentCascadeBoundsArray[CascadeIndex].Max - OutTranslucentCascadeBoundsArray[CascadeIndex].Min;
+// 		ViewUniformParameters.TranslucencyLightingVolumeMin[CascadeIndex] = FVector4(OutTranslucentCascadeBoundsArray[CascadeIndex].Min, 1.0f / GTranslucencyLightingVolumeDim);
+// 		ViewUniformParameters.TranslucencyLightingVolumeInvSize[CascadeIndex] = FVector4(FVector(1.0f) / VolumeSize, VolumeVoxelSize);
+// 	}
+// 
+// 	ViewUniformParameters.PreExposure = PreExposure;
+// 	ViewUniformParameters.OneOverPreExposure = 1.f / PreExposure;
+// 
+// 	ViewUniformParameters.DepthOfFieldFocalDistance = FinalPostProcessSettings.DepthOfFieldFocalDistance;
+// 	ViewUniformParameters.DepthOfFieldSensorWidth = FinalPostProcessSettings.DepthOfFieldSensorWidth;
+// 	ViewUniformParameters.DepthOfFieldFocalRegion = FinalPostProcessSettings.DepthOfFieldFocalRegion;
+// 	// clamped to avoid div by 0 in shader
+// 	ViewUniformParameters.DepthOfFieldNearTransitionRegion = FMath::Max(0.01f, FinalPostProcessSettings.DepthOfFieldNearTransitionRegion);
+// 	// clamped to avoid div by 0 in shader
+// 	ViewUniformParameters.DepthOfFieldFarTransitionRegion = FMath::Max(0.01f, FinalPostProcessSettings.DepthOfFieldFarTransitionRegion);
+// 	ViewUniformParameters.DepthOfFieldScale = FinalPostProcessSettings.DepthOfFieldScale;
+// 	ViewUniformParameters.DepthOfFieldFocalLength = 50.0f;
+// 
+// 	ViewUniformParameters.bSubsurfacePostprocessEnabled = GCompositionLighting.IsSubsurfacePostprocessRequired() ? 1.0f : 0.0f;
+// 
+// 	{
+// 		// This is the CVar default
+// 		float Value = 1.0f;
+// 
+// 		// Compiled out in SHIPPING to make cheating a bit harder.
+// #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+// 		Value = CVarGeneralPurposeTweak.GetValueOnRenderThread();
+// #endif
+// 
+// 		ViewUniformParameters.GeneralPurposeTweak = Value;
+// 	}
+// 
+// 	ViewUniformParameters.DemosaicVposOffset = 0.0f;
+// 	{
+// 		ViewUniformParameters.DemosaicVposOffset = CVarDemosaicVposOffset.GetValueOnRenderThread();
+// 	}
+// 
+// 	ViewUniformParameters.IndirectLightingColorScale = FVector(FinalPostProcessSettings.IndirectLightingColor.R * FinalPostProcessSettings.IndirectLightingIntensity,
+// 		FinalPostProcessSettings.IndirectLightingColor.G * FinalPostProcessSettings.IndirectLightingIntensity,
+// 		FinalPostProcessSettings.IndirectLightingColor.B * FinalPostProcessSettings.IndirectLightingIntensity);
+// 
+// 	ViewUniformParameters.NormalCurvatureToRoughnessScaleBias.X = FMath::Clamp(CVarNormalCurvatureToRoughnessScale.GetValueOnAnyThread(), 0.0f, 2.0f);
+// 	ViewUniformParameters.NormalCurvatureToRoughnessScaleBias.Y = FMath::Clamp(CVarNormalCurvatureToRoughnessBias.GetValueOnAnyThread(), -1.0f, 1.0f);
+// 	ViewUniformParameters.NormalCurvatureToRoughnessScaleBias.Z = FMath::Clamp(CVarNormalCurvatureToRoughnessExponent.GetValueOnAnyThread(), .05f, 20.0f);
+// 
+// 	ViewUniformParameters.RenderingReflectionCaptureMask = bIsReflectionCapture ? 1.0f : 0.0f;
+// 
+// 	ViewUniformParameters.AmbientCubemapTint = FinalPostProcessSettings.AmbientCubemapTint;
+// 	ViewUniformParameters.AmbientCubemapIntensity = FinalPostProcessSettings.AmbientCubemapIntensity;
+// 
+// 	{
+// 		// Enables HDR encoding mode selection without recompile of all PC shaders during ES2 emulation.
+// 		ViewUniformParameters.HDR32bppEncodingMode = 0.0f;
+// 		if (IsMobileHDR32bpp())
+// 		{
+// 			EMobileHDRMode MobileHDRMode = GetMobileHDRMode();
+// 			switch (MobileHDRMode)
+// 			{
+// 			case EMobileHDRMode::EnabledMosaic:
+// 				ViewUniformParameters.HDR32bppEncodingMode = 1.0f;
+// 				break;
+// 			case EMobileHDRMode::EnabledRGBE:
+// 				ViewUniformParameters.HDR32bppEncodingMode = 2.0f;
+// 				break;
+// 			case EMobileHDRMode::EnabledRGBA8:
+// 				ViewUniformParameters.HDR32bppEncodingMode = 3.0f;
+// 				break;
+// 			default:
+// 				checkNoEntry();
+// 				break;
+// 			}
+// 		}
+// 	}
+// 
+// 	ViewUniformParameters.CircleDOFParams = CircleDofHalfCoc(*this);
+// 
+// 	if (Family->Scene)
+// 	{
+// 		Scene = Family->Scene->GetRenderScene();
+// 	}
+// 
+// 
+// 
+// 	ERHIFeatureLevel::Type RHIFeatureLevel = Scene == nullptr ? GMaxRHIFeatureLevel : Scene->GetFeatureLevel();
+
+	//if (GScene && GScene->SkyLight)
+	{
+// 		FSkyLightSceneProxy* SkyLight = Scene->SkyLight;
+// 
+// 		ViewUniformParameters.SkyLightColor = SkyLight->LightColor;
+// 
+// 		bool bApplyPrecomputedBentNormalShadowing =
+// 			SkyLight->bCastShadows
+// 			&& SkyLight->bWantsStaticShadowing;
+// 
+// 		ViewUniformParameters.SkyLightParameters = bApplyPrecomputedBentNormalShadowing ? 1 : 0;
+		ViewUniformParameters.SkyLightColor = { 1.0f,1.0f, 1.0f };
+		ViewUniformParameters.SkyLightParameters = 1.f;
+	}
+	//else
+	{
+		//ViewUniformParameters.SkyLightColor = FLinearColor::Black;
+		//ViewUniformParameters.SkyLightParameters = 0;
+	}
+
+	// Make sure there's no padding since we're going to cast to FVector4*
+	//checkSlow(sizeof(ViewUniformParameters.SkyIrradianceEnvironmentMap) == sizeof(FVector4) * 7);
+	SetupSkyIrradianceEnvironmentMapConstants((Vector4*)&ViewUniformParameters.SkyIrradianceEnvironmentMap);
+
+// 	ViewUniformParameters.MobilePreviewMode =
+// 		(GIsEditor &&
+// 		(RHIFeatureLevel == ERHIFeatureLevel::ES2 || RHIFeatureLevel == ERHIFeatureLevel::ES3_1) &&
+// 			GMaxRHIFeatureLevel > ERHIFeatureLevel::ES3_1) ? 1.0f : 0.0f;
+
+	// Padding between the left and right eye may be introduced by an HMD, which instanced stereo needs to account for.
+// 	if ((Family != nullptr) && (StereoPass != eSSP_FULL) && (Family->Views.Num() > 1))
+// 	{
+// 		check(Family->Views.Num() >= 2);
+// 
+// 		// The static_cast<const FViewInfo*> is fine because when executing this method, we know that
+// 		// Family::Views point to multiple FViewInfo, since of them is <this>.
+// 		const float StereoViewportWidth = float(
+// 			static_cast<const FViewInfo*>(Family->Views[1])->ViewRect.Max.X -
+// 			static_cast<const FViewInfo*>(Family->Views[0])->ViewRect.Min.X);
+// 		const float EyePaddingSize = float(
+// 			static_cast<const FViewInfo*>(Family->Views[1])->ViewRect.Min.X -
+// 			static_cast<const FViewInfo*>(Family->Views[0])->ViewRect.Max.X);
+// 
+// 		ViewUniformParameters.HMDEyePaddingOffset = (StereoViewportWidth - EyePaddingSize) / StereoViewportWidth;
+// 	}
+// 	else
+// 	{
+// 		ViewUniformParameters.HMDEyePaddingOffset = 1.0f;
+// 	}
+// 
+// 	ViewUniformParameters.ReflectionCubemapMaxMip = FMath::FloorLog2(UReflectionCaptureComponent::GetReflectionCaptureSize());
+// 
+// 	ViewUniformParameters.ShowDecalsMask = Family->EngineShowFlags.Decals ? 1.0f : 0.0f;
+// 
+// 	extern int32 GDistanceFieldAOSpecularOcclusionMode;
+// 	ViewUniformParameters.DistanceFieldAOSpecularOcclusionMode = GDistanceFieldAOSpecularOcclusionMode;
+// 
+// 	ViewUniformParameters.IndirectCapsuleSelfShadowingIntensity = Scene ? Scene->DynamicIndirectShadowsSelfShadowingIntensity : 1.0f;
+// 
+// 	extern FVector GetReflectionEnvironmentRoughnessMixingScaleBiasAndLargestWeight();
+// 	ViewUniformParameters.ReflectionEnvironmentRoughnessMixingScaleBiasAndLargestWeight = GetReflectionEnvironmentRoughnessMixingScaleBiasAndLargestWeight();
+// 
+// 	ViewUniformParameters.StereoPassIndex = (StereoPass <= eSSP_LEFT_EYE) ? 0 : (StereoPass == eSSP_RIGHT_EYE) ? 1 : StereoPass - eSSP_MONOSCOPIC_EYE + 1;
+// 	ViewUniformParameters.StereoIPD = StereoIPD;
+// 
+// 	ViewUniformParameters.PreIntegratedBRDF = GEngine->PreIntegratedSkinBRDFTexture->Resource->TextureRHI;
+}
+enum ETranslucencyVolumeCascade
+{
+	TVC_Inner,
+	TVC_Outer,
+
+	TVC_MAX,
+};
+
+void ViewInfo::InitRHIResources()
+{
+	Box VolumeBounds[TVC_MAX];
+
+	CachedViewUniformShaderParameters = new ViewUniformShaderParameters();
+
+	RenderTargets& SceneContext = RenderTargets::Get();
+
+	SetupUniformBufferParameters(
+		SceneContext,
+		VolumeBounds,
+		TVC_MAX,
+		*CachedViewUniformShaderParameters);
+
+	ViewUniformBuffer = CreateConstantBuffer(false, sizeof(ViewUniformShaderParameters), CachedViewUniformShaderParameters); //TUniformBufferRef<FViewUniformShaderParameters>::CreateUniformBufferImmediate(*CachedViewUniformShaderParameters, UniformBuffer_SingleFrame);
 }
 
-#pragma pack(push)
-#pragma pack(1)
-struct ViewUniform
+void ViewInfo::SetupSkyIrradianceEnvironmentMapConstants(Vector4* OutSkyIrradianceEnvironmentMap) const
 {
-	Matrix TranslatedWorldToClip;
-	Matrix WorldToClip;
-	Matrix TranslatedWorldToView;
-	Matrix ViewToTranslatedWorld;
-	Matrix TranslatedWorldToCameraView;
-	Matrix CameraViewToTranslatedWorld;
-	Matrix ViewToClip;
-	Matrix ViewToClipNoAA;
-	Matrix ClipToView;
-	Matrix ClipToTranslatedWorld;
-	Matrix SVPositionToTranslatedWorld;
-	Matrix ScreenToWorld;
-	Matrix ScreenToTranslatedWorld;
-	// half3 ViewForward;
-	// half3 ViewUp;
-	// half3 ViewRight;
-	// half3 HMDViewNoRollUp;
-	// half3 HMDViewNoRollRight;
-	Vector4 InvDeviceZToWorldZTransform;
-	Vector4 ScreenPositionScaleBias;
-	Vector WorldCameraOrigin;
-	float ViewPading01;
-	Vector TranslatedWorldCameraOrigin;
-	float ViewPading02;
-	Vector WorldViewOrigin;
-	float ViewPading03;
-
-	Vector PreViewTranslation;
-	float ViewPading04;
-	Vector4 ViewRectMin;
-	Vector4 ViewSizeAndInvSize;
-	Vector4 BufferSizeAndInvSize;
-	Vector4 BufferBilinearUVMinMax;
-
-	uint32 Random;
-	uint32 FrameNumber;
-	uint32 StateFrameIndexMod8;
-	uint32 ViewPading05;
-
-	float DemosaicVposOffset;
-	Vector IndirectLightingColorScale;
-
-	Vector AtmosphericFogSunDirection;
-	float AtmosphericFogSunPower;
-	float AtmosphericFogPower;
-	float AtmosphericFogDensityScale;
-	float AtmosphericFogDensityOffset;
-	float AtmosphericFogGroundOffset;
-	float AtmosphericFogDistanceScale;
-	float AtmosphericFogAltitudeScale;
-	float AtmosphericFogHeightScaleRayleigh;
-	float AtmosphericFogStartDistance;
-	float AtmosphericFogDistanceOffset;
-	float AtmosphericFogSunDiscScale;
-	uint32 AtmosphericFogRenderMask;
-	uint32 AtmosphericFogInscatterAltitudeSampleNum;
-	LinearColor AtmosphericFogSunColor;
-
-	float AmbientCubemapIntensity;
-	float SkyLightParameters;
-	float PrePadding_View_2472;
-	float PrePadding_View_2476;
-	Vector4 SkyLightColor;
-	Vector4 SkyIrradianceEnvironmentMap[7];
-
-	float PrePadding_View_2862;
-	Vector VolumetricLightmapWorldToUVScale;
-	float PrePadding_View_2861;
-	Vector VolumetricLightmapWorldToUVAdd;
-	float PrePadding_View_2876;
-	Vector VolumetricLightmapIndirectionTextureSize;
-
-	float VolumetricLightmapBrickSize;
-	Vector VolumetricLightmapBrickTexelSize;
-};
-#pragma pack(pop)
-
-ViewUniform VU;
-
-ID3D11Buffer* ViewUniformBuffer;
-
-std::vector<Mesh*> AllMeshes;
-std::vector<MeshBatch> AllBatches;
-DirectionalLight DirLight;
-
-Camera MainCamera;
-Actor* SelectedActor;
-ViewMatrices VMs;
-
-float ViewZNear = 100.f;
-float ViewZFar = 2000000000.f;
-
-void InitScene()
+	OutSkyIrradianceEnvironmentMap[0] = { 0.00155f, -0.0033f,  0.06505f,  0.14057f };
+	OutSkyIrradianceEnvironmentMap[1] = { 0.00003f, -0.00304f,  0.09185f, 0.17386f };
+	OutSkyIrradianceEnvironmentMap[2] = { -0.00289f, -0.00268f, 0.1612f,  0.25372f };
+	OutSkyIrradianceEnvironmentMap[3] = { 0.00864f, -0.0024f,  -0.05994f, -0.00767f };
+	OutSkyIrradianceEnvironmentMap[4] = { 0.00792f, -0.00237f, -0.06537f, -0.00857f };
+	OutSkyIrradianceEnvironmentMap[5] = { 0.00666f, -0.00231f, -0.07398f, -0.01038f };
+	OutSkyIrradianceEnvironmentMap[6] = { -0.00346f, -0.00294f, -0.00201f, 1.00f };
+}
+void Scene::InitScene()
 {
-	Mesh* m1 = new Mesh();
-	//m1->ImportFromFBX("shaderBallNoCrease/shaderBall.fbx");
-	//m1->ImportFromFBX("k526efluton4-House_15/247_House 15_fbx.fbx");
-	m1->ImportFromFBX("Primitives/Sphere.fbx");
-	//m1->GeneratePlane(100.f, 100.f, 1, 1);
-	//m1->SetPosition(20.0f, -100.0f, 480.0f);
-	//m1->SetRotation(-3.14f / 2.0f, 0, 0);
-	m1->InitResource();
-	AllMeshes.push_back(m1);
-	SelectedActor = m1;
-	for (Mesh* m : AllMeshes)
-	{
-		m->DrawStaticElement();
-	}
-
-	DirLight.Color = Vector(1.0f, 1.0f, 1.0f);
-	DirLight.Direction = Vector(1.0f, 1.0f, 1.0f);
-	DirLight.Intencity = 1000.f;
-	DirLight.LightSourceAngle = 0.5357f;
-	DirLight.LightSourceSoftAngle = 0.0f;
-	DirLight.Direction.Normalize();
-
-	MainCamera.SetViewport((float)WindowWidth, (float)WindowHeight);
-	MainCamera.SetPostion(Vector(0, -400, 0));
-	MainCamera.LookAt(Vector(0, 0, 0));
+	/*
 	//Matrix::DXFromPerspectiveFovLH(3.1415926f / 2, 1.0, 1.0f, 10000.f);
 	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, ViewZNear, ViewZFar);
 	//Matrix ProjectionMatrix = ReversedZPerspectiveMatrix(3.1415926f / 2.f, 3.1415926f / 2.f, 1.0f, 1.0f, 1.0,1.0f);
@@ -284,10 +482,19 @@ void InitScene()
 	VU.SVPositionToTranslatedWorld.Transpose();
 	VU.ScreenToWorld.Transpose();
 	VU.ScreenToTranslatedWorld.Transpose();
+	*/
+	AtmosphericFog = new AtmosphericFogSceneInfo(this);
+
+}
+
+void Scene::AddMesh(Mesh* InMesh)
+{
+	InMesh->DrawStaticElement(this);
 }
 
 void UpdateView()
 {
+	/*
 	Matrix ProjectionMatrix = Matrix::DXReversedZFromPerspectiveFovLH(3.1415926f / 3.f, (float)WindowWidth / WindowHeight, ViewZNear, ViewZFar);
 	Matrix ViewRotationMatrix = Matrix::DXLookAtLH(Vector(0, 0, 0), MainCamera.FaceDir, MainCamera.Up);
 
@@ -346,34 +553,7 @@ void UpdateView()
 	VU.ScreenToTranslatedWorld.Transpose();
 
 
-	VU.AtmosphericFogSunDirection = { -0.39815f, -0.05403f, 0.91573f };
-	VU.AtmosphericFogSunPower = 1.0f;
-	VU.AtmosphericFogPower = 1.0f;
-	VU.AtmosphericFogDensityScale = 1.0f;
-	VU.AtmosphericFogDensityOffset = 0.0f;
-	VU.AtmosphericFogGroundOffset = -98975.89844f;
-	VU.AtmosphericFogDistanceScale = 1.0f;
-	VU.AtmosphericFogAltitudeScale = 1.0f;
-	VU.AtmosphericFogHeightScaleRayleigh = 8.0f;
-	VU.AtmosphericFogStartDistance = 0.15f;
-	VU.AtmosphericFogDistanceOffset = 0.0f;
-	VU.AtmosphericFogSunDiscScale = 1.0f;
-	VU.AtmosphericFogRenderMask = 0;
-	VU.AtmosphericFogInscatterAltitudeSampleNum = 32;
-	VU.AtmosphericFogSunColor = { 2.75f, 2.75f, 2.75f, 2.75f };
-
-	VU.SkyLightParameters = 1.f;
-	VU.SkyLightColor = {1.0f,1.0f, 1.0f, 1.0f };
-	VU.SkyIrradianceEnvironmentMap[0] = { 0.00155f, -0.0033f,  0.06505f,  0.14057f };
-	VU.SkyIrradianceEnvironmentMap[1] = { 0.00003f, -0.00304f,  0.09185f, 0.17386f };
-	VU.SkyIrradianceEnvironmentMap[2] = { -0.00289f, -0.00268f, 0.1612f,  0.25372f };
-	VU.SkyIrradianceEnvironmentMap[3] = { 0.00864f, -0.0024f,  -0.05994f, -0.00767f };
-	VU.SkyIrradianceEnvironmentMap[4] = { 0.00792f, -0.00237f, -0.06537f, -0.00857f };
-	VU.SkyIrradianceEnvironmentMap[5] = { 0.00666f, -0.00231f, -0.07398f, -0.01038f };
-	VU.SkyIrradianceEnvironmentMap[6] = { -0.00346f, -0.00294f, -0.00201f, 1.00f };
-
 	D3D11DeviceContext->UpdateSubresource(ViewUniformBuffer, 0, NULL, &VU, 0, 0);
-
-
-	
+	*/
 }
+

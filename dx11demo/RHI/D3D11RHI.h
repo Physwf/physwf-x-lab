@@ -6,6 +6,8 @@
 
 #include <map>
 #include <string>
+#include <vector>
+#include <assert.h>
 
 using namespace Microsoft::WRL;
 
@@ -24,7 +26,7 @@ extern D3D11_VIEWPORT GViewport;
 extern LONG WindowWidth;
 extern LONG WindowHeight;
 
-bool D3D11Setup();
+bool InitRHI();
 void D3D11Present();
 
 struct ParameterAllocation

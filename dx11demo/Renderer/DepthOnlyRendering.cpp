@@ -1,6 +1,7 @@
 #include "DepthOnlyRendering.h"
 #include "Scene.h"
 #include "RenderTargets.h"
+#include "DeferredShading.h"
 
 ID3D11InputLayout* PositionOnlyMeshInputLayout;
 
@@ -38,22 +39,15 @@ void InitPrePass()
 	PrePassBlendState = TStaticBlendState<>::GetRHI();
 }
 
-
-void RenderPrePass()
+void RenderPrePassView(ViewInfo& View)
 {
-	//D3D11DeviceContext->OMSetRenderTargets(1, &RenderTargetView, SceneDepthDSV);
-	//D3D11DeviceContext->OMSetRenderTargets(0, NULL, SceneDepthDSV);
-	//const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
-	//D3D11DeviceContext->ClearRenderTargetView(RenderTargetView, ClearColor);
-	//D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 0.0f, 0);
-
 	RenderTargets& SceneContex = RenderTargets::Get();
 	SceneContex.BeginRenderingPrePass(true);
 
 	const ParameterAllocation& ViewParams = PrePassVSParams.at("View");
 	const ParameterAllocation& PrimitiveParams = PrePassVSParams.at("Primitive");
 
-	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(ViewParams.BufferIndex, 1, &View.ViewUniformBuffer);
 
 	D3D11DeviceContext->RSSetState(PrePassRasterizerState);
 	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
@@ -61,7 +55,7 @@ void RenderPrePass()
 	D3D11DeviceContext->OMSetDepthStencilState(PrePassDepthStencilState, 0);
 
 
-	for (MeshBatch& MB : AllBatches)
+	for (MeshBatch& MB : GScene->AllBatches)
 	{
 		D3D11DeviceContext->IASetInputLayout(PositionOnlyMeshInputLayout);
 		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -79,5 +73,13 @@ void RenderPrePass()
 			D3D11DeviceContext->VSSetConstantBuffers(PrimitiveParams.BufferIndex, 1, &MB.Elements[Element].PrimitiveUniformBuffer);
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
+	}
+}
+
+void SceneRenderer::RenderPrePass()
+{
+	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ++ViewIndex)
+	{
+		RenderPrePassView(Views[ViewIndex]);
 	}
 }

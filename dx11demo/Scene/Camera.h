@@ -1,65 +1,36 @@
 #pragma once
 
-#include "UnrealMath.h"
-#include "D3D11RHI.h"
+#include "Actor.h"
+#include "SceneView.h"
 
+class Viewport;
 
-struct CAMERA_CBUFFER
-{
-	Matrix ViewMatrix;
-	Matrix ProjMatrix;
-};
-
-class Camera
+class Camera : public Actor
 {
 public:
 	Camera();
 	~Camera() {};
 
-	void SetPostion(Vector Position);
-	const Vector& GetPosition() const;
+	void SetFOV(float InFOV) { FOV = InFOV; }
 	void LookAt(Vector Target);
-	void SetViewport(float fWidth, float fHeight);
 	void SetLen(float fNear, float fFar);
 
-	void Walk(float fStep);
-	void Side(float fStep);
-	void Back(float fStep);
-	void Lift(float fStep);
+	SceneView* CalcSceneView(SceneViewFamily& ViewFamily, Viewport& VP);
 
-	void StartMove(Vector Direction);
-	void TryMove(float fDeltaTime);
-	void StopMove();
-
-	void StartDrag(int X, int Y);
-	void Drag(int X, int Y);
-	void StopDrag(int X, int Y);
-
-	void StartRotate(int X, int Y);
-	void Rotate(int X, int Y);
-	void StopRotate(int X, int Y);
-
-	void Rotate(const Vector& R);
+	virtual void Tick(float fDeltaSeconds) override;
+	virtual void Register() override {};
+	virtual void UnRegister() override {};
 public:
-
-	Vector Eye;
 	Vector FaceDir;
 	Vector Up;
 
 	float Near;
 	float Far;
-	float fViewportWidth = 720.f;
-	float fViewportHeight = 720.f;
 
-	int DragStartX;
-	int DragStartY;
-	bool bDraging;
+	float FOV;
 
-	Vector StartFaceDir;
-	int RotateStartX;
-	int RotateStartY;
-	bool bRotating;
-
-	bool IsMoving;
-	Vector MoveDirection;
+	/** The coordinates for the upper left corner of the master viewport subregion allocated to this player. 0-1 */
+	Vector2 Origin;
+	/** The size of the master viewport subregion allocated to this player. 0-1 */
+	Vector2 Size;
 };

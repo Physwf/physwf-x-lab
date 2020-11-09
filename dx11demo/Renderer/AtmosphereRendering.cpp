@@ -1,6 +1,7 @@
 #include "AtmosphereRendering.h"
 #include "RenderTargets.h"
-#include "scene.h"
+#include "Scene.h"
+#include "DeferredShading.h"
 #include "DirectXTex.h"
 using namespace DirectX;
 
@@ -28,6 +29,11 @@ ID3D11SamplerState* AtmosphereInscatterTextureSampler;
 std::map<std::string, ParameterAllocation> AtmosphereFogVSParams;
 std::map<std::string, ParameterAllocation> AtmosphereFogPSParams;
 
+
+bool ShouldRenderAtmosphere(/*const FSceneViewFamily& Family*/)
+{
+	return true;
+}
 
 void InitAtomosphereFog()
 {
@@ -94,59 +100,87 @@ void InitAtomosphereFog()
 	}
 }
 
-void RenderAtmosphereFog()
+void SceneRenderer::RenderAtmosphereFog()
 {
 	RenderTargets& SceneContext = RenderTargets::Get();
 	SceneContext.BeginRenderingSceneColor();
 
-	UINT Stride = sizeof(Vector2);
-	UINT Offset = 0;
-	D3D11DeviceContext->IASetVertexBuffers(0, 1, &AtmosphereFogVertexBuffer, &Stride, &Offset);
-	D3D11DeviceContext->IASetIndexBuffer(AtmosphereFogIndexBuffer, DXGI_FORMAT_R16_UINT,0);
-	D3D11DeviceContext->IASetInputLayout(AtmosphereFogInputLayout);
-	D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ++ViewIndex)
+	{
+		SceneView& View = Views[ViewIndex];
 
-	D3D11DeviceContext->VSSetShader(AtmosphereFogVertexShader, 0, 0);
-	D3D11DeviceContext->PSSetShader(AtmosphereFogPixelShader, 0, 0);
+		UINT Stride = sizeof(Vector2);
+		UINT Offset = 0;
+		D3D11DeviceContext->IASetVertexBuffers(0, 1, &AtmosphereFogVertexBuffer, &Stride, &Offset);
+		D3D11DeviceContext->IASetIndexBuffer(AtmosphereFogIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+		D3D11DeviceContext->IASetInputLayout(AtmosphereFogInputLayout);
+		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	const ParameterAllocation& VSViewParam = AtmosphereFogVSParams["View"];
-	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);
-	const ParameterAllocation& PSViewParam = AtmosphereFogPSParams["View"];
-	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+		D3D11DeviceContext->VSSetShader(AtmosphereFogVertexShader, 0, 0);
+		D3D11DeviceContext->PSSetShader(AtmosphereFogPixelShader, 0, 0);
 
-	const ParameterAllocation& SceneDepthTextureParam = AtmosphereFogPSParams["SceneTexturesStruct_SceneDepthTexture"];
-	const ParameterAllocation& SceneDepthTextureSamplerParam = AtmosphereFogPSParams["SceneTexturesStruct_SceneDepthTextureSampler"];
-	const ParameterAllocation& AtmosphereTransmittanceTextureParam = AtmosphereFogPSParams["AtmosphereTransmittanceTexture"];
-	const ParameterAllocation& AtmosphereTransmittanceTextureSamplerParam = AtmosphereFogPSParams["AtmosphereTransmittanceTextureSampler"];
-	const ParameterAllocation& AtmosphereIrradianceTextureParam = AtmosphereFogPSParams["AtmosphereIrradianceTexture"];
-	const ParameterAllocation& AtmosphereIrradianceTextureSamplerParam = AtmosphereFogPSParams["AtmosphereIrradianceTextureSampler"];
-	const ParameterAllocation& AtmosphereInscatterTextureParam = AtmosphereFogPSParams["AtmosphereInscatterTexture"];
-	const ParameterAllocation& AtmosphereInscatterTextureSamplerParam = AtmosphereFogPSParams["AtmosphereInscatterTextureSampler"];
-	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SceneDepthSRV);
-	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &SceneDepthSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureParam.BaseIndex, AtmosphereTransmittanceTextureParam.Size, &AtmosphereTransmittanceSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &AtmosphereTransmittanceTextureSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereIrradianceTextureParam.BaseIndex, AtmosphereIrradianceTextureParam.Size, &AtmosphereIrradianceSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereIrradianceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &AtmosphereIrradianceTextureSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereInscatterTextureParam.BaseIndex, AtmosphereInscatterTextureParam.Size, &AtmosphereInscatterSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereInscatterTextureSamplerParam.BaseIndex, AtmosphereInscatterTextureSamplerParam.Size, &AtmosphereInscatterTextureSampler);
+		const ParameterAllocation& VSViewParam = AtmosphereFogVSParams["View"];
+		D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
+		const ParameterAllocation& PSViewParam = AtmosphereFogPSParams["View"];
+		D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
 
-	D3D11DeviceContext->RSSetState(AtmosphereFogRasterState);
-	D3D11DeviceContext->RSSetViewports(1, &GViewport);
-	D3D11DeviceContext->OMSetBlendState(AtmosphereFogBlendState,NULL,0xffffffff);
+		const ParameterAllocation& SceneDepthTextureParam = AtmosphereFogPSParams["SceneTexturesStruct_SceneDepthTexture"];
+		const ParameterAllocation& SceneDepthTextureSamplerParam = AtmosphereFogPSParams["SceneTexturesStruct_SceneDepthTextureSampler"];
+		const ParameterAllocation& AtmosphereTransmittanceTextureParam = AtmosphereFogPSParams["AtmosphereTransmittanceTexture"];
+		const ParameterAllocation& AtmosphereTransmittanceTextureSamplerParam = AtmosphereFogPSParams["AtmosphereTransmittanceTextureSampler"];
+		const ParameterAllocation& AtmosphereIrradianceTextureParam = AtmosphereFogPSParams["AtmosphereIrradianceTexture"];
+		const ParameterAllocation& AtmosphereIrradianceTextureSamplerParam = AtmosphereFogPSParams["AtmosphereIrradianceTextureSampler"];
+		const ParameterAllocation& AtmosphereInscatterTextureParam = AtmosphereFogPSParams["AtmosphereInscatterTexture"];
+		const ParameterAllocation& AtmosphereInscatterTextureSamplerParam = AtmosphereFogPSParams["AtmosphereInscatterTextureSampler"];
+		D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SceneDepthSRV);
+		D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &SceneDepthSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureParam.BaseIndex, AtmosphereTransmittanceTextureParam.Size, &AtmosphereTransmittanceSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &AtmosphereTransmittanceTextureSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereIrradianceTextureParam.BaseIndex, AtmosphereIrradianceTextureParam.Size, &AtmosphereIrradianceSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereIrradianceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &AtmosphereIrradianceTextureSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereInscatterTextureParam.BaseIndex, AtmosphereInscatterTextureParam.Size, &AtmosphereInscatterSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereInscatterTextureSamplerParam.BaseIndex, AtmosphereInscatterTextureSamplerParam.Size, &AtmosphereInscatterTextureSampler);
 
-	D3D11DeviceContext->DrawIndexed(6, 0, 0);
+		D3D11DeviceContext->RSSetState(AtmosphereFogRasterState);
+		D3D11DeviceContext->RSSetViewports(1, &GViewport);
+		D3D11DeviceContext->OMSetBlendState(AtmosphereFogBlendState, NULL, 0xffffffff);
 
-	ID3D11ShaderResourceView* NULLSRV = NULL;
-	ID3D11SamplerState* NULLSampler = NULL;
-	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &NULLSRV);
-	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &NULLSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureParam.BaseIndex, AtmosphereTransmittanceTextureParam.Size, &NULLSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereIrradianceTextureParam.BaseIndex, AtmosphereIrradianceTextureParam.Size, &NULLSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereIrradianceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
-	D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSRV);
-	D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
+		D3D11DeviceContext->DrawIndexed(6, 0, 0);
 
+		ID3D11ShaderResourceView* NULLSRV = NULL;
+		ID3D11SamplerState* NULLSampler = NULL;
+		D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &NULLSRV);
+		D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &NULLSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureParam.BaseIndex, AtmosphereTransmittanceTextureParam.Size, &NULLSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereIrradianceTextureParam.BaseIndex, AtmosphereIrradianceTextureParam.Size, &NULLSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereIrradianceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
+		D3D11DeviceContext->PSSetShaderResources(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSRV);
+		D3D11DeviceContext->PSSetSamplers(AtmosphereTransmittanceTextureSamplerParam.BaseIndex, AtmosphereTransmittanceTextureSamplerParam.Size, &NULLSampler);
+
+	}
 }
 
+AtmosphericFogSceneInfo::AtmosphericFogSceneInfo(/*UAtmosphericFogComponent* InComponent,*/ const Scene* InScene)
+{
+	SunMultiplier = 1.0f;
+	FogMultiplier = 1.0f;
+	InvDensityMultiplier = 1.0f;
+	DensityOffset = 0.0f;
+	GroundOffset = -98975.89844f;
+	DistanceScale = 1.0f;
+	AltitudeScale = 1.0f;
+	RHeight = 8.0f;
+	StartDistance = 0.15f;
+	DistanceOffset = 0.0f;
+	SunDiscScale = 1.0f;
+	DefaultSunColor = { 2.75f, 2.75f, 2.75f, 2.75f };
+	DefaultSunDirection = { -0.39815f, -0.05403f, 0.91573f };
+	RenderFlag = 0;
+	InscatterAltitudeSampleNum = 32;
+}
+
+AtmosphericFogSceneInfo::~AtmosphericFogSceneInfo()
+{
+
+}

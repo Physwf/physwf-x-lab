@@ -77,12 +77,27 @@ struct FbxMaterial
 	std::string GetName() const { return fbxMaterial ? fbxMaterial->GetName() : "None"; }
 };
 
-struct PrimitiveUniform
+struct alignas(16) PrimitiveUniform
 {
 	Matrix LocalToWorld;
 	Matrix WorldToLocal;
+	Vector4 ObjectWorldPositionAndRadius; // needed by some materials
+	Vector ObjectBounds;
+	float LocalToWorldDeterminantSign;
+	Vector ActorWorldPosition;
+	float DecalReceiverMask;
 	float PerObjectGBufferData;
+	float UseSingleSampleShadowFromStationaryLights;
+	float UseVolumetricLightmapShadowFromStationaryLights;
+	float UseEditorDepthTest;
+	Vector4 ObjectOrientation;
+	Vector4 NonUniformScale;
 	Vector4 InvNonUniformScale;
+	Vector LocalObjectBoundsMin;
+	float PrePadding_Primitive_252;
+	Vector LocalObjectBoundsMax;
+	uint32 LightingChannelMask;
+	float LpvBiasMultiplier;
 };
 
 struct MeshElement
@@ -115,22 +130,26 @@ struct MeshMaterial
 class Mesh : public Actor
 {
 public:
-	Mesh() {}
+	Mesh(){}
+	Mesh(const char* ResourcePath);
 	~Mesh() {}
 
 	void ImportFromFBX(const char* pFileName);
 	void GeneratePlane(float InWidth, float InHeight,int InNumSectionW, int InNumSectionH);
 	void GnerateBox(float InSizeX, float InSizeY, float InSizeZ, int InNumSectionX, int InNumSectionY, int InNumSectionZ);
 
+
 	void InitResource();
 	void ReleaseResource();
 
-	void Tick(float fDeltaTime);
+	virtual void Register() override;
+	virtual void UnRegister() override;
+	virtual void Tick(float fDeltaTime) override;
 
+	void UpdateUniformBuffer();
 	int GetNumberBatches() { return 1; }
 	bool GetMeshElement(int BatchIndex, int SectionIndex, MeshBatch& OutMeshBatch);
-	void Draw(ID3D11DeviceContext* Context, const MeshRenderState& ShaderState);
-	void DrawStaticElement();
+	void DrawStaticElement(class Scene* InScene);
 private:
 	void Build();
 	void BuildVertexBuffer(const MeshDescription& MD2, std::vector<std::vector<uint32> >& OutPerSectionIndices, std::vector<StaticMeshBuildVertex>& StaticMeshBuildVertices);
@@ -142,6 +161,7 @@ private:
 	ID3D11Buffer* PrimitiveUniformBuffer = NULL;
 	std::vector<MeshMaterial> Materials;
 	std::multimap<int32, int32> OverlappingCorners;
+	
 };
 
 static void RegisterMeshAttributes(MeshDescription& MD);

@@ -37,6 +37,20 @@ Matrix Matrix::GetTransposed() const
 	return Result;
 }
 
+Vector4 Matrix::TransformFVector4(const Vector4& P) const
+{
+	Vector4 Result;
+	VectorRegister VecP = VectorLoadAligned(&P);
+	VectorRegister VecR = VectorTransformVector(VecP, this);
+	VectorStoreAligned(VecR, &Result);
+	return Result;
+}
+
+Vector4 Matrix::TransformVector(const Vector& V) const
+{
+	return TransformFVector4(Vector4(V.X, V.Y, V.Z, 0.0f));
+}
+
 Matrix Matrix::DXLookToLH(const Vector& To)
 {
 	srand(unsigned int(To.SizeSquared()));
@@ -101,6 +115,8 @@ Matrix Matrix::DXFromOrthognalLH(float r, float l, float t, float b, float zf, f
 	Result.M[3][0] = -(r + l) / (r - l);	Result.M[3][1] = (t + b) / (t - b);		Result.M[3][2] = -zn / (zf - zn);				Result.M[3][3] = 1.0f;
 	return Result;
 }
+
+const Vector Vector::ZeroVector = Vector(0,0,0);
 
 float Vector::SizeSquared() const
 {
@@ -254,4 +270,60 @@ bool Vector2::Equals(const Vector2& V, float Tolerance /*= KINDA_SMALL_NUMBER*/)
 bool Vector2::IsNearlyZero(float Tolerance /*= KINDA_SMALL_NUMBER*/) const
 {
 	return	Math::Abs(X) <= Tolerance && Math::Abs(Y) <= Tolerance;
+}
+
+float Math::Atan2(float Y, float X)
+{
+	//return atan2f(Y,X);
+	// atan2f occasionally returns NaN with perfectly valid input (possibly due to a compiler or library bug).
+	// We are replacing it with a minimax approximation with a max relative error of 7.15255737e-007 compared to the C library function.
+	// On PC this has been measured to be 2x faster than the std C version.
+
+	const float absX = Math::Abs(X);
+	const float absY = Math::Abs(Y);
+	const bool yAbsBigger = (absY > absX);
+	float t0 = yAbsBigger ? absY : absX; // Max(absY, absX)
+	float t1 = yAbsBigger ? absX : absY; // Min(absX, absY)
+
+	if (t0 == 0.f)
+		return 0.f;
+
+	float t3 = t1 / t0;
+	float t4 = t3 * t3;
+
+	static const float c[7] = {
+		+7.2128853633444123e-03f,
+		-3.5059680836411644e-02f,
+		+8.1675882859940430e-02f,
+		-1.3374657325451267e-01f,
+		+1.9856563505717162e-01f,
+		-3.3324998579202170e-01f,
+		+1.0f
+	};
+
+	t0 = c[0];
+	t0 = t0 * t4 + c[1];
+	t0 = t0 * t4 + c[2];
+	t0 = t0 * t4 + c[3];
+	t0 = t0 * t4 + c[4];
+	t0 = t0 * t4 + c[5];
+	t0 = t0 * t4 + c[6];
+	t3 = t0 * t3;
+
+	t3 = yAbsBigger ? (0.5f * PI) - t3 : t3;
+	t3 = (X < 0.0f) ? PI - t3 : t3;
+	t3 = (Y < 0.0f) ? -t3 : t3;
+
+	return t3;
+}
+
+Vector4 Vector4::GetSafeNormal(float Tolerance /*= SMALL_NUMBER*/) const
+{
+	const float SquareSum = X * X + Y * Y + Z * Z;
+	if (SquareSum > Tolerance)
+	{
+		const float Scale = Math::InvSqrt(SquareSum);
+		return Vector4(X*Scale, Y*Scale, Z*Scale, 0.0f);
+	}
+	return Vector4(0.f);
 }

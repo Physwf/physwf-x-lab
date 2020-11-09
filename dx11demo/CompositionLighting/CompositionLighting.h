@@ -1,18 +1,19 @@
 #pragma once
 
+class ViewInfo;
 
 class CompositionLighting
 {
 public:
 	void Init();
 
-	void ProcessBeforeBasePass();
+	void ProcessBeforeBasePass(ViewInfo& View);
 
-	void ProcessAfterBasePass();
+	void ProcessAfterBasePass(ViewInfo& View);
 
 	//void ProcessLpvIndirect(FRHICommandListImmediate& RHICmdList, FViewInfo& View);
 
-	void ProcessAfterLighting();
+	void ProcessAfterLighting(ViewInfo& View);
 };
 
 extern CompositionLighting GCompositionLighting;

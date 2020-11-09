@@ -2,7 +2,7 @@
 #include "Scene.h"
 #include "Mesh.h"
 #include "RenderTargets.h"
-
+#include "DeferredShading.h"
 #include "DirectXTex.h"
 using namespace DirectX;
 
@@ -194,33 +194,19 @@ void InitBasePass()
 		// 		ID3D11SamplerState* PrecomputedLighting_IndirectLightingCacheTextureSampler2;
 	}
 }
-
-void RenderBasePass()
+void RenderBasePassView(ViewInfo& View)
 {
-// 	ID3D11RenderTargetView* MRT[4];
-// 	MRT[0] = BasePassSceneColorRTV;
-// 	MRT[1] = BasePassGBufferRTV[0];
-// 	MRT[2] = BasePassGBufferRTV[1];
-// 	MRT[3] = BasePassGBufferRTV[2];
-// 	D3D11DeviceContext->OMSetRenderTargets(4, MRT, SceneDepthDSV);
-// 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
-// 	for (ID3D11RenderTargetView* RTV : MRT)
-// 	{
-// 		if (RTV) D3D11DeviceContext->ClearRenderTargetView(RTV, ClearColor);
-// 	}
-// 	D3D11DeviceContext->ClearDepthStencilView(SceneDepthDSV, D3D11_CLEAR_DEPTH, 0.f, 0);
-
 	RenderTargets& SceneContext = RenderTargets::Get();
 	SceneContext.BeginRenderingGBuffer(true);
 
 
 	const ParameterAllocation& VSViewParam = BasePassVSParams.at("View");
 	const ParameterAllocation& VSPrecomputedLightingParameters = BasePassVSParams.at("PrecomputedLightingParameters");
-	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->VSSetConstantBuffers(VSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
 	D3D11DeviceContext->VSSetConstantBuffers(VSPrecomputedLightingParameters.BufferIndex, 1, &PrecomputedLightUniformBuffer);
 
 	D3D11DeviceContext->RSSetState(BasePassRasterizerState);
-	D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(),NULL,0xffffffff);
+	D3D11DeviceContext->OMSetBlendState(TStaticBlendState<>::GetRHI(), NULL, 0xffffffff);
 	D3D11DeviceContext->RSSetViewports(1, &GViewport);
 	D3D11DeviceContext->OMSetDepthStencilState(BasePassDepthStencilState, 0);
 
@@ -235,7 +221,7 @@ void RenderBasePass()
 	// 	const ParameterAllocation& StaticShadowTextureParam = BasePassParams["PrecomputedLighting_StaticShadowTexture"];
 	// 	const ParameterAllocation& StaticShadowTextureSamplerParam = BasePassParams["PrecomputedLighting_StaticShadowTextureSampler"];
 
-	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &ViewUniformBuffer);
+	D3D11DeviceContext->PSSetConstantBuffers(PSViewParam.BufferIndex, 1, &View.ViewUniformBuffer);
 	D3D11DeviceContext->PSSetConstantBuffers(PrecomputedLightingBuffer.BufferIndex, 1, &PrecomputedLightUniformBuffer);
 	D3D11DeviceContext->PSSetShaderResources(BaseColorParam.BaseIndex, BaseColorParam.Size, &BaseColorSRV);
 	D3D11DeviceContext->PSSetSamplers(BaseColorSamplerParam.BaseIndex, BaseColorSamplerParam.Size, &BaseColorSampler);
@@ -249,7 +235,7 @@ void RenderBasePass()
 	const ParameterAllocation& PrimitiveParam = BasePassVSParams.at("Primitive");
 	const ParameterAllocation& PSPrimitiveParam = BasePassPSParams.at("Primitive");
 
-	for (MeshBatch& MB : AllBatches)
+	for (MeshBatch& MB : GScene->AllBatches)
 	{
 		D3D11DeviceContext->IASetInputLayout(MeshInputLayout);
 		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -269,5 +255,19 @@ void RenderBasePass()
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 
+	}
+}
+
+void SceneRenderer::RenderBasePass()
+{
+	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ViewIndex++)
+	{
+		//SCOPED_CONDITIONAL_DRAW_EVENTF(RHICmdList, EventView, Views.Num() > 1, TEXT("View%d"), ViewIndex);
+		ViewInfo& View = Views[ViewIndex];
+		//SCOPED_GPU_MASK(RHICmdList, View.GPUMask);
+
+		//TUniformBufferRef<FOpaqueBasePassUniformParameters> BasePassUniformBuffer;
+		//CreateOpaqueBasePassUniformBuffer(RHICmdList, View, ForwardScreenSpaceShadowMask, BasePassUniformBuffer);
+		RenderBasePassView(View);
 	}
 }

@@ -3,5 +3,4 @@
 #include "D3D11RHI.h"
 #include "UnrealMath.h"
 
-void InitShadowPass();
-void RenderShadowPass();
+void InitShadowDepthMapsPass();

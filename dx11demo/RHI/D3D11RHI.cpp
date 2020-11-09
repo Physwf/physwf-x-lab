@@ -28,7 +28,7 @@ D3D11_VIEWPORT GViewport;
 LONG WindowWidth = 1920;
 LONG WindowHeight = 1080;
 
-bool D3D11Setup()
+bool InitRHI()
 {
 	//create DXGIFactory
 	HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&DXGIFactory);

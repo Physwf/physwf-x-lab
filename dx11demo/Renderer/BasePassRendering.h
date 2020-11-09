@@ -4,4 +4,3 @@
 #include "UnrealMath.h"
 
 void InitBasePass();
-void RenderBasePass();

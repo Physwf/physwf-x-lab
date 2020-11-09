@@ -57,38 +57,40 @@ void CompositionLighting::Init()
 	AO0.Init();
 }
 
-void CompositionLighting::ProcessBeforeBasePass()
+void CompositionLighting::ProcessBeforeBasePass(ViewInfo& View)
 {
 	
 }
 
-void CompositionLighting::ProcessAfterBasePass()
+void CompositionLighting::ProcessAfterBasePass(ViewInfo& View)
 {
 	int Levels = 2;
 
 	if (Levels >= 3)
 	{
-		AOSetup2.Process();
+		AOSetup2.Process(View);
 	}
 	if (Levels >= 2)
 	{
-		AOSetup1.Process();
+		AOSetup1.Process(View);
 	}
+
 	// upsample from lower resolution
 	if (Levels >= 3)
 	{
-		AO2.Process();
+		AO2.Process(View);
 	}
 	if (Levels >= 2)
 	{
-		AO1.Process();
+		AO1.Process(View);
 	}
 
-	AO0.Process();
+	AO0.Process(View);
 }
 
-void CompositionLighting::ProcessAfterLighting()
+void CompositionLighting::ProcessAfterLighting(ViewInfo& View)
 {
 
 }
 
+CompositionLighting GCompositionLighting;

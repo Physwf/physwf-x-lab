@@ -2,38 +2,30 @@
 
 #include "UnrealMath.h"
 
+class World;
+
 class Actor
 {
 public:
 	Actor();
 	virtual ~Actor();
 
-	void SetPosition(float fX, float fY, float fZ);
-	void SetRotation(float fRoll, float fPitch, float fYall);
-	void Pitch(float fValue);
-	void Yall(float fValue);
-	void Roll(float fValue);
-	
-	void StartDrag(int X, int Y);
-	void Drag(int X, int Y);
-	void StopDrag(int X, int Y);
+	virtual void Tick(float fDeltaSeconds) = 0;
+	virtual void Register() = 0;
+	virtual void UnRegister() = 0;
 
+	void SetPosition(Vector InPosition);
+	void SetRotation(Rotator InRotation);
+
+	World* GetWorld() { return mWorld; }
 protected:
-	Matrix GetWorldMatrix() 
-	{ 
-		Matrix R = Matrix::DXFormRotation(Rotation);
-		Matrix T = Matrix::DXFromTranslation(Position);
-		R.Transpose();
-		T.Transpose();
-		return  T * R;
-	}
+	Matrix GetWorldMatrix();
 
 	Vector Position;
-	Vector Rotation;
+	Rotator Rotation;
+	bool bTransformDirty = false;
 
-	int DragStartX;
-	int DragStartY;
-	bool bDraging;
+	World* mWorld;
 
-	bool bTransformDirty;
+	friend class World;
 };

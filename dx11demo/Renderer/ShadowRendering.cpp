@@ -53,8 +53,9 @@ std::map<std::string, ParameterAllocation> ShadowProjectionVSParams;
 std::map<std::string, ParameterAllocation> ShadowProjectionPSParams;
 
 
-void InitShadowPass()
+void InitShadowDepthMapsPass()
 {
+	/*
 	//shadow pass
 	ShadowPassVSBytecode = CompileVertexShader(TEXT("ShadowDepthVertexShader.hlsl"), "VS_Main");
 	ShadowPassPSBytecode = CompilePixelShader(TEXT("ShadowDepthPixelShader.hlsl"), "PS_Main");
@@ -149,12 +150,12 @@ void InitShadowPass()
 
 	ShadowMapProjectionMatrix.Transpose();
 	//ShadowMapProjectionUniformBuffer = CreateConstantBuffer(false, sizeof(ShadowMapProjectionMatrix), &ShadowMapProjectionMatrix);
-
+	*/
 }
-
 
 void RenderShadowProjection()
 {
+	/*
 	D3D11DeviceContext->OMSetRenderTargets(1, &ShadowProjectionRTV, NULL);
 	//D3D11DeviceContext->OMSetDepthStencilState(NULL, 0);
 	const FLOAT ClearColor[] = { 0.f,0.f,0.0f,1.f };
@@ -225,10 +226,12 @@ void RenderShadowProjection()
 	D3D11DeviceContext->PSSetSamplers(ShadowDepthTextureSampler.BaseIndex, ShadowDepthTextureSampler.Size, &Sampler);
 	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
 	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
+	*/
 }
 
-void RenderShadowPass()
+void SceneRenderer::RenderShadowDepthMaps()
 {
+	/*
 	D3D11DeviceContext->OMSetRenderTargets(0, NULL, ShadowPassDSV);
 	D3D11DeviceContext->ClearDepthStencilView(ShadowPassDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
@@ -241,12 +244,12 @@ void RenderShadowPass()
 	D3D11DeviceContext->VSSetConstantBuffers(ProjectionMatrixParams.BufferIndex, 1, &GlobalConstantBuffer);
 
 	D3D11DeviceContext->RSSetState(ShadowPassRasterizerState);
-	//D3D11DeviceContext->OMSetBlendState(PrePassBlendState,);
+	D3D11DeviceContext->OMSetBlendState(TSTaticBlendState<>::GetRHI(), NULL, 0xffffffff);
 	D3D11DeviceContext->OMSetDepthStencilState(ShadowPassDepthStencilState, 0);
 
 	const ParameterAllocation& PrimitiveParams = ShadowPassVSParams.at("Primitive");
 
-	for (MeshBatch& MB : AllBatches)
+	for (MeshBatch& MB : GScene->AllBatches)
 	{
 		D3D11DeviceContext->IASetInputLayout(PositionOnlyMeshInputLayout);
 		D3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -265,6 +268,5 @@ void RenderShadowPass()
 			D3D11DeviceContext->DrawIndexed(MB.Elements[Element].NumTriangles * 3, MB.Elements[Element].FirstIndex, 0);
 		}
 	}
-
-	RenderShadowProjection();
+	*/
 }

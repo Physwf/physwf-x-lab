@@ -24,6 +24,91 @@ typedef unsigned long long	uint64;
 
 #define DELTA			(0.00001f)
 
+/**
+*	float4 vector register type, where the first float (X) is stored in the lowest 32 bits, and so on.
+*/
+struct VectorRegister
+{
+	float	V[4];
+};
+
+/**
+*	int32[4] vector register type, where the first int32 (X) is stored in the lowest 32 bits, and so on.
+*/
+struct VectorRegisterInt
+{
+	int32	V[4];
+};
+
+/**
+*	double[2] vector register type, where the first double (X) is stored in the lowest 64 bits, and so on.
+*/
+struct VectorRegisterDouble
+{
+	double	V[2];
+};
+
+/**
+* Returns a bitwise equivalent vector based on 4 DWORDs.
+*
+* @param X		1st uint32 component
+* @param Y		2nd uint32 component
+* @param Z		3rd uint32 component
+* @param W		4th uint32 component
+* @return		Bitwise equivalent vector with 4 floats
+*/
+inline VectorRegister MakeVectorRegister(uint32 X, uint32 Y, uint32 Z, uint32 W)
+{
+	VectorRegister Vec;
+	((uint32&)Vec.V[0]) = X;
+	((uint32&)Vec.V[1]) = Y;
+	((uint32&)Vec.V[2]) = Z;
+	((uint32&)Vec.V[3]) = W;
+	return Vec;
+}
+
+/**
+* Returns a vector based on 4 FLOATs.
+*
+* @param X		1st float component
+* @param Y		2nd float component
+* @param Z		3rd float component
+* @param W		4th float component
+* @return		Vector of the 4 FLOATs
+*/
+inline VectorRegister MakeVectorRegister(float X, float Y, float Z, float W)
+{
+	VectorRegister Vec = { { X, Y, Z, W } };
+	return Vec;
+}
+
+
+/**
+* Calculate Homogeneous transform.
+*
+* @param VecP			VectorRegister
+* @param MatrixM		FMatrix pointer to the Matrix to apply transform
+* @return VectorRegister = VecP*MatrixM
+*/
+inline VectorRegister VectorTransformVector(const VectorRegister&  VecP, const void* MatrixM)
+{
+	typedef float Float4x4[4][4];
+	union { VectorRegister v; float f[4]; } Tmp, Result;
+	Tmp.v = VecP;
+	const Float4x4& M = *((const Float4x4*)MatrixM);
+
+	Result.f[0] = Tmp.f[0] * M[0][0] + Tmp.f[1] * M[1][0] + Tmp.f[2] * M[2][0] + Tmp.f[3] * M[3][0];
+	Result.f[1] = Tmp.f[0] * M[0][1] + Tmp.f[1] * M[1][1] + Tmp.f[2] * M[2][1] + Tmp.f[3] * M[3][1];
+	Result.f[2] = Tmp.f[0] * M[0][2] + Tmp.f[1] * M[1][2] + Tmp.f[2] * M[2][2] + Tmp.f[3] * M[3][2];
+	Result.f[3] = Tmp.f[0] * M[0][3] + Tmp.f[1] * M[1][3] + Tmp.f[2] * M[2][3] + Tmp.f[3] * M[3][3];
+
+	return Result.v;
+}
+
+
+#define VectorLoadAligned( Ptr )		MakeVectorRegister( ((const float*)(Ptr))[0], ((const float*)(Ptr))[1], ((const float*)(Ptr))[2], ((const float*)(Ptr))[3] )
+#define VectorStoreAligned( Vec, Ptr )	memcpy( Ptr, &(Vec), 16 )
+
 class Math
 {
 public:
@@ -73,14 +158,16 @@ public:
 	{
 		return TruncToInt(ceilf(F));
 	}
+	static inline int32 FloorToInt(float F)
+	{
+		return TruncToInt(floorf(F));
+	}
 	/** Computes absolute value in a generic way */
 	template< class T >
 	static constexpr inline T Abs(const T A)
 	{
 		return (A >= (T)0) ? A : -A;
 	}
-	static inline float Sqrt(float Value) { return sqrtf(Value); }
-
 	/** Divides two integers and rounds up */
 	template <class T>
 	static inline T DivideAndRoundUp(T Dividend, T Divisor)
@@ -110,6 +197,30 @@ public:
 		// Do the platform specific log and convert using the cached value
 		return Loge(Value) * LogToLog2;
 	}
+	static inline float Sin(float Value) { return sinf(Value); }
+	static inline float Asin(float Value) { return asinf((Value < -1.f) ? -1.f : ((Value < 1.f) ? Value : 1.f)); }
+	static inline float Sinh(float Value) { return sinhf(Value); }
+	static inline float Cos(float Value) { return cosf(Value); }
+	static inline float Acos(float Value) { return acosf((Value < -1.f) ? -1.f : ((Value < 1.f) ? Value : 1.f)); }
+	static inline float Tan(float Value) { return tanf(Value); }
+	static inline float Atan(float Value) { return atanf(Value); }
+	static float Atan2(float Y, float X);
+	static inline float Sqrt(float Value) { return sqrtf(Value); }
+	static inline float Pow(float A, float B) { return powf(A, B); }
+	/** Computes a fully accurate inverse square root */
+	static inline float InvSqrt(float F) { 	return 1.0f / sqrtf(F); }
+	/** Computes a faster but less accurate inverse square root */
+	static inline float InvSqrtEst(float F) { return InvSqrt(F); }
+	/** Return true if value is NaN (not a number). */
+	static inline bool IsNaN(float A) { return ((*(uint32*)&A) & 0x7FFFFFFF) > 0x7F800000; }
+	/** Return true if value is finite (not NaN and not Infinity). */
+	static inline bool IsFinite(float A) { return ((*(uint32*)&A) & 0x7F800000) != 0x7F800000; }
+	static inline bool IsNegativeFloat(const float& A) { return ((*(uint32*)&A) >= (uint32)0x80000000);  /*Detects sign bit.*/ }
+	static inline bool IsNegativeDouble(const double& A) { return ((*(uint64*)&A) >= (uint64)0x8000000000000000); /*Detects sign bit.*/ }
+	/** Returns a random integer between 0 and RAND_MAX, inclusive */
+	static inline int32 Rand() { return rand(); }
+	/** Seeds global random number functions Rand() and FRand() */
+	static inline void RandInit(int32 Seed) { srand(Seed); }
 };
 
 
@@ -127,7 +238,7 @@ struct alignas(16) Vector4
 
 	Vector4(): X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
 	explicit Vector4(float V) : X(V), Y(V), Z(V), W(V) {}
-	explicit Vector4(const Vector& V,float InW);
+	Vector4(const Vector& V,float InW = 1.f);
 	Vector4(float InX, float InY, float InZ, float InW = 1.0f) : X(InX), Y(InY), Z(InZ), W(InW) {}
 	Vector4(std::initializer_list<float> list);
 
@@ -162,6 +273,21 @@ struct alignas(16) Vector4
 	{
 		return rhs.operator*(Value);
 	}
+
+	Vector4 GetSafeNormal(float Tolerance = SMALL_NUMBER) const;
+	inline float Vector4::SizeSquared3() const
+	{
+		return X * X + Y * Y + Z * Z;
+	}
+	inline float Vector4::Size() const
+	{
+		return Math::Sqrt(X*X + Y * Y + Z * Z + W * W);
+	}
+	inline float Vector4::SizeSquared() const
+	{
+		return X * X + Y * Y + Z * Z + W * W;
+	}
+
 };
 
 inline Vector4::Vector4(std::initializer_list<float> list)
@@ -271,10 +397,13 @@ struct Vector
 {
 	float X, Y, Z;
 
+	static const Vector ZeroVector;
+
 	Vector() : X(0.0f), Y(0.0f), Z(0.0f) {}
 	explicit Vector(float V) : X(V), Y(V), Z(V) {}
 	Vector(float InX, float InY, float InZ) : X(InX), Y(InY), Z(InZ) {}
 	Vector(std::initializer_list<float> list);
+	Vector(const Vector4& V) : X(V.X), Y(V.Y), Z(V.Z) {};
 
 	Vector operator+(const Vector& rhs) const;
 	Vector operator-(const Vector& rhs) const;
@@ -447,8 +576,20 @@ inline Vector Vector::GetSafeNormal(float Tolerance /*= SMALL_NUMBER*/) const
 	return Vector(X*Scale, Y*Scale, Z*Scale);
 }
 
+struct Rotator
+{
+public:
+	/** Rotation around the right axis (around Y axis), Looking up and down (0=Straight Ahead, +Up, -Down) */
+	float Pitch;
+	/** Rotation around the up axis (around Z axis), Running in circles 0=East, +North, -South. */
+	float Yaw;
+	/** Rotation around the forward axis (around X axis), Tilting your head, 0=Straight, +Clockwise, -CCW. */
+	float Roll;
 
-inline Vector4::Vector4(const Vector& V, float InW) : X(V.X), Y(V.Y), Z(V.Z), W(InW)
+public:
+};
+
+inline Vector4::Vector4(const Vector& V, float InW/* = 1.f*/) : X(V.X), Y(V.Y), Z(V.Z), W(InW)
 {
 
 }
@@ -681,6 +822,7 @@ namespace EAxis
 		Z,
 	};
 }
+inline void VectorMatrixInverse(void* DstMatrix, const void* SrcMatrix);
 
 struct Matrix
 {
@@ -726,11 +868,41 @@ struct Matrix
 
 	Vector Transform(const Vector& InVector) const;
 
+	inline Matrix InverseFast() const
+	{
+		Matrix Result;
+		VectorMatrixInverse(&Result, this);
+		return Result;
+	}
+	inline Vector GetOrigin() const { return Vector(M[3][0], M[3][1], M[3][2]); }
+	inline Vector4 TransformFVector4(const Vector4& V) const;
+	Vector4 TransformVector(const Vector& V) const;
+
+	inline Vector4 TransformPosition(const Vector &V) const
+	{
+		return TransformFVector4(Vector4(V.X, V.Y, V.Z, 1.0f));
+	}
+
+	inline Vector InverseTransformPosition(const Vector &V) const
+	{
+		Matrix InvSelf = this->InverseFast();
+		return InvSelf.TransformPosition(V);
+	}
+
+	inline Matrix RemoveTranslation() const
+	{
+		Matrix Result = *this;
+		Result.M[3][0] = 0.0f;
+		Result.M[3][1] = 0.0f;
+		Result.M[3][2] = 0.0f;
+		return Result;
+	}
+
 	static Matrix	FromScale(float Scale);
 	static Matrix	DXFromPitch(float fPitch);
 	static Matrix	DXFromYaw(float fYaw);
 	static Matrix	DXFromRoll(float fRoll);
-	static Matrix	DXFormRotation(Vector Rotation);
+	static Matrix	DXFormRotation(Rotator Rotation);
 	static Matrix	DXFromTranslation(Vector Translation);
 	static Matrix	DXLookAtLH(const Vector& Eye,const Vector& LookAtPosition, const Vector& Up);
 	static Matrix	DXLookToLH(const Vector& To);
@@ -747,6 +919,38 @@ class TranslationMatrix : public Matrix
 public:
 	TranslationMatrix(const Vector& Delta);
 };
+
+class ScaleMatrix : public Matrix
+{
+public:
+	ScaleMatrix(float Scale);
+	ScaleMatrix(const Vector& Scale);
+	static Matrix Make(float Scale)
+	{
+		return ScaleMatrix(Scale);
+	}
+	static Matrix Make(const Vector& Scale)
+	{
+		return ScaleMatrix(Scale);
+	}
+};
+inline ScaleMatrix::ScaleMatrix(float Scale)
+	: Matrix(
+		Plane(Scale, 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, Scale, 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, Scale, 0.0f),
+		Plane(0.0f, 0.0f, 0.0f, 1.0f)
+	)
+{ }
+
+inline ScaleMatrix::ScaleMatrix(const Vector& Scale)
+	: Matrix(
+		Plane(Scale.X, 0.0f, 0.0f, 0.0f),
+		Plane(0.0f, Scale.Y, 0.0f, 0.0f),
+		Plane(0.0f, 0.0f, Scale.Z, 0.0f),
+		Plane(0.0f, 0.0f, 0.0f, 1.0f)
+	)
+{ }
 
 class ReversedZPerspectiveMatrix : public Matrix
 {
@@ -1169,11 +1373,11 @@ inline Matrix Matrix::DXFromRoll(float fRoll)
 	return Result;
 }
 
-inline Matrix Matrix::DXFormRotation(Vector Rotation)
+inline Matrix Matrix::DXFormRotation(Rotator Rotation)
 {
-	Matrix Pitch =	DXFromPitch(Rotation.X);
-	Matrix Yaw =	DXFromYaw(Rotation.Y);
-	Matrix Roll =	DXFromRoll(Rotation.Z);
+	Matrix Pitch =	DXFromPitch(Rotation.Pitch);
+	Matrix Yaw =	DXFromYaw(Rotation.Yaw);
+	Matrix Roll =	DXFromRoll(Rotation.Roll);
 	return Pitch * Yaw * Roll;
 }
 
@@ -1645,3 +1849,328 @@ inline void QuantizeSceneBufferSize(const IntPoint& InBufferSize, IntPoint& OutB
 	OutBufferSize.X = (InBufferSize.X + DividableBy - 1) & Mask;
 	OutBufferSize.Y = (InBufferSize.Y + DividableBy - 1) & Mask;
 }
+
+struct IntVector
+{
+	/** Holds the point's x-coordinate. */
+	int32 X;
+
+	/** Holds the point's y-coordinate. */
+	int32 Y;
+
+	/**  Holds the point's z-coordinate. */
+	int32 Z;
+
+	IntVector(int32 InX, int32 InY, int32 InZ);
+};
+
+inline IntVector::IntVector(int32 InX, int32 InY, int32 InZ) : X(InX) , Y(InY) , Z(InZ) { }
+
+struct IntRect
+{
+	IntPoint Min;
+	IntPoint Max;
+public:
+	IntRect() {};
+	IntRect(int32 X0, int32 Y0, int32 X1, int32 Y1);
+	IntRect(IntPoint InMin, IntPoint InMax);
+public:
+	const IntPoint& operator()(int32 PointIndex) const;
+	IntPoint& operator()(int32 PointIndex);
+	bool operator==(const IntRect& Other) const;
+	bool operator!=(const IntRect& Other) const;
+	IntRect& operator*=(int32 Scale);
+	IntRect& operator+=(const IntPoint& Point);
+	IntRect& operator-=(const IntPoint& Point);
+	IntRect operator*(int32 Scale) const;
+	IntRect operator/(int32 Div) const;
+	IntRect operator+(const IntPoint& Point) const;
+	IntRect operator/(const IntPoint& Point) const;
+	IntRect operator-(const IntPoint& Point) const;
+	IntRect operator+(const IntRect& Other) const;
+	IntRect operator-(const IntRect& Other) const;
+public:
+	int32 Area() const;
+	IntRect Bottom(int32 InHeight) const;
+	void Clip(const IntRect& Other);
+	void Union(const IntRect& Other);
+	bool Contains(IntPoint Point) const;
+	void GetCenterAndExtents(IntPoint& OutCenter, IntPoint& OutExtent) const;
+	int32 Height() const;
+	void InflateRect(int32 Amount);
+	void Include(IntPoint Point);
+	IntRect Inner(IntPoint Shrink) const;
+	IntRect Right(int32 InWidth) const;
+	IntRect Scale(float Fraction) const;
+	IntPoint Size() const;
+	int32 Width() const;
+	bool IsEmpty() const;
+
+public:
+	static IntRect DivideAndRoundUp(IntRect lhs, int32 Div);
+	static IntRect DivideAndRoundUp(IntRect lhs, IntPoint Div);
+	static int32 Num();
+};
+
+
+inline IntRect IntRect::Scale(float Fraction) const
+{
+	Vector2 Min2D = Vector2((float)Min.X, (float)Min.Y) * Fraction;
+	Vector2 Max2D = Vector2((float)Max.X, (float)Max.Y) * Fraction;
+
+	return IntRect(Math::FloorToInt(Min2D.X), Math::FloorToInt(Min2D.Y), Math::CeilToInt(Max2D.X), Math::CeilToInt(Max2D.Y));
+}
+/* IntRect inline functions
+*****************************************************************************/
+inline IntRect::IntRect(int32 X0, int32 Y0, int32 X1, int32 Y1)
+	: Min(X0, Y0)
+	, Max(X1, Y1)
+{ }
+
+
+inline IntRect::IntRect(IntPoint InMin, IntPoint InMax)
+	: Min(InMin)
+	, Max(InMax)
+{ }
+
+
+inline const IntPoint& IntRect::operator()(int32 PointIndex) const
+{
+	return (&Min)[PointIndex];
+}
+
+
+inline IntPoint& IntRect::operator()(int32 PointIndex)
+{
+	return (&Min)[PointIndex];
+}
+
+
+inline bool IntRect::operator==(const IntRect& Other) const
+{
+	return Min == Other.Min && Max == Other.Max;
+}
+
+
+inline bool IntRect::operator!=(const IntRect& Other) const
+{
+	return Min != Other.Min || Max != Other.Max;
+}
+
+
+inline IntRect& IntRect::operator*=(int32 Scale)
+{
+	Min *= Scale;
+	Max *= Scale;
+
+	return *this;
+}
+
+
+inline IntRect& IntRect::operator+=(const IntPoint& Point)
+{
+	Min += Point;
+	Max += Point;
+
+	return *this;
+}
+
+
+inline IntRect& IntRect::operator-=(const IntPoint& Point)
+{
+	Min -= Point;
+	Max -= Point;
+
+	return *this;
+}
+
+
+inline IntRect IntRect::operator*(int32 Scale) const
+{
+	return IntRect(Min * Scale, Max * Scale);
+}
+
+
+inline IntRect IntRect::operator/(int32 Div) const
+{
+	return IntRect(Min / Div, Max / Div);
+}
+
+
+inline IntRect IntRect::operator+(const IntPoint& Point) const
+{
+	return IntRect(Min + Point, Max + Point);
+}
+
+
+inline IntRect IntRect::operator/(const IntPoint& Point) const
+{
+	return IntRect(Min / Point, Max / Point);
+}
+
+
+inline IntRect IntRect::operator-(const IntPoint& Point) const
+{
+	return IntRect(Min - Point, Max - Point);
+}
+
+
+inline IntRect IntRect::operator+(const IntRect& Other) const
+{
+	return IntRect(Min + Other.Min, Max + Other.Max);
+}
+
+
+inline IntRect IntRect::operator-(const IntRect& Other) const
+{
+	return IntRect(Min - Other.Min, Max - Other.Max);
+}
+
+
+inline int32 IntRect::Area() const
+{
+	return (Max.X - Min.X) * (Max.Y - Min.Y);
+}
+
+
+inline IntRect IntRect::Bottom(int32 InHeight) const
+{
+	return IntRect(Min.X, Math::Max(Min.Y, Max.Y - InHeight), Max.X, Max.Y);
+}
+
+
+inline void IntRect::Clip(const IntRect& R)
+{
+	Min.X = Math::Max<int32>(Min.X, R.Min.X);
+	Min.Y = Math::Max<int32>(Min.Y, R.Min.Y);
+	Max.X = Math::Min<int32>(Max.X, R.Max.X);
+	Max.Y = Math::Min<int32>(Max.Y, R.Max.Y);
+
+	// return zero area if not overlapping
+	Max.X = Math::Max<int32>(Min.X, Max.X);
+	Max.Y = Math::Max<int32>(Min.Y, Max.Y);
+}
+
+inline void IntRect::Union(const IntRect& R)
+{
+	Min.X = Math::Min<int32>(Min.X, R.Min.X);
+	Min.Y = Math::Min<int32>(Min.Y, R.Min.Y);
+	Max.X = Math::Max<int32>(Max.X, R.Max.X);
+	Max.Y = Math::Max<int32>(Max.Y, R.Max.Y);
+}
+
+inline bool IntRect::Contains(IntPoint P) const
+{
+	return P.X >= Min.X && P.X < Max.X && P.Y >= Min.Y && P.Y < Max.Y;
+}
+
+
+inline IntRect IntRect::DivideAndRoundUp(IntRect lhs, int32 Div)
+{
+	return DivideAndRoundUp(lhs, IntPoint(Div, Div));
+}
+
+inline IntRect IntRect::DivideAndRoundUp(IntRect lhs, IntPoint Div)
+{
+	return IntRect(lhs.Min / Div, IntPoint::DivideAndRoundUp(lhs.Max, Div));
+}
+
+inline void IntRect::GetCenterAndExtents(IntPoint& OutCenter, IntPoint& OutExtent) const
+{
+	OutExtent.X = (Max.X - Min.X) / 2;
+	OutExtent.Y = (Max.Y - Min.Y) / 2;
+
+	OutCenter.X = Min.X + OutExtent.X;
+	OutCenter.Y = Min.Y + OutExtent.Y;
+}
+
+
+inline int32 IntRect::Height() const
+{
+	return (Max.Y - Min.Y);
+}
+
+
+inline void IntRect::InflateRect(int32 Amount)
+{
+	Min.X -= Amount;
+	Min.Y -= Amount;
+	Max.X += Amount;
+	Max.Y += Amount;
+}
+
+
+inline void IntRect::Include(IntPoint Point)
+{
+	Min.X = Math::Min(Min.X, Point.X);
+	Min.Y = Math::Min(Min.Y, Point.Y);
+	Max.X = Math::Max(Max.X, Point.X);
+	Max.Y = Math::Max(Max.Y, Point.Y);
+}
+
+inline IntRect IntRect::Inner(IntPoint Shrink) const
+{
+	return IntRect(Min + Shrink, Max - Shrink);
+}
+
+
+inline int32 IntRect::Num()
+{
+	return 2;
+}
+
+
+inline IntRect IntRect::Right(int32 InWidth) const
+{
+	return IntRect(Math::Max(Min.X, Max.X - InWidth), Min.Y, Max.X, Max.Y);
+}
+
+
+inline IntPoint IntRect::Size() const
+{
+	return IntPoint(Max.X - Min.X, Max.Y - Min.Y);
+}
+
+
+inline int32 IntRect::Width() const
+{
+	return Max.X - Min.X;
+}
+
+inline bool IntRect::IsEmpty() const
+{
+	return Width() == 0 && Height() == 0;
+}
+
+/** Inverse Rotation matrix */
+class InverseRotationMatrix : public Matrix
+{
+public:
+	/**
+	* Constructor.
+	*
+	* @param Rot rotation
+	*/
+	InverseRotationMatrix(const Rotator& Rot);
+};
+
+
+inline InverseRotationMatrix::InverseRotationMatrix(const Rotator& Rot)
+	: Matrix(
+		Matrix( // Yaw
+			Plane(+Math::Cos(Rot.Yaw * PI / 180.f), -Math::Sin(Rot.Yaw * PI / 180.f), 0.0f, 0.0f),
+			Plane(+Math::Sin(Rot.Yaw * PI / 180.f), +Math::Cos(Rot.Yaw * PI / 180.f), 0.0f, 0.0f),
+			Plane(0.0f, 0.0f, 1.0f, 0.0f),
+			Plane(0.0f, 0.0f, 0.0f, 1.0f)) *
+		Matrix( // Pitch
+			Plane(+Math::Cos(Rot.Pitch * PI / 180.f), 0.0f, -Math::Sin(Rot.Pitch * PI / 180.f), 0.0f),
+			Plane(0.0f, 1.0f, 0.0f, 0.0f),
+			Plane(+Math::Sin(Rot.Pitch * PI / 180.f), 0.0f, +Math::Cos(Rot.Pitch * PI / 180.f), 0.0f),
+			Plane(0.0f, 0.0f, 0.0f, 1.0f)) *
+		Matrix( // Roll
+			Plane(1.0f, 0.0f, 0.0f, 0.0f),
+			Plane(0.0f, +Math::Cos(Rot.Roll * PI / 180.f), +Math::Sin(Rot.Roll * PI / 180.f), 0.0f),
+			Plane(0.0f, -Math::Sin(Rot.Roll * PI / 180.f), +Math::Cos(Rot.Roll * PI / 180.f), 0.0f),
+			Plane(0.0f, 0.0f, 0.0f, 1.0f))
+	)
+{ }

@@ -57,7 +57,7 @@ void InitHZB()
 	DepthStencilState = TStaticDepthStencilState<FALSE, D3D11_COMPARISON_ALWAYS>::GetRHI();
 }
 
-void BuildHZB()
+void BuildHZB(ViewInfo& View)
 {
 	D3D11DeviceContext->OMSetRenderTargets(1, &HZBRTVs[0], NULL);
 	D3D11DeviceContext->IASetInputLayout(GFilterInputLayout);
@@ -80,20 +80,20 @@ void BuildHZB()
 	const IntPoint GBufferSize = SceneContext.GetBufferSizeXY();
 	const Vector2 InvSize(1.0f / float(GBufferSize.X), 1.0f / float(GBufferSize.Y));
 	const Vector4 InputUvFactorAndOffset(
-// 		float(2 * View.HZBMipmap0Size.X) / float(GBufferSize.X),
-// 		float(2 * View.HZBMipmap0Size.Y) / float(GBufferSize.Y),
-		//float(View.ViewRect.Min.X) / float(GBufferSize.X),
-		//float(View.ViewRect.Min.Y) / float(GBufferSize.Y)
-		float(2 * HZBSize.X) / float(GBufferSize.X),
-		float(2 * HZBSize.Y) / float(GBufferSize.Y),
-		float(GViewport.TopLeftX) / float(GBufferSize.X),
-		float(GViewport.TopLeftY) / float(GBufferSize.Y)
+		float(2 * View.HZBMipmap0Size.X) / float(GBufferSize.X),
+		float(2 * View.HZBMipmap0Size.Y) / float(GBufferSize.Y),
+		float(View.ViewRect.Min.X) / float(GBufferSize.X),
+		float(View.ViewRect.Min.Y) / float(GBufferSize.Y)
+		//float(2 * HZBSize.X) / float(GBufferSize.X),
+		//float(2 * HZBSize.Y) / float(GBufferSize.Y),
+		//float(GViewport.TopLeftX) / float(GBufferSize.X),
+		//float(GViewport.TopLeftY) / float(GBufferSize.Y)
 	);
 	const Vector2 InputViewportMaxBound(
-// 		float(View.ViewRect.Max.X) / float(GBufferSize.X) - 0.5f * InvSize.X,
-// 		float(View.ViewRect.Max.Y) / float(GBufferSize.Y) - 0.5f * InvSize.Y
-		float(GViewport.TopLeftX + GViewport.Width) / float(GBufferSize.X) - 0.5f * InvSize.X,
-		float(GViewport.TopLeftY + GViewport.Height) / float(GBufferSize.Y) - 0.5f * InvSize.Y
+		float(View.ViewRect.Max.X) / float(GBufferSize.X) - 0.5f * InvSize.X,
+		float(View.ViewRect.Max.Y) / float(GBufferSize.Y) - 0.5f * InvSize.Y
+// 		float(GViewport.TopLeftX + GViewport.Width) / float(GBufferSize.X) - 0.5f * InvSize.X,
+// 		float(GViewport.TopLeftY + GViewport.Height) / float(GBufferSize.Y) - 0.5f * InvSize.Y
 	);
 
 	memcpy(GlobalConstantBufferData + InvSizeParam.BaseIndex, &InvSize, InvSizeParam.Size);
@@ -105,7 +105,7 @@ void BuildHZB()
 	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &SceneDepthSampler);
 
 	D3D11DeviceContext->RSSetState(RasterizerState);
-	D3D11_VIEWPORT Viewport = { 0,0,HZBSize.X,HZBSize.Y,0.f,1.f };
+	D3D11_VIEWPORT Viewport = { 0,0,(float)HZBSize.X,(float)HZBSize.Y,0.f,1.f };
 	D3D11DeviceContext->RSSetViewports(1, &Viewport);
 	D3D11DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 	D3D11DeviceContext->OMSetBlendState(BlendState, NULL, 0xffffffff);
@@ -124,9 +124,9 @@ void BuildHZB()
 
 		D3D11DeviceContext->PSSetShader(PS1, 0, 0);
 
-		const ParameterAllocation& InvSizeParam = PSParams0["InvSize"];
-		const ParameterAllocation& TextureParam = PSParams0["Texture"];
-		const ParameterAllocation& TextureSamplerParam = PSParams0["TextureSampler"];
+		const ParameterAllocation& InvSizeParam = PSParams1["InvSize"];
+		const ParameterAllocation& TextureParam = PSParams1["Texture"];
+		const ParameterAllocation& TextureSamplerParam = PSParams1["TextureSampler"];
 
 		memcpy(GlobalConstantBufferData + InvSizeParam.BaseIndex, &InvSize, InvSizeParam.Size);
 		D3D11DeviceContext->UpdateSubresource(GlobalConstantBuffer, 0, NULL, GlobalConstantBufferData, 0, 0);
@@ -143,6 +143,20 @@ void BuildHZB()
 
 		SrcSize /= 2;
 		DstSize /= 2;
+	}
+
+	ID3D11ShaderResourceView* SRV = NULL;
+	ID3D11SamplerState* Sampler = NULL;
+	D3D11DeviceContext->PSSetShaderResources(SceneDepthTextureParam.BaseIndex, SceneDepthTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(SceneDepthTextureSamplerParam.BaseIndex, SceneDepthTextureSamplerParam.Size, &Sampler);
+}
+
+void SceneRenderer::RenderHzb()
+{
+	for (uint32 ViewIndex = 0; ViewIndex < Views.size(); ViewIndex++)
+	{
+		ViewInfo& View = Views[ViewIndex];
+		BuildHZB(View);
 	}
 }
 
