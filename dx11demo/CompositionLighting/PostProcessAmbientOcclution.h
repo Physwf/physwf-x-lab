@@ -82,6 +82,14 @@ public:
 	ID3D11PixelShader* PS;
 	ID3D11RasterizerState* RasterState;
 	ID3D11BlendState* BlendState;
+	ID3D11DepthStencilState* DepthStencilState;
+
+	ID3D11ShaderResourceView* GBufferBSRV;
+	ID3D11SamplerState* GBufferBSamplerState;
+	ID3D11ShaderResourceView* GBufferCSRV;
+	ID3D11SamplerState* GBufferCSamplerState;
+	ID3D11ShaderResourceView* ScreenSpaceAOSRV;
+	ID3D11SamplerState* ScreenSpaceAOState;
 
 	ID3D11Texture2D* Output;
 	ID3D11RenderTargetView* OutputRTV;

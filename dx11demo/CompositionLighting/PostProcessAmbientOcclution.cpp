@@ -300,6 +300,8 @@ void RCPassPostProcessAmbientOcclusion::ProcessPS(ID3D11RenderTargetView* DestRe
 // 	Value[4] = FVector4(InvFadeRadius, -(Settings.AmbientOcclusionFadeDistance - FadeRadius) * InvFadeRadius, HzbStepMipLevelFactorValue, 0);
 // 	Value[5] = FVector4(View.ViewRect.Width(), View.ViewRect.Height(), ViewRect.Min.X, ViewRect.Min.Y);
 	memcpy(GlobalConstantBufferData + ScreenSpaceAOParamsParam.BaseIndex, &ScreenSpaceAOParams, ScreenSpaceAOParamsParam.Size);
+
+	D3D11DeviceContext->UpdateSubresource(GlobalConstantBuffer, 0, 0, &GlobalConstantBufferData, 0, 0);
 	D3D11DeviceContext->PSSetConstantBuffers(HZBRemappingParam.BufferIndex, 1, &GlobalConstantBuffer);
 
 	D3D11DeviceContext->RSSetState(RasterState);
@@ -356,14 +358,24 @@ void RCPassPostProcessBasePassAO::Init()
 	PSBytecode = CompilePixelShader(TEXT("PostProcessAmbientOcclusion.hlsl"), "BasePassAOPS");
 	GetShaderParameterAllocations(PSBytecode, PSParams);
 	PS = CreatePixelShader(PSBytecode);
+	
+	RenderTargets& SceneContext = RenderTargets::Get();
+	GBufferBSRV = CreateShaderResourceView2D(SceneContext.GetGBufferBTexture(), DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0);
+	GBufferBSamplerState = TStaticSamplerState<>::GetRHI();
+	GBufferCSRV = CreateShaderResourceView2D(SceneContext.GetGBufferCTexture(), DXGI_FORMAT_R8G8B8A8_UNORM, 1, 0);
+	GBufferCSamplerState = TStaticSamplerState<>::GetRHI();
+	ScreenSpaceAOSRV = CreateShaderResourceView2D(SceneContext.GetScreenSpaceAO(), DXGI_FORMAT_R8_UNORM, 1, 0);
+	ScreenSpaceAOState = TStaticSamplerState<>::GetRHI();
 	RasterState = TStaticRasterizerState<>::GetRHI();
-	BlendState = TStaticBlendState<>::GetRHI();
+	DepthStencilState = TStaticDepthStencilState<FALSE, D3D11_COMPARISON_ALWAYS>::GetRHI();
+	//GraphicsPSOInit.BlendState = TStaticBlendState<CW_RGBA, BO_Add, BF_DestColor, BF_Zero, BO_Add, BF_DestAlpha, BF_Zero>::GetRHI();
+	BlendState = TStaticBlendState<FALSE,FALSE,0x07+0x08, D3D11_BLEND_OP_ADD, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_ZERO, D3D11_BLEND_OP_ADD, D3D11_BLEND_DEST_ALPHA, D3D11_BLEND_ZERO>::GetRHI();
 }
 
 void RCPassPostProcessBasePassAO::Process(ViewInfo& View)
 {
-	return;
-	D3D11DeviceContext->OMSetRenderTargets(1, &OutputRTV, NULL);
+	RenderTargets& SceneContext = RenderTargets::Get();
+	SceneContext.BeginRenderingSceneColor();
 
 	D3D11DeviceContext->IASetInputLayout(GFilterInputLayout);
 	UINT Strides = sizeof(FilterVertex);
@@ -374,10 +386,54 @@ void RCPassPostProcessBasePassAO::Process(ViewInfo& View)
 	D3D11DeviceContext->VSSetShader(GCommonPostProcessVS, 0, 0);
 	D3D11DeviceContext->PSSetShader(PS, 0, 0);
 
+	const ParameterAllocation& GBufferBTextureParam = PSParams.at("SceneTexturesStruct_GBufferBTexture");
+	const ParameterAllocation& GBufferBTextureSamplerParam = PSParams.at("SceneTexturesStruct_GBufferBTextureSampler");
+	const ParameterAllocation& GBufferCTextureParam = PSParams.at("SceneTexturesStruct_GBufferCTexture");
+	const ParameterAllocation& GBufferCTextureSamplerParam = PSParams.at("SceneTexturesStruct_GBufferCTextureSampler");
+	const ParameterAllocation& GBufferAOTextureParam = PSParams.at("SceneTexturesStruct_ScreenSpaceAOTexture");
+	const ParameterAllocation& GBufferAOTextureSamplerParam = PSParams.at("SceneTexturesStruct_ScreenSpaceAOTextureSampler");
+
+	const ParameterAllocation& ScreenSpaceAOParamsParam = PSParams.at("ScreenSpaceAOParams");
+
+	D3D11DeviceContext->PSSetShaderResources(GBufferBTextureParam.BaseIndex, GBufferBTextureParam.Size, &GBufferBSRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferBTextureSamplerParam.BaseIndex, GBufferBTextureSamplerParam.Size, &GBufferBSamplerState);
+	D3D11DeviceContext->PSSetShaderResources(GBufferCTextureParam.BaseIndex, GBufferCTextureParam.Size, &GBufferBSRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferCTextureSamplerParam.BaseIndex, GBufferCTextureSamplerParam.Size, &GBufferCSamplerState);
+	D3D11DeviceContext->PSSetShaderResources(GBufferAOTextureParam.BaseIndex, GBufferAOTextureParam.Size, &ScreenSpaceAOSRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferAOTextureSamplerParam.BaseIndex, GBufferAOTextureSamplerParam.Size, &ScreenSpaceAOState);
+
+	Vector4 ScreenSpaceAOParams[6]
+		= {
+		Vector4(2.00f, 0.003f, 0.0125f, 0.50f),
+		Vector4(10.4375f, 6.0625f, 0.2125f, 1.72461f),
+		Vector4(2.00f, 0.005f, 0.00f, 0.60f),
+		Vector4(0.00f, 0.00f, 1.00f, 1.00f),
+		Vector4(0.0002f, -0.60f, 0.40f, 0.00f),
+		Vector4(View.ViewRect.Width(), View.ViewRect.Height(), View.ViewRect.Min.X, View.ViewRect.Min.Y),
+	};
+	
+	memcpy(GlobalConstantBufferData + ScreenSpaceAOParamsParam.BaseIndex, &ScreenSpaceAOParams, ScreenSpaceAOParamsParam.Size);
+	D3D11DeviceContext->PSSetConstantBuffers(ScreenSpaceAOParamsParam.BufferIndex, 1, &GlobalConstantBuffer);
+
 	D3D11DeviceContext->RSSetState(RasterState);
 	D3D11_VIEWPORT Viewport;
+	Viewport.TopLeftX = Viewport.TopLeftY = 0;
+	Viewport.Width = View.ViewRect.Max.X - View.ViewRect.Min.X;
+	Viewport.Height = View.ViewRect.Max.Y - View.ViewRect.Min.Y;
+	Viewport.MinDepth = 0;
+	Viewport.MaxDepth = 1;
 	D3D11DeviceContext->RSSetViewports(1, &Viewport);
 	D3D11DeviceContext->OMSetBlendState(BlendState, NULL, 0xffffffff);
+	D3D11DeviceContext->OMSetDepthStencilState(DepthStencilState, 0);
 
 	D3D11DeviceContext->DrawIndexed(6, 0, 0);
+
+	ID3D11ShaderResourceView* SRV = NULL;
+	ID3D11SamplerState* Sampler = NULL;
+	D3D11DeviceContext->PSSetShaderResources(GBufferBTextureParam.BaseIndex, GBufferBTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferBTextureSamplerParam.BaseIndex, GBufferBTextureSamplerParam.Size, &Sampler);
+	D3D11DeviceContext->PSSetShaderResources(GBufferCTextureParam.BaseIndex, GBufferCTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferCTextureSamplerParam.BaseIndex, GBufferCTextureSamplerParam.Size, &Sampler);
+	D3D11DeviceContext->PSSetShaderResources(GBufferAOTextureParam.BaseIndex, GBufferAOTextureParam.Size, &SRV);
+	D3D11DeviceContext->PSSetSamplers(GBufferAOTextureSamplerParam.BaseIndex, GBufferAOTextureSamplerParam.Size, &Sampler);
 }

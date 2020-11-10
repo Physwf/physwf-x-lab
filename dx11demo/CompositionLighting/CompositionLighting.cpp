@@ -56,6 +56,8 @@ void CompositionLighting::Init()
 	AO0.Inputs[2] = AO1.Output;
 	//AO0.Inputs[3] = HZBSRV;
 	AO0.Init(false);
+
+	BasePassAO.Init();
 }
 
 void CompositionLighting::ProcessBeforeBasePass(ViewInfo& View)
@@ -88,6 +90,8 @@ void CompositionLighting::ProcessAfterBasePass(ViewInfo& View)
 	}
 
 	AO0.Process(View);
+
+	BasePassAO.Process(View);
 }
 
 void CompositionLighting::ProcessAfterLighting(ViewInfo& View)
