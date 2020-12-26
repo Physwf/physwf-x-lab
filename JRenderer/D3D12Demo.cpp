@@ -38,13 +38,14 @@ void D3D12Demo::Initialize()
 
 		DXGI_SWAP_CHAIN_DESC SwapChainDesc;
 		ZeroMemory(&SwapChainDesc, sizeof(SwapChainDesc));
-		SwapChainDesc.BufferDesc.Width = 1000;
-		SwapChainDesc.BufferDesc.Height = 800;
+		SwapChainDesc.BufferDesc.Width = 1920;
+		SwapChainDesc.BufferDesc.Height = 1080;
 		SwapChainDesc.BufferDesc.RefreshRate.Numerator = 1;
 		SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
 		SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
 		SwapChainDesc.SampleDesc.Count = 1;
+		SwapChainDesc.SampleDesc.Quality = 0;
 		SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		SwapChainDesc.BufferCount = FrameCount;
 		SwapChainDesc.OutputWindow = m_hWnd;
@@ -63,14 +64,14 @@ void D3D12Demo::Initialize()
 
 		m_Viewport.TopLeftX = 0;
 		m_Viewport.TopLeftY = 0;
-		m_Viewport.Width = 1000;
-		m_Viewport.Height = 800;
+		m_Viewport.Width = 1920;
+		m_Viewport.Height = 1080;
 		m_Viewport.MinDepth = 0.0f;
 		m_Viewport.MaxDepth = 1.0f;
 
 		m_ScissorRect.left = m_ScissorRect.top = 0;
-		m_ScissorRect.bottom = 800;
-		m_ScissorRect.right = 1000;
+		m_ScissorRect.right = 1920;
+		m_ScissorRect.bottom = 1080;
 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
 		ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
