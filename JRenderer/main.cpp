@@ -1,4 +1,4 @@
-#include "d3d12demo.h"
+#include "TriangleDemo.h"
 
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT message,
@@ -54,7 +54,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	D3D12Demo Demo(g_hWind);
+	TriangleDemoMSAA Demo(g_hWind);
 	Demo.Initialize();
 
 	MSG msg;
