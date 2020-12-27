@@ -14,29 +14,20 @@ void D3D12Demo::Initialize()
 		HRESULT hr;
 		assert(S_OK == D3D12CreateDevice(m_DXGIAdapter.Get(), D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), &m_D3D12Device));
 
-		//MSAA支持查询
-		m_MSAALevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		m_MSAALevels.SampleCount = 32;
-		m_MSAALevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-		while (m_MSAALevels.SampleCount > 0)
-		{
-			assert(S_OK == m_D3D12Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &m_MSAALevels, sizeof(m_MSAALevels)));
-			if(m_MSAALevels.NumQualityLevels >0) break;//如果SampleCount被支持,则NumQualityLevels>0
-			m_MSAALevels.SampleCount >>= 1;
-		}
-
 		D3D12_COMMAND_QUEUE_DESC CmdQueueDesc;
 		ZeroMemory(&CmdQueueDesc, sizeof(CmdQueueDesc));
 		CmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		CmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		assert(S_OK == m_D3D12Device->CreateCommandQueue(&CmdQueueDesc, __uuidof(ID3D12CommandQueue), &m_D3D12CmdQueue));
 
+		m_BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
 		DXGI_SWAP_CHAIN_DESC SwapChainDesc;
 		ZeroMemory(&SwapChainDesc, sizeof(SwapChainDesc));
 		SwapChainDesc.BufferDesc.Width = 1920;
 		SwapChainDesc.BufferDesc.Height = 1080;
 		SwapChainDesc.BufferDesc.RefreshRate.Numerator = 1;
-		SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		SwapChainDesc.BufferDesc.Format = m_BackBufferFormat;
 		SwapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
 		SwapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
 		SwapChainDesc.SampleDesc.Count = 1;
@@ -53,26 +44,51 @@ void D3D12Demo::Initialize()
 
 		m_DXGIFactory->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER);
 
-		m_Viewport.TopLeftX = 0;
-		m_Viewport.TopLeftY = 0;
-		m_Viewport.Width = 1920;
-		m_Viewport.Height = 1080;
-		m_Viewport.MinDepth = 0.0f;
-		m_Viewport.MaxDepth = 1.0f;
+		
 
-		m_ScissorRect.left = m_ScissorRect.top = 0;
-		m_ScissorRect.right = 1920;
-		m_ScissorRect.bottom = 1080;
+		if(m_NumCBVSRVUAVDescriptors >0)
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+			ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			rtvHeapDesc.NumDescriptors = m_NumCBVSRVUAVDescriptors;
+			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;//Only shader visible descriptor heaps can be bound to command lists
+			assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&rtvHeapDesc, __uuidof(ID3D12DescriptorHeap), &m_CBVSRVUAVDescHeap));
+		}
+		if (m_NumSamplerDescriptors > 0)
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+			ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+			rtvHeapDesc.NumDescriptors = m_NumSamplerDescriptors;
+			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&rtvHeapDesc, __uuidof(ID3D12DescriptorHeap), &m_SamplerHeap));
+		}
+		if (m_NumRTVDescriptors > 0)
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+			ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			rtvHeapDesc.NumDescriptors = m_NumRTVDescriptors;
+			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&rtvHeapDesc, __uuidof(ID3D12DescriptorHeap), &m_RTVDescHeap));
+		}
+		if (m_NumDSVDescriptors > 0)
+		{
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
+			ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
+			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+			rtvHeapDesc.NumDescriptors = m_NumRTVDescriptors;
+			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&rtvHeapDesc, __uuidof(ID3D12DescriptorHeap), &m_DSVDescHeap));
+		}
 
-		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc;
-		ZeroMemory(&rtvHeapDesc, sizeof(D3D12_DESCRIPTOR_HEAP_DESC));
-		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		rtvHeapDesc.NumDescriptors = FrameCount+1;
-		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&rtvHeapDesc, __uuidof(ID3D12DescriptorHeap), &m_D3D12DescHeap));
+		m_CBVSRVUAVDescriptorSize = m_D3D12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		m_SamplerDescriptorSize = m_D3D12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 		m_RTVDescriptorSize = m_D3D12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		m_DSVDescriptorSize = m_D3D12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-		D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_D3D12DescHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		for (UINT n = 0; n < FrameCount; ++n)
 		{
 			assert(S_OK == m_DXGISwapChain->GetBuffer(n, __uuidof(ID3D12Resource), &m_BackBuffer[n]));
@@ -81,18 +97,6 @@ void D3D12Demo::Initialize()
 			RTVHandle.ptr += m_RTVDescriptorSize;
 		}
 		hr = m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), &m_D3D12CmdAllocator);
-
-		D3D12_ROOT_SIGNATURE_DESC rootSignDesc;
-		ZeroMemory(&rootSignDesc, sizeof(D3D12_ROOT_SIGNATURE_DESC));
-		rootSignDesc.NumParameters = 0;
-		rootSignDesc.pParameters = nullptr;
-		rootSignDesc.NumStaticSamplers = 0;
-		rootSignDesc.pStaticSamplers = 0;
-		rootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-		ComPtr<ID3DBlob> Signature;
-		ComPtr<ID3DBlob> Error;
-		assert(S_OK == D3D12SerializeRootSignature(&rootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, &Signature, &Error));
-		assert(S_OK == m_D3D12Device->CreateRootSignature(0, Signature->GetBufferPointer(), Signature->GetBufferSize(), __uuidof(ID3D12RootSignature), &m_D3D12RootSign));
 
 		InitPipelineStates();
 
@@ -115,8 +119,8 @@ void D3D12Demo::Render()
 {
 	Draw();
 
-	ID3D12CommandList* ppCommandLists[] = { m_D3D12CmdList.Get() };
-	m_D3D12CmdQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	//ID3D12CommandList* ppCommandLists[] = { m_D3D12CmdList.Get() };
+	m_D3D12CmdQueue->ExecuteCommandLists(m_CommandLists.size(), &m_CommandLists[0]);
 
 	m_DXGISwapChain->Present(1, 0);
 

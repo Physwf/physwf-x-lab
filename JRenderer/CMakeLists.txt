@@ -11,6 +11,13 @@ target_include_directories(JRenderer PRIVATE "../x0/Include")
 target_include_directories(JRenderer PRIVATE $ENV{FBX_SDK_HOME}/include)
 find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
 
+#https://www.jianshu.com/p/66df9650a9e2
+ADD_CUSTOM_COMMAND(TARGET JRenderer
+        PRE_BUILD
+        COMMENT "Copy Shaders"
+        COMMAND @copy $(SolutionDir)..\\JRenderer\\Shaders\\*.hlsl  $(TargetDir)
+)
+
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 

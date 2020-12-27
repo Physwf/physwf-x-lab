@@ -54,7 +54,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	TriangleDemoMSAA Demo(g_hWind);
+	TriangleDemoMSAA2 Demo(g_hWind);
 	Demo.Initialize();
 
 	MSG msg;

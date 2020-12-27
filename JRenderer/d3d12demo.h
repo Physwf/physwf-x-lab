@@ -7,6 +7,8 @@
 #include <dxgidebug.h>
 #include <d3dcompiler.h>
 #include <cassert>
+#include <vector>
+
 #define FrameCount 2
 
 #define LOG(format,...)									\
@@ -30,7 +32,13 @@ using namespace Microsoft::WRL;
 class D3D12Demo
 {
 public:
-	D3D12Demo(HWND hWnd) : m_hWnd(hWnd) {}
+	D3D12Demo(HWND hWnd) 
+		: m_hWnd(hWnd) 
+		, m_NumCBVSRVUAVDescriptors(0)
+		, m_NumSamplerDescriptors(0)
+		, m_NumRTVDescriptors(FrameCount)
+		, m_NumDSVDescriptors(0)
+	{}
 
 	void Initialize();
 	void Render();
@@ -48,21 +56,24 @@ protected:
 	ComPtr<ID3D12CommandQueue>			m_D3D12CmdQueue;
 	ComPtr<IDXGISwapChain3>				m_DXGISwapChain;
 	ComPtr<ID3D12Resource>				m_BackBuffer[FrameCount];
+	DXGI_FORMAT							m_BackBufferFormat;
 
-	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS	m_MSAALevels;
 
-	ComPtr<ID3D12RootSignature>			m_D3D12RootSign;
-	ComPtr<ID3D12DescriptorHeap>		m_D3D12DescHeap;
-	ComPtr<ID3D12GraphicsCommandList>	m_D3D12CmdList;
+	ComPtr<ID3D12DescriptorHeap>		m_CBVSRVUAVDescHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_SamplerHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_RTVDescHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_DSVDescHeap;
+	UINT								m_CBVSRVUAVDescriptorSize;
+	UINT								m_SamplerDescriptorSize;
 	UINT								m_RTVDescriptorSize;
+	UINT								m_DSVDescriptorSize;
 
-	ComPtr<ID3D12PipelineState>			m_D3D12PipelineState;
+	UINT								m_NumCBVSRVUAVDescriptors;
+	UINT								m_NumSamplerDescriptors;
+	UINT								m_NumRTVDescriptors;
+	UINT								m_NumDSVDescriptors;
 
-	D3D12_VIEWPORT	m_Viewport;
-	D3D12_RECT		m_ScissorRect;
-
-	ComPtr<ID3D12Resource>				m_D3D12VertexBuffer;
-	D3D12_VERTEX_BUFFER_VIEW			m_VertexBufferView;
+	std::vector<ID3D12CommandList*>		m_CommandLists;
 
 	UINT								m_FrameIndex;
 	HANDLE								m_FenceEvent;
