@@ -14,7 +14,16 @@ void D3D12Demo::Initialize()
 		HRESULT hr;
 		assert(S_OK == D3D12CreateDevice(m_DXGIAdapter.Get(), D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), &m_D3D12Device));
 
-		
+		//MSAA支持查询
+		m_MSAALevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		m_MSAALevels.SampleCount = 32;
+		m_MSAALevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
+		while (m_MSAALevels.SampleCount > 0)
+		{
+			assert(S_OK == m_D3D12Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &m_MSAALevels, sizeof(m_MSAALevels)));
+			if(m_MSAALevels.NumQualityLevels >0) break;//如果SampleCount被支持,则NumQualityLevels>0
+			m_MSAALevels.SampleCount >>= 1;
+		}
 
 		D3D12_COMMAND_QUEUE_DESC CmdQueueDesc;
 		ZeroMemory(&CmdQueueDesc, sizeof(CmdQueueDesc));

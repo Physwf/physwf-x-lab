@@ -49,6 +49,7 @@ protected:
 	ComPtr<IDXGISwapChain3>				m_DXGISwapChain;
 	ComPtr<ID3D12Resource>				m_BackBuffer[FrameCount];
 
+	D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS	m_MSAALevels;
 
 	ComPtr<ID3D12RootSignature>			m_D3D12RootSign;
 	ComPtr<ID3D12DescriptorHeap>		m_D3D12DescHeap;

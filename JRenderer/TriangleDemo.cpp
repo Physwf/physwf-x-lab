@@ -216,7 +216,8 @@ void TriangleDemoMSAA::InitPipelineStates()
 		GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		GPSDesc.NumRenderTargets = 1;
 		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		GPSDesc.SampleDesc.Count = 16;
+		GPSDesc.SampleDesc.Count = m_MSAALevels.SampleCount;
+		GPSDesc.SampleDesc.Quality = m_MSAALevels.NumQualityLevels - 1;//Quality的区间为0到NumQualityLevels - 1
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), &m_D3D12PipelineState));
 
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), m_D3D12PipelineState.Get(), __uuidof(ID3D12GraphicsCommandList), &m_D3D12CmdList));
@@ -273,12 +274,6 @@ void TriangleDemoMSAA::InitPipelineStates()
 	}
 
 	{
-		D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS MSAALevels;
-		MSAALevels.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		MSAALevels.SampleCount = 16;
-		MSAALevels.Flags = D3D12_MULTISAMPLE_QUALITY_LEVELS_FLAG_NONE;
-		assert(S_OK == m_D3D12Device->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &MSAALevels, sizeof(MSAALevels)));
-
 		D3D12_HEAP_PROPERTIES HeapProperitys;
 		ZeroMemory(&HeapProperitys, sizeof(D3D12_HEAP_PROPERTIES));
 		HeapProperitys.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -295,14 +290,14 @@ void TriangleDemoMSAA::InitPipelineStates()
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		ResourceDesc.SampleDesc.Count = 16;
-		ResourceDesc.SampleDesc.Quality = 0;
+		ResourceDesc.SampleDesc.Count = m_MSAALevels.SampleCount;
+		ResourceDesc.SampleDesc.Quality = m_MSAALevels.NumQualityLevels - 1;
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(D3D12_CLEAR_VALUE));
 		ClearValue.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		/*assert(S_OK ==*/ m_D3D12Device->CreateCommittedResource(&HeapProperitys, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), &m_SceneColorMSAA)/*)*/;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperitys, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), &m_SceneColorMSAA));
 
 		D3D12_RENDER_TARGET_VIEW_DESC Desc;
 		ZeroMemory(&Desc, 0);
