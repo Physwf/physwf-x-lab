@@ -1,4 +1,5 @@
 #include "TriangleDemo.h"
+#include "ShadingModels.h"
 
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT message,
@@ -54,7 +55,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	TriangleDemoMSAA2 Demo(g_hWind);
+	//TriangleDemoMSAA2 Demo(g_hWind);
+	PhongShadingModel Demo(g_hWind);
 	Demo.Initialize();
 
 	MSG msg;
