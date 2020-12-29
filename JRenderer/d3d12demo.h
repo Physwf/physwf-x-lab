@@ -42,6 +42,8 @@ public:
 
 	void Initialize();
 	void Render();
+
+	virtual void OnMouseMove(float fScreenX, float fScreenY) {};
 private:
 	bool EnumAdapter();
 protected:

@@ -113,6 +113,11 @@ void ShadingModelDemo::InitSceneDepthRT()
 	}
 }
 
+void PhongShadingModel::OnMouseMove(float fScreenX, float fScreenY)
+{
+	UpdatePointLight(fScreenX, fScreenY);
+}
+
 void PhongShadingModel::InitPipelineStates()
 {
 	ShadingModelDemo::InitPipelineStates();
@@ -394,14 +399,48 @@ void PhongShadingModel::InitMeshResourcces()
 
 	{
 		ViewUniform View;
-		XMFLOAT4X4 Projection;
+		View.ViewSizeAndInvSize = XMFLOAT4(1920.f, 1080.f, 1.f / 1980.f, 1.f / 1080.f);
+		View.ViewRectMin = XMFLOAT4(0, 0, 0, 0);
+		XMFLOAT4X4 PerspectiveProjection;
 		XMMATRIX XMPerspectiveProjection = XMMatrixPerspectiveFovLH(90.f, 1920.f / 1080.f, 10, 100000.f);
-		XMStoreFloat4x4(&Projection, XMPerspectiveProjection);
-		View.WorldToClip = Projection;
+		XMStoreFloat4x4(&PerspectiveProjection, XMPerspectiveProjection);
+		{
+			XMFLOAT4 TestPosition(0, 0, 1000.f, 1.f);
+			XMVECTOR XMTestPosition = XMLoadFloat4(&TestPosition);
+			XMVECTOR XMTestPostionClipSpace = XMVector4Transform(XMTestPosition, XMPerspectiveProjection);
+			XMVECTOR Determinent;
+			XMMATRIX XMInversePerspectiveProjection = XMMatrixInverse(&Determinent, XMPerspectiveProjection);
+			XMVECTOR XMTestPosition2 = XMVector4Transform(XMTestPostionClipSpace, XMInversePerspectiveProjection);
+			XMStoreFloat4(&TestPosition, XMTestPosition2);
+
+			float a = PerspectiveProjection.m[0][0];
+			float b = PerspectiveProjection.m[1][1];
+			float c = PerspectiveProjection.m[2][2];
+			float d = PerspectiveProjection.m[3][2];
+			float s = PerspectiveProjection.m[2][0];
+			float t = PerspectiveProjection.m[2][1];
+
+			XMFLOAT4X4 InverseProjection = XMFLOAT4X4(
+				1.0f / a, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f / b, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f / d,
+				-s / a, -t / b, 1.0f, -c / d
+			);
+
+			{
+				XMMATRIX InverseXMPerspectiveProjection = XMLoadFloat4x4(&InverseProjection);
+				XMVECTOR PAfterInverse = XMVector4Transform(XMTestPostionClipSpace, InverseXMPerspectiveProjection);
+				XMStoreFloat4(&TestPosition, PAfterInverse);
+				View.ClipToWorld = InverseProjection;
+			}
+
+		}
+		
+		View.WorldToClip = PerspectiveProjection;
 		XMVECTOR Determinent = XMMatrixDeterminant(XMPerspectiveProjection);
 		XMPerspectiveProjection = XMMatrixInverse(&Determinent, XMPerspectiveProjection);
-		XMStoreFloat4x4(&Projection, XMPerspectiveProjection);
-		View.ClipToWorld = Projection;
+// 		XMStoreFloat4x4(&Projection, XMPerspectiveProjection);
+// 		View.ClipToWorld = Projection;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -528,7 +567,7 @@ void PhongShadingModel::InitMeshResourcces()
 
 	{
 		PointLightUniform PointLight;
-		PointLight.LightPosition = XMFLOAT4(0.f, 0.f, -100.f,1.0f);
+		PointLight.LightPosition = XMFLOAT4(100.f, 100.f, -100.f,1.0f);
 		PointLight.LightColor = XMFLOAT4(1.f, 1.f, 1.f,1.0f);
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
@@ -579,8 +618,8 @@ void PhongShadingModel::InitMeshResourcces()
 		MaterialUniform Material;
 		Material.ka = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 		Material.kd = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-		Material.ks = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-		Material.alpha = 5.f;
+		Material.ks = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+		Material.alpha = 2.f;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -616,5 +655,20 @@ void PhongShadingModel::InitMeshResourcces()
 		memcpy(pDataBegin, &Material, sizeof(Material));
 		m_MaterialUniformBuffer->Unmap(0, nullptr);
 	}
+}
+
+void PhongShadingModel::UpdatePointLight(float fScreenX, float fScreenY)
+{
+	PointLightUniform PointLight;
+	float XYAmplify = 200.f;
+	PointLight.LightPosition = XMFLOAT4((fScreenX - 0.5f)*XYAmplify, (0.5f - fScreenY)*XYAmplify, -100.f, 1.0f);
+	PointLight.LightColor = XMFLOAT4(1.f, 1.f, 1.f, 1.0f);
+
+	UINT8* pDataBegin;
+	D3D12_RANGE readRange;
+	readRange.Begin = readRange.End = 0;
+	m_PointLightUniformBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin));
+	memcpy(pDataBegin, &PointLight, sizeof(PointLight));
+	m_PointLightUniformBuffer->Unmap(0, nullptr);
 }
 

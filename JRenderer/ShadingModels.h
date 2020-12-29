@@ -9,7 +9,9 @@ struct ViewUniform
 {
 	XMFLOAT4X4 WorldToClip;
 	XMFLOAT4X4 ClipToWorld;
-	float Pading00[32];
+	XMFLOAT4 ViewSizeAndInvSize;
+	XMFLOAT4 ViewRectMin;
+	float Pading00[24];
 };
 
 struct PrimitiveUniform
@@ -51,6 +53,7 @@ public:
 	}
 protected:
 	virtual void InitPipelineStates();
+	
 	void InitSceneColorRT();
 	void InitSceneDepthRT();
 protected:
@@ -70,9 +73,6 @@ protected:
 	D3D12_INDEX_BUFFER_VIEW				m_PrimitiveIndexBufferView;
 	ComPtr<ID3D12Resource>				m_ViewUniformBuffer;
 	ComPtr<ID3D12Resource>				m_PrimitiveUniformBuffer;
-	ComPtr<ID3D12Resource>				m_AmbientLightUniformBuffer;
-	ComPtr<ID3D12Resource>				m_PointLightUniformBuffer;
-	ComPtr<ID3D12Resource>				m_MaterialUniformBuffer;
 
 	Mesh m;
 private:
@@ -86,9 +86,15 @@ public:
 	{
 		m_NumCBVSRVUAVDescriptors = 2;
 	}
+	virtual void OnMouseMove(float fScreenX, float fScreenY);
 protected:
 	virtual void InitPipelineStates();
 	virtual void Draw();
 private:
 	void InitMeshResourcces();
+	void UpdatePointLight(float fScreenX, float fScreenY);
+private:
+	ComPtr<ID3D12Resource>				m_AmbientLightUniformBuffer;
+	ComPtr<ID3D12Resource>				m_PointLightUniformBuffer;
+	ComPtr<ID3D12Resource>				m_MaterialUniformBuffer;
 };

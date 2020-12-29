@@ -10,6 +10,28 @@ HWND g_hWind = NULL;
 LONG WindowWidth = 1920;
 LONG WindowHeight = 1080;
 
+//TriangleDemoMSAA2 Demo(g_hWind);
+PhongShadingModel* pDemo;
+
+#define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
+
+void OutputDebug(const char* Format)
+{
+	OutputDebugStringA(Format);
+}
+
+inline void XLOG(const char* format, ...)
+{
+	char buffer[16 * 1024] = { 0 };
+	va_list v_list;
+	va_start(v_list, format);
+	vsprintf_s(buffer, format, v_list);
+	va_end(v_list);
+	extern void OutputDebug(const char* Format);
+	OutputDebug(buffer);
+}
+
+
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -55,8 +77,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	//TriangleDemoMSAA2 Demo(g_hWind);
 	PhongShadingModel Demo(g_hWind);
+	pDemo = &Demo;
 	Demo.Initialize();
 
 	MSG msg;
@@ -117,6 +139,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 	case WM_MOUSEMOVE:
 	{
+		X_LOG("MouseX:%d,MouseY:%d\n", LOWORD(lParam), HIWORD(lParam));
+		pDemo->OnMouseMove(LOWORD(lParam)/(float)WindowWidth, HIWORD(lParam) / (float)WindowHeight);
 		break;
 	}
 	}
