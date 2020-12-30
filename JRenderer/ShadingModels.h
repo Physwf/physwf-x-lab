@@ -9,9 +9,10 @@ struct ViewUniform
 {
 	XMFLOAT4X4 WorldToClip;
 	XMFLOAT4X4 ClipToWorld;
+	XMFLOAT4X4 SvPositionToWorld;
 	XMFLOAT4 ViewSizeAndInvSize;
 	XMFLOAT4 ViewRectMin;
-	float Pading00[24];
+	float Pading00[8];
 };
 
 struct PrimitiveUniform

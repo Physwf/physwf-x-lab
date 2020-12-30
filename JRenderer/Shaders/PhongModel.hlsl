@@ -10,7 +10,7 @@ struct VSInput
 struct VS_Output
 {
     linear noperspective centroid float4 Position : SV_Position;
-    float3 WorldPostion : POSITION;
+    //float3 WorldPostion : POSITION;
     float3 Normal       : NORMAL;
     float2 UV           : TEXCOORD0;
     float4 TangentToWorld0          : TEXCOORD10_centroid; 
@@ -22,6 +22,7 @@ cbuffer View : register(b0)
 {
     float4x4 WorldToClip;
     float4x4 ClipToWorld;
+    float4x4 SvPositionToWorld;
     float4 ViewSizeAndInvSize;
     float4 ViewRectMin;
 }
@@ -60,7 +61,7 @@ void VSMain(VSInput Input, out VS_Output Output)
 
     float4 WorldPostion = mul(LocalToWorld,float4(Input.Position,1.0f));
     Output.Position = mul(WorldToClip,WorldPostion);
-    Output.WorldPostion = WorldPostion;
+    //Output.WorldPostion = WorldPostion;
     Output.Normal = Input.Normal; //float3(0,0,1);
     Output.UV = Input.UV;
 }
@@ -84,20 +85,29 @@ cbuffer Material: register(b4)
     float alpha;
 }
 
+float2 GetScreenPosition(float4 SvPosition)
+{
+    float2 PixelPostion = SvPosition.xy - ViewRectMin.xy;
+    float3 NDCPos = float3((PixelPostion * ViewSizeAndInvSize.zw - 0.5f) * float2(2,-2), SvPosition.z);
+    return float4(NDCPos.xyz,1) * SvPosition.w;
+}
+
+float3 SvPositionToWorldPosition(float4 SvPosition)
+{
+    float4 HomWorldPostion = mul(SvPositionToWorld,float4(SvPosition.xyz,1));
+    return HomWorldPostion.xyz / HomWorldPostion.w;
+}
+
 void PSMain(VS_Output Input,out float4 OutColor : SV_Target)
 {
     float3 TangentToWorld1 = cross(Input.TangentToWorld2.xyz,Input.TangentToWorld0.xyz) * Input.TangentToWorld2.w;
     float3x3 TangentToWorld = float3x3(Input.TangentToWorld0.xyz, TangentToWorld1, Input.TangentToWorld2.xyz);
 
-    //float3 WorldNormal = mul(TangentToWorld, Input.Normal);
-    float3 WorldNormal = Input.Normal;
-    //WorldNormal = WorldNormal*0.5 + 0.5;
-    float2 PixelPostion = Input.Position.xy - ViewRectMin.xy;
-    float3 NDCPos = float3((PixelPostion * ViewSizeAndInvSize.zw - 0.5f) * float2(2,-2),Input.Position.z);
-    float4 ClipPosition = float4(NDCPos,Input.Position.w);
-    float4 HomWorldPostion = mul(ClipPosition, ClipToWorld);
-    float3 WorldPostion = Input.WorldPostion;//HomWorldPostion.xyz;
+    float3 WorldNormal1 = mul(TangentToWorld, Input.Normal);
+    float3 WorldNormal = Input.Normal - WorldNormal1;
+    float3 WorldPostion = SvPositionToWorldPosition(Input.Position);
     float3 CameraVector = -WorldPostion;
+
     //Phong-shading
     float3 V = normalize(CameraVector);
     float3 N = WorldNormal;

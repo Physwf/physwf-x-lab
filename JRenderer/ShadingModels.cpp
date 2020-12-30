@@ -105,7 +105,7 @@ void ShadingModelDemo::InitSceneDepthRT()
 		ZeroMemory(&Desc, 0);
 		Desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		Desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
-		Desc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
+		Desc.Flags = D3D12_DSV_FLAG_NONE;// D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
 		//Desc.Texture2DMS.MipSlice = 0;
 		//Desc.Texture2DMS.PlaneSlice = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE DescHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
@@ -279,7 +279,7 @@ void PhongShadingModel::InitMeshResourcces()
 	GPSDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
 	GPSDesc.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
 	GPSDesc.RasterizerState.DepthClipEnable = TRUE;
-	GPSDesc.RasterizerState.MultisampleEnable = FALSE;
+	GPSDesc.RasterizerState.MultisampleEnable = TRUE;
 	GPSDesc.RasterizerState.AntialiasedLineEnable = FALSE;
 	GPSDesc.RasterizerState.ForcedSampleCount = 0;
 	GPSDesc.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
@@ -297,7 +297,7 @@ void PhongShadingModel::InitMeshResourcces()
 	GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	GPSDesc.DepthStencilState.DepthEnable = TRUE;
 	GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 	GPSDesc.DepthStencilState.StencilEnable = FALSE;
 	GPSDesc.SampleMask = UINT_MAX;
 	GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -399,48 +399,38 @@ void PhongShadingModel::InitMeshResourcces()
 
 	{
 		ViewUniform View;
-		View.ViewSizeAndInvSize = XMFLOAT4(1920.f, 1080.f, 1.f / 1980.f, 1.f / 1080.f);
+		View.ViewSizeAndInvSize = XMFLOAT4(1920.f, 1080.f, 1.f / 1920.f, 1.f / 1080.f);
 		View.ViewRectMin = XMFLOAT4(0, 0, 0, 0);
-		XMFLOAT4X4 PerspectiveProjection;
-		XMMATRIX XMPerspectiveProjection = XMMatrixPerspectiveFovLH(90.f, 1920.f / 1080.f, 10, 100000.f);
-		XMStoreFloat4x4(&PerspectiveProjection, XMPerspectiveProjection);
+
 		{
-			XMFLOAT4 TestPosition(0, 0, 1000.f, 1.f);
-			XMVECTOR XMTestPosition = XMLoadFloat4(&TestPosition);
-			XMVECTOR XMTestPostionClipSpace = XMVector4Transform(XMTestPosition, XMPerspectiveProjection);
+			XMFLOAT4X4 PerspectiveProjection;
+			XMMATRIX XMPerspectiveProjection = XMMatrixPerspectiveFovLH(90.f, 1920.f / 1080.f, 10, 100000.f);
+			XMStoreFloat4x4(&PerspectiveProjection, XMPerspectiveProjection);
+			View.WorldToClip = PerspectiveProjection;
+
 			XMVECTOR Determinent;
 			XMMATRIX XMInversePerspectiveProjection = XMMatrixInverse(&Determinent, XMPerspectiveProjection);
-			XMVECTOR XMTestPosition2 = XMVector4Transform(XMTestPostionClipSpace, XMInversePerspectiveProjection);
-			XMStoreFloat4(&TestPosition, XMTestPosition2);
+			XMFLOAT4X4 InversePerspectiveProjection;
+			XMStoreFloat4x4(&InversePerspectiveProjection, XMInversePerspectiveProjection);
+			View.ClipToWorld = InversePerspectiveProjection;
 
-			float a = PerspectiveProjection.m[0][0];
-			float b = PerspectiveProjection.m[1][1];
-			float c = PerspectiveProjection.m[2][2];
-			float d = PerspectiveProjection.m[3][2];
-			float s = PerspectiveProjection.m[2][0];
-			float t = PerspectiveProjection.m[2][1];
-
-			XMFLOAT4X4 InverseProjection = XMFLOAT4X4(
-				1.0f / a, 0.0f, 0.0f, 0.0f,
-				0.0f, 1.0f / b, 0.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f / d,
-				-s / a, -t / b, 1.0f, -c / d
+			float Mx = 2.0f * View.ViewSizeAndInvSize.z;
+			float My = -2.0f * View.ViewSizeAndInvSize.w;
+			float Ax = -1.0f /*- 2.0f * EffectiveViewRect.Min.X * View.ViewSizeAndInvSize.Z*/;
+			float Ay = 1.0f /*+ 2.0f * EffectiveViewRect.Min.Y * View.ViewSizeAndInvSize.W*/;
+			XMFLOAT4X4 Temp = XMFLOAT4X4
+			(
+				Mx, 0, 0, 0,
+				0, My, 0, 0,
+				0, 0, 1, 0,
+				Ax, Ay, 0, 1
 			);
-
-			{
-				XMMATRIX InverseXMPerspectiveProjection = XMLoadFloat4x4(&InverseProjection);
-				XMVECTOR PAfterInverse = XMVector4Transform(XMTestPostionClipSpace, InverseXMPerspectiveProjection);
-				XMStoreFloat4(&TestPosition, PAfterInverse);
-				View.ClipToWorld = InverseProjection;
-			}
-
+			XMMATRIX XMTemp;
+			XMTemp = XMLoadFloat4x4(&Temp);
+			XMTemp = XMMatrixMultiply(XMTemp, XMInversePerspectiveProjection);
+			XMStoreFloat4x4(&Temp, XMTemp);
+			View.SvPositionToWorld = Temp;
 		}
-		
-		View.WorldToClip = PerspectiveProjection;
-		XMVECTOR Determinent = XMMatrixDeterminant(XMPerspectiveProjection);
-		XMPerspectiveProjection = XMMatrixInverse(&Determinent, XMPerspectiveProjection);
-// 		XMStoreFloat4x4(&Projection, XMPerspectiveProjection);
-// 		View.ClipToWorld = Projection;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
