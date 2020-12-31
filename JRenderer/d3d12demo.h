@@ -44,6 +44,7 @@ public:
 	void Render();
 
 	virtual void OnMouseMove(float fScreenX, float fScreenY) {};
+	virtual void OnKeyDown(unsigned char KeyCode) {};
 private:
 	bool EnumAdapter();
 protected:

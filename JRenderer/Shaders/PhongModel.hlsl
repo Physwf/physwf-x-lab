@@ -75,6 +75,8 @@ cbuffer PointLight : register(b3)
 {
     float4 LightPosition;
     float4 LightColor;
+    float Intencity;
+    float FadeOffExponent;
 };
 
 cbuffer Material: register(b4)
@@ -83,6 +85,7 @@ cbuffer Material: register(b4)
     float4 kd;
     float4 ks;
     float alpha;
+    float ShadingModel;
 }
 
 float2 GetScreenPosition(float4 SvPosition)
@@ -98,6 +101,35 @@ float3 SvPositionToWorldPosition(float4 SvPosition)
     return HomWorldPostion.xyz / HomWorldPostion.w;
 }
 
+float4 PhongShading(float3 WorldNormal , float3 CameraVector,float3 LightVector)
+{
+    float3 V = normalize(CameraVector);
+    float3 N = normalize(WorldNormal);
+    float3 L = normalize(LightVector);
+    float3 R = 2.f * dot(L,N) * N - L;
+    float LightIntencity = Intencity / pow(length(LightVector),FadeOffExponent);
+    float3 DisffuseColor = LightIntencity * ka * LightColor * max(dot(N,L),0);
+    float3 SpecularColor = LightIntencity * ks * LightColor * pow(max(dot(R,V),0),alpha);
+    float3 AmbientColor =  ka * AmbientLightColor;
+
+    return float4(AmbientColor+DisffuseColor+SpecularColor,1);
+}
+
+float4 BlinPhongShading(float3 WorldNormal , float3 CameraVector,float3 LightVector)
+{
+     //Blin-Phong-shading
+    float3 V = normalize(CameraVector);
+    float3 N = normalize(WorldNormal);
+    float3 L = normalize(LightVector);
+    float3 H = normalize(L + V);
+    float LightIntencity = Intencity / pow(length(LightVector),FadeOffExponent);
+    float3 DisffuseColor = LightIntencity * ka * LightColor * max(dot(N,L),0);
+    float3 SpecularColor = LightIntencity * ks * LightColor * pow(max(dot(N,H),0),alpha);
+    float3 AmbientColor =  ka * AmbientLightColor;
+
+    return float4(AmbientColor+DisffuseColor+SpecularColor,1);
+}
+
 void PSMain(VS_Output Input,out float4 OutColor : SV_Target)
 {
     float3 TangentToWorld1 = cross(Input.TangentToWorld2.xyz,Input.TangentToWorld0.xyz) * Input.TangentToWorld2.w;
@@ -106,18 +138,16 @@ void PSMain(VS_Output Input,out float4 OutColor : SV_Target)
     float3 WorldNormal = mul(TangentToWorld, float3(0,0,1));
     float3 WorldPostion = SvPositionToWorldPosition(Input.Position);
     float3 CameraVector = -WorldPostion;
+    float3 LightVector =  LightPosition.xyz - WorldPostion;
 
-    //Phong-shading
-    float3 V = normalize(CameraVector);
-    float3 N = normalize(WorldNormal);
-    float3 L = normalize(LightPosition);
-    float3 R = 2.f * dot(L,N) * N - L;
-    float3 DisffuseColor = ka * LightColor * max(dot(N,L),0);
-    float3 SpecularColor = ks * LightColor * pow(max(dot(R,V),0),alpha);
-    float3 AmbientColor =  ka * AmbientLightColor;
-    //Blin-Phong-shading
-    float3 H = normalize(L + V);
-    float3 SpecularColorBP = ks * LightColor * pow(max(dot(N,H),0),alpha);
-
-    OutColor = float4(AmbientColor+DisffuseColor+SpecularColor,1);
+    OutColor = 0;
+    [branch]
+    if(ShadingModel == 0)
+    {
+        OutColor = PhongShading(WorldNormal,CameraVector,LightVector);
+    }
+    else
+    {
+        OutColor = BlinPhongShading(WorldNormal,CameraVector,LightVector);
+    }
 }

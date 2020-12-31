@@ -115,6 +115,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
 	case WM_KEYDOWN:
 	{
+		pDemo->OnKeyDown(wParam);
 		break;
 	}
 	case WM_KEYUP:

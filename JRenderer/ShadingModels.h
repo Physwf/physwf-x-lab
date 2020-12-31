@@ -32,7 +32,9 @@ struct PointLightUniform
 {
 	XMFLOAT4 LightPosition;
 	XMFLOAT4 LightColor;
-	float Pading00[56];
+	float Intencity;
+	float FadeOffExponent;
+	float Pading00[54];
 };
 
 struct MaterialUniform
@@ -41,7 +43,8 @@ struct MaterialUniform
 	XMFLOAT4 kd;
 	XMFLOAT4 ks;
 	float alpha;
-	float Pading00[51];
+	float ShadingModel;
+	float Pading00[50];
 };
 
 class ShadingModelDemo : public D3D12Demo
@@ -86,8 +89,10 @@ public:
 	PhongShadingModel(HWND hWnd) : ShadingModelDemo(hWnd)
 	{
 		m_NumCBVSRVUAVDescriptors = 2;
+		bUseBlinPhong = true;
 	}
 	virtual void OnMouseMove(float fScreenX, float fScreenY);
+	virtual void OnKeyDown(unsigned char KeyCode);
 protected:
 	virtual void InitPipelineStates();
 	virtual void Draw();
@@ -98,4 +103,5 @@ private:
 	ComPtr<ID3D12Resource>				m_AmbientLightUniformBuffer;
 	ComPtr<ID3D12Resource>				m_PointLightUniformBuffer;
 	ComPtr<ID3D12Resource>				m_MaterialUniformBuffer;
+	bool bUseBlinPhong;
 };

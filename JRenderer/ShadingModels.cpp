@@ -118,6 +118,34 @@ void PhongShadingModel::OnMouseMove(float fScreenX, float fScreenY)
 	UpdatePointLight(fScreenX, fScreenY);
 }
 
+void PhongShadingModel::OnKeyDown(unsigned char KeyCode)
+{
+	float ShadingModel = 0;
+	switch (KeyCode)
+	{
+	case 49://0
+		ShadingModel = 0;
+		break;
+	case 50://1
+		ShadingModel = 1;
+		break;
+	}
+
+	MaterialUniform Material;
+	Material.ka = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
+	Material.kd = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
+	Material.ks = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	Material.alpha = 5.f;
+	Material.ShadingModel = ShadingModel;
+
+	UINT8* pDataBegin;
+	D3D12_RANGE readRange;
+	readRange.Begin = readRange.End = 0;
+	m_MaterialUniformBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pDataBegin));
+	memcpy(pDataBegin, &Material, sizeof(Material));
+	m_MaterialUniformBuffer->Unmap(0, nullptr);
+}
+
 void PhongShadingModel::InitPipelineStates()
 {
 	ShadingModelDemo::InitPipelineStates();
@@ -245,6 +273,12 @@ void PhongShadingModel::InitMeshResourcces()
 	ComPtr<ID3DBlob> VS;
 	ComPtr<ID3DBlob> PS;
 
+// 	D3D_SHADER_MACRO Micros[] = 
+// 	{
+// 		{"USE_BLINPHONG",	bUseBlinPhong ? "1" : "0"},
+// 		{"USE_PHONG",		bUseBlinPhong ? "0" : "1"},
+// 		{ NULL,				NULL },
+// 	};
 	HRESULT hr;
 	hr = D3DCompileFromFile(TEXT("PhongModel.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &VS, &Error);
 	if (FAILED(hr))
@@ -559,6 +593,8 @@ void PhongShadingModel::InitMeshResourcces()
 		PointLightUniform PointLight;
 		PointLight.LightPosition = XMFLOAT4(100.f, 100.f, -100.f,1.0f);
 		PointLight.LightColor = XMFLOAT4(1.f, 1.f, 1.f,1.0f);
+		PointLight.Intencity = 20000.f;
+		PointLight.FadeOffExponent = 2.f;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -610,6 +646,7 @@ void PhongShadingModel::InitMeshResourcces()
 		Material.kd = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 		Material.ks = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
 		Material.alpha = 5.f;
+		Material.ShadingModel = 0;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -653,6 +690,8 @@ void PhongShadingModel::UpdatePointLight(float fScreenX, float fScreenY)
 	float XYAmplify = 200.f;
 	PointLight.LightPosition = XMFLOAT4((fScreenX - 0.5f)*XYAmplify, (0.5f - fScreenY)*XYAmplify, -100.f, 1.0f);
 	PointLight.LightColor = XMFLOAT4(1.f, 1.f, 1.f, 1.0f);
+	PointLight.Intencity = 20000.f;
+	PointLight.FadeOffExponent = 2.f;
 
 	UINT8* pDataBegin;
 	D3D12_RANGE readRange;
