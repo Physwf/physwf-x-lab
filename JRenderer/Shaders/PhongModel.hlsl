@@ -11,7 +11,7 @@ struct VS_Output
 {
     linear noperspective centroid float4 Position : SV_Position;
     //float3 WorldPostion : POSITION;
-    float3 Normal       : NORMAL;
+    //float3 Normal       : NORMAL;
     float2 UV           : TEXCOORD0;
     float4 TangentToWorld0          : TEXCOORD10_centroid; 
     float4 TangentToWorld2	        : TEXCOORD11_centroid;
@@ -60,9 +60,9 @@ void VSMain(VSInput Input, out VS_Output Output)
 	Output.TangentToWorld2_Center = Output.TangentToWorld2;
 
     float4 WorldPostion = mul(LocalToWorld,float4(Input.Position,1.0f));
-    Output.Position = mul(WorldToClip,WorldPostion);
+    Output.Position = mul(WorldToClip, WorldPostion);
     //Output.WorldPostion = WorldPostion;
-    Output.Normal = Input.Normal; //float3(0,0,1);
+    //Output.Normal = float3(0,0,1);
     Output.UV = Input.UV;
 }
 
@@ -103,14 +103,13 @@ void PSMain(VS_Output Input,out float4 OutColor : SV_Target)
     float3 TangentToWorld1 = cross(Input.TangentToWorld2.xyz,Input.TangentToWorld0.xyz) * Input.TangentToWorld2.w;
     float3x3 TangentToWorld = float3x3(Input.TangentToWorld0.xyz, TangentToWorld1, Input.TangentToWorld2.xyz);
 
-    float3 WorldNormal1 = mul(TangentToWorld, Input.Normal);
-    float3 WorldNormal = Input.Normal - WorldNormal1;
+    float3 WorldNormal = mul(TangentToWorld, float3(0,0,1));
     float3 WorldPostion = SvPositionToWorldPosition(Input.Position);
     float3 CameraVector = -WorldPostion;
 
     //Phong-shading
     float3 V = normalize(CameraVector);
-    float3 N = WorldNormal;
+    float3 N = normalize(WorldNormal);
     float3 L = normalize(LightPosition);
     float3 R = 2.f * dot(L,N) * N - L;
     float3 DisffuseColor = ka * LightColor * max(dot(N,L),0);

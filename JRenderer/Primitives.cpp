@@ -93,17 +93,17 @@ void Mesh::LoadFBX(const char* pFileName)
 // 	FbxAxisSystem::EUpVector UpVector = FbxAxisSystem::eZAxis;
 // 	FbxAxisSystem::EFrontVector FrontVector = (FbxAxisSystem::EFrontVector) - FbxAxisSystem::eParityOdd;
 
-	//FbxAxisSystem::ECoordSystem CoordSystem = FbxAxisSystem::eLeftHanded;
-	//FbxAxisSystem::EUpVector UpVector = FbxAxisSystem::eYAxis;
-	//FbxAxisSystem::EFrontVector FrontVector = (FbxAxisSystem::EFrontVector) - FbxAxisSystem::eParityOdd;
+	FbxAxisSystem::ECoordSystem CoordSystem = FbxAxisSystem::eLeftHanded;
+	FbxAxisSystem::EUpVector UpVector = FbxAxisSystem::eYAxis;
+	FbxAxisSystem::EFrontVector FrontVector = (FbxAxisSystem::EFrontVector) - FbxAxisSystem::eParityOdd;
 
-	//FbxAxisSystem UnrealImportAxis(UpVector, FrontVector, CoordSystem);
-	//FbxAxisSystem SourceSetup = lScene->GetGlobalSettings().GetAxisSystem();
+	FbxAxisSystem ImportAxis(UpVector, FrontVector, CoordSystem);
+	FbxAxisSystem SourceSetup = lScene->GetGlobalSettings().GetAxisSystem();
 
-	//if (SourceSetup != UnrealImportAxis)
+	if (SourceSetup != ImportAxis)
 	{
-		//FbxRootNodeUtility::RemoveAllFbxRoots(lScene);
-		//UnrealImportAxis.ConvertScene(lScene);
+		FbxRootNodeUtility::RemoveAllFbxRoots(lScene);
+		ImportAxis.ConvertScene(lScene);
 // 		FbxAMatrix JointOrientationMatrix;
 // 		JointOrientationMatrix.SetIdentity();
 // 		if (GetImportOptions()->bForceFrontXAxis)

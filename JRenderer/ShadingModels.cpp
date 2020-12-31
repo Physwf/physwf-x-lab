@@ -471,7 +471,7 @@ void PhongShadingModel::InitMeshResourcces()
 		PrimitiveUniform Primitive;
 		XMMATRIX LocalToWorld = XMMatrixTranslation(0,0,40.f);
 		XMStoreFloat4x4(&Primitive.LocalToWorld, LocalToWorld);
-		Primitive.LocalToWorldDeterminantSign = 1;
+		Primitive.LocalToWorldDeterminantSign = -1;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -609,7 +609,7 @@ void PhongShadingModel::InitMeshResourcces()
 		Material.ka = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 		Material.kd = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
 		Material.ks = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-		Material.alpha = 2.f;
+		Material.alpha = 5.f;
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
