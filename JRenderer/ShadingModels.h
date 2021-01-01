@@ -105,3 +105,16 @@ private:
 	ComPtr<ID3D12Resource>				m_MaterialUniformBuffer;
 	bool bUseBlinPhong;
 };
+
+class PBRShadingModel : public ShadingModelDemo
+{
+public:
+	PBRShadingModel(HWND hWnd) : ShadingModelDemo(hWnd)
+	{
+	}
+protected:
+	virtual void InitPipelineStates();
+	virtual void Draw();
+private:
+	void InitMeshResourcces();
+};

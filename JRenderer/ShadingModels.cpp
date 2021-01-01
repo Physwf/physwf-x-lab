@@ -701,3 +701,17 @@ void PhongShadingModel::UpdatePointLight(float fScreenX, float fScreenY)
 	m_PointLightUniformBuffer->Unmap(0, nullptr);
 }
 
+void PBRShadingModel::InitPipelineStates()
+{
+
+}
+
+void PBRShadingModel::Draw()
+{
+
+}
+
+void PBRShadingModel::InitMeshResourcces()
+{
+
+}
