@@ -1,5 +1,7 @@
 #include "TriangleDemo.h"
 #include "ShadingModels.h"
+#include "PBRTools.h"
+#include "SkyBoxDemo.h"
 
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT message,
@@ -11,7 +13,7 @@ LONG WindowWidth = 1920;
 LONG WindowHeight = 1080;
 
 //TriangleDemoMSAA2 Demo(g_hWind);
-PhongShadingModel* pDemo;
+D3D12Demo* pDemo;
 
 #define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
 
@@ -63,7 +65,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	(
 		NULL,
 		L"WindowClass1",
-		L"dx11demo",
+		L"JRender",
 		WS_OVERLAPPEDWINDOW,
 		300,
 		300,
@@ -77,7 +79,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	PhongShadingModel Demo(g_hWind);
+	//PhongShadingModel Demo(g_hWind);
+	//MERL100Coordinate Demo(g_hWind);
+	SkyBoxDemo Demo(g_hWind);
 	pDemo = &Demo;
 	Demo.Initialize();
 

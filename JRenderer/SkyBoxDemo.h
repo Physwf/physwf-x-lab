@@ -4,10 +4,12 @@
 
 using namespace DirectX;
 
+//Device requires SizeInBytes be a multiple of 256.
 struct CubeMapViewUniform
 {
 	XMFLOAT4X4 FaceTransform[6];
 	XMFLOAT4X4 Projection;
+	float padding[16];
 };
 
 struct SkyBoxViewUniform
@@ -23,7 +25,7 @@ public:
 	{
 		m_NumSamplerDescriptors = 1;
 		m_NumRTVDescriptors = FrameCount + 1;
-		m_CBVSRVUAVDescriptorSize = 2 + 2;
+		m_NumCBVSRVUAVDescriptors = 2 + 2;
 	}
 protected:
 	virtual void InitPipelineStates();
@@ -58,6 +60,8 @@ private:
 	ComPtr<ID3D12GraphicsCommandList> m_SkyBoxCmdList;
 	ComPtr<ID3D12Resource> m_SkyBoxVertexBuffer;
 	D3D12_VERTEX_BUFFER_VIEW m_SkyBoxVertexBufferView;
+	ComPtr<ID3D12Resource> m_SkyBoxIndexBuffer;
+	D3D12_INDEX_BUFFER_VIEW m_SkyBoxIndexBufferView;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SkyBoxSRVHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SkyBoxSRVSamplerHandle;
 	ComPtr<ID3D12Resource> m_SkyBoxViewUniformBuffer;

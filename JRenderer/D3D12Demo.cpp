@@ -98,8 +98,6 @@ void D3D12Demo::Initialize()
 		}
 		hr = m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), &m_D3D12CmdAllocator);
 
-		InitPipelineStates();
-
 		{
 			m_D3D12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), &m_Fence);
 			m_FenceValue = 1;
@@ -112,6 +110,8 @@ void D3D12Demo::Initialize()
 
 			WaitForPreviousFrame();
 		}
+
+		InitPipelineStates();
 	}
 }
 

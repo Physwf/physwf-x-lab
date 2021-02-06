@@ -6,19 +6,20 @@ struct VSInput
 
 struct VSOutput
 {
-    float4 SVPosition : SV_Position;
+    float3 Position : POSITION;
 };
 
 struct GSOutput
 {
     float3 WorldPosition : TEXCOORD0;
     float4 SVPosition : SV_Position;
+    uint RenderTargetArrayIndex : SV_RenderTargetArrayIndex;
 };
 
 VSOutput VSMain(VSInput Input) 
 {
     VSOutput Output = (VSOutput)0;
-    Output.SVPosition = Input.Position;
+    Output.Position = Input.Position;
     return Output;
 }
 
@@ -31,7 +32,6 @@ cbuffer View
 [maxvertexcount(4)]
 void GSMain(
     triangle VSOutput Input[3],
-    out uint RenderTargetArrayIndex : SV_RenderTargetArrayIndex, 
     inout TriangleStream<GSOutput> TriStream)
 {
     for(int CubeFaceIndex=0;CubeFaceIndex<6;++CubeFaceIndex)
@@ -39,9 +39,9 @@ void GSMain(
         for(int VertexIndex=0;VertexIndex<3;++VertexIndex)
         {
             GSOutput Output = (GSOutput)0;
-            RenderTargetArrayIndex = CubeFaceIndex;
-            Output.WorldPosition = mul(FaceTransform[CubeFaceIndex], Input[VertexIndex].SVPosition);
-            Output.SVPosition = mul(Projection, Input[VertexIndex].SVPosition);
+            Output.RenderTargetArrayIndex = CubeFaceIndex;
+            Output.WorldPosition = mul(FaceTransform[CubeFaceIndex], float4(Input[VertexIndex].Position,1.0f)).xyz;
+            Output.SVPosition = mul(Projection, float4(Input[VertexIndex].Position,1.0f));
             TriStream.Append(Output);
         }
         TriStream.RestartStrip();
