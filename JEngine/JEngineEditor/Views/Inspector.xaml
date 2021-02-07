@@ -1,0 +1,24 @@
+﻿<Page x:Class="JEngineEditor.Views.Inspector"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:JEngineEditor.Views"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="300"
+      Title="Inspector">
+
+    <Page.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="AllowDrop" Value="True"/>
+        </Style>
+    </Page.Resources>
+    <TabControl x:Name="tc">
+        <TabItem Header="Inspector" Height="21" VerticalAlignment="Top" Drop="TabItem_Drop" DragOver="TabItem_DragOver">
+            <StackPanel Margin="1,1,1,1" MinWidth="300">
+                <Button Width="Auto" Content="Hello"/>
+                <Button Width="Auto" Content="Hello"/>
+            </StackPanel>
+        </TabItem>
+    </TabControl>
+</Page>

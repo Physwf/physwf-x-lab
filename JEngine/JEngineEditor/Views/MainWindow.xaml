@@ -1,0 +1,26 @@
+﻿<Window x:Class="JEngineEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:JEngineEditor"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="1080" Width="1920">
+    
+     <StackPanel>
+        <Menu Width="Auto" Height="20" Background="LightGray" DockPanel.Dock="Top">
+            <MenuItem Header="文件">
+                <MenuItem Header="保存"></MenuItem>
+                <Separator/>
+                <MenuItem Header="退出"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="帮助">
+                <MenuItem Header="关于本产品"/>
+            </MenuItem>
+        </Menu>
+        <DockPanel Width="Auto" Height="Auto">
+            <Frame Source="Hierarchy.xaml" DockPanel.Dock="Left" NavigationUIVisibility="Hidden"/>
+            <Frame Source="Inspector.xaml" DockPanel.Dock="Right" NavigationUIVisibility="Hidden"/>
+        </DockPanel>
+    </StackPanel>
+</Window>
