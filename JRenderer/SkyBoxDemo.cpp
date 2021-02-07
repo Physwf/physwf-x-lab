@@ -12,15 +12,15 @@ void SkyBoxDemo::InitPipelineStates()
 void SkyBoxDemo::Draw()
 {
 	m_CommandLists.clear();
-	m_SkyBoxCmdList->Reset(m_D3D12CmdAllocator.Get(),m_SkyBoxPipelineState.Get() );
+	m_SkyBoxCmdList->Reset(m_D3D12CmdAllocator.Get(), m_SkyBoxPipelineState.Get() );
 	m_SkyBoxCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_SkyBoxCmdList->IASetVertexBuffers(0, 1, &m_SkyBoxVertexBufferView);
 	m_SkyBoxCmdList->IASetIndexBuffer(&m_SkyBoxIndexBufferView);
 	m_SkyBoxCmdList->SetGraphicsRootSignature(m_SkyBoxRootSignature.Get());
 	m_SkyBoxCmdList->SetPipelineState(m_SkyBoxPipelineState.Get());
-	m_SkyBoxCmdList->SetDescriptorHeaps(1,m_CBVSRVUAVDescHeap.GetAddressOf());
+	m_SkyBoxCmdList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 	m_SkyBoxCmdList->SetGraphicsRootConstantBufferView(0, m_SkyBoxViewUniformBuffer->GetGPUVirtualAddress());
-	m_SkyBoxCmdList->SetGraphicsRootDescriptorTable(1,m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+	m_SkyBoxCmdList->SetGraphicsRootDescriptorTable(1, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 	m_SkyBoxCmdList->RSSetViewports(1, &m_Viewport);
 	m_SkyBoxCmdList->RSSetScissorRects(1, &m_ScissorRect);
 
@@ -38,7 +38,7 @@ void SkyBoxDemo::Draw()
 
 	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 
-	m_SkyBoxCmdList->DrawInstanced(4, 1, 0, 0);
+	m_SkyBoxCmdList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
 	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
 	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -80,8 +80,8 @@ void SkyBoxDemo::InitCubemapPass()
 		ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		ResourceDesc.Alignment = 0;
-		ResourceDesc.Width = 512;
-		ResourceDesc.Height = 512;
+		ResourceDesc.Width = 256;
+		ResourceDesc.Height = 256;
 		ResourceDesc.DepthOrArraySize = 6;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.Format = m_CubeMapRTFormat;
@@ -129,13 +129,13 @@ void SkyBoxDemo::InitCubemapPass()
 		Ranges[0].NumDescriptors = 1;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].RegisterSpace = 0;
-		Ranges[0].OffsetInDescriptorsFromTableStart = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].NumDescriptors = 1;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].RegisterSpace = 0;
-		Ranges[1].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
 // 		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
 // 		Ranges[2].NumDescriptors = 1;
@@ -442,6 +442,9 @@ void SkyBoxDemo::UpdateCubeMap()
 	m_CubeMapCmdList->SetPipelineState(m_CubeMapPipelineState.Get());
 	m_CubeMapCmdList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 	m_CubeMapCmdList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+	D3D12_GPU_DESCRIPTOR_HANDLE Handle = m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart();
+	//Handle.ptr += m_CBVSRVUAVDescriptorSize;
+	m_CubeMapCmdList->SetGraphicsRootDescriptorTable(1, Handle);
 	//m_CubeMapCmdList->
 	m_CubeMapCmdList->RSSetViewports(1, &m_CubeMapViewport);
 	m_CubeMapCmdList->RSSetScissorRects(1, &m_CubeMapScissorRect);
