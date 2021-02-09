@@ -219,7 +219,7 @@ void SkyBoxDemo::InitCubemapPass()
 		GPSDesc.PS = { reinterpret_cast<UINT8*>(PS->GetBufferPointer()), PS->GetBufferSize() };
 		GPSDesc.InputLayout = { InputElementDesc, _countof(InputElementDesc) };
 		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 		GPSDesc.RasterizerState.FrontCounterClockwise = TRUE;
 		GPSDesc.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
 		GPSDesc.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
@@ -263,10 +263,10 @@ void SkyBoxDemo::InitCubemapPass()
 		//2-3
 		float TriangleStripQuad[] = 
 		{
-			-1.0f,1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
-			-1.0f,-1.0f, -1.0f,
-			1.0f,-1.0f, -1.0f,
+			-1.0f,1.0f, 0.5f,
+			1.0f, 1.0f, 0.5f,
+			-1.0f,-1.0f, 0.5f,
+			1.0f,-1.0f, 0.5f,
 		};
 
 		const UINT VertexBufferSize = sizeof(TriangleStripQuad);
@@ -449,9 +449,7 @@ void SkyBoxDemo::UpdateCubeMap()
 	m_CubeMapCmdList->RSSetViewports(1, &m_CubeMapViewport);
 	m_CubeMapCmdList->RSSetScissorRects(1, &m_CubeMapScissorRect);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
-	rtvHandle.ptr += 2 * m_RTVDescriptorSize;
-	m_CubeMapCmdList->OMSetRenderTargets(1, &rtvHandle, 0, nullptr);
+	m_CubeMapCmdList->OMSetRenderTargets(1, &m_CubeMapRTHandle, 0, nullptr);
 
 	
 

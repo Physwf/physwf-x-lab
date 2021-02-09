@@ -29,23 +29,26 @@ cbuffer View
     float4x4 Projection;
 };
 
-[maxvertexcount(4)]
+[maxvertexcount(18)]
 void GSMain(
     triangle VSOutput Input[3],
     inout TriangleStream<GSOutput> TriStream)
 {
+    [unroll]
     for(int CubeFaceIndex=0;CubeFaceIndex<6;++CubeFaceIndex)
     {
+        GSOutput Output = (GSOutput)0;
+        Output.RenderTargetArrayIndex = CubeFaceIndex;
+        [unroll]
         for(int VertexIndex=0;VertexIndex<3;++VertexIndex)
         {
-            GSOutput Output = (GSOutput)0;
-            Output.RenderTargetArrayIndex = CubeFaceIndex;
-            Output.WorldPosition = mul(FaceTransform[CubeFaceIndex], float4(Input[VertexIndex].Position,1.0f)).xyz;
-            Output.SVPosition = mul(Projection, float4(Input[VertexIndex].Position,1.0f));
+            Output.WorldPosition = mul(float4(Input[VertexIndex].Position,1.0f), FaceTransform[0]).xyz;
+            Output.SVPosition = mul(float4(Input[VertexIndex].Position,1.0f),Projection);
             TriStream.Append(Output);
         }
         TriStream.RestartStrip();
     }
+     
 }
 
 Texture2D HDRI;
