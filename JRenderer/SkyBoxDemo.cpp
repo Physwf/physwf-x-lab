@@ -263,10 +263,10 @@ void SkyBoxDemo::InitCubemapPass()
 		//2-3
 		float TriangleStripQuad[] = 
 		{
-			-1.0f,1.0f, 0.5f,
-			1.0f, 1.0f, 0.5f,
-			-1.0f,-1.0f, 0.5f,
-			1.0f,-1.0f, 0.5f,
+			-1.0f,1.0f, -1.f,
+			1.0f, 1.0f, -1.f,
+			-1.0f,-1.0f, -1.f,
+			1.0f,-1.0f, -1.f,
 		};
 
 		const UINT VertexBufferSize = sizeof(TriangleStripQuad);

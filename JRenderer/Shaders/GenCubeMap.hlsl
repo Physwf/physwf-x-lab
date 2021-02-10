@@ -42,7 +42,7 @@ void GSMain(
         [unroll]
         for(int VertexIndex=0;VertexIndex<3;++VertexIndex)
         {
-            Output.WorldPosition = mul(float4(Input[VertexIndex].Position,1.0f), FaceTransform[0]).xyz;
+            Output.WorldPosition = mul(float4(Input[VertexIndex].Position,1.0f),FaceTransform[CubeFaceIndex]).xyz;
             Output.SVPosition = mul(float4(Input[VertexIndex].Position,1.0f),Projection);
             TriStream.Append(Output);
         }
@@ -56,10 +56,10 @@ SamplerState HDRISampler;
 
 float4 PSMain(GSOutput Input) :SV_Target
 {
-    float3 ViewDir = normalize(Input.WorldPosition);
-    float2 ViewDirXZ = normalize(ViewDir.xz);
+    float3 WorldPosition = /*normalize*/(Input.WorldPosition);
     float2 UV;
-    UV.x = ViewDirXZ.x;
-    UV.y = ViewDir.y * 0.5 + 0.5;
+    UV.x = (atan2(WorldPosition.z, WorldPosition.x)+3.1415926f)/6.28f;
+    UV.y = acos(WorldPosition.y/dot(WorldPosition,WorldPosition))/3.14f;
+    //return float4(UV,0,1);
     return HDRI.Sample(HDRISampler,UV);
 }
