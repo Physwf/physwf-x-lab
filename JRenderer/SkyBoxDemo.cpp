@@ -2,6 +2,8 @@
 #include <d3dx12.h>
 #include <cassert>
 
+#define PI 3.1415926f
+
 void SkyBoxDemo::InitPipelineStates()
 {
 	InitCubemapPass();
@@ -13,6 +15,9 @@ void SkyBoxDemo::Draw()
 {
 	m_CommandLists.clear();
 	m_SkyBoxCmdList->Reset(m_D3D12CmdAllocator.Get(), m_SkyBoxPipelineState.Get() );
+
+	UpdateView();
+
 	m_SkyBoxCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	m_SkyBoxCmdList->IASetVertexBuffers(0, 1, &m_SkyBoxVertexBufferView);
 	m_SkyBoxCmdList->IASetIndexBuffer(&m_SkyBoxIndexBufferView);
@@ -47,25 +52,26 @@ void SkyBoxDemo::Draw()
 	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 	m_SkyBoxCmdList->ResourceBarrier(1, &ResourceBarrier);
 
+	m_SkyBoxCmdList->Close();
+
 	m_CommandLists.push_back(m_SkyBoxCmdList.Get());
 
-	m_SkyBoxCmdList->Close();
 }
 
 void SkyBoxDemo::InitCubemapPass()
 {
 	m_CubeMapViewport.TopLeftX = 0;
 	m_CubeMapViewport.TopLeftY = 0;
-	m_CubeMapViewport.Width = 256;
-	m_CubeMapViewport.Height = 256;
+	m_CubeMapViewport.Width = 512;
+	m_CubeMapViewport.Height = 512;
 	m_CubeMapViewport.MinDepth = 0.0f;
 	m_CubeMapViewport.MaxDepth = 1.0f;
 
 	m_CubeMapScissorRect.left = m_ScissorRect.top = 0;
-	m_CubeMapScissorRect.right = 256;
-	m_CubeMapScissorRect.bottom = 256;
+	m_CubeMapScissorRect.right = 512;
+	m_CubeMapScissorRect.bottom = 512;
 
-	m_CubeMapRTFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+	m_CubeMapRTFormat = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	//rendertarget
 	{
 		D3D12_HEAP_PROPERTIES HeapProps;
@@ -80,8 +86,8 @@ void SkyBoxDemo::InitCubemapPass()
 		ZeroMemory(&ResourceDesc, sizeof(D3D12_RESOURCE_DESC));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		ResourceDesc.Alignment = 0;
-		ResourceDesc.Width = 256;
-		ResourceDesc.Height = 256;
+		ResourceDesc.Width = 512;
+		ResourceDesc.Height = 512;
 		ResourceDesc.DepthOrArraySize = 6;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.Format = m_CubeMapRTFormat;
@@ -313,12 +319,13 @@ void SkyBoxDemo::InitCubemapPass()
 	//constant buffer
 	{
 		CubeMapViewUniform ViewUniform;
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[0], XMMatrixIdentity());//-Z
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[1], XMMatrixRotationY(90.0f));//+X
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[2], XMMatrixRotationY(180.0f));//+Z
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[3], XMMatrixRotationY(-90.0f));//-Z
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[4], XMMatrixRotationX(-90.0f));//+Y
-		XMStoreFloat4x4(&ViewUniform.FaceTransform[5], XMMatrixRotationX(90.0f));//-Y
+
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[0], XMMatrixRotationY(PI / 2.f));//+X
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[1], XMMatrixRotationY(-PI / 2.f));//-X
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[2], XMMatrixRotationX(PI / 2.f)* XMMatrixRotationY(PI ));//+Y
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[3], XMMatrixRotationX(-PI / 2.f) * XMMatrixRotationY(PI));//-Y
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[4], XMMatrixRotationY(PI));//+Z
+		XMStoreFloat4x4(&ViewUniform.FaceTransform[5], XMMatrixIdentity());//-Z
 		XMStoreFloat4x4(&ViewUniform.Projection, XMMatrixIdentity());
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
@@ -367,7 +374,8 @@ void SkyBoxDemo::InitCubemapPass()
 	{
 		TexMetadata Metadata;
 		ScratchImage Image;
-		if (S_OK == LoadFromHDRFile(TEXT("./hdri/green_sanctuary_1k.hdr"), &Metadata, Image))
+		//if (S_OK == LoadFromHDRFile(TEXT("./hdri/lilienstein_1k.hdr"), &Metadata, Image))
+		if (S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_02_1k.hdr"), &Metadata, Image))
 		{
 			assert(S_OK == CreateTexture(m_D3D12Device.Get(), Image.GetMetadata(), m_HDRI.GetAddressOf()));
 			std::vector<D3D12_SUBRESOURCE_DATA> SubResources;
@@ -442,10 +450,7 @@ void SkyBoxDemo::UpdateCubeMap()
 	m_CubeMapCmdList->SetPipelineState(m_CubeMapPipelineState.Get());
 	m_CubeMapCmdList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 	m_CubeMapCmdList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
-	D3D12_GPU_DESCRIPTOR_HANDLE Handle = m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart();
-	//Handle.ptr += m_CBVSRVUAVDescriptorSize;
-	m_CubeMapCmdList->SetGraphicsRootDescriptorTable(1, Handle);
-	//m_CubeMapCmdList->
+	m_CubeMapCmdList->SetGraphicsRootDescriptorTable(1, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 	m_CubeMapCmdList->RSSetViewports(1, &m_CubeMapViewport);
 	m_CubeMapCmdList->RSSetScissorRects(1, &m_CubeMapScissorRect);
 
@@ -499,7 +504,7 @@ void SkyBoxDemo::InitSceneColorPass()
 		Range.NumDescriptors = 1;
 		Range.BaseShaderRegister = 0;
 		Range.RegisterSpace = 0;
-		Range.OffsetInDescriptorsFromTableStart = 0;
+		Range.OffsetInDescriptorsFromTableStart = 3;
 		RootParams[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		RootParams[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		RootParams[1].DescriptorTable.NumDescriptorRanges = 1;
@@ -542,12 +547,14 @@ void SkyBoxDemo::InitSceneColorPass()
 		if (FAILED(hr))
 		{
 			LOGA("%s", Error->GetBufferPointer());
+			assert(FALSE);
 			return;
 		}
 		hr = D3DCompileFromFile(TEXT("SkyBox.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &PS, &Error);
 		if (FAILED(hr))
 		{
 			LOGA("%s", Error->GetBufferPointer());
+			assert(FALSE);
 			return;
 		}
 
@@ -606,15 +613,15 @@ void SkyBoxDemo::InitSceneColorPass()
 		float CubeVertices[] =
 		{
 			//-z
-			-1.0f,1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
-			-1.0f,-1.0f, -1.0f,
-			1.0f,-1.0f, -1.0f,
+			-1000.0f,1000.0f, -1000.0f,
+			1000.0f, 1000.0f, -1000.0f,
+			-1000.0f,-1000.0f, -1000.0f,
+			1000.0f,-1000.0f, -1000.0f,
 			//+z
-			-1.0f,1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			-1.0f,-1.0f, 1.0f,
-			1.0f,-1.0f, 1.0f,
+			-1000.0f,1000.0f, 1000.0f,
+			1000.0f, 1000.0f, 1000.0f,
+			-1000.0f,-1000.0f, 1000.0f,
+			1000.0f,-1000.0f, 1000.0f,
 		};
 		const UINT VertexBufferSize = sizeof(CubeVertices);
 
@@ -660,12 +667,13 @@ void SkyBoxDemo::InitSceneColorPass()
 	//index buffer
 	{
 		UINT16 Indices[] = {
-			0,1,2,2,1,3,//-z
 			1,5,3,3,5,7,//+x
-			5,4,7,7,4,6,//+z
-			4,0,6,6,0,2,//+z
+			4,0,6,6,0,2,//-x
 			4,5,0,0,5,1,//+y
 			7,6,3,3,6,2,//-y
+			5,4,7,7,4,6,//+z
+			0,1,2,2,1,3,//-z
+
 		};
 		const UINT32 IndexBufferSize = sizeof(Indices);
 		D3D12_HEAP_PROPERTIES HeapProps;
@@ -710,7 +718,7 @@ void SkyBoxDemo::InitSceneColorPass()
 	//constant buffer
 	{
 		SkyBoxViewUniform ViewUniform;
-		XMStoreFloat4x4(&ViewUniform.WorldToProj, XMMatrixPerspectiveFovLH(90.0f,1920.f/1080.f,10,10000.f));
+		XMStoreFloat4x4(&ViewUniform.WorldToProj, XMMatrixIdentity() /*XMMatrixPerspectiveFovLH(90.0f,1920.f/1080.f,10,10000.f)*/);
 
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(D3D12_HEAP_PROPERTIES));
@@ -759,7 +767,7 @@ void SkyBoxDemo::InitSceneColorPass()
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
-		SRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		SRVDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
 		SRVDesc.TextureCube.MipLevels = 1;
@@ -779,5 +787,19 @@ void SkyBoxDemo::InitSceneColorPass()
 		// 		m_SkyBoxSRVSamplerHandle.ptr += m_SamplerDescriptorSize;
 		// 		m_D3D12Device->CreateSampler(&Desc, m_SkyBoxSRVSamplerHandle);
 	}
+}
+
+void SkyBoxDemo::UpdateView()
+{
+	SkyBoxViewUniform ViewUniform;
+	ViewRotation.y += 0.005f;
+	XMStoreFloat4x4(&ViewUniform.WorldToProj, XMMatrixRotationY(ViewRotation.y) * XMMatrixPerspectiveFovLH(90.0f,1920.f/1080.f,0.1f,10000.f));
+
+	UINT8* pDataBegin;
+	D3D12_RANGE ReadRange;
+	ReadRange.Begin = ReadRange.End = 0;
+	m_SkyBoxViewUniformBuffer->Map(0, &ReadRange, reinterpret_cast<void**>(&pDataBegin));
+	memcpy(pDataBegin, &ViewUniform, sizeof(ViewUniform));
+	m_SkyBoxViewUniformBuffer->Unmap(0, nullptr);
 }
 

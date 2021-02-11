@@ -17,15 +17,15 @@ cbuffer View
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    Output.WorldPosition = float4(Input.Position,1);
-    Output.SVPosition = mul(float4(Output.WorldPosition,1),WorldToProj);
+    Output.WorldPosition = Input.Position;
+    Output.SVPosition = mul(WorldToProj,float4(Input.Position,1));
     return Output;
 }
 
 TextureCube SkyBoxTexture;
 SamplerState SkyBoxSamplerState;
 
-void PSMain()
+float4 PSMain(VSOutput Input) : SV_Target
 {
-    
+    return SkyBoxTexture.Sample(SkyBoxSamplerState,Input.WorldPosition);
 }

@@ -34,6 +34,7 @@ private:
 	void InitCubemapPass();
 	void UpdateCubeMap();
 	void InitSceneColorPass();
+	void UpdateView();
 private:
 	//Cubemap Pass
 	D3D12_VIEWPORT m_CubeMapViewport;
@@ -66,4 +67,5 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SkyBoxSRVSamplerHandle;
 	ComPtr<ID3D12Resource> m_SkyBoxViewUniformBuffer;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_SkyBoxViewBufferHandle;
+	XMFLOAT4 ViewRotation = XMFLOAT4(0.0f,0.0f, 0.0f, 0.0f);
 };

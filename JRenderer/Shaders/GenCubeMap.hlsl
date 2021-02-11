@@ -42,7 +42,7 @@ void GSMain(
         [unroll]
         for(int VertexIndex=0;VertexIndex<3;++VertexIndex)
         {
-            Output.WorldPosition = mul(float4(Input[VertexIndex].Position,1.0f),FaceTransform[CubeFaceIndex]).xyz;
+            Output.WorldPosition = mul(FaceTransform[CubeFaceIndex],float4(Input[VertexIndex].Position,1.0f)).xyz;
             Output.SVPosition = mul(float4(Input[VertexIndex].Position,1.0f),Projection);
             TriStream.Append(Output);
         }
@@ -54,12 +54,12 @@ void GSMain(
 Texture2D HDRI;
 SamplerState HDRISampler;
 
-float4 PSMain(GSOutput Input) :SV_Target
+float4 PSMain(GSOutput Input) : SV_Target
 {
-    float3 WorldPosition = /*normalize*/(Input.WorldPosition);
+    float3 WorldPosition = normalize(Input.WorldPosition);
     float2 UV;
-    UV.x = (atan2(WorldPosition.z, WorldPosition.x)+3.1415926f)/6.28f;
-    UV.y = acos(WorldPosition.y/dot(WorldPosition,WorldPosition))/3.14f;
+    UV.x = (atan2(WorldPosition.z, WorldPosition.x)+3.14f)/6.28f;
+    UV.y = acos(WorldPosition.y)/3.14f;
     //return float4(UV,0,1);
     return HDRI.Sample(HDRISampler,UV);
 }
