@@ -2,6 +2,7 @@
 
 #include "d3d12demo.h"
 #include "Primitives.h"
+#include "D3D12RHI.h"
 
 using namespace DirectX;
 
@@ -113,8 +114,83 @@ public:
 	{
 	}
 protected:
-	virtual void InitPipelineStates();
-	virtual void Draw();
+	virtual void InitPipelineStates() override;
+	void GenEnvironmentMap();
+	void DrawSkyBox();
 private:
-	void InitMeshResourcces();
+	void LoadGenEnviPipelineState();
+	void LoadSkyboxPipelineState();
+	void LoadGenEnviAssets();
+	void LoadSkyboxAssets();
+protected:
+	ComPtr<ID3D12Resource>		mEnvironmentMap;
+	ComPtr<ID3D12Resource>			mHDRRT;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRRTVHandle;
+private:
+	ComPtr<ID3D12Resource>		mHDRI;
+	ComPtr<ID3D12Resource>		mHDRIUpload;
+	D3D12_CPU_DESCRIPTOR_HANDLE mHDRISRVHandle;
+	ComPtr<ID3D12RootSignature> mGenEnviMapRootSignature;
+	ComPtr<ID3D12PipelineState> mGenEnviMapPSO;
+	ComPtr<ID3D12GraphicsCommandList> mGenEnviMapCmdList;
+	D3D12_CPU_DESCRIPTOR_HANDLE mGenEnviRTVHandle;
+	ComPtr<ID3D12Resource>		mGenEnviMapVB;
+	ComPtr<ID3D12Resource>		mGenEnviMapVBUpload;
+	D3D12_VERTEX_BUFFER_VIEW	mGenEnviMapVBView;
+	ComPtr<ID3D12Resource>		mGenEnviMapConstBuffer;
+	D3D12_VIEWPORT				mGenEnviViewport;
+	D3D12_RECT					mGenEnviScissorRect;
+	//SkyBox
+	ComPtr<ID3D12RootSignature> mSkyboxRootSignature;
+	ComPtr<ID3D12PipelineState> mSkyboxPSO;
+	ComPtr<ID3D12GraphicsCommandList> mSkyboxCommandList;
+	ComPtr<ID3D12Resource>		mSkyboxVB;
+	D3D12_VERTEX_BUFFER_VIEW	mSkyboxVBView;
+	ComPtr<ID3D12Resource>		mSkyboxIB;
+	D3D12_INDEX_BUFFER_VIEW		mSkyboxIBView;
+	ComPtr<ID3D12Resource>		mSkyboxCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mSkyboxCBVHandle;
+};
+
+class PBRShadingModelRealIBL : public PBRShadingModel
+{
+public:
+	PBRShadingModelRealIBL(HWND hWnd) : PBRShadingModel(hWnd)
+	{
+		m_NumRTVDescriptors = FrameCount + 1;
+		m_NumCBVSRVUAVDescriptors = 1;
+		m_NumDSVDescriptors = 1;
+	}
+protected:
+	void InitPipelineStates();
+private:
+	void LoadPrimitivePipelineState();
+	void LoadPrimitiveAssets();
+	void UpdatePointLight(float fScreenX, float fScreenY);
+	void DrawPrimitives();
+	void PostProcess();
+private:
+	ComPtr<ID3D12RootSignature>		mPrimitiveRootSignature;
+	ComPtr<ID3D12PipelineState>		mPrimitvePSO;
+	ComPtr<ID3D12GraphicsCommandList> mPrimitiveCommandList;
+
+	ComPtr<ID3D12Resource>			mPrimitiveVB;
+	D3D12_VERTEX_BUFFER_VIEW		mPrimitiveVBView;
+	ComPtr<ID3D12Resource>			mPrimitiveIB;
+	D3D12_INDEX_BUFFER_VIEW			mPrimitiveIBView;
+	ComPtr<ID3D12Resource>			mPrimitiveViewCB;
+	ComPtr<ID3D12Resource>			mPrimitiveMaterialCB;
+
+};
+
+class PBRShadingModelPrefilterIBL : public PBRShadingModel
+{
+protected:
+	void LoadGenIrradiancePipelineState();
+	void LoadGenPrefilterEnviPipelineState();
+protected:
+	ComPtr<ID3D12RootSignature> mGenIrradianceMapRootSignature;
+	ComPtr<ID3D12PipelineState> mGenIrradianceMapPSO;
+	ComPtr<ID3D12RootSignature> mGenPrefilterEnvironmentMapRootSignature;
+	ComPtr<ID3D12PipelineState> mGenPrefilterEnvironmentMapPSO;
 };
