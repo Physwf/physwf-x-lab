@@ -1090,6 +1090,7 @@ void PBRShadingModel::LoadGenEnviAssets()
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), (void**)mEnvironmentMap.GetAddressOf()));
 
 		mGenEnviRTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mGenEnviRTVHandle.ptr += 2 * m_RTVDescriptorSize;
 		D3D12_RENDER_TARGET_VIEW_DESC RTVDesc;
 		ZeroMemory(&RTVDesc, sizeof(RTVDesc));
 		RTVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -1286,6 +1287,66 @@ void PBRShadingModel::LoadSkyboxAssets()
 void PBRShadingModel::InitPipelineStates()
 {
 	LoadGenEnviPipelineState();
+	LoadSkyboxAssets();
+	//HDR Render Target
+	{
+		D3D12_HEAP_PROPERTIES HeapProps;
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		ResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		ResourceDesc.Width = 1920;
+		ResourceDesc.Height = 1080;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+
+		D3D12_CLEAR_VALUE ClearValue;
+		ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		memset(&ClearValue.Color, sizeof(ClearValue.Color), 0);
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue,__uuidof(ID3D12Resource), (void**)mHDRRT.GetAddressOf()));
+
+		mHDRRTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mHDRRTVHandle.ptr += 3 * m_RTVDescriptorSize;
+
+		D3D12_RENDER_TARGET_VIEW_DESC RTVDesc;
+		ZeroMemory(&RTVDesc, sizeof(RTVDesc));
+		RTVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		m_D3D12Device->CreateRenderTargetView(mHDRRT.Get(), &RTVDesc, mHDRRTVHandle);
+	}
+	//Depth
+	{
+		D3D12_HEAP_PROPERTIES HeapProps;
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		ResourceDesc.Width = 1920;
+		ResourceDesc.Height = 1080;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+		D3D12_CLEAR_VALUE ClearValue;
+		ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		ClearValue.DepthStencil.Depth = 1.0f;
+		ClearValue.DepthStencil.Stencil = 0;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ, &ClearValue, __uuidof(ID3D12Resource), (void**)mDepthStencial.GetAddressOf()));
+
+		D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc;
+		ZeroMemory(&DSVDesc, sizeof(DSVDesc));
+		DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		//DSVDesc.
+
+		mmDepthStencialHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		m_D3D12Device->CreateDepthStencilView(mDepthStencial.Get(), &DSVDesc, mmDepthStencialHandle);
+	}
 }
 
 void PBRShadingModel::GenEnvironmentMap()
@@ -1317,6 +1378,23 @@ void PBRShadingModel::GenEnvironmentMap()
 
 void PBRShadingModel::DrawSkyBox()
 {
+	mSkyboxCommandList->Reset(m_D3D12CmdAllocator.Get(), mSkyboxPSO.Get());
+	
+	mSkyboxCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, NULL);
+	const FLOAT ClearColor[] = { 0,0,0, 0 };
+	mSkyboxCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
+	mSkyboxCommandList->IASetVertexBuffers(0, 1, &mSkyboxVBView);
+	mSkyboxCommandList->IASetIndexBuffer(&mSkyboxIBView);
+	mSkyboxCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	ID3D12DescriptorHeap* Heaps[] = {m_CBVSRVUAVDescHeap.Get(),m_RTVDescHeap.Get()};
+	mSkyboxCommandList->SetDescriptorHeaps(2, Heaps);
+	mSkyboxCommandList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+	mSkyboxCommandList->SetGraphicsRootDescriptorTable(1, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+	mSkyboxCommandList->RSSetViewports(1, &m_Viewport);
+	mSkyboxCommandList->RSSetScissorRects(1, &m_ScissorRect);
+
+	mSkyboxCommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+
 
 }
 

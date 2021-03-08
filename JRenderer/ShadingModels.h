@@ -126,6 +126,8 @@ protected:
 	ComPtr<ID3D12Resource>		mEnvironmentMap;
 	ComPtr<ID3D12Resource>			mHDRRT;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRRTVHandle;
+	ComPtr<ID3D12Resource>			mDepthStencial;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mmDepthStencialHandle;
 private:
 	ComPtr<ID3D12Resource>		mHDRI;
 	ComPtr<ID3D12Resource>		mHDRIUpload;
