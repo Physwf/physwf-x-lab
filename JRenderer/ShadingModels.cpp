@@ -1406,7 +1406,85 @@ void PBRShadingModelRealIBL::InitPipelineStates()
 
 void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 {
+	//
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[2];
+		ZeroMemory(Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		Ranges[0].NumDescriptors = 2;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
+		D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
+		ZeroMemory(&DescriptorTable, sizeof(DescriptorTable));
+		DescriptorTable.NumDescriptorRanges = 2;
+		DescriptorTable.pDescriptorRanges = Ranges;
+		D3D12_ROOT_PARAMETER Parameters[2];
+		ZeroMemory(&Parameters, sizeof(Parameters));
+		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Parameters[0].DescriptorTable = DescriptorTable;
+		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
+		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
+		RootSignDesc.NumParameters = 1;
+		RootSignDesc.pParameters = Parameters;
+		RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc,D3D_ROOT_SIGNATURE_VERSION_1,RootSign.GetAddressOf(),Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mPrimitiveRootSignature.GetAddressOf()));
 
+		ComPtr<ID3DBlob> VS;
+		ComPtr<ID3DBlob> PS;
+
+		if (S_OK != D3DCompileFromFile(TEXT("RealTimeIBL.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+
+		if (S_OK != D3DCompileFromFile(TEXT("RealTimeIBL.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+
+		D3D12_INPUT_ELEMENT_DESC InputDesc[] = 
+		{ 
+			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"NORMAL",	1,DXGI_FORMAT_R32G32B32_FLOAT,0,12,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+		};
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC PipelineDesc;
+		ZeroMemory(&PipelineDesc, sizeof(PipelineDesc));
+		PipelineDesc.pRootSignature = mPrimitiveRootSignature.Get();
+		PipelineDesc.VS = { VS->GetBufferPointer(),VS->GetBufferSize() };
+		PipelineDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
+		PipelineDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+		PipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		PipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+		PipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		PipelineDesc.SampleMask = 0xffffffff;
+		PipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		PipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+		PipelineDesc.RasterizerState.FrontCounterClockwise = TRUE;
+		PipelineDesc.DepthStencilState.DepthEnable = TRUE;
+		PipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		PipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+		PipelineDesc.InputLayout.pInputElementDescs = InputDesc;
+		PipelineDesc.InputLayout.NumElements = sizeof(InputDesc);
+		PipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		PipelineDesc.NumRenderTargets = 1;
+		PipelineDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		PipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		PipelineDesc.SampleDesc = { 1,0 };
+		PipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+
+		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mPrimitvePSO.GetAddressOf()));
+	}
 }
 
 void PBRShadingModelRealIBL::LoadPrimitiveAssets()
