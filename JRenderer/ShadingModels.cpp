@@ -1489,7 +1489,78 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 
 void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 {
+	ComPtr<ID3D12GraphicsCommandList> CommandList;
+	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12PipelineState), (void**)CommandList.GetAddressOf()));
+	//Mesh
+	Mesh M;
+	M.LoadFBX("./Primitives/Sphere.fbx");
+	//VB
+	{
+		ComPtr<ID3D12Resource> PrimitiveVBUpload;
+		D3D12_HEAP_PROPERTIES HeapProps;
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.Width = M.Vertices.size() * sizeof(MeshVertex);
+		ResourceDesc.Height = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveVBUpload.GetAddressOf()));
 
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveVB.GetAddressOf()));
+
+		CommandList->CopyResource(mPrimitiveVB.Get(), PrimitiveVBUpload.Get());
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mPrimitiveVB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+	}
+	//IB
+	{
+		ComPtr<ID3D12Resource> PrimitiveIBUpload;
+		D3D12_HEAP_PROPERTIES HeapProps;
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = M.Indices.size() * sizeof(int);
+		ResourceDesc.Height = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps,D3D12_HEAP_FLAG_NONE,&ResourceDesc,D3D12_RESOURCE_STATE_COPY_SOURCE,NULL,__uuidof(ID3D12Resource),(void**)PrimitiveIBUpload.GetAddressOf()));
+
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveIB.GetAddressOf()));
+
+		CommandList->CopyResource(mPrimitiveIB.Get(), PrimitiveIBUpload.Get());
+		
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mPrimitiveIB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+	}
+	//CB
+	{
+
+	}
+	//Lights
+	{
+		
+	}
 }
 
 void PBRShadingModelPrefilterIBL::LoadGenIrradiancePipelineState()
