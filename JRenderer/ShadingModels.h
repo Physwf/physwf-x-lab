@@ -8,12 +8,13 @@ using namespace DirectX;
 
 struct ViewUniform
 {
+	XMFLOAT4 ViewOrigin;
 	XMFLOAT4X4 WorldToClip;
 	XMFLOAT4X4 ClipToWorld;
 	XMFLOAT4X4 SvPositionToWorld;
 	XMFLOAT4 ViewSizeAndInvSize;
 	XMFLOAT4 ViewRectMin;
-	float Pading00[8];
+	float Pading00[4];
 };
 
 struct PrimitiveUniform
@@ -46,6 +47,13 @@ struct MaterialUniform
 	float alpha;
 	float ShadingModel;
 	float Pading00[50];
+};
+
+struct PBRMaterialUniform
+{
+	XMFLOAT4 BaseColor;
+	XMFLOAT4 SpecularColor;
+	float fRoughtness;
 };
 
 class ShadingModelDemo : public D3D12Demo

@@ -1510,6 +1510,11 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveVBUpload.GetAddressOf()));
 
+		void* pData;
+		PrimitiveVBUpload->Map(0, NULL,&pData);
+		memcpy(pData, M.Vertices.data(), M.Vertices.size() * sizeof(MeshVertex));
+		PrimitiveVBUpload->Unmap(0, NULL);
+
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveVB.GetAddressOf()));
@@ -1539,6 +1544,11 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps,D3D12_HEAP_FLAG_NONE,&ResourceDesc,D3D12_RESOURCE_STATE_COPY_SOURCE,NULL,__uuidof(ID3D12Resource),(void**)PrimitiveIBUpload.GetAddressOf()));
 
+		void* pData;
+		PrimitiveIBUpload->Map(0, NULL, &pData);
+		memcpy(pData, M.Indices.data(), M.Indices.size() * sizeof(int));
+		PrimitiveIBUpload->Unmap(0, NULL);
+
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveIB.GetAddressOf()));
@@ -1555,12 +1565,63 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 	}
 	//CB
 	{
+		//View
+		{
+			ViewUniform View;
+			View.ViewOrigin;
 
+			D3D12_HEAP_PROPERTIES HeapProperties;
+			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+			HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+			D3D12_RESOURCE_DESC ResourceDesc;
+			ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+			ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+			ResourceDesc.Width = sizeof(View);
+			ResourceDesc.Height = 1;
+			ResourceDesc.MipLevels = 1;
+			ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+			ResourceDesc.SampleDesc = { 1,0 };
+			ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveViewCB.GetAddressOf()));
+
+			void* pData;
+			mPrimitiveViewCB->Map(0, NULL, &pData);
+			memcpy(pData, &View, sizeof(View));
+			mPrimitiveViewCB->Unmap(0, NULL);
+		}
+
+		{
+			PBRMaterialUniform Material;
+
+			D3D12_HEAP_PROPERTIES HeapProperties;
+			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+			HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+			D3D12_RESOURCE_DESC ResourceDesc;
+			ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+			ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+			ResourceDesc.Width = sizeof(Material);
+			ResourceDesc.Height = 1;
+			ResourceDesc.MipLevels = 1;
+			ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+			ResourceDesc.SampleDesc = { 1,0 };
+			ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveMaterialCB.GetAddressOf()));
+
+			void* pData;
+			mPrimitiveViewCB->Map(0, NULL, &pData);
+			memcpy(pData, &Material, sizeof(Material));
+			mPrimitiveViewCB->Unmap(0, NULL);
+		}
 	}
 	//Lights
 	{
 		
 	}
+}
+
+void PBRShadingModelRealIBL::DrawPrimitives()
+{
+
 }
 
 void PBRShadingModelPrefilterIBL::LoadGenIrradiancePipelineState()
