@@ -135,7 +135,7 @@ protected:
 	ComPtr<ID3D12Resource>			mHDRRT;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRRTVHandle;
 	ComPtr<ID3D12Resource>			mDepthStencial;
-	D3D12_CPU_DESCRIPTOR_HANDLE		mmDepthStencialHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mDepthStencialHandle;
 private:
 	ComPtr<ID3D12Resource>		mHDRI;
 	ComPtr<ID3D12Resource>		mHDRIUpload;
@@ -172,7 +172,8 @@ public:
 		m_NumDSVDescriptors = 1;
 	}
 protected:
-	void InitPipelineStates();
+	virtual void InitPipelineStates() override;
+	virtual void Draw() override;
 private:
 	void LoadPrimitivePipelineState();
 	void LoadPrimitiveAssets();
@@ -184,6 +185,7 @@ private:
 	ComPtr<ID3D12PipelineState>		mPrimitvePSO;
 	ComPtr<ID3D12GraphicsCommandList> mPrimitiveCommandList;
 
+	Mesh							mPrimitive;
 	ComPtr<ID3D12Resource>			mPrimitiveVB;
 	D3D12_VERTEX_BUFFER_VIEW		mPrimitiveVBView;
 	ComPtr<ID3D12Resource>			mPrimitiveIB;
