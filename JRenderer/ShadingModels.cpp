@@ -718,6 +718,7 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 	//EnvironmentMap
 	{
 		D3D12_DESCRIPTOR_RANGE Ranges[2];
+		ZeroMemory(Ranges, sizeof(Ranges));
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
@@ -728,25 +729,29 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 1;
 		Ranges[1].RegisterSpace = 0;
-		Ranges[1].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
 		D3D12_ROOT_PARAMETER RootParameter;
 		RootParameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		RootParameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-		RootParameter.DescriptorTable.NumDescriptorRanges = 2;
+		RootParameter.DescriptorTable.NumDescriptorRanges = _countof(Ranges);
 		RootParameter.DescriptorTable.pDescriptorRanges = Ranges;
 
 		D3D12_STATIC_SAMPLER_DESC SamplerDesc;
 		ZeroMemory(&SamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
 		SamplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
-		SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		SamplerDesc.ShaderRegister = 0;
+		SamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
 		D3D12_ROOT_SIGNATURE_DESC RSDesc;
 		ZeroMemory(&RSDesc, sizeof(RSDesc));
-		RSDesc.NumParameters = 2;
-		RSDesc.NumStaticSamplers = 1;
+		RSDesc.NumParameters = 1;
 		RSDesc.pParameters = &RootParameter;
+		RSDesc.NumStaticSamplers = 1;
 		RSDesc.pStaticSamplers = &SamplerDesc;
 		RSDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
@@ -790,11 +795,11 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 		PSODesc.GS = { GS->GetBufferPointer(),GS->GetBufferSize() };
 		PSODesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
 		//PSODesc.StreamOutput;
-		PSODesc.BlendState.IndependentBlendEnable = true;
-		PSODesc.BlendState.RenderTarget[0].BlendEnable = true;
-		PSODesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		PSODesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
-		PSODesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+// 		PSODesc.BlendState.IndependentBlendEnable = true;
+// 		PSODesc.BlendState.RenderTarget[0].BlendEnable = true;
+// 		PSODesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+// 		PSODesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+// 		PSODesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
 		PSODesc.SampleMask = 0xffffffff;
 		PSODesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		PSODesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -805,12 +810,12 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 		//PSODesc.IBStripCutValue;
 		PSODesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		PSODesc.NumRenderTargets = 1;
+		PSODesc.SampleDesc = { 1,0 };
 		PSODesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&PSODesc,__uuidof(ID3D12PipelineState),(void**)mGenEnviMapPSO.GetAddressOf()));
 	}
 
 	{
-		assert(S_OK == m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12GraphicsCommandList), (void**)m_D3D12CmdAllocator.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mGenEnviMapPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mGenEnviMapCmdList.GetAddressOf()));
 		mGenEnviMapCmdList->Close();
 	}
@@ -828,12 +833,12 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 		Ranges[0].NumDescriptors = 1;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].RegisterSpace = 0;
-		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 2;
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].NumDescriptors = 1;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].RegisterSpace = 0;
-		Ranges[1].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 3;
 		DescriptorTable.NumDescriptorRanges = 2;
 		DescriptorTable.pDescriptorRanges = Ranges;
 
@@ -850,6 +855,7 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 		CubeMapSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.ShaderRegister = 0;
 		CubeMapSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		CubeMapSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
 		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
 		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
@@ -862,18 +868,18 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 
 		ComPtr<ID3DBlob> RootSign;
 		ComPtr<ID3DBlob> Error;
-		D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf());
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mSkyboxRootSignature.GetAddressOf()));
 	
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
 
-		if (S_OK != D3DCompileFromFile(TEXT("./Shaders/Skybox.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("./Skybox.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s", Error->GetBufferPointer());
 		}
 		
-		if (S_OK != D3DCompileFromFile(TEXT("./Shaders/Skybox.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("./Skybox.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s", Error->GetBufferPointer());
 		}
@@ -886,8 +892,8 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC PipelineDesc;
 		ZeroMemory(&PipelineDesc, sizeof(PipelineDesc));
 		PipelineDesc.pRootSignature = mSkyboxRootSignature.Get();
-		PipelineDesc.VS = { VS->GetBufferPointer(),VS->GetBufferSize };
-		PipelineDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize };
+		PipelineDesc.VS = { VS->GetBufferPointer(),VS->GetBufferSize() };
+		PipelineDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
 		PipelineDesc.BlendState.AlphaToCoverageEnable = FALSE;
 		PipelineDesc.BlendState.IndependentBlendEnable = FALSE;
 		PipelineDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
@@ -960,7 +966,7 @@ void PBRShadingModel::LoadGenEnviAssets()
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
 	CommandList->Close();
-
+	CommandList->Reset(m_D3D12CmdAllocator.Get(), nullptr);
 	//VB
 	{
 		//0-1
@@ -982,10 +988,15 @@ void PBRShadingModel::LoadGenEnviAssets()
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		ResourceDesc.Width = VertexBufferSize;
-		ResourceDesc.Height = 1;
-		ResourceDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)mGenEnviMapVBUpload.GetAddressOf()));
+		ResourceDesc.Height = 1;//BUFFER的Height必须为1
+		ResourceDesc.DepthOrArraySize = 1;//BUFFER的DepthOrArraySize必须为1
+		ResourceDesc.MipLevels = 1;//BUFFER的MipLevels必须为1
+		ResourceDesc.SampleDesc = { 1,0 };//BUFFER的SampleDesc必须为{ 1,0 }
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;//BUFFER的Format必须为DXGI_FORMAT_UNKNOWN
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;//BUFFER的Layout必须为D3D12_TEXTURE_LAYOUT_ROW_MAJOR
+		//D3D12_HEAP_TYPE_UPLOAD的初始状态必须为D3D12_RESOURCE_STATE_GENERIC_READ
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mGenEnviMapVBUpload.GetAddressOf()));
+		mGenEnviMapVBUpload->SetName(TEXT("mGenEnviMapVBUpload"));
 
 		D3D12_RANGE Range;
 		Range.Begin = Range.End = 0;
@@ -994,16 +1005,20 @@ void PBRShadingModel::LoadGenEnviAssets()
 		memcpy(pData, TriangleStripQuad, VertexBufferSize);
 		mGenEnviMapVBUpload->Unmap(0, nullptr);
 
-		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		ResourceDesc.Width = VertexBufferSize;
 		ResourceDesc.Height = 1;
-		ResourceDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mGenEnviMapVB.GetAddressOf()));
+		mGenEnviMapVB->SetName(TEXT("mGenEnviMapVB"));
 
 		CommandList->CopyResource(mGenEnviMapVB.Get(), mGenEnviMapVBUpload.Get());
 		D3D12_RESOURCE_BARRIER Barrier;
@@ -1019,6 +1034,9 @@ void PBRShadingModel::LoadGenEnviAssets()
 		mGenEnviMapVBView.StrideInBytes = sizeof(float) * 3;
 	}
 	//GS Constant Buffer
+
+	ComPtr<ID3D12Resource> ConstBufferUpload;
+
 	{
 		struct GSView
 		{
@@ -1050,12 +1068,19 @@ void PBRShadingModel::LoadGenEnviAssets()
 		ResourceDesc.SampleDesc.Quality = 0;
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		
-		ComPtr<ID3D12Resource> ConstBufferUpload;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)ConstBufferUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)ConstBufferUpload.GetAddressOf()));
+		ConstBufferUpload->SetName(TEXT("ConstBufferUpload"));
+
+		void* pData;
+		ConstBufferUpload->Map(0, nullptr, &pData);
+		memcpy(pData, &View, sizeof(View));
+		ConstBufferUpload->Unmap(0, nullptr);
 
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mGenEnviMapConstBuffer.GetAddressOf()));
+		mGenEnviMapConstBuffer->SetName(TEXT("mGenEnviMapConstBuffer"));
+
 
 		CommandList->CopyResource(mGenEnviMapConstBuffer.Get(), ConstBufferUpload.Get());
 
@@ -1072,39 +1097,42 @@ void PBRShadingModel::LoadGenEnviAssets()
 		TexMetadata Metadata;
 		ScratchImage Image;
 
-		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_02_1k.hdr"), &Metadata, Image));
-
-		D3D12_HEAP_PROPERTIES HeapProps;
-		ZeroMemory(&HeapProps, sizeof(HeapProps));
-		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-		D3D12_RESOURCE_DESC ResourceDesc;
-		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
-		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		ResourceDesc.Width = Metadata.width;
-		ResourceDesc.Height = Metadata.height;
-		ResourceDesc.DepthOrArraySize = Metadata.arraySize;
-		ResourceDesc.MipLevels = Metadata.mipLevels;
-		ResourceDesc.Format = Metadata.format;
-
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)mHDRIUpload.GetAddressOf()));
+		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_01_1k.hdr"), &Metadata, Image));
 
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
-		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		ResourceDesc.Dimension = static_cast<D3D12_RESOURCE_DIMENSION>(Metadata.dimension);
 		ResourceDesc.Width = Metadata.width;
 		ResourceDesc.Height = Metadata.height;
 		ResourceDesc.DepthOrArraySize = Metadata.arraySize;
 		ResourceDesc.MipLevels = Metadata.mipLevels;
 		ResourceDesc.Format = Metadata.format;
+		ResourceDesc.SampleDesc = { 1,0 };
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mHDRI.GetAddressOf()));
+		mHDRI->SetName(TEXT("mHDRI"));
 
 		std::vector<D3D12_SUBRESOURCE_DATA> SubResources;
-		assert(S_OK == PrepareUpload(m_D3D12Device.Get(),Image.GetImages(),Image.GetImageCount(),Metadata, SubResources));
-		const UINT64 UploadBufferSize = GetRequiredIntermediateSize(mHDRI.Get(),0, SubResources.size());
+		assert(S_OK == PrepareUpload(m_D3D12Device.Get(), Image.GetImages(), Image.GetImageCount(), Metadata, SubResources));
+		const UINT64 UploadBufferSize = GetRequiredIntermediateSize(mHDRI.Get(), 0, SubResources.size());
+
+		ZeroMemory(&HeapProps, sizeof(HeapProps));
+		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = UploadBufferSize;
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mHDRIUpload.GetAddressOf()));
+		mHDRIUpload->SetName(TEXT("mHDRIUpload"));
 
 		UpdateSubresources(CommandList.Get(), mHDRI.Get(), mHDRIUpload.Get(), 0,0, (UINT)SubResources.size(), SubResources.data());
 
@@ -1125,12 +1153,15 @@ void PBRShadingModel::LoadGenEnviAssets()
 		SRVDesc.Texture2D.MipLevels = 1;
 		SRVDesc.Texture2D.PlaneSlice = 0;
 		SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+		SRVDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
 		m_D3D12Device->CreateShaderResourceView(mHDRI.Get(), &SRVDesc, mHDRISRVHandle);
 	}
 
 	{
+		CommandList->Close();
 		ID3D12CommandList* List[] = { CommandList.Get() };
 		m_D3D12CmdQueue->ExecuteCommandLists(1, List);
+		WaitForPreviousFrame();
 	}
 }
 
@@ -1138,8 +1169,10 @@ void PBRShadingModel::LoadSkyboxAssets()
 {
 	ComPtr<ID3D12GraphicsCommandList> CmdList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), NULL, __uuidof(ID3D12GraphicsCommandList), (void**)CmdList.GetAddressOf()));
-
+	CmdList->Close();
+	CmdList->Reset(m_D3D12CmdAllocator.Get(), nullptr);
 	//VB
+	ComPtr<ID3D12Resource> SkyboxVBUpload;
 	{
 		float CubeVertices[] =
 		{
@@ -1164,13 +1197,13 @@ void PBRShadingModel::LoadSkyboxAssets()
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		ResourceDesc.Width = VertexBufferSize;
 		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		ComPtr<ID3D12Resource> SkyboxVBUpload;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)SkyboxVBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)SkyboxVBUpload.GetAddressOf()));
 
 		D3D12_RANGE Range;
 		void* pData;
@@ -1197,6 +1230,7 @@ void PBRShadingModel::LoadSkyboxAssets()
 	}
 
 	//IB
+	ComPtr<ID3D12Resource> SkyboxIBUpload;
 	{
 		UINT16 Indices[] =
 		{
@@ -1215,13 +1249,14 @@ void PBRShadingModel::LoadSkyboxAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 		ResourceDesc.Width = IndexBufferSize;
 		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		ComPtr<ID3D12Resource> SkyboxIBUpload;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)SkyboxIBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)SkyboxIBUpload.GetAddressOf()));
 
 		void* pData;
 		SkyboxIBUpload->Map(0, nullptr, (void**)&pData);
@@ -1247,6 +1282,7 @@ void PBRShadingModel::LoadSkyboxAssets()
 	}
 
 	//constant buffer
+	ComPtr<ID3D12Resource> SkyboxCBUpload;
 	{
 		struct ViewUniform
 		{
@@ -1261,22 +1297,25 @@ void PBRShadingModel::LoadSkyboxAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 		ResourceDesc.Width = sizeof(View);
 		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		ComPtr<ID3D12Resource> SkyboxCBUpload;
-		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
-		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)SkyboxCBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)SkyboxCBUpload.GetAddressOf()));
 
 		void* pData;
-		SkyboxCBUpload->Map(0, NULL, &pData);
+		D3D12_RANGE Range;
+		Range.Begin = Range.End = 0;
+		SkyboxCBUpload->Map(0, &Range, &pData);
 		memcpy(pData, &View, sizeof(ViewUniform));
 		SkyboxCBUpload->Unmap(0, NULL);
 
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mSkyboxCB.GetAddressOf()));
 
 		CmdList->CopyResource(mSkyboxCB.Get(), SkyboxCBUpload.Get());
@@ -1291,15 +1330,15 @@ void PBRShadingModel::LoadSkyboxAssets()
 	}
 
 	{
+		CmdList->Close();
 		ID3D12CommandList* List[] = { CmdList.Get() };
 		m_D3D12CmdQueue->ExecuteCommandLists(1, List);
+		WaitForPreviousFrame();
 	}
 }
 
-void PBRShadingModel::InitPipelineStates()
+void PBRShadingModel::LoadCommonAssets()
 {
-	LoadGenEnviPipelineState();
-	LoadSkyboxAssets();
 	//HDR Render Target
 	{
 		D3D12_HEAP_PROPERTIES HeapProps;
@@ -1311,6 +1350,7 @@ void PBRShadingModel::InitPipelineStates()
 		ResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		ResourceDesc.Width = 1920;
 		ResourceDesc.Height = 1080;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -1318,15 +1358,17 @@ void PBRShadingModel::InitPipelineStates()
 		D3D12_CLEAR_VALUE ClearValue;
 		ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		memset(&ClearValue.Color, sizeof(ClearValue.Color), 0);
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue,__uuidof(ID3D12Resource), (void**)mHDRRT.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), (void**)mHDRRT.GetAddressOf()));
 
 		mHDRRTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		mHDRRTVHandle.ptr += 3 * m_RTVDescriptorSize;
 
 		D3D12_RENDER_TARGET_VIEW_DESC RTVDesc;
 		ZeroMemory(&RTVDesc, sizeof(RTVDesc));
-		RTVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		RTVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+		RTVDesc.Texture2D.MipSlice = 0;
+		RTVDesc.Texture2D.PlaneSlice = 0;
 		m_D3D12Device->CreateRenderTargetView(mHDRRT.Get(), &RTVDesc, mHDRRTVHandle);
 	}
 	//Depth
@@ -1340,6 +1382,7 @@ void PBRShadingModel::InitPipelineStates()
 		ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		ResourceDesc.Width = 1920;
 		ResourceDesc.Height = 1080;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
@@ -1348,17 +1391,26 @@ void PBRShadingModel::InitPipelineStates()
 		ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		ClearValue.DepthStencil.Depth = 1.0f;
 		ClearValue.DepthStencil.Stencil = 0;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ, &ClearValue, __uuidof(ID3D12Resource), (void**)mDepthStencial.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &ClearValue, __uuidof(ID3D12Resource), (void**)mDepthStencial.GetAddressOf()));
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc;
 		ZeroMemory(&DSVDesc, sizeof(DSVDesc));
 		DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		//DSVDesc.
+		DSVDesc.Texture2D.MipSlice = 0;
 
 		mDepthStencialHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		m_D3D12Device->CreateDepthStencilView(mDepthStencial.Get(), &DSVDesc, mDepthStencialHandle);
 	}
+}
+
+void PBRShadingModel::InitPipelineStates()
+{
+	LoadGenEnviPipelineState();
+	LoadSkyboxPipelineState();
+	LoadGenEnviAssets();
+	LoadSkyboxAssets();
+	LoadCommonAssets();
 }
 
 void PBRShadingModel::GenEnvironmentMap()
@@ -1414,6 +1466,9 @@ void PBRShadingModelRealIBL::InitPipelineStates()
 {
 	PBRShadingModel::InitPipelineStates();
 	LoadPrimitivePipelineState();
+	LoadPrimitiveAssets();
+	WaitForPreviousFrame();
+	GenEnvironmentMap();
 }
 
 void PBRShadingModelRealIBL::Draw()
@@ -1431,11 +1486,11 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		Ranges[0].NumDescriptors = 2;
 		Ranges[0].BaseShaderRegister = 0;
-		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 4;
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].NumDescriptors = 1;
 		Ranges[1].BaseShaderRegister = 0;
-		Ranges[1].OffsetInDescriptorsFromTableStart = 0;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 6;
 
 		D3D12_ROOT_DESCRIPTOR_TABLE DescriptorTable;
 		ZeroMemory(&DescriptorTable, sizeof(DescriptorTable));
@@ -1456,6 +1511,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 		CubeMapSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 		CubeMapSamplerDesc.ShaderRegister = 0;
+		CubeMapSamplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
 		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
 		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
@@ -1488,7 +1544,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 		D3D12_INPUT_ELEMENT_DESC InputDesc[] = 
 		{ 
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
-			{"NORMAL",	1,DXGI_FORMAT_R32G32B32_FLOAT,0,12,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"NORMAL",	0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 		};
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC PipelineDesc;
@@ -1508,7 +1564,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 		PipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		PipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
 		PipelineDesc.InputLayout.pInputElementDescs = InputDesc;
-		PipelineDesc.InputLayout.NumElements = sizeof(InputDesc);
+		PipelineDesc.InputLayout.NumElements = _countof(InputDesc);
 		PipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		PipelineDesc.NumRenderTargets = 1;
 		PipelineDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -1523,7 +1579,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 {
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
-	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12PipelineState), (void**)CommandList.GetAddressOf()));
+	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
 	//Mesh
 	mPrimitive.LoadFBX("./Primitives/Sphere.fbx");
 	//VB
