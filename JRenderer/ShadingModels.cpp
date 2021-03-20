@@ -1097,7 +1097,7 @@ void PBRShadingModel::LoadGenEnviAssets()
 		TexMetadata Metadata;
 		ScratchImage Image;
 
-		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_01_1k.hdr"), &Metadata, Image));
+		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_02_1k.hdr"), &Metadata, Image));
 
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
@@ -1205,7 +1205,7 @@ void PBRShadingModel::LoadSkyboxAssets()
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)SkyboxVBUpload.GetAddressOf()));
 
-		D3D12_RANGE Range;
+		//D3D12_RANGE Range;
 		void* pData;
 		SkyboxVBUpload->Map(0, nullptr, (void**)&pData);
 		memcpy(pData, CubeVertices, VertexBufferSize);
@@ -1357,7 +1357,7 @@ void PBRShadingModel::LoadCommonAssets()
 
 		D3D12_CLEAR_VALUE ClearValue;
 		ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		memset(&ClearValue.Color, sizeof(ClearValue.Color), 0);
+		memset(&ClearValue.Color, 0, sizeof(ClearValue.Color));
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), (void**)mHDRRT.GetAddressOf()));
 
 		mHDRRTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
@@ -1417,12 +1417,14 @@ void PBRShadingModel::GenEnvironmentMap()
 {
 	mGenEnviMapCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenEnviMapPSO.Get());
 
+
 	mGenEnviMapCmdList->OMSetRenderTargets(1, &mGenEnviRTVHandle, FALSE, NULL);
 	const FLOAT ClearColor[] = { 0,0,0, 0 };
 	mGenEnviMapCmdList->ClearRenderTargetView(mGenEnviRTVHandle, ClearColor, 0, NULL);
 	mGenEnviMapCmdList->IASetVertexBuffers(0, 1, &mGenEnviMapVBView);
 	mGenEnviMapCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ID3D12DescriptorHeap* Heaps[] = {m_CBVSRVUAVDescHeap.Get()};
+	mGenEnviMapCmdList->SetGraphicsRootSignature(mGenEnviMapRootSignature.Get());
 	mGenEnviMapCmdList->SetDescriptorHeaps(_countof(Heaps), Heaps);
 	mGenEnviMapCmdList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 	mGenEnviMapCmdList->RSSetViewports(1, &mGenEnviViewport);
@@ -1435,21 +1437,25 @@ void PBRShadingModel::GenEnvironmentMap()
 	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	ResourceBarrier.Transition.pResource = mEnvironmentMap.Get();
 	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_GENERIC_READ;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 	mGenEnviMapCmdList->ResourceBarrier(1, &ResourceBarrier);
+
+	mGenEnviMapCmdList->Close();
+	m_CommandLists.push_back(mGenEnviMapCmdList.Get());
 }
 
 void PBRShadingModel::DrawSkyBox()
 {
 	mSkyboxCommandList->Reset(m_D3D12CmdAllocator.Get(), mSkyboxPSO.Get());
 	
-	mSkyboxCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, NULL);
+	mSkyboxCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, nullptr);
 	const FLOAT ClearColor[] = { 0,0,0, 0 };
 	mSkyboxCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
 	mSkyboxCommandList->IASetVertexBuffers(0, 1, &mSkyboxVBView);
 	mSkyboxCommandList->IASetIndexBuffer(&mSkyboxIBView);
 	mSkyboxCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	ID3D12DescriptorHeap* Heaps[] = {m_CBVSRVUAVDescHeap.Get()};
+	mSkyboxCommandList->SetGraphicsRootSignature(mSkyboxRootSignature.Get());
 	mSkyboxCommandList->SetDescriptorHeaps(_countof(Heaps), Heaps);
 	mSkyboxCommandList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 	mSkyboxCommandList->RSSetViewports(1, &m_Viewport);
@@ -1467,8 +1473,8 @@ void PBRShadingModelRealIBL::InitPipelineStates()
 	PBRShadingModel::InitPipelineStates();
 	LoadPrimitivePipelineState();
 	LoadPrimitiveAssets();
-	WaitForPreviousFrame();
 	GenEnvironmentMap();
+	WaitForPreviousFrame();
 }
 
 void PBRShadingModelRealIBL::Draw()
@@ -1573,6 +1579,8 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 		PipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mPrimitvePSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mPrimitvePSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPrimitiveCommandList.GetAddressOf()));
+		mPrimitiveCommandList->Close();
 	}
 }
 
@@ -1580,23 +1588,28 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 {
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
+	CommandList->Close();
+	CommandList->Reset(m_D3D12CmdAllocator.Get(), nullptr);
 	//Mesh
 	mPrimitive.LoadFBX("./Primitives/Sphere.fbx");
+	
 	//VB
+	ComPtr<ID3D12Resource> PrimitiveVBUpload;
 	{
-		ComPtr<ID3D12Resource> PrimitiveVBUpload;
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
 		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc,sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 		ResourceDesc.Width = mPrimitive.Vertices.size() * sizeof(MeshVertex);
 		ResourceDesc.Height = 1;
 		ResourceDesc.MipLevels = 1;
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveVBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveVBUpload.GetAddressOf()));
 
 		void* pData;
 		PrimitiveVBUpload->Map(0, NULL,&pData);
@@ -1615,10 +1628,15 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
+
+		mPrimitiveVBView.BufferLocation = mPrimitiveVB->GetGPUVirtualAddress();
+		mPrimitiveVBView.StrideInBytes = sizeof(MeshVertex);
+		mPrimitiveVBView.SizeInBytes = mPrimitive.Vertices.size() * sizeof(MeshVertex);
+
 	}
 	//IB
+	ComPtr<ID3D12Resource> PrimitiveIBUpload;
 	{
-		ComPtr<ID3D12Resource> PrimitiveIBUpload;
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -1629,8 +1647,9 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 		ResourceDesc.Height = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps,D3D12_HEAP_FLAG_NONE,&ResourceDesc,D3D12_RESOURCE_STATE_COPY_SOURCE,NULL,__uuidof(ID3D12Resource),(void**)PrimitiveIBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps,D3D12_HEAP_FLAG_NONE,&ResourceDesc,D3D12_RESOURCE_STATE_GENERIC_READ,NULL,__uuidof(ID3D12Resource),(void**)PrimitiveIBUpload.GetAddressOf()));
 
 		void* pData;
 		PrimitiveIBUpload->Map(0, NULL, &pData);
@@ -1650,6 +1669,11 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
+
+		mPrimitiveIBView.BufferLocation = mPrimitiveIB->GetGPUVirtualAddress();
+		mPrimitiveIBView.Format = DXGI_FORMAT_R32_UINT;
+		mPrimitiveIBView.SizeInBytes = mPrimitive.Indices.size() * sizeof(int);
+
 	}
 	//CB
 	{
@@ -1667,10 +1691,11 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 			ResourceDesc.Width = sizeof(View);
 			ResourceDesc.Height = 1;
 			ResourceDesc.MipLevels = 1;
+			ResourceDesc.DepthOrArraySize = 1;
 			ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 			ResourceDesc.SampleDesc = { 1,0 };
 			ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveViewCB.GetAddressOf()));
+			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveViewCB.GetAddressOf()));
 
 			void* pData;
 			mPrimitiveViewCB->Map(0, NULL, &pData);
@@ -1690,10 +1715,11 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 			ResourceDesc.Width = sizeof(Material);
 			ResourceDesc.Height = 1;
 			ResourceDesc.MipLevels = 1;
+			ResourceDesc.DepthOrArraySize = 1;
 			ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 			ResourceDesc.SampleDesc = { 1,0 };
 			ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveMaterialCB.GetAddressOf()));
+			assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveMaterialCB.GetAddressOf()));
 
 			void* pData;
 			mPrimitiveViewCB->Map(0, NULL, &pData);
@@ -1707,7 +1733,9 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 	}
 
 	{
+		CommandList->Close();
 		m_D3D12CmdQueue->ExecuteCommandLists(1, (ID3D12CommandList**)CommandList.GetAddressOf());
+		WaitForPreviousFrame();
 	}
 }
 
@@ -1715,11 +1743,17 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 {
 	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitvePSO.Get());
 
+	mPrimitiveCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, &mDepthStencialHandle);
+	const FLOAT ClearColor[] = { 0,0,0, 0 };
+	mPrimitiveCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
+	mPrimitiveCommandList->ClearDepthStencilView(mDepthStencialHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
+
 	mPrimitiveCommandList->IASetIndexBuffer(&mPrimitiveIBView);
 	mPrimitiveCommandList->IASetVertexBuffers(0, 1, &mPrimitiveVBView);
 	mPrimitiveCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	ID3D12DescriptorHeap* Heaps[] = { m_CBVSRVUAVDescHeap.Get() };
 	mPrimitiveCommandList->SetDescriptorHeaps(_countof(Heaps), Heaps);
+	mPrimitiveCommandList->SetGraphicsRootSignature(mPrimitiveRootSignature.Get());
 	mPrimitiveCommandList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 	mPrimitiveCommandList->RSSetScissorRects(1, &m_ScissorRect);
 	mPrimitiveCommandList->RSSetViewports(1, &m_Viewport);
