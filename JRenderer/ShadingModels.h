@@ -120,6 +120,13 @@ class PBRShadingModel : public ShadingModelDemo
 public:
 	PBRShadingModel(HWND hWnd) : ShadingModelDemo(hWnd)
 	{
+		//EnviMapPass, 1 Cube Map
+		//General HDR Render Target, 1
+		m_NumRTVDescriptors += 2; 
+		m_NumDSVDescriptors += 1;
+		//EnviMapPass, 2 
+		//SkyboxPass, 2
+		m_NumCBVSRVUAVDescriptors += 4;
 	}
 protected:
 	virtual void InitPipelineStates() override;
@@ -130,6 +137,7 @@ private:
 	void LoadSkyboxPipelineState();
 	void LoadGenEnviAssets();
 	void LoadSkyboxAssets();
+	void LoadCommonAssets();
 protected:
 	ComPtr<ID3D12Resource>		mEnvironmentMap;
 	ComPtr<ID3D12Resource>			mHDRRT;
@@ -167,9 +175,8 @@ class PBRShadingModelRealIBL : public PBRShadingModel
 public:
 	PBRShadingModelRealIBL(HWND hWnd) : PBRShadingModel(hWnd)
 	{
-		m_NumRTVDescriptors = FrameCount + 1;
-		m_NumCBVSRVUAVDescriptors = 1;
-		m_NumDSVDescriptors = 1;
+		//Primitive Pass 3
+		m_NumCBVSRVUAVDescriptors += 3;
 	}
 protected:
 	virtual void InitPipelineStates() override;
