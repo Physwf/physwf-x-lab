@@ -98,7 +98,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 			continue;
 		}
-		{
+		else {
 			Demo.Render();
 			Sleep(1);
 		}
