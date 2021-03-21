@@ -54,6 +54,7 @@ struct PBRMaterialUniform
 	XMFLOAT4 BaseColor;
 	XMFLOAT4 SpecularColor;
 	float fRoughtness;
+	char padding[256 - 2 * sizeof(XMFLOAT4) - sizeof(float)];
 };
 
 class ShadingModelDemo : public D3D12Demo
@@ -140,6 +141,7 @@ private:
 	void LoadCommonAssets();
 protected:
 	ComPtr<ID3D12Resource>		mEnvironmentMap;
+	D3D12_CPU_DESCRIPTOR_HANDLE mEnviromentMapSRV;
 	ComPtr<ID3D12Resource>			mHDRRT;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRRTVHandle;
 	ComPtr<ID3D12Resource>			mDepthStencial;
@@ -156,6 +158,7 @@ private:
 	ComPtr<ID3D12Resource>		mGenEnviMapVBUpload;
 	D3D12_VERTEX_BUFFER_VIEW	mGenEnviMapVBView;
 	ComPtr<ID3D12Resource>		mGenEnviMapConstBuffer;
+	D3D12_CPU_DESCRIPTOR_HANDLE mGenEnviMapCBView;
 	D3D12_VIEWPORT				mGenEnviViewport;
 	D3D12_RECT					mGenEnviScissorRect;
 	//SkyBox
@@ -198,7 +201,9 @@ private:
 	ComPtr<ID3D12Resource>			mPrimitiveIB;
 	D3D12_INDEX_BUFFER_VIEW			mPrimitiveIBView;
 	ComPtr<ID3D12Resource>			mPrimitiveViewCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveViewCBV;
 	ComPtr<ID3D12Resource>			mPrimitiveMaterialCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveMaterialCBV;
 
 };
 
