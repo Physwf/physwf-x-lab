@@ -14,14 +14,14 @@ struct ViewUniform
 	XMFLOAT4X4 SvPositionToWorld;
 	XMFLOAT4 ViewSizeAndInvSize;
 	XMFLOAT4 ViewRectMin;
-	float Pading00[4];
+	char Pading00[256 - sizeof(XMFLOAT4) * 3 - sizeof(XMFLOAT4X4) * 3];
 };
 
 struct PrimitiveUniform
 {
 	XMFLOAT4X4 LocalToWorld;
 	float LocalToWorldDeterminantSign;
-	float Pading00[47];
+	char Pading00[256-sizeof(XMFLOAT4X4) - sizeof(float)];
 };
 
 struct AmbientLightUniform
@@ -200,6 +200,8 @@ private:
 	D3D12_VERTEX_BUFFER_VIEW		mPrimitiveVBView;
 	ComPtr<ID3D12Resource>			mPrimitiveIB;
 	D3D12_INDEX_BUFFER_VIEW			mPrimitiveIBView;
+	ComPtr<ID3D12Resource>			mPrimitiveCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveCBV;
 	ComPtr<ID3D12Resource>			mPrimitiveViewCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveViewCBV;
 	ComPtr<ID3D12Resource>			mPrimitiveMaterialCB;

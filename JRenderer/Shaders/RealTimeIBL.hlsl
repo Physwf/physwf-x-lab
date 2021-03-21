@@ -9,28 +9,43 @@ struct VSInput
 struct VSOutput
 {
     float4 SvPosition : SV_Position;
-
-    float3 Position : POSITION;
+    float3 WorldPosition : POSITION;
     float3 Normal : NORMAL;
+};
+
+cbuffer Primitive : register(b0)
+{
+    float4x4 LocalToWorld;
+    float LocalToWorldDeterminantSign;
+    float4 padding[11];
+};
+
+cbuffer View  : register(b1)
+{
+    float4 ViewOrigin;
+    float4x4 WorldToClip;
+	float4x4 ClipToWorld;
+	float4x4 SvPositionToWorld;
+	float4 ViewSizeAndInvSize;
+	float4 ViewRectMin;
+    float4 padding3;
 };
 
 VSOutput VSMain(VSInput Input) 
 {
     VSOutput Output = (VSOutput)0;
-    Output.Position = Input.Position;
+    Output.WorldPosition = mul(LocalToWorld,float4(Input.Position,1.f));
+    Output.SvPosition = mul(WorldToClip,float4(Output.WorldPosition,1.f));
+    Output.Normal = Input.Normal;
     return Output;
 }
 
-cbuffer View
+cbuffer Material : register(b2)
 {
-    float3 ViewOrigin;
-}
-
-cbuffer Material
-{
-    float3 BaseColor;
-    float3 SpecularColor;
+    float4 BaseColor;
+    float4 SpecularColor;
     float  fRoughness;
+    float4 padding05[13];
 }
 
 TextureCube EnvironmentMap;
@@ -104,6 +119,7 @@ float3 DiffuseIBL(float3 V, float3 N)
 {
     float3 DiffuseLight = 0;
     const uint SmapleCount = 1024;
+    [unrool]
     for(uint i=0;i<SmapleCount;++i)
     {
         float2 Xi = Hammersley(i,SmapleCount);
@@ -112,13 +128,14 @@ float3 DiffuseIBL(float3 V, float3 N)
         float NoL = saturate(dot(N,L));
         DiffuseLight += NoL* Li;
     }
-    return (DiffuseLight / SmapleCount) * BaseColor / PI;
+    return (DiffuseLight / SmapleCount) * BaseColor.rgb / PI;
 }
 
 float3 SpecularIBL(float3 V, float3 N)
 {
     float3 SpecularLight = 0;
     const uint SmapleCount = 1024;
+    [unrool]
     for(uint i=0;i<SmapleCount;++i)
     {
         float2 Xi = Hammersley(i,SmapleCount);
@@ -147,7 +164,7 @@ float3 SpecularIBL(float3 V, float3 N)
 
 float4 PSMain(VSOutput Input) :SV_Target
 {
-    float3 V = normalize(ViewOrigin - Input.Position);
+    float3 V = normalize(ViewOrigin.xyz - Input.WorldPosition);
     float3 N = normalize(Input.Normal);
     float3 Color = DiffuseIBL(V,N) + SpecularIBL(V,N);
     return float4(Color,1.0);
