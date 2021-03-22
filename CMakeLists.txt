@@ -15,6 +15,7 @@ add_subdirectory(ray_tracing)
 add_subdirectory(pbrt)
 add_subdirectory(MikkTSpace)
 add_subdirectory(x8)
+add_subdirectory(HDRIViewer)
 include_directories(x3/Include)
 set(DIR_PROJECT "./demo")
 add_executable(x-lab ${DIR_PROJECT}/winmain.cpp 
