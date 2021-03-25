@@ -12,6 +12,9 @@ public:
 
 	int Width() const { return ImageWidth; }
 	int Height() const { return ImageHeight; }
+
+	size_t GetDataSize() const { return Data.size(); }
+	const float* GetData() const { return Data.data(); }
 private:
 	std::vector<float> Data;
 	int ImageWidth, ImageHeight;
