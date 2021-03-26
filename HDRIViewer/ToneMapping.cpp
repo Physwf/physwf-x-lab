@@ -1,4 +1,5 @@
 #include "ToneMapping.h"
+#include "ToneMapping_Curves.h"
 extern "C"
 {
 #include "bmp.h"
@@ -6,7 +7,7 @@ extern "C"
 
 #include <vector>
 #include <numeric>
-#include <cmath>
+
 
 void RGB2Luminance(const float* InputRGB, int Width, int Height, float* OutputLuminace)
 {
@@ -110,16 +111,9 @@ void RGB2AverageLuminace(const float* InputRGB, int Width, int Height, float Min
 	OutLAvg = WightedAverageL;
 }
 
-float Reinhard(float x) {
-	return x / (1.0f + x);
-}
+typedef float(*CurvePtr)(float);
 
-float Reinhard2(float x) {
-	const float L_white = 4.0;
-	return (x * (1.0f + x / (L_white * L_white))) / (1.0f + x);
-}
-
-void ToneMapping_Reinhard(const float* InputRGB, int Width, int Height, unsigned char* OutputData)
+void ToneMapping_WithCurve(const float* InputRGB, int Width, int Height, CurvePtr Curve, unsigned char* OutputData)
 {
 	float Lavg;
 	RGB2AverageLuminace(InputRGB, Width, Height, -10.f, 12.f, Lavg);
@@ -135,7 +129,7 @@ void ToneMapping_Reinhard(const float* InputRGB, int Width, int Height, unsigned
 			float Yxyx, Yxyy, Yxyz;
 			RGB2Yxy(R, G, B, Yxyx, Yxyy, Yxyz);
 			float lp = Yxyx / (9.6f * Lavg + 0.0001f);
-			Yxyx = Reinhard(lp);
+			Yxyx = Curve(lp);
 			Yxy2RGB(Yxyx, Yxyy, Yxyz, R, G, B);
 			if (R < 0.f) R = 0.f;
 			if (R > 1.f) R = 1.f;
@@ -151,7 +145,7 @@ void ToneMapping_Reinhard(const float* InputRGB, int Width, int Height, unsigned
 	}
 }
 
-void ToneMapping_Reinhard2(const float* InputRGB, int Width, int Height, unsigned char* OutputData)
+void ToneMapping_Unreal(const float* InputRGB, int Width, int Height, unsigned char* OutputData)
 {
 	float Lavg;
 	RGB2AverageLuminace(InputRGB, Width, Height, -10.f, 12.f, Lavg);
@@ -167,7 +161,7 @@ void ToneMapping_Reinhard2(const float* InputRGB, int Width, int Height, unsigne
 			float Yxyx, Yxyy, Yxyz;
 			RGB2Yxy(R, G, B, Yxyx, Yxyy, Yxyz);
 			float lp = Yxyx / (9.6f * Lavg + 0.0001f);
-			Yxyx = Reinhard2(lp);
+			Yxyx = Tonemap_Unreal(lp);
 			Yxy2RGB(Yxyx, Yxyy, Yxyz, R, G, B);
 			if (R < 0.f) R = 0.f;
 			if (R > 1.f) R = 1.f;
@@ -175,7 +169,6 @@ void ToneMapping_Reinhard2(const float* InputRGB, int Width, int Height, unsigne
 			if (G > 1.f) G = 1.f;
 			if (B < 0.f) B = 0.f;
 			if (B > 1.f) B = 1.f;
-			Linear2Gamma(R, G, B, R, G, B);
 			OutputData[WritePixelIndex + 0] = (unsigned char)(B * 255.f);
 			OutputData[WritePixelIndex + 1] = (unsigned char)(G * 255.f);
 			OutputData[WritePixelIndex + 2] = (unsigned char)(R * 255.f);
@@ -266,12 +259,22 @@ void ToneMapping(const float* InputRGB, int Width, int Height, unsigned char* Ou
 	}
 	case TMA_REINHARD:
 	{
-		ToneMapping_Reinhard(InputRGB, Width, Height, OutputData);
+		ToneMapping_WithCurve(InputRGB, Width, Height, Reinhard, OutputData);
 		break;
 	}
 	case TMA_REINHARD2:
 	{
-		ToneMapping_Reinhard2(InputRGB, Width, Height, OutputData);
+		ToneMapping_WithCurve(InputRGB, Width, Height, Reinhard2, OutputData);
+		break;
+	}
+	case TMA_ACES:
+	{
+		ToneMapping_WithCurve(InputRGB, Width, Height, Tonemap_ACES, OutputData);
+		break;
+	}
+	case TMA_Unreal:
+	{
+		ToneMapping_Unreal(InputRGB, Width, Height, OutputData);
 		break;
 	}
 	default:
@@ -293,19 +296,22 @@ int main(int argc, char** argv)
 	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_REINHARD2);
 	{
 		FILE* RGB;
-		fopen_s(&RGB, "wide_street_01_1k.bmp", "w+b");
+		fopen_s(&RGB, "wide_street_01_1k-TMA_REINHARD.bmp", "w+b");
 		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
 		fclose(RGB);
 	}
-// 	HDRLoader Loader;
-// 	HDRLoaderResult Result;
-// 	Loader.load("./hdri/wide_street_01_1k.hdr", Result);
-// 	for (int y = 0; y < Result.height; ++y)
-// 	{
-// 		for (int x = 0; x < Result.width; ++x)
-// 		{
-// 			printf("%f \n", Result.cols[y * Result.width + x]);
-// 		}
-// 		printf("\n");
-// 	}
+	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_ACES);
+	{
+		FILE* RGB;
+		fopen_s(&RGB, "wide_street_01_1k-TMA_ACES.bmp", "w+b");
+		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
+		fclose(RGB);
+	}
+	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_Unreal);
+	{
+		FILE* RGB;
+		fopen_s(&RGB, "wide_street_01_1k-TMA_Unreal.bmp", "w+b");
+		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
+		fclose(RGB);
+	}
 }
