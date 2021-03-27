@@ -11,6 +11,8 @@ add_subdirectory(ray_tracing)
 add_subdirectory(pbrt)
 add_subdirectory(MikkTSpace)
 add_subdirectory(x8)
+add_subdirectory(HDRIViewer)
+
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
