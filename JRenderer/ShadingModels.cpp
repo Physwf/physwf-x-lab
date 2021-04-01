@@ -933,6 +933,179 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 	}
 }
 
+void PBRShadingModel::LoadTonemapPipelineState()
+{
+	//Histogram
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[3];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		Ranges[1].BaseShaderRegister = 0;
+		Ranges[1].NumDescriptors = 1;
+		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		Ranges[2].BaseShaderRegister = 0;
+		Ranges[2].NumDescriptors = 1;
+		D3D12_ROOT_PARAMETER Parameters[1];
+		ZeroMemory(&Parameters, sizeof(Parameters));
+		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = 3;
+		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
+
+		D3D12_ROOT_SIGNATURE_DESC SignDesc;
+		ZeroMemory(&SignDesc, sizeof(SignDesc));
+		SignDesc.NumParameters = 1;
+		SignDesc.pParameters = Parameters;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&SignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapHistogramRootSignature.GetAddressOf()));
+
+		ComPtr<ID3DBlob> CS;
+
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), NULL, NULL, "HistgramCSMain", "cs_5_0", 0, 0, CS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC PipelineDesc;
+		ZeroMemory(&PipelineDesc, sizeof(PipelineDesc));
+		PipelineDesc.pRootSignature = mTonemapHistogramRootSignature.Get();
+		PipelineDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
+		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12CmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapHistgramCommandList.GetAddressOf()));
+		mTonemapHistgramCommandList->Close();
+	}
+
+	//Luminance Average
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[2];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[1].BaseShaderRegister = 0;
+		Ranges[1].NumDescriptors = 1;
+
+		D3D12_ROOT_PARAMETER Parameters[1];
+		ZeroMemory(&Parameters, sizeof(Parameters));
+		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = 2;
+		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
+		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
+		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
+		RootSignDesc.NumParameters = 1;
+		RootSignDesc.pParameters = Parameters;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapHistogramRootSignature.GetAddressOf()));
+
+		ComPtr<ID3DBlob> CS;
+		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "CSMain", "cs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, CS.GetAddressOf(),Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+		D3D12_COMPUTE_PIPELINE_STATE_DESC CPSDesc;
+		ZeroMemory(&CPSDesc, sizeof(CPSDesc));
+		CPSDesc.pRootSignature = mTonemapHistogramRootSignature.Get();
+		CPSDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
+
+		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&CPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
+	}
+
+	//
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[1];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+
+		D3D12_ROOT_PARAMETER Paramaters[1];
+		ZeroMemory(&Paramaters, sizeof(Paramaters));
+		Paramaters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Paramaters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		Paramaters[0].DescriptorTable.NumDescriptorRanges = 1;
+		Paramaters[0].DescriptorTable.pDescriptorRanges = Ranges;
+
+		D3D12_STATIC_SAMPLER_DESC SamplerDesc;
+		ZeroMemory(&SamplerDesc, sizeof(SamplerDesc));
+		SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		SamplerDesc.ShaderRegister = 0;
+
+		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
+		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
+		RootSignDesc.NumParameters = 1;
+		RootSignDesc.pParameters = Paramaters;
+		RootSignDesc.NumStaticSamplers = 1;
+		RootSignDesc.pStaticSamplers = &SamplerDesc;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapRootSignature.GetAddressOf()));
+
+		ComPtr<ID3DBlob> VS;
+		ComPtr<ID3DBlob> PS;
+		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s\n", Error->GetBufferPointer());
+			return;
+		}
+		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s\n", Error->GetBufferPointer());
+			return;
+		}
+
+		D3D12_INPUT_ELEMENT_DESC InputDesc[] = {
+			{"POSITION",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
+		};
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSDesc;
+		ZeroMemory(&GPSDesc, sizeof(GPSDesc));
+		GPSDesc.pRootSignature = mTonemapRootSignature.Get();
+		GPSDesc.VS = { VS->GetBufferPointer(), VS->GetBufferSize() };
+		GPSDesc.PS = { PS->GetBufferPointer(), PS->GetBufferSize() };
+		GPSDesc.BlendState.AlphaToCoverageEnable = FALSE;
+		GPSDesc.BlendState.IndependentBlendEnable = FALSE;
+		GPSDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		GPSDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+		GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		GPSDesc.BlendState.RenderTarget[0].LogicOpEnable = true;
+		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		GPSDesc.DepthStencilState.DepthEnable = FALSE;
+		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		GPSDesc.InputLayout.pInputElementDescs = InputDesc;
+		GPSDesc.InputLayout.NumElements = _countof(InputDesc);
+		GPSDesc.NumRenderTargets = 1;
+		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R10G10B10A2_UNORM;
+		GPSDesc.SampleDesc = { 1,0 };
+
+		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapPSO.GetAddressOf()));
+	}
+
+}
+
 void PBRShadingModel::LoadGenEnviAssets()
 {
 	{
@@ -1451,6 +1624,19 @@ void PBRShadingModel::LoadCommonAssets()
 		RTVDesc.Texture2D.MipSlice = 0;
 		RTVDesc.Texture2D.PlaneSlice = 0;
 		m_D3D12Device->CreateRenderTargetView(mHDRRT.Get(), &RTVDesc, mHDRRTVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		SRVDesc.Texture2D.MipLevels = 1;
+		SRVDesc.Texture2D.MostDetailedMip = 0;
+
+		mHDRSRV = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mHDRSRV.ptr += 7 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mHDRRT.Get(), &SRVDesc, mHDRSRV);
+
 	}
 	//Depth
 	{
@@ -1483,6 +1669,112 @@ void PBRShadingModel::LoadCommonAssets()
 
 		mDepthStencialHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		m_D3D12Device->CreateDepthStencilView(mDepthStencial.Get(), &DSVDesc, mDepthStencialHandle);
+	}
+}
+
+void PBRShadingModel::LoadTonemapAssets()
+{
+	ComPtr<ID3D12GraphicsCommandList> CommandList;
+	{
+		assert(S_OK == m_D3D12Device->CreateCommandList(0,D3D12_COMMAND_LIST_TYPE_COPY,m_D3D12CmdAllocator.Get(),nullptr,__uuidof(ID3D12GraphicsCommandList),(void**)CommandList.Get()));
+		CommandList->Close();
+	}
+	//Histogram Buffer
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = 256 * sizeof(UINT);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramResult.GetAddressOf()));
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
+		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
+		UAVDesc.Format = DXGI_FORMAT_R32_UINT;
+		UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		UAVDesc.Buffer.FirstElement = 0;
+		UAVDesc.Buffer.NumElements = 256;
+		UAVDesc.Buffer.StructureByteStride = sizeof(UINT);
+		UAVDesc.Buffer.CounterOffsetInBytes = 0;
+		mTonemapHistogramResultUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultUAVHandle.ptr += 8 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateUnorderedAccessView(mTonemapHistogramResult.Get(), nullptr, &UAVDesc, mTonemapHistogramResultUAVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		SRVDesc.Format = DXGI_FORMAT_R32_UINT;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		SRVDesc.Buffer.FirstElement = 0;
+		SRVDesc.Buffer.NumElements = 256;
+		SRVDesc.Buffer.NumElements = sizeof(UINT);
+		SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+		mTonemapHistogramResultSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultSRVHandle.ptr += 9 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mTonemapHistogramResult.Get(), &SRVDesc, mTonemapHistogramResultSRVHandle);
+	}
+	//Histogram CB
+	{
+
+	}
+	//Luminance Average Buffer
+	{
+
+	}
+	//VB
+	{
+		float Square[] = {
+			-1.0f,1.0f,
+			1.0f,1.0f,
+			1.0f,-1.0f,
+			-1.f,-1.f,
+		};
+
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(Square);
+		ResourceDesc.Height = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.SampleDesc = { 1,0 };
+
+		assert(m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVBUpload.GetAddressOf()));
+
+		void* pData;
+		mTonemapVB->Map(0, nullptr, &pData);
+		memcpy(pData, Square, sizeof(Square));
+		mTonemapVB->Unmap(0, 0);
+
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVB.GetAddressOf()));
+
+		CommandList->CopyResource(mTonemapVB.Get(), mTonemapVBUpload.Get());
+
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mTonemapVB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+
 	}
 }
 

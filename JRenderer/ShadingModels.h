@@ -127,7 +127,9 @@ public:
 		m_NumDSVDescriptors += 1;
 		//EnviMapPass, 2 
 		//SkyboxPass, 2
-		m_NumCBVSRVUAVDescriptors += 4;
+		//Scene SRV 1
+		//tonemap 1 CBV 2 SRV 2 UAV
+		m_NumCBVSRVUAVDescriptors += 10;
 	}
 protected:
 	virtual void InitPipelineStates() override;
@@ -136,13 +138,16 @@ protected:
 private:
 	void LoadGenEnviPipelineState();
 	void LoadSkyboxPipelineState();
+	void LoadTonemapPipelineState();
 	void LoadGenEnviAssets();
 	void LoadSkyboxAssets();
 	void LoadCommonAssets();
+	void LoadTonemapAssets();
 protected:
 	ComPtr<ID3D12Resource>		mEnvironmentMap;
 	D3D12_CPU_DESCRIPTOR_HANDLE mEnviromentMapSRV;
 	ComPtr<ID3D12Resource>			mHDRRT;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRSRV;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mHDRRTVHandle;
 	ComPtr<ID3D12Resource>			mDepthStencial;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mDepthStencialHandle;
@@ -171,6 +176,31 @@ private:
 	D3D12_INDEX_BUFFER_VIEW		mSkyboxIBView;
 	ComPtr<ID3D12Resource>		mSkyboxCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSkyboxCBVHandle;
+	//Tonemap
+	ComPtr<ID3D12RootSignature> mTonemapHistogramRootSignature;
+	ComPtr<ID3D12PipelineState> mTonemapHistogramPSO;
+	ComPtr<ID3D12GraphicsCommandList> mTonemapHistgramCommandList;
+	ComPtr<ID3D12Resource>	mTonemapHistogramCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE	mTonemapHistogramCBVHandle;
+	ComPtr<ID3D12Resource>  mTonemapHistogramResult;
+	D3D12_CPU_DESCRIPTOR_HANDLE mTonemapHistogramResultUAVHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE mTonemapHistogramResultSRVHandle;
+
+	ComPtr<ID3D12RootSignature> mTonemapAvgLuminanceRootSignature;
+	ComPtr<ID3D12PipelineState> mTonemapAvgLuminacePSO;
+	ComPtr<ID3D12GraphicsCommandList> mTonemapAvgLuminaceCommandList;
+	ComPtr<ID3D12Resource> mTonemapAvgLuminaceBuffer;
+	D3D12_CPU_DESCRIPTOR_HANDLE mTonemapAvgLuminaceBufferUAVHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE mTonemapAvgLuminaceBufferSRVHandle;
+
+	ComPtr<ID3D12RootSignature> mTonemapRootSignature;
+	ComPtr<ID3D12PipelineState> mTonemapPSO;
+	ComPtr<ID3D12GraphicsCommandList> mTonemapCommandList;
+	ComPtr<ID3D12Resource>		mTonemapVBUpload;
+	ComPtr<ID3D12Resource>		mTonemapVB;
+	D3D12_VERTEX_BUFFER_VIEW	mTonemapVBView;
+	ComPtr<ID3D12Resource>		mTonemapCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mTonemapCBVHandle;
 };
 
 class PBRShadingModelRealIBL : public PBRShadingModel
