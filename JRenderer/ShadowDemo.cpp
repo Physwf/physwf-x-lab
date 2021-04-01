@@ -373,7 +373,30 @@ void PCSSDemo::LoadSceneAssets()
 	}
 	//Material Uniform
 	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(MaterialUniform);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mMarryMaterialCB.GetAddressOf()));
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
+		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
+		CBVDesc.BufferLocation = mMarryMaterialCB->GetGPUVirtualAddress();
+		CBVDesc.SizeInBytes = sizeof(MaterialUniform);
+		
+		mMarryMaterialCBView = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mMarryMaterialCBView.ptr += 4 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateConstantBufferView(&CBVDesc, mMarryMaterialCBView);
 	}
 	//diffuse map
 	{
