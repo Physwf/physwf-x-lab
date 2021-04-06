@@ -1723,11 +1723,70 @@ void PBRShadingModel::LoadTonemapAssets()
 	}
 	//Histogram CB
 	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(TonemapUniform);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramCB.GetAddressOf()));
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
+		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
+		CBVDesc.BufferLocation = mTonemapHistogramCB->GetGPUVirtualAddress();
+		CBVDesc.SizeInBytes = sizeof(TonemapUniform);
+		
+		mTonemapHistogramCBVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramCBVHandle.ptr += 10 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateConstantBufferView(&CBVDesc, mTonemapHistogramCBVHandle);
 	}
 	//Luminance Average Buffer
 	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(float);
+		ResourceDesc.Height = 1;
+		ResourceDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramResult.GetAddressOf()));
 
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
+		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
+		UAVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		UAVDesc.Buffer.FirstElement = 0;
+		UAVDesc.Buffer.NumElements = 1;
+		UAVDesc.Buffer.StructureByteStride = sizeof(float);
+
+		mTonemapHistogramResultUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultUAVHandle.ptr += 11 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateUnorderedAccessView(mTonemapHistogramResult.Get(), NULL, &UAVDesc, mTonemapHistogramResultUAVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		SRVDesc.Buffer.FirstElement = 0;
+		SRVDesc.Buffer.NumElements = 1;
+		SRVDesc.Buffer.StructureByteStride = sizeof(float);
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		mTonemapHistogramResultSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultUAVHandle.ptr += 12 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mTonemapHistogramResult.Get(), &SRVDesc, mTonemapHistogramResultSRVHandle);
 	}
 	//VB
 	{
@@ -1861,6 +1920,7 @@ void PBRShadingModelRealIBL::Draw()
 	DrawSkyBox();
 	WaitForPreviousFrame();
 	DrawPrimitives();
+	PostProcess();
 }
 
 void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
@@ -2211,6 +2271,14 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 	mPrimitiveCommandList->Close();
 
 	m_CommandLists.push_back(mPrimitiveCommandList.Get());
+}
+
+void PBRShadingModelRealIBL::PostProcess()
+{
+	//Tonemap
+	{
+
+	}
 }
 
 void PBRShadingModelPrefilterIBL::LoadGenIrradiancePipelineState()

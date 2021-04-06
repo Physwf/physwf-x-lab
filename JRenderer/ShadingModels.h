@@ -39,6 +39,18 @@ struct PBRMaterialUniform
 	char padding[256 - 2 * sizeof(XMFLOAT4) - sizeof(float)];
 };
 
+struct TonemapUniform
+{
+	int InputWidth;
+	int InputHeight;
+	float MinLogL;
+	float LogRange;
+	float InverseLogRange;
+	float DeltaTime;
+	float tau;
+	char padding[256 - 7 * sizeof(float)];
+};
+
 class ShadingModelDemo : public D3D12Demo
 {
 public:
