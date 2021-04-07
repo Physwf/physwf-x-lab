@@ -129,6 +129,7 @@ protected:
 	virtual void InitPipelineStates() override;
 	void GenEnvironmentMap();
 	void DrawSkyBox();
+	void PostProcess();
 private:
 	void LoadGenEnviPipelineState();
 	void LoadSkyboxPipelineState();
@@ -213,7 +214,6 @@ private:
 	void LoadPrimitiveAssets();
 	void UpdatePointLight(float fScreenX, float fScreenY);
 	void DrawPrimitives();
-	void PostProcess();
 private:
 	ComPtr<ID3D12RootSignature>		mPrimitiveRootSignature;
 	ComPtr<ID3D12PipelineState>		mPrimitvePSO;
