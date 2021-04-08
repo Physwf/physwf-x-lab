@@ -1931,8 +1931,7 @@ void PBRShadingModel::PostProcess()
 		//histogram
 		mTonemapHistgramCommandList->Reset(m_D3D12CmdAllocator.Get(), mTonemapHistogramPSO.Get());
 		mTonemapHistgramCommandList->SetComputeRootSignature(mTonemapHistogramRootSignature.Get());
-		ID3D12DescriptorHeap* Heaps[] = { m_CBVSRVUAVDescHeap.Get() };
-		mTonemapHistgramCommandList->SetDescriptorHeaps(_countof(Heaps), Heaps);
+		mTonemapHistgramCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 		mTonemapHistgramCommandList->SetComputeRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 		mTonemapHistgramCommandList->Dispatch(64,48,1);
 
@@ -1950,8 +1949,7 @@ void PBRShadingModel::PostProcess()
 		//average
 		mTonemapAvgLuminaceCommandList->Reset(m_D3D12CmdAllocator.Get(), mTonemapHistogramPSO.Get());
 		mTonemapAvgLuminaceCommandList->SetComputeRootSignature(mTonemapAvgLuminanceRootSignature.Get());
-		ID3D12DescriptorHeap* Heaps[] = { m_CBVSRVUAVDescHeap.Get() };
-		mTonemapAvgLuminaceCommandList->SetDescriptorHeaps(_countof(Heaps), Heaps);
+		mTonemapAvgLuminaceCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 		mTonemapAvgLuminaceCommandList->SetComputeRootDescriptorTable(1, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 		mTonemapAvgLuminaceCommandList->Dispatch(256,1,1);
 
@@ -1982,8 +1980,7 @@ void PBRShadingModel::PostProcess()
 		mTonemapCommandList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
 
 		mTonemapCommandList->SetGraphicsRootSignature(mTonemapRootSignature.Get());
-		ID3D12DescriptorHeap* Heaps[] = { m_CBVSRVUAVDescHeap.Get() };
-		mTonemapCommandList->SetDescriptorHeaps(_countof(Heaps), Heaps);
+		mTonemapCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
 		mTonemapCommandList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
 		mTonemapCommandList->IASetVertexBuffers(0, 1, &mTonemapVBView);
 		mTonemapCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
