@@ -58,7 +58,7 @@ void CSMain(uint GroupIndex : SV_GroupIndex)
 
     GroupMemoryBarrierWithGroupSync();
 
-    for(uint i = GROUP_SIZE << 1; i >=0 ;i << 1)
+    for(uint i = GROUP_SIZE >> 1; i >0 ;i >>= 1)
     {
         if(GroupIndex < i)
         {
@@ -164,7 +164,7 @@ float4 Tonemapping_Reinhard(float3 LinearColor,float Lavg)
     float Lp = Yxy.x / (9.6f * Lavg + 0.0001f);
     Yxy.x = Reinhard(Lp);
     float3 TonemapColor = Yxy2RGB(Yxy);
-    return (Linear2Gamma(TonemapColor),1.0f);
+    return float4(Linear2Gamma(TonemapColor),1.0f);
 }
 
 cbuffer TonemapCB
@@ -178,7 +178,7 @@ float4 Tonemapping_Reinhard2(float3 LinearColor,float Lavg)
     float Lp = Yxy.x / (9.6f * Lavg + 0.0001f);
     Yxy.x = Reinhard2(Lp,L_white);
     float3 TonemapColor = Yxy2RGB(Yxy);
-    return (Linear2Gamma(TonemapColor),1.0f);
+    return float4(Linear2Gamma(TonemapColor),1.0f);
 }
 
 float4 Tonemapping_Unreal(float3 LinearColor,float Lavg)
@@ -187,7 +187,7 @@ float4 Tonemapping_Unreal(float3 LinearColor,float Lavg)
     float Lp = Yxy.x / (9.6f * Lavg + 0.0001f);
     Yxy.x = Tonemap_Unreal(Lp);
     float3 TonemapColor = Yxy2RGB(Yxy);
-    return (TonemapColor,1.0f);
+    return float4(TonemapColor,1.0f);
 }
 
 void VSMain(float2 Position:POSITION, float4 SVPosition:SV_Position,out float2 UV : TEXCOORD)
@@ -201,7 +201,7 @@ SamplerState PointSampler;
 
 void PSMain(float2 UV : TEXCOORD,out float4 Color : SV_Target)
 {
-    float3 LinearColor = Input.SampleLevel(PointSampler,UV,0);
+    float3 LinearColor = Input.SampleLevel(PointSampler,UV,0).rgb;
     float Lavg = LuminanceAverageROnly[0];
     Color = Tonemapping_Reinhard(LinearColor,Lavg);
 }

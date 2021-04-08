@@ -942,7 +942,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
-		Ranges[0].OffsetInDescriptorsFromTableStart = 7;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 7;//hdr render target
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 1;
@@ -950,7 +950,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		Ranges[2].BaseShaderRegister = 0;
 		Ranges[2].NumDescriptors = 1;
-		Ranges[2].OffsetInDescriptorsFromTableStart = 8;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 8;//histogram
 		D3D12_ROOT_PARAMETER Parameters[1];
 		ZeroMemory(&Parameters, sizeof(Parameters));
 		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -970,7 +970,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 
 		ComPtr<ID3DBlob> CS;
 
-		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), NULL, NULL, "HistgramCSMain", "cs_5_0", 0, 0, CS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), NULL, NULL, "HistogramCSMain", "cs_5_0", 0, 0, CS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s", Error->GetBufferPointer());
 			return;
@@ -981,7 +981,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		PipelineDesc.pRootSignature = mTonemapHistogramRootSignature.Get();
 		PipelineDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
 		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
-		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12CmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapHistgramCommandList.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapHistgramCommandList.GetAddressOf()));
 		mTonemapHistgramCommandList->Close();
 	}
 
@@ -996,16 +996,16 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 1;
-		Ranges[1].OffsetInDescriptorsFromTableStart = 9;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 9;//histogram
 		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		Ranges[2].BaseShaderRegister = 0;
 		Ranges[2].NumDescriptors = 1;
-		Ranges[2].OffsetInDescriptorsFromTableStart = 11;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 11;//average luminance
 
 		D3D12_ROOT_PARAMETER Parameters[1];
 		ZeroMemory(&Parameters, sizeof(Parameters));
 		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-		Parameters[0].DescriptorTable.NumDescriptorRanges = 2;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = 3;
 		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
 		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -1020,7 +1020,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapHistogramRootSignature.GetAddressOf()));
 
 		ComPtr<ID3DBlob> CS;
-		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "CSMain", "cs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, CS.GetAddressOf(),Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "CSMain", "cs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, CS.GetAddressOf(),Error.GetAddressOf()))
 		{
 			LOGA("%s", Error->GetBufferPointer());
 			return;
@@ -1031,22 +1031,29 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		CPSDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
 
 		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&CPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList),(void**)mTonemapAvgLuminaceCommandList.GetAddressOf()));
+		mTonemapAvgLuminaceCommandList->Close();
 	}
 
 	//
 	{
-		D3D12_DESCRIPTOR_RANGE Ranges[1];
+		D3D12_DESCRIPTOR_RANGE Ranges[2];
 		ZeroMemory(&Ranges, sizeof(Ranges));
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
-		Ranges[0].OffsetInDescriptorsFromTableStart = 12;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 7;//hdr render target
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[1].BaseShaderRegister = 1;
+		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 12;//average luminance
+
 
 		D3D12_ROOT_PARAMETER Paramaters[1];
 		ZeroMemory(&Paramaters, sizeof(Paramaters));
 		Paramaters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		Paramaters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-		Paramaters[0].DescriptorTable.NumDescriptorRanges = 1;
+		Paramaters[0].DescriptorTable.NumDescriptorRanges = 2;
 		Paramaters[0].DescriptorTable.pDescriptorRanges = Ranges;
 
 		D3D12_STATIC_SAMPLER_DESC SamplerDesc;
@@ -1072,12 +1079,12 @@ void PBRShadingModel::LoadTonemapPipelineState()
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-		if (S_OK == D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
@@ -1112,6 +1119,8 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		GPSDesc.SampleDesc = { 1,0 };
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapPSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mTonemapPSO.Get(), __uuidof(ID3D12PipelineState), (void**)mTonemapCommandList.GetAddressOf()));
+		mTonemapCommandList->Close();
 	}
 
 }
@@ -1850,9 +1859,11 @@ void PBRShadingModel::InitPipelineStates()
 {
 	LoadGenEnviPipelineState();
 	LoadSkyboxPipelineState();
+	LoadTonemapPipelineState();
 	LoadGenEnviAssets();
 	LoadSkyboxAssets();
 	LoadCommonAssets();
+	LoadTonemapAssets();
 }
 
 void PBRShadingModel::GenEnvironmentMap()
