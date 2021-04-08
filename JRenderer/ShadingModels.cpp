@@ -942,12 +942,15 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 7;
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 10;
 		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
 		Ranges[2].BaseShaderRegister = 0;
 		Ranges[2].NumDescriptors = 1;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 8;
 		D3D12_ROOT_PARAMETER Parameters[1];
 		ZeroMemory(&Parameters, sizeof(Parameters));
 		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -984,14 +987,20 @@ void PBRShadingModel::LoadTonemapPipelineState()
 
 	//Luminance Average
 	{
-		D3D12_DESCRIPTOR_RANGE Ranges[2];
+		D3D12_DESCRIPTOR_RANGE Ranges[3];
 		ZeroMemory(&Ranges, sizeof(Ranges));
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 10;
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 9;
+		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		Ranges[2].BaseShaderRegister = 0;
+		Ranges[2].NumDescriptors = 1;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 11;
 
 		D3D12_ROOT_PARAMETER Parameters[1];
 		ZeroMemory(&Parameters, sizeof(Parameters));
@@ -1031,6 +1040,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[0].BaseShaderRegister = 0;
 		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 12;
 
 		D3D12_ROOT_PARAMETER Paramaters[1];
 		ZeroMemory(&Paramaters, sizeof(Paramaters));
@@ -1833,7 +1843,6 @@ void PBRShadingModel::LoadTonemapAssets()
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
-
 	}
 }
 
@@ -1900,6 +1909,15 @@ void PBRShadingModel::DrawSkyBox()
 	mSkyboxCommandList->RSSetScissorRects(1, &m_ScissorRect);
 
 	mSkyboxCommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
+
+	D3D12_RESOURCE_BARRIER ResourceBarrier;
+	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	ResourceBarrier.Transition.pResource = mHDRRT.Get();
+	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	mSkyboxCommandList->ResourceBarrier(1, &ResourceBarrier);
 
 	mSkyboxCommandList->Close();
 
@@ -1974,13 +1992,19 @@ void PBRShadingModel::PostProcess()
 
 		mTonemapCommandList->DrawInstanced(4, 1, 0, 1);
 
+		ResourceBarrier.Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+		ResourceBarrier.Transition.pResource = mTonemapAvgLuminaceBuffer.Get();
 		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 		mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
 
-		ResourceBarrier.Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
-		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		ResourceBarrier.Transition.pResource = mHDRRT.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 		mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
 
