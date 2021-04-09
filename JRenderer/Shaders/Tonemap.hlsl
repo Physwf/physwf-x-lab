@@ -190,16 +190,16 @@ float4 Tonemapping_Unreal(float3 LinearColor,float Lavg)
     return float4(TonemapColor,1.0f);
 }
 
-void VSMain(float2 Position:POSITION, float4 SVPosition:SV_Position,out float2 UV : TEXCOORD)
+void VSMain(float2 Position:POSITION,out float4 SVPosition:SV_Position,out float2 UV : TEXCOORD)
 {
     SVPosition = float4(Position,0,1);
     UV = Position - float2(-1.f,-1.f)/2.f;
 }
 
-RWBuffer<float> LuminanceAverageROnly;
+Buffer<float> LuminanceAverageROnly;
 SamplerState PointSampler;
 
-void PSMain(float2 UV : TEXCOORD,out float4 Color : SV_Target)
+void PSMain(float4 SVPosition:SV_Position,float2 UV : TEXCOORD,out float4 Color : SV_Target)
 {
     float3 LinearColor = Input.SampleLevel(PointSampler,UV,0).rgb;
     float Lavg = LuminanceAverageROnly[0];
