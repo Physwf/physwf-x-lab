@@ -161,8 +161,6 @@ void PhongShadingModel::InitPipelineStates()
 
 void PhongShadingModel::Draw()
 {
-	m_CommandLists.clear();
-
 	m_D3D12CmdAllocator->Reset();
 	m_PrimitiveCmdList->Reset(m_D3D12CmdAllocator.Get(), m_PrimitivePipelineState.Get());
 
@@ -822,6 +820,7 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 
 	{
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mGenEnviMapPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mGenEnviMapCmdList.GetAddressOf()));
+		mGenEnviMapCmdList->SetName(TEXT("mGenEnviMapCmdList"));
 		mGenEnviMapCmdList->Close();
 	}
 }
@@ -926,6 +925,7 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 	
 		{
 			assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mSkyboxPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mSkyboxCommandList.GetAddressOf()));
+			mSkyboxCommandList->SetName(TEXT("mSkyboxCommandList"));
 			mSkyboxCommandList->Close();
 		}
 
@@ -982,6 +982,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		PipelineDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
 		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapHistgramCommandList.GetAddressOf()));
+		mTonemapHistgramCommandList->SetName(TEXT("mTonemapHistgramCommandList"));
 		mTonemapHistgramCommandList->Close();
 	}
 
@@ -1032,6 +1033,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 
 		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&CPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapAvgLuminacePSO.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapAvgLuminacePSO.Get(), __uuidof(ID3D12GraphicsCommandList),(void**)mTonemapAvgLuminaceCommandList.GetAddressOf()));
+		mTonemapAvgLuminaceCommandList->SetName(TEXT("mTonemapAvgLuminaceCommandList"));
 		mTonemapAvgLuminaceCommandList->Close();
 	}
 
@@ -1092,7 +1094,7 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		}
 
 		D3D12_INPUT_ELEMENT_DESC InputDesc[] = {
-			{"POSITION",0,DXGI_FORMAT_R32G32_FLOAT,0,8,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
+			{"POSITION",0,DXGI_FORMAT_R32G32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
 		};
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSDesc;
@@ -1118,11 +1120,12 @@ void PBRShadingModel::LoadTonemapPipelineState()
 		GPSDesc.InputLayout.NumElements = _countof(InputDesc);
 		GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		GPSDesc.NumRenderTargets = 1;
-		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R10G10B10A2_UNORM;
+		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		GPSDesc.SampleDesc = { 1,0 };
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapPSO.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mTonemapPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapCommandList.GetAddressOf()));
+		mTonemapCommandList->SetName(TEXT("mTonemapCommandList"));
 		mTonemapCommandList->Close();
 	}
 
@@ -1718,6 +1721,7 @@ void PBRShadingModel::LoadTonemapAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramResult.GetAddressOf()));
+		mTonemapHistogramResult->SetName(TEXT("mTonemapHistogramResult"));
 
 		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
 		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
@@ -1761,6 +1765,7 @@ void PBRShadingModel::LoadTonemapAssets()
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramCB.GetAddressOf()));
+		mTonemapHistogramCB->SetName(TEXT("mTonemapHistogramCB"));
 
 		TonemapUniform Tonemap;
 		Tonemap.InputWidth = 1920;
@@ -1795,6 +1800,7 @@ void PBRShadingModel::LoadTonemapAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapAvgLuminaceBuffer.GetAddressOf()));
+		mTonemapAvgLuminaceBuffer->SetName(TEXT("mTonemapAvgLuminaceBuffer"));
 
 		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
 		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
@@ -1805,8 +1811,8 @@ void PBRShadingModel::LoadTonemapAssets()
 		UAVDesc.Buffer.StructureByteStride = 0;
 		UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
 
-		mTonemapHistogramResultUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
-		mTonemapHistogramResultUAVHandle.ptr += 11 * m_CBVSRVUAVDescriptorSize;
+		mTonemapAvgLuminaceBufferUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapAvgLuminaceBufferUAVHandle.ptr += 11 * m_CBVSRVUAVDescriptorSize;
 		m_D3D12Device->CreateUnorderedAccessView(mTonemapAvgLuminaceBuffer.Get(), NULL, &UAVDesc, mTonemapHistogramResultUAVHandle);
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
@@ -1818,9 +1824,9 @@ void PBRShadingModel::LoadTonemapAssets()
 		SRVDesc.Buffer.StructureByteStride = 0;
 		SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
 		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		mTonemapHistogramResultSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
-		mTonemapHistogramResultUAVHandle.ptr += 12 * m_CBVSRVUAVDescriptorSize;
-		m_D3D12Device->CreateShaderResourceView(mTonemapHistogramResult.Get(), &SRVDesc, mTonemapHistogramResultSRVHandle);
+		mTonemapAvgLuminaceBufferSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapAvgLuminaceBufferSRVHandle.ptr += 12 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mTonemapHistogramResult.Get(), &SRVDesc, mTonemapAvgLuminaceBufferSRVHandle);
 	}
 	//VB
 	{
@@ -1846,6 +1852,7 @@ void PBRShadingModel::LoadTonemapAssets()
 		ResourceDesc.SampleDesc = { 1,0 };
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVBUpload.GetAddressOf()));
+		mTonemapVBUpload->SetName(TEXT("mTonemapVBUpload"));
 
 		void* pData;
 		mTonemapVBUpload->Map(0, nullptr, &pData);
@@ -1856,6 +1863,7 @@ void PBRShadingModel::LoadTonemapAssets()
 		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVB.GetAddressOf()));
+		mTonemapVB->SetName(TEXT("mTonemapVB"));
 
 		mTonemapVBView.BufferLocation = mTonemapVB->GetGPUVirtualAddress();
 		mTonemapVBView.SizeInBytes = sizeof(Square);
@@ -1946,15 +1954,7 @@ void PBRShadingModel::DrawSkyBox()
 
 	mSkyboxCommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
-	D3D12_RESOURCE_BARRIER ResourceBarrier;
-	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
-	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	ResourceBarrier.Transition.pResource = mHDRRT.Get();
-	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-
-	mSkyboxCommandList->ResourceBarrier(1, &ResourceBarrier);
-
+	
 	mSkyboxCommandList->Close();
 
 	m_CommandLists.push_back(mSkyboxCommandList.Get());
@@ -1980,7 +1980,7 @@ void PBRShadingModel::PostProcess()
 		mTonemapHistgramCommandList->ResourceBarrier(1, &ResourceBarrier);
 
 		mTonemapHistgramCommandList->Close();
-		m_CommandLists.push_back(mTonemapHistgramCommandList.Get());
+		m_ComputeCommandList.push_back(mTonemapHistgramCommandList.Get());
 
 		//average
 		mTonemapAvgLuminaceCommandList->Reset(m_D3D12ComputeCmdAllocator.Get(), mTonemapAvgLuminacePSO.Get());
@@ -1997,7 +1997,7 @@ void PBRShadingModel::PostProcess()
 		
 
 		mTonemapAvgLuminaceCommandList->Close();
-		m_CommandLists.push_back(mTonemapAvgLuminaceCommandList.Get());
+		m_ComputeCommandList.push_back(mTonemapAvgLuminaceCommandList.Get());
 
 		//tonemap
 		mTonemapCommandList->Reset(m_D3D12CmdAllocator.Get(), mTonemapPSO.Get());
@@ -2169,6 +2169,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mPrimitvePSO.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mPrimitvePSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPrimitiveCommandList.GetAddressOf()));
+		mPrimitiveCommandList->SetName(TEXT("mPrimitiveCommandList"));
 		mPrimitiveCommandList->Close();
 	}
 }
@@ -2411,6 +2412,16 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 	mPrimitiveCommandList->RSSetViewports(1, &m_Viewport);
 
 	mPrimitiveCommandList->DrawIndexedInstanced(mPrimitive.Indices.size(), 1, 0, 0, 0);
+
+	D3D12_RESOURCE_BARRIER ResourceBarrier;
+	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	ResourceBarrier.Transition.pResource = mHDRRT.Get();
+	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	mPrimitiveCommandList->ResourceBarrier(1, &ResourceBarrier);
+
 
 	mPrimitiveCommandList->Close();
 
