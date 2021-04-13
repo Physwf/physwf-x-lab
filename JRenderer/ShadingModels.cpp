@@ -161,8 +161,6 @@ void PhongShadingModel::InitPipelineStates()
 
 void PhongShadingModel::Draw()
 {
-	m_CommandLists.clear();
-
 	m_D3D12CmdAllocator->Reset();
 	m_PrimitiveCmdList->Reset(m_D3D12CmdAllocator.Get(), m_PrimitivePipelineState.Get());
 
@@ -822,6 +820,7 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 
 	{
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mGenEnviMapPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mGenEnviMapCmdList.GetAddressOf()));
+		mGenEnviMapCmdList->SetName(TEXT("mGenEnviMapCmdList"));
 		mGenEnviMapCmdList->Close();
 	}
 }
@@ -926,11 +925,212 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 	
 		{
 			assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mSkyboxPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mSkyboxCommandList.GetAddressOf()));
+			mSkyboxCommandList->SetName(TEXT("mSkyboxCommandList"));
 			mSkyboxCommandList->Close();
 		}
 
 		
 	}
+}
+
+void PBRShadingModel::LoadTonemapPipelineState()
+{
+	//Histogram
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[3];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 7;//hdr render target
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		Ranges[1].BaseShaderRegister = 0;
+		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 10;
+		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		Ranges[2].BaseShaderRegister = 0;
+		Ranges[2].NumDescriptors = 1;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 8;//histogram
+		D3D12_ROOT_PARAMETER Parameters[1];
+		ZeroMemory(&Parameters, sizeof(Parameters));
+		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = 3;
+		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
+
+		D3D12_ROOT_SIGNATURE_DESC SignDesc;
+		ZeroMemory(&SignDesc, sizeof(SignDesc));
+		SignDesc.NumParameters = 1;
+		SignDesc.pParameters = Parameters;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&SignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapHistogramRootSignature.GetAddressOf()));
+
+		ComPtr<ID3DBlob> CS;
+
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), NULL, NULL, "HistogramCSMain", "cs_5_0", 0, 0, CS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+
+		D3D12_COMPUTE_PIPELINE_STATE_DESC PipelineDesc;
+		ZeroMemory(&PipelineDesc, sizeof(PipelineDesc));
+		PipelineDesc.pRootSignature = mTonemapHistogramRootSignature.Get();
+		PipelineDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
+		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapHistogramPSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapHistogramPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapHistgramCommandList.GetAddressOf()));
+		mTonemapHistgramCommandList->SetName(TEXT("mTonemapHistgramCommandList"));
+		mTonemapHistgramCommandList->Close();
+	}
+
+	//Luminance Average
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[3];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 10;
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		Ranges[1].BaseShaderRegister = 0;
+		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 8;//histogram
+		Ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		Ranges[2].BaseShaderRegister = 1;
+		Ranges[2].NumDescriptors = 1;
+		Ranges[2].OffsetInDescriptorsFromTableStart = 11;//average luminance
+
+		D3D12_ROOT_PARAMETER Parameters[1];
+		ZeroMemory(&Parameters, sizeof(Parameters));
+		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = _countof(Ranges);
+		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
+		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
+		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
+		RootSignDesc.NumParameters = 1;
+		RootSignDesc.pParameters = Parameters;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapAvgLuminanceRootSignature.GetAddressOf()));
+		
+		ComPtr<ID3DBlob> CS;
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "CSMain", "cs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, CS.GetAddressOf(),Error.GetAddressOf()))
+		{
+			LOGA("%s", Error->GetBufferPointer());
+			return;
+		}
+		D3D12_COMPUTE_PIPELINE_STATE_DESC CPSDesc;
+		ZeroMemory(&CPSDesc, sizeof(CPSDesc));
+		CPSDesc.pRootSignature = mTonemapAvgLuminanceRootSignature.Get();
+		CPSDesc.CS = { CS->GetBufferPointer(),CS->GetBufferSize() };
+
+		assert(S_OK == m_D3D12Device->CreateComputePipelineState(&CPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapAvgLuminacePSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, m_D3D12ComputeCmdAllocator.Get(), mTonemapAvgLuminacePSO.Get(), __uuidof(ID3D12GraphicsCommandList),(void**)mTonemapAvgLuminaceCommandList.GetAddressOf()));
+		mTonemapAvgLuminaceCommandList->SetName(TEXT("mTonemapAvgLuminaceCommandList"));
+		mTonemapAvgLuminaceCommandList->Close();
+	}
+
+	//
+	{
+		D3D12_DESCRIPTOR_RANGE Ranges[2];
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[0].BaseShaderRegister = 0;
+		Ranges[0].NumDescriptors = 1;
+		Ranges[0].OffsetInDescriptorsFromTableStart = 7;//hdr render target
+		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		Ranges[1].BaseShaderRegister = 1;
+		Ranges[1].NumDescriptors = 1;
+		Ranges[1].OffsetInDescriptorsFromTableStart = 12;//average luminance
+
+
+		D3D12_ROOT_PARAMETER Paramaters[1];
+		ZeroMemory(&Paramaters, sizeof(Paramaters));
+		Paramaters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		Paramaters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		Paramaters[0].DescriptorTable.NumDescriptorRanges = 2;
+		Paramaters[0].DescriptorTable.pDescriptorRanges = Ranges;
+
+		D3D12_STATIC_SAMPLER_DESC SamplerDesc;
+		ZeroMemory(&SamplerDesc, sizeof(SamplerDesc));
+		SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		SamplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		SamplerDesc.ShaderRegister = 0;
+
+		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
+		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
+		RootSignDesc.NumParameters = 1;
+		RootSignDesc.pParameters = Paramaters;
+		RootSignDesc.NumStaticSamplers = 1;
+		RootSignDesc.pStaticSamplers = &SamplerDesc;
+		RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+		ComPtr<ID3DBlob> RootSign;
+		ComPtr<ID3DBlob> Error;
+		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mTonemapRootSignature.GetAddressOf()));
+
+		ComPtr<ID3DBlob> VS;
+		ComPtr<ID3DBlob> PS;
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s\n", Error->GetBufferPointer());
+			return;
+		}
+		if (S_OK != D3DCompileFromFile(TEXT("Tonemap.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		{
+			LOGA("%s\n", Error->GetBufferPointer());
+			return;
+		}
+
+		D3D12_INPUT_ELEMENT_DESC InputDesc[] = {
+			{"POSITION",0,DXGI_FORMAT_R32G32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0}
+		};
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSDesc;
+		ZeroMemory(&GPSDesc, sizeof(GPSDesc));
+		GPSDesc.pRootSignature = mTonemapRootSignature.Get();
+		GPSDesc.VS = { VS->GetBufferPointer(), VS->GetBufferSize() };
+		GPSDesc.PS = { PS->GetBufferPointer(), PS->GetBufferSize() };
+		GPSDesc.BlendState.AlphaToCoverageEnable = FALSE;
+		GPSDesc.BlendState.IndependentBlendEnable = true;
+		GPSDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		GPSDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+		GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		GPSDesc.BlendState.RenderTarget[0].LogicOpEnable = FALSE;
+		GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+		GPSDesc.SampleMask = 0xffffffff;
+		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		GPSDesc.DepthStencilState.DepthEnable = FALSE;
+		GPSDesc.InputLayout.pInputElementDescs = InputDesc;
+		GPSDesc.InputLayout.NumElements = _countof(InputDesc);
+		GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		GPSDesc.NumRenderTargets = 1;
+		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		GPSDesc.SampleDesc = { 1,0 };
+
+		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mTonemapPSO.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mTonemapPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mTonemapCommandList.GetAddressOf()));
+		mTonemapCommandList->SetName(TEXT("mTonemapCommandList"));
+		mTonemapCommandList->Close();
+	}
+
 }
 
 void PBRShadingModel::LoadGenEnviAssets()
@@ -1451,6 +1651,19 @@ void PBRShadingModel::LoadCommonAssets()
 		RTVDesc.Texture2D.MipSlice = 0;
 		RTVDesc.Texture2D.PlaneSlice = 0;
 		m_D3D12Device->CreateRenderTargetView(mHDRRT.Get(), &RTVDesc, mHDRRTVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		SRVDesc.Texture2D.MipLevels = 1;
+		SRVDesc.Texture2D.MostDetailedMip = 0;
+
+		mHDRSRV = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mHDRSRV.ptr += 7 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mHDRRT.Get(), &SRVDesc, mHDRSRV);
+
 	}
 	//Depth
 	{
@@ -1486,13 +1699,211 @@ void PBRShadingModel::LoadCommonAssets()
 	}
 }
 
+void PBRShadingModel::LoadTonemapAssets()
+{
+	ComPtr<ID3D12GraphicsCommandList> CommandList;
+	{
+		assert(S_OK == m_D3D12Device->CreateCommandList(0,D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(),nullptr,__uuidof(ID3D12GraphicsCommandList),(void**)CommandList.GetAddressOf()));
+		CommandList->Close();
+	}
+	//Histogram Buffer
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = 256 * sizeof(UINT);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramResult.GetAddressOf()));
+		mTonemapHistogramResult->SetName(TEXT("mTonemapHistogramResult"));
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
+		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
+		UAVDesc.Format = DXGI_FORMAT_R32_UINT;
+		UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		UAVDesc.Buffer.FirstElement = 0;
+		UAVDesc.Buffer.NumElements = 256;
+		UAVDesc.Buffer.StructureByteStride = 0;
+		UAVDesc.Buffer.CounterOffsetInBytes = 0;
+		UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		mTonemapHistogramResultUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultUAVHandle.ptr += 8 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateUnorderedAccessView(mTonemapHistogramResult.Get(), nullptr, &UAVDesc, mTonemapHistogramResultUAVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		SRVDesc.Format = DXGI_FORMAT_R32_UINT;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		SRVDesc.Buffer.FirstElement = 0;
+		SRVDesc.Buffer.NumElements = 256;
+		SRVDesc.Buffer.StructureByteStride = 0;
+		SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		mTonemapHistogramResultSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramResultSRVHandle.ptr += 9 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mTonemapHistogramResult.Get(), &SRVDesc, mTonemapHistogramResultSRVHandle);
+	}
+	//Histogram CB
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(TonemapUniform);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapHistogramCB.GetAddressOf()));
+		mTonemapHistogramCB->SetName(TEXT("mTonemapHistogramCB"));
+
+		TonemapUniform Tonemap;
+		Tonemap.InputWidth = 1920;
+		Tonemap.InputHeight = 1080;
+		Tonemap.MinLogL = -10.f;
+		Tonemap.LogRange = 12.f;
+		Tonemap.InverseLogRange = 1.f / Tonemap.LogRange;
+		
+		void* pData;
+		mTonemapHistogramCB->Map(0, nullptr, &pData);
+		memcpy(pData,&Tonemap,sizeof(Tonemap));
+		mTonemapHistogramCB->Unmap(0, nullptr);
+
+		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
+		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
+		CBVDesc.BufferLocation = mTonemapHistogramCB->GetGPUVirtualAddress();
+		CBVDesc.SizeInBytes = sizeof(TonemapUniform);
+		
+		mTonemapHistogramCBVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapHistogramCBVHandle.ptr += 10 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateConstantBufferView(&CBVDesc, mTonemapHistogramCBVHandle);
+	}
+	//Luminance Average Buffer
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(float);
+		ResourceDesc.Height = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapAvgLuminaceBuffer.GetAddressOf()));
+		mTonemapAvgLuminaceBuffer->SetName(TEXT("mTonemapAvgLuminaceBuffer"));
+
+		D3D12_UNORDERED_ACCESS_VIEW_DESC UAVDesc;
+		ZeroMemory(&UAVDesc, sizeof(UAVDesc));
+		UAVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		UAVDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		UAVDesc.Buffer.FirstElement = 0;
+		UAVDesc.Buffer.NumElements = 1;
+		UAVDesc.Buffer.StructureByteStride = 0;
+		UAVDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+		mTonemapAvgLuminaceBufferUAVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapAvgLuminaceBufferUAVHandle.ptr += 11 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateUnorderedAccessView(mTonemapAvgLuminaceBuffer.Get(), NULL, &UAVDesc, mTonemapAvgLuminaceBufferUAVHandle);
+
+		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		SRVDesc.Buffer.FirstElement = 0;
+		SRVDesc.Buffer.NumElements = 1;
+		SRVDesc.Buffer.StructureByteStride = 0;
+		SRVDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		mTonemapAvgLuminaceBufferSRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		mTonemapAvgLuminaceBufferSRVHandle.ptr += 12 * m_CBVSRVUAVDescriptorSize;
+		m_D3D12Device->CreateShaderResourceView(mTonemapAvgLuminaceBuffer.Get(), &SRVDesc, mTonemapAvgLuminaceBufferSRVHandle);
+	}
+	//VB
+	{
+		float Square[] = {
+			-1.0f,1.0f,
+			1.0f,1.0f,
+			-1.f,-1.f,
+			1.0f,-1.0f,
+		};
+
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = sizeof(Square);
+		ResourceDesc.Height = 1;
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.SampleDesc = { 1,0 };
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVBUpload.GetAddressOf()));
+		mTonemapVBUpload->SetName(TEXT("mTonemapVBUpload"));
+
+		void* pData;
+		mTonemapVBUpload->Map(0, nullptr, &pData);
+		memcpy(pData, Square, sizeof(Square));
+		mTonemapVBUpload->Unmap(0, 0);
+
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mTonemapVB.GetAddressOf()));
+		mTonemapVB->SetName(TEXT("mTonemapVB"));
+
+		mTonemapVBView.BufferLocation = mTonemapVB->GetGPUVirtualAddress();
+		mTonemapVBView.SizeInBytes = sizeof(Square);
+		mTonemapVBView.StrideInBytes = 2 * sizeof(float);
+
+		CommandList->Reset(m_D3D12CmdAllocator.Get(), nullptr);
+
+		CommandList->CopyResource(mTonemapVB.Get(), mTonemapVBUpload.Get());
+
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mTonemapVB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+
+		CommandList->Close();
+		m_D3D12CmdQueue->ExecuteCommandLists(1, (ID3D12CommandList**)CommandList.GetAddressOf());
+		WaitForPreviousFrame();
+	}
+}
+
 void PBRShadingModel::InitPipelineStates()
 {
 	LoadGenEnviPipelineState();
 	LoadSkyboxPipelineState();
+	LoadTonemapPipelineState();
 	LoadGenEnviAssets();
 	LoadSkyboxAssets();
 	LoadCommonAssets();
+	LoadTonemapAssets();
 }
 
 void PBRShadingModel::GenEnvironmentMap()
@@ -1550,9 +1961,110 @@ void PBRShadingModel::DrawSkyBox()
 
 	mSkyboxCommandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
 
+	
 	mSkyboxCommandList->Close();
 
 	m_CommandLists.push_back(mSkyboxCommandList.Get());
+}
+
+void PBRShadingModel::PostProcess()
+{
+	//tonemap
+	{
+		//histogram
+		{
+			mTonemapHistgramCommandList->Reset(m_D3D12ComputeCmdAllocator.Get(), mTonemapHistogramPSO.Get());
+			mTonemapHistgramCommandList->SetComputeRootSignature(mTonemapHistogramRootSignature.Get());
+			mTonemapHistgramCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+			mTonemapHistgramCommandList->SetComputeRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+			mTonemapHistgramCommandList->Dispatch(64, 48, 1);
+
+			D3D12_RESOURCE_BARRIER ResourceBarrier;
+			ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+			ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			ResourceBarrier.Transition.pResource = mTonemapHistogramResult.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+			mTonemapHistgramCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			mTonemapHistgramCommandList->Close();
+			m_ComputeCommandList.push_back(mTonemapHistgramCommandList.Get());
+		}
+
+		//average
+		{
+			mTonemapAvgLuminaceCommandList->Reset(m_D3D12ComputeCmdAllocator.Get(), mTonemapAvgLuminacePSO.Get());
+			mTonemapAvgLuminaceCommandList->SetComputeRootSignature(mTonemapAvgLuminanceRootSignature.Get());
+			mTonemapAvgLuminaceCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+			mTonemapAvgLuminaceCommandList->SetComputeRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+			mTonemapAvgLuminaceCommandList->Dispatch(1, 1, 1);
+
+			D3D12_RESOURCE_BARRIER ResourceBarrier;
+			ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+			ResourceBarrier.Transition.pResource = mTonemapHistogramResult.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			mTonemapAvgLuminaceCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			mTonemapAvgLuminaceCommandList->Close();
+			m_ComputeCommandList.push_back(mTonemapAvgLuminaceCommandList.Get());
+		}
+		WaitForPreviousFrame();
+		ExecuteComputeCommandList();
+		//tonemap
+		{
+			mTonemapCommandList->Reset(m_D3D12CmdAllocator.Get(), mTonemapPSO.Get());
+
+			D3D12_RESOURCE_BARRIER ResourceBarrier;
+			ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+			ResourceBarrier.Transition.pResource = mTonemapAvgLuminaceBuffer.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			ResourceBarrier.Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+			RTVHandle.ptr += m_FrameIndex * m_RTVDescriptorSize;
+			mTonemapCommandList->OMSetRenderTargets(1, &RTVHandle, FALSE, NULL);
+			FLOAT Color[4] = { 0 };
+			mTonemapCommandList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
+
+			mTonemapCommandList->SetGraphicsRootSignature(mTonemapRootSignature.Get());
+			mTonemapCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+			mTonemapCommandList->SetGraphicsRootDescriptorTable(0, m_CBVSRVUAVDescHeap->GetGPUDescriptorHandleForHeapStart());
+			mTonemapCommandList->IASetVertexBuffers(0, 1, &mTonemapVBView);
+			mTonemapCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			mTonemapCommandList->RSSetScissorRects(1, &m_ScissorRect);
+			mTonemapCommandList->RSSetViewports(1, &m_Viewport);
+
+			mTonemapCommandList->DrawInstanced(4, 1, 0, 1);
+
+			ResourceBarrier.Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+			mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			ResourceBarrier.Transition.pResource = mTonemapAvgLuminaceBuffer.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			ResourceBarrier.Transition.pResource = mHDRRT.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+			mTonemapCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+			mTonemapCommandList->Close();
+			m_CommandLists.push_back(mTonemapCommandList.Get());
+		}
+		WaitForComputeFrame();
+		ExecuteDirectCommandList();
+	}
 }
 
 void PBRShadingModelRealIBL::InitPipelineStates()
@@ -1569,6 +2081,8 @@ void PBRShadingModelRealIBL::Draw()
 	DrawSkyBox();
 	WaitForPreviousFrame();
 	DrawPrimitives();
+	ExecuteDirectCommandList();
+	PostProcess();
 }
 
 void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
@@ -1673,6 +2187,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&PipelineDesc, __uuidof(ID3D12PipelineState), (void**)mPrimitvePSO.GetAddressOf()));
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mPrimitvePSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPrimitiveCommandList.GetAddressOf()));
+		mPrimitiveCommandList->SetName(TEXT("mPrimitiveCommandList"));
 		mPrimitiveCommandList->Close();
 	}
 }
@@ -1851,7 +2366,7 @@ void PBRShadingModelRealIBL::LoadPrimitiveAssets()
 			PBRMaterialUniform Material;
 			Material.BaseColor = { 1.0f,1.0f, 1.0f, 1.0f, };
 			Material.SpecularColor = { 1.0f,1.0f, 1.0f, 1.0f, };
-			Material.fRoughtness = 0.0f;
+			Material.fRoughtness = 0.3f;
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
 			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
@@ -1915,6 +2430,16 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 	mPrimitiveCommandList->RSSetViewports(1, &m_Viewport);
 
 	mPrimitiveCommandList->DrawIndexedInstanced(mPrimitive.Indices.size(), 1, 0, 0, 0);
+
+	D3D12_RESOURCE_BARRIER ResourceBarrier;
+	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	ResourceBarrier.Transition.pResource = mHDRRT.Get();
+	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	mPrimitiveCommandList->ResourceBarrier(1, &ResourceBarrier);
+
 
 	mPrimitiveCommandList->Close();
 

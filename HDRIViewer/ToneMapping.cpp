@@ -7,6 +7,7 @@ extern "C"
 
 #include <vector>
 #include <numeric>
+#include <algorithm>
 
 
 void RGB2Luminance(const float* InputRGB, int Width, int Height, float* OutputLuminace)
@@ -288,60 +289,30 @@ void ToneMapping(const float* InputRGB, int Width, int Height, unsigned char* Ou
 
 int main(int argc, char** argv)
 {
-	{
-		HRDIFile f;
-		f.Load("./hdri/wide_street_01_1k.hdr");
+	HRDIFile f;
+	f.Load("./hdri/wide_street_02_1k.hdr");
 
-		std::vector<unsigned char> Output;
-		Output.resize(f.Width() * f.Height() * 3);
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_REINHARD2);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "wide_street_01_1k-TMA_REINHARD.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_ACES);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "wide_street_01_1k-TMA_ACES.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_Unreal);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "wide_street_01_1k-TMA_Unreal.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
+	std::vector<unsigned char> Output;
+	Output.resize(f.Width() * f.Height() * 3);
+	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_REINHARD2);
+	{
+		FILE* RGB;
+		fopen_s(&RGB, "wide_street_02_1k-TMA_REINHARD.bmp", "w+b");
+		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
+		fclose(RGB);
 	}
+	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_ACES);
 	{
-		HRDIFile f;
-		f.Load("./hdri/ulmer_muenster_1k.hdr");
-
-		std::vector<unsigned char> Output;
-		Output.resize(f.Width() * f.Height() * 3);
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_REINHARD2);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "ulmer_muenster_1k-TMA_REINHARD.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_ACES);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "ulmer_muenster_1k-TMA_ACES.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
-		ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_Unreal);
-		{
-			FILE* RGB;
-			fopen_s(&RGB, "ulmer_muenster_1k-TMA_Unreal.bmp", "w+b");
-			BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
-			fclose(RGB);
-		}
+		FILE* RGB;
+		fopen_s(&RGB, "wide_street_02_1k-TMA_ACES.bmp", "w+b");
+		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
+		fclose(RGB);
+	}
+	ToneMapping(f.GetData(), f.Width(), f.Height(), Output.data(), TMA_Unreal);
+	{
+		FILE* RGB;
+		fopen_s(&RGB, "wide_street_02_1k-TMA_Unreal.bmp", "w+b");
+		BMP_WritePixels_RGB24(RGB, Output.data(), f.Width(), f.Height());
+		fclose(RGB);
 	}
 }
