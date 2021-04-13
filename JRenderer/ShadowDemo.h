@@ -4,6 +4,16 @@
 #include "DirectXMath.h"
 using namespace DirectX;
 
+struct ObjMaterialUniform
+{
+	XMFLOAT4 ka;
+	XMFLOAT4 kd;
+	XMFLOAT4 ks;
+	float alpha;
+	float ShadingModel;
+	float Pading00[50];
+};
+
 class ShadowDemo : public D3D12Demo
 {
 public:

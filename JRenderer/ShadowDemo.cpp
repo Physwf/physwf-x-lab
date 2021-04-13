@@ -379,7 +379,7 @@ void PCSSDemo::LoadSceneAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		ResourceDesc.Width = sizeof(MaterialUniform);
+		ResourceDesc.Width = sizeof(ObjMaterialUniform);
 		ResourceDesc.Height = 1;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
@@ -392,7 +392,7 @@ void PCSSDemo::LoadSceneAssets()
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
 		CBVDesc.BufferLocation = mMarryMaterialCB->GetGPUVirtualAddress();
-		CBVDesc.SizeInBytes = sizeof(MaterialUniform);
+		CBVDesc.SizeInBytes = sizeof(ObjMaterialUniform);
 		
 		mMarryMaterialCBView = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		mMarryMaterialCBView.ptr += 4 * m_CBVSRVUAVDescriptorSize;
