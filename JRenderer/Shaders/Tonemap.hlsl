@@ -47,31 +47,33 @@ void HistogramCSMain(uint GroupIndex : SV_GroupIndex, uint3 ThreadID : SV_Dispat
     InterlockedAdd(Histogram[GroupIndex],LocalSharedHistogram[GroupIndex]);
 }
 
-Buffer<uint> HistogramROnly;
 RWBuffer<float> LuminanceAverage;
 
-[numthreads(1,1,1)]
+[numthreads(16,16,1)]
 void CSMain(uint GroupIndex : SV_GroupIndex)
 {
-    uint CountForThisBin = HistogramROnly[GroupIndex] * GroupIndex;
+    uint CountForThisBin = Histogram[GroupIndex] * GroupIndex;
     LocalSharedHistogram[GroupIndex] = CountForThisBin;
 
     GroupMemoryBarrierWithGroupSync();
 
+    Histogram[GroupIndex] = 0;
+    
     for(uint i = GROUP_SIZE >> 1; i >0 ;i >>= 1)
     {
         if(GroupIndex < i)
         {
-            InterlockedAdd(LocalSharedHistogram[GroupIndex], LocalSharedHistogram[GroupIndex + i]);
+            //InterlockedAdd(LocalSharedHistogram[GroupIndex], LocalSharedHistogram[GroupIndex + i]);
+            LocalSharedHistogram[GroupIndex] += LocalSharedHistogram[GroupIndex + i];
         }
         GroupMemoryBarrierWithGroupSync();
     }
 
-
+    
     if(GroupIndex == 0)
     {
-        uint BlackPixelCount = HistogramROnly[0];
-        float WightedLogAverage = LocalSharedHistogram[0] / (float) max(InputWidth*InputHeight - BlackPixelCount,1) -1.0f;
+        uint BlackPixelCount = CountForThisBin;
+        float WightedLogAverage = LocalSharedHistogram[0].x / (float) max(InputWidth*InputHeight - BlackPixelCount,1) -1.0f;
         float WightedAverageL = exp2(((WightedLogAverage / 254.0f) * LogRange) + MinLogL);
         LuminanceAverage[0] = WightedAverageL;
     }
@@ -193,7 +195,8 @@ float4 Tonemapping_Unreal(float3 LinearColor,float Lavg)
 void VSMain(float2 Position:POSITION,out float4 SVPosition:SV_Position,out float2 UV : TEXCOORD)
 {
     SVPosition = float4(Position,0,1);
-    UV = Position - float2(-1.f,-1.f)/2.f;
+    UV = (Position + float2(1.f,1.f))/2.f;
+    UV.y = 1.f - UV.y;
 }
 
 Buffer<float> LuminanceAverageROnly;
