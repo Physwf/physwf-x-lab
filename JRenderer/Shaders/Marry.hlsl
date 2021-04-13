@@ -1,6 +1,7 @@
 cbuffer Primitive
 {
-    float4x4 LocalToWorld;
+    float3x3 LocalToWorld;
+    float3 Translation;
 }
 
 cbuffer View
@@ -17,13 +18,15 @@ struct VSInput
 struct VSOutput
 {
     float4 SVPosition : SV_Position;
-    float3 Normal : TEXCOORD;
+    float3 WorldNormal : TEXCOORD;
 }
 
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-
+    float3 WorldPosition = mul(Input.Position,LocalToWorld);
+    Output.SV_Position = mul(float4(WorldPosition,1.0f),WorldToClip);
+    Output.WorldNormal = mul(Normal,LocalToWorld);
 
     return Output;
 }
@@ -31,7 +34,6 @@ VSOutput VSMain(VSInput Input)
 struct Light
 {
     float3 LightPosition;
-    
 }
 
 Texture<float> ShadowDepth;
@@ -39,7 +41,7 @@ SamplerState ShadowDepthSampler;
 Texture<float4> DiffuseMap;
 SamplerState DiffuseMapSampler;
 
-void PSMain()
+void PSMain(VSOutput Input,out float4 OutColor)
 {
 
 }

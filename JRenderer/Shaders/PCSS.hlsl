@@ -1,7 +1,8 @@
 
 cbuffer Primitive
 {
-    float4x4 LocalToWorld;
+    float3x3 LocalToWorld;
+    float3 Translation;
 }
 
 cbuffer View
@@ -11,7 +12,8 @@ cbuffer View
 
 struct VSInput
 {
-    float4 Position : POSITION;
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
 }
 
 struct VSOutput
@@ -22,6 +24,6 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    float4 WorldPosition = mul(Input.Position,LocalToWorld);
-    Output.SVPosition = mul(WorldPosition,WorldToClip);
+    float3 WorldPosition = mul(Input.Position,LocalToWorld) + Translation;
+    Output.SVPosition = mul(float4(WorldPosition,,1.0f),WorldToClip);
 }
