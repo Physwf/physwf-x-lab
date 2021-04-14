@@ -1,5 +1,5 @@
 extern "C" {
-#include "rgbe.h"
+ #include "rgbe.h"
 };
 #include <cstdio>
 #include "HDRIFile.h"
