@@ -2,11 +2,7 @@
 #include "hdrloader.h"
 #include "ToneMapping.h"
 #include "Atmosphere.h"
-
-extern "C"
-{
-	#include "bmp.h"
-}
+#include "bmp.h"
 
 #include <windows.h>
 
@@ -79,9 +75,12 @@ void GenerateSky()
 
 HINSTANCE g_hInstance;
 HWND g_hWnd;
+HBITMAP g_hBitmap;
+HWND g_hOpenButton;
 int WindowWidth = 1024;
-int WindowHeight = 798;
+int WindowHeight = 512;
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+std::vector<unsigned char> ImageData;
 
 #define IDB_OPEN     3301  
 #define IDB_IMAGE    3302  
@@ -108,7 +107,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	RegisterClassEx(&wc);
 
-	RECT wr = { 0,0,WindowWidth,WindowHeight };
+	RECT wr = { 0,0,WindowWidth,WindowHeight + 30 };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
 	g_hInstance = hInstance;
@@ -118,8 +117,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		L"WindowClass1",
 		L"HDRViewer",
 		WS_OVERLAPPEDWINDOW,
-		300,
-		300,
+		WindowWidth,
+		WindowHeight + 30,
 		wr.right - wr.left,
 		wr.bottom - wr.top,
 		NULL,
@@ -128,7 +127,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		NULL
 	);
 
-	GenerateSky();
+	//GenerateSky();
 
 	ShowWindow(g_hWnd, nCmdShow);
 
@@ -160,8 +159,11 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 	{
 	case WM_CREATE:
 	{
-		HWND OpenButton = CreateWindow(TEXT("BUTTON"), TEXT("Open"), WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 0, 0, 100, 30, hWnd, (HMENU)IDB_OPEN, g_hInstance, NULL);
-		HWND ImageControl = CreateWindow(TEXT("STATIC"), TEXT("Image"), WS_VISIBLE | WS_CHILD | SS_BITMAP, 0, 30, 1024, 768, hWnd, (HMENU)IDB_IMAGE, g_hInstance, NULL);
+		if (g_hOpenButton == NULL)
+		{
+			g_hOpenButton = CreateWindow(TEXT("BUTTON"), TEXT("Open"), WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 0, 0, 100, 30, hWnd, (HMENU)IDB_OPEN, g_hInstance, NULL);
+		}
+		
 		break;
 	}
 	case WM_COMMAND:
@@ -189,7 +191,38 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			// 显示对话框让用户选择文件
 			if (GetOpenFileName(&opfn))
 			{
+				char filepath[512] = { 0 };
+				ZeroMemory(&filepath, sizeof(filepath));
+				size_t NumBytesConverted = 0;
+				wcstombs_s(&NumBytesConverted, filepath, opfn.lpstrFile, 512);
+				HRDIFile Loader;
+				if (!Loader.Load(filepath))
+				{
+					MessageBox(NULL, TEXT("Error!"), TEXT(""), MB_OK);
+				}
 				
+				ImageData.resize(Loader.Width() * Loader.Height() * 3);
+				ToneMapping(Loader.GetData(), Loader.Width(), Loader.Height(), ImageData.data(), TMA_ACES);
+
+				if (ImageData.size() > 0)
+				{
+					BITMAPINFO bmi;
+					ZeroMemory(&bmi, sizeof(BITMAPINFO));
+					bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+					bmi.bmiHeader.biWidth = Loader.Width();
+					bmi.bmiHeader.biHeight = Loader.Height();
+					bmi.bmiHeader.biPlanes = 1;
+					bmi.bmiHeader.biBitCount = 24;
+					bmi.bmiHeader.biCompression = BI_RGB;
+
+					unsigned char* Data = NULL;
+					g_hBitmap = CreateDIBSection(GetDC(hWnd), &bmi, DIB_RGB_COLORS, (VOID**)(&Data), NULL, 0);
+					memcpy_s(Data, ImageData.size(), ImageData.data(), ImageData.size());
+				}
+
+				RECT rect = { 0,30,Loader.Width(),Loader.Height()+30 };
+				InvalidateRect(hWnd, &rect, false);
+				UpdateWindow(hWnd);
 			}
 			break;
 		}
@@ -197,39 +230,31 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			break;
 		}
 	}
+	case WM_PAINT:
+	{
+		if (ImageData.size() > 0)
+		{
+			PAINTSTRUCT ps;// DC(可画图的内存对象) 的句柄
+			HDC hdc;   // 通过窗口句柄获取该窗口的 DC
+			hdc = BeginPaint(hWnd, &ps);
+			HDC hDCMem = CreateCompatibleDC(hdc);
+			HGDIOBJ hbmOld = SelectObject(hDCMem, g_hBitmap);
+			BITMAP bm;
+			GetObject(g_hBitmap, sizeof(bm), &bm);
+			BitBlt(hdc, 0, 30, bm.bmWidth, bm.bmHeight, hDCMem, 0, 0, SRCCOPY);
+			SelectObject(hDCMem, hbmOld);
+			DeleteDC(hDCMem);
+			EndPaint(hWnd, &ps);
+		}
+
+		break;
+	}
 	case WM_DESTROY:
 	{
 		PostQuitMessage(0);
 		return 0;
 	}
-	case WM_KEYDOWN:
-	{
-		break;
-	}
-	case WM_KEYUP:
-	{
-		break;
-	}
-	case WM_LBUTTONDOWN:
-	{
-		break;
-	}
-	case WM_LBUTTONUP:
-	{
-		break;
-	}
-	case WM_RBUTTONDOWN:
-	{
-		break;
-	}
-	case WM_RBUTTONUP:
-	{
-		break;
-	}
-	case WM_MOUSEMOVE:
-	{
-		break;
-	}
+
 	}
 	return	DefWindowProc(hWnd, message, wParam, lParam);
 }
