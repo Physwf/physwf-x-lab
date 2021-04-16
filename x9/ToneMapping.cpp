@@ -75,6 +75,9 @@ void ToneMapping_WithCurve(const float* InputRGB, int Width, int Height, CurvePt
 			float R = InputRGB[ReadPixelIndex + 0];
 			float G = InputRGB[ReadPixelIndex + 1];
 			float B = InputRGB[ReadPixelIndex + 2];
+			assert(!std::isnan(R));
+			assert(!std::isnan(G));
+			assert(!std::isnan(B));
 			float Yxyx, Yxyy, Yxyz;
 			RGB2Yxy(R, G, B, Yxyx, Yxyy, Yxyz);
 			float lp = Yxyx / (9.6f * Lavg + 0.0001f);

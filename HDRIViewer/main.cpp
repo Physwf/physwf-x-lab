@@ -1,6 +1,8 @@
 #include "HDRIFile.h"
 #include "hdrloader.h"
 #include "ToneMapping.h"
+#include "Atmosphere.h"
+
 extern "C"
 {
 	#include "bmp.h"
@@ -57,6 +59,24 @@ int commandline(int argc, char** argv)
 	}
 	return 0;
 }
+
+void GenerateSky()
+{
+	float Color[] = { 0.2f,0.4f,0.8f }; 
+	std::vector<float> OutputHDR;
+	int Width = 4096;
+	int Height = 768;
+	OutputHDR.resize(Width * Height * 3);
+	GenerateCIESky(Width, Height, Color,3.14f * 0.5f * 0.5f, 1.0f, OutputHDR.data());
+	std::vector<unsigned char> OutputLDR;
+	OutputLDR.resize(Width * Height * 3);
+	ToneMapping(OutputHDR.data(), Width, Height, OutputLDR.data(), TMA_ACES);
+	FILE* RGB;
+	fopen_s(&RGB, "testatmosphere.bmp", "w+b");
+	BMP_WritePixels_RGB24(RGB, OutputLDR.data(), Width, Height);
+	fclose(RGB);
+}
+
 HINSTANCE g_hInstance;
 HWND g_hWnd;
 int WindowWidth = 1024;
@@ -108,6 +128,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		NULL
 	);
 
+	GenerateSky();
 
 	ShowWindow(g_hWnd, nCmdShow);
 

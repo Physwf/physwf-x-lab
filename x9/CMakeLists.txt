@@ -7,7 +7,7 @@ add_library(libx9 SHARED ${DIR_SRC})
 
 add_definitions(-DUNICODE -D_UNICODE)
 
-SET(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
+SET(LIBRARY_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 
 include(GenerateExportHeader)
 generate_export_header(libx9 
