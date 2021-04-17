@@ -89,6 +89,79 @@ void ShadowDemo::LoadCommonAssets()
 
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
 	}
+	//Plane VB
+	Mesh Plane;
+	Plane.LoadObj("");
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = Plane.Vertices.size() * sizeof(MeshVertex);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1, 0 };
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mPlaneVBUpload.GetAddressOf()));
+
+		void* pData;
+		mPlaneVBUpload->Map(0, nullptr, &pData);
+		memcpy(pData, Plane.Vertices.data(), Plane.Vertices.size() * sizeof(MeshVertex));
+		mPlaneVBUpload->Unmap(0, NULL);
+
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mPlaneVB.GetAddressOf()));
+
+		CommandList->CopyResource(mPlaneVB.Get(), mPlaneVBUpload.Get());
+
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mPlaneVB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+	}
+	//Plane IB
+	{
+		D3D12_HEAP_PROPERTIES HeapProperties;
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+		D3D12_RESOURCE_DESC ResourceDesc;
+		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
+		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		ResourceDesc.Width = Plane.Indices.size() * sizeof(int);
+		ResourceDesc.Height = 1;
+		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.MipLevels = 1;
+		ResourceDesc.SampleDesc = { 1, 0 };
+		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mPlaneIBUpload.GetAddressOf()));
+
+		void* pData;
+		mPlaneIBUpload->Map(0, nullptr, &pData);
+		memcpy(pData, Plane.Indices.data(), Plane.Indices.size() * sizeof(int));
+		mPlaneIBUpload->Unmap(0, NULL);
+
+		CommandList->CopyResource(mPlaneIB.Get(), mPlaneIBUpload.Get());
+
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.pResource = mPlaneIB.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+
+		CommandList->ResourceBarrier(1, &ResourceBarrier);
+	}
 	//Primitve Uniform
 	{
 		D3D12_HEAP_PROPERTIES HeapProperties;

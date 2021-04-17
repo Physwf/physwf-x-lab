@@ -34,6 +34,12 @@ protected:
 	D3D12_INDEX_BUFFER_VIEW		mMarryIBView;
 	ComPtr<ID3D12Resource>		mMarryPrimitiveCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarryPrimitiveCBView;
+	ComPtr<ID3D12Resource>		mPlaneVBUpload;
+	ComPtr<ID3D12Resource>		mPlaneVB;
+	D3D12_VERTEX_BUFFER_VIEW	mPlaneVBView;
+	ComPtr<ID3D12Resource>		mPlaneIBUpload;
+	ComPtr<ID3D12Resource>		mPlaneIB;
+	D3D12_INDEX_BUFFER_VIEW		mPlaneIBView;
 	ComPtr<ID3D12Resource>		mSceneDepth;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneDepthViewHandle;
 };
@@ -70,6 +76,8 @@ private:
 	//Scene
 	ComPtr<ID3D12Resource>		mSceneViewCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneViewCBHandle;
+	ComPtr<ID3D12Resource>		mLightCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mLightCBView;
 	//Marry pass
 	ComPtr<ID3D12RootSignature> mMarrayRootSignature;
 	ComPtr<ID3D12PipelineState> mMarrayPSO;
@@ -78,4 +86,10 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarryMaterialCBView;
 	ComPtr<ID3D12Resource>		mMarrayDiffuseColorSR;
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarrayDiffuseColorSRV;
+	//Plane
+	ComPtr<ID3D12RootSignature> mPlaneRootSignature;
+	ComPtr<ID3D12RootSignature> mPlanePSO;
+	ComPtr<ID3D12GraphicsCommandList> mPlaneCommandList;
+	ComPtr<ID3D12Resource>		mPlaneMaterialCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mPlaneMaterialCBView;
 };
