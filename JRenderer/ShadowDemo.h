@@ -59,10 +59,14 @@ private:
 	void DrawShadow();
 private:
 	void LoadPCSSPipleState();
-	void LoadScenePipelineState();
+	void LoadMarryPipelineState();
+	void LoadPlanePipelineState();
 
 	void LoadPCSSAssets();
-	void LoadSceneAssets();
+	void LoadMarryAssets();
+	void LoadPlaneAssets();
+	void LoadCommonAssets();
+
 private:
 	//Shadow Pass
 	ComPtr<ID3D12RootSignature> mPCSSRootSignature;
@@ -73,7 +77,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphSRVHandle;
 	ComPtr<ID3D12Resource>		mPCSSViewCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSViewCBViewHandle;
-	//Scene
+	//Common
 	ComPtr<ID3D12Resource>		mSceneViewCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneViewCBHandle;
 	ComPtr<ID3D12Resource>		mLightCB;
@@ -88,7 +92,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarrayDiffuseColorSRV;
 	//Plane
 	ComPtr<ID3D12RootSignature> mPlaneRootSignature;
-	ComPtr<ID3D12RootSignature> mPlanePSO;
+	ComPtr<ID3D12PipelineState> mPlanePSO;
 	ComPtr<ID3D12GraphicsCommandList> mPlaneCommandList;
 	ComPtr<ID3D12Resource>		mPlaneMaterialCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mPlaneMaterialCBView;

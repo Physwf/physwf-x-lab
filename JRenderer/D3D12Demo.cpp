@@ -11,7 +11,6 @@ void D3D12Demo::Initialize()
 			debugController->EnableDebugLayer();
 		}
 
-		HRESULT hr;
 		assert(S_OK == D3D12CreateDevice(m_DXGIAdapter.Get(), D3D_FEATURE_LEVEL_12_0, __uuidof(ID3D12Device), &m_D3D12Device));
 
 		D3D12_COMMAND_QUEUE_DESC CmdQueueDesc;
@@ -19,6 +18,9 @@ void D3D12Demo::Initialize()
 		CmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		CmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 		assert(S_OK == m_D3D12Device->CreateCommandQueue(&CmdQueueDesc, __uuidof(ID3D12CommandQueue), &m_D3D12CmdQueue));
+		CmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+		CmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+		assert(S_OK == m_D3D12Device->CreateCommandQueue(&CmdQueueDesc, __uuidof(ID3D12CommandQueue), &m_D3D12ComputeCmdQueue));
 
 		m_BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
@@ -96,7 +98,9 @@ void D3D12Demo::Initialize()
 			//offset
 			RTVHandle.ptr += m_RTVDescriptorSize;
 		}
-		hr = m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), &m_D3D12CmdAllocator);
+		assert(S_OK == m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, __uuidof(ID3D12CommandAllocator), &m_D3D12CmdAllocator));
+		assert(S_OK == m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, __uuidof(ID3D12CommandAllocator), &m_D3D12ComputeCmdAllocator));
+		assert(S_OK == m_D3D12Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY, __uuidof(ID3D12CommandAllocator), &m_D3D12CopyCmdAllocator));
 
 		{
 			m_D3D12Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), &m_Fence);
@@ -118,10 +122,7 @@ void D3D12Demo::Initialize()
 void D3D12Demo::Render()
 {
 	Draw();
-
-	//ID3D12CommandList* ppCommandLists[] = { m_D3D12CmdList.Get() };
-	m_D3D12CmdQueue->ExecuteCommandLists(m_CommandLists.size(), &m_CommandLists[0]);
-
+	
 	m_DXGISwapChain->Present(1, 0);
 
 	WaitForPreviousFrame();
@@ -162,10 +163,42 @@ bool D3D12Demo::EnumAdapter()
 	return true;
 }
 
+
+void D3D12Demo::ExecuteDirectCommandList()
+{
+	m_D3D12CmdQueue->ExecuteCommandLists(m_CommandLists.size(), &m_CommandLists[0]);
+	m_CommandLists.clear();
+}
+
+
+void D3D12Demo::ExecuteComputeCommandList()
+{
+	if (m_ComputeCommandList.size() > 0)
+	{
+		m_D3D12ComputeCmdQueue->ExecuteCommandLists(m_ComputeCommandList.size(), &m_ComputeCommandList[0]);
+		m_ComputeCommandList.clear();
+	}
+}
+
 void D3D12Demo::WaitForPreviousFrame()
 {
 	const UINT64 fence = m_FenceValue;
 	m_D3D12CmdQueue->Signal(m_Fence.Get(), fence);
+	m_FenceValue++;
+
+	if (m_Fence->GetCompletedValue() < fence)
+	{
+		m_Fence->SetEventOnCompletion(fence, m_FenceEvent);
+		WaitForSingleObject(m_FenceEvent, INFINITE);
+	}
+
+	m_FrameIndex = m_DXGISwapChain->GetCurrentBackBufferIndex();
+}
+
+void D3D12Demo::WaitForComputeFrame()
+{
+	const UINT64 fence = m_FenceValue;
+	m_D3D12ComputeCmdQueue->Signal(m_Fence.Get(), fence);
 	m_FenceValue++;
 
 	if (m_Fence->GetCompletedValue() < fence)

@@ -47,6 +47,11 @@ cbuffer Light
     float SpecularPower;
 };
 
+cbuffer Material
+{
+    
+};
+
 Texture2D<float> ShadowDepthMap;
 SamplerState ShadowDepthMapSampler;
 Texture2D<float> DiffuseMap;

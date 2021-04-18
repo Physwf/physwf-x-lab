@@ -50,13 +50,19 @@ private:
 protected:
 	virtual void InitPipelineStates() = 0;
 	virtual void Draw() = 0;
+	void ExecuteDirectCommandList();
+	void ExecuteComputeCommandList();
 	void WaitForPreviousFrame();
+	void WaitForComputeFrame();
 protected:
 	ComPtr<IDXGIFactory>				m_DXGIFactory;
 	ComPtr<IDXGIAdapter>				m_DXGIAdapter;
 	ComPtr<ID3D12Device>				m_D3D12Device;
 	ComPtr<ID3D12CommandAllocator>		m_D3D12CmdAllocator;
+	ComPtr<ID3D12CommandAllocator>		m_D3D12ComputeCmdAllocator;
+	ComPtr<ID3D12CommandAllocator>		m_D3D12CopyCmdAllocator;
 	ComPtr<ID3D12CommandQueue>			m_D3D12CmdQueue;
+	ComPtr<ID3D12CommandQueue>			m_D3D12ComputeCmdQueue;
 	ComPtr<IDXGISwapChain3>				m_DXGISwapChain;
 	ComPtr<ID3D12Resource>				m_BackBuffer[FrameCount];
 	DXGI_FORMAT							m_BackBufferFormat;
@@ -76,6 +82,7 @@ protected:
 	UINT								m_NumRTVDescriptors;
 	UINT								m_NumDSVDescriptors;
 
+	std::vector<ID3D12CommandList*>		m_ComputeCommandList;
 	std::vector<ID3D12CommandList*>		m_CommandLists;
 
 	UINT								m_FrameIndex;
