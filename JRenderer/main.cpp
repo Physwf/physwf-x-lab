@@ -2,6 +2,7 @@
 #include "ShadingModels.h"
 //#include "PBRTools.h"
 #include "SkyBoxDemo.h"
+#include "ShadowDemo.h"
 
 LRESULT CALLBACK WindowProc(HWND hWnd,
 	UINT message,
@@ -82,7 +83,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//PhongShadingModel Demo(g_hWind);
 	//MERL100Coordinate Demo(g_hWind);
 	//SkyBoxDemo Demo(g_hWind);
-	PBRShadingModelRealIBL Demo(g_hWind);
+	//PBRShadingModelRealIBL Demo(g_hWind);
+	PCSSDemo Demo(g_hWind);
 	pDemo = &Demo;
 	Demo.Initialize();
 

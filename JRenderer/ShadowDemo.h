@@ -3,6 +3,7 @@
 #include "d3d12demo.h"
 #include "DirectXMath.h"
 using namespace DirectX;
+#include "Primitives.h"
 
 struct ObjMaterialUniform
 {
@@ -30,7 +31,7 @@ class ShadowDemo : public D3D12Demo
 public:
 	ShadowDemo(HWND hWnd) : D3D12Demo(hWnd)
 	{
-		m_NumCBVSRVUAVDescriptors += 1;//Primitive uniform
+		m_NumCBVSRVUAVDescriptors += 2;//Primitive uniform x 2
 		m_NumDSVDescriptors += 2;
 	}
 protected:
@@ -54,6 +55,8 @@ protected:
 	ComPtr<ID3D12Resource>		mPlaneIBUpload;
 	ComPtr<ID3D12Resource>		mPlaneIB;
 	D3D12_INDEX_BUFFER_VIEW		mPlaneIBView;
+	ComPtr<ID3D12Resource>		mPlanePrimitiveCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mPlanePrimitiveCBView;
 	ComPtr<ID3D12Resource>		mSceneDepth;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneDepthViewHandle;
 

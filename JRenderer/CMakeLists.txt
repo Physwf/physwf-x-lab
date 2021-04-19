@@ -17,6 +17,9 @@ find_library(DirectXTexLib DirectXTex HINTS ${DirectXTexDir}DirectXTex/Bin/Deskt
 target_include_directories(JRenderer PRIVATE ${DirectXTexDir}DirectXTex)
 target_include_directories(JRenderer PRIVATE ${DirectXMathDir}Inc)
 
+set_property(TARGET JRenderer
+    PROPERTY VS_PACKAGE_REFERENCES "WinPixEventRuntime"
+)
 #https://www.jianshu.com/p/66df9650a9e2
 ADD_CUSTOM_COMMAND(TARGET JRenderer
         PRE_BUILD
