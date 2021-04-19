@@ -41,15 +41,18 @@ cbuffer Light
     float4 LightPositionAndRadius;
     float4 LightOrientationAndNeerPlane;
     float2 LightmapViewport;
-    float3 AmbientLight;
-    float3 DiffuseLight;
-    float3 SpecularLight;
-    float SpecularPower;
+    float3 AmbientIntencity;
+    float3 Intencity;
 };
 
 cbuffer Material
 {
-    
+    float3 ka;
+	float3 kd;
+	float3 ks;
+	float Ns;//高光指数
+	float Ni;//折射率
+	float ShadingModel;
 };
 
 Texture2D<float> ShadowDepthMap;
@@ -99,9 +102,14 @@ void PSMain(VSOutput Input,out float4 OutColor)
 
     float3 BaseColor = DiffuseMap.Sample(DiffuseMapSampler,Input.UV);
 
-    float3 AmbientColor = mul(BaseColor,AmbientLight);
-    float3 Lambert = mul(DiffuseLight, BaseColor) * max(dot(L,N),0);
-    float3 SpecularLight = SpecularLight * pow(dot(H,V),SpecularPower);
+    float3 AmibientBaseColor = mul(BaseColor,Ka);
+    float3 DiffuseBaseColor = mul(BaseColor,Kd);
 
-    OutColor = AmbientColor + Lambert + SpecularLight;
+    float3 AmbientColor = mul(AmibientBaseColor,AmbientIntencity);
+    float LightIntencity = Intencity * fLightPercent; 
+
+    float3 DiffuseColor = mul(LightIntencity, DiffuseBaseColor) * max(dot(L,N),0);
+    //float3 SpecularColor = LightIntencity * pow(dot(H,V),Ns);
+
+    OutColor = AmbientColor + DiffuseColor;
 }

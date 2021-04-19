@@ -6,12 +6,23 @@ using namespace DirectX;
 
 struct ObjMaterialUniform
 {
-	XMFLOAT4 ka;
-	XMFLOAT4 kd;
-	XMFLOAT4 ks;
+	XMFLOAT3 ka;
+	XMFLOAT3 kd;
+	XMFLOAT3 ks;
+	float Ns;//高光指数
+	float Ni;//折射率
 	float alpha;
 	float ShadingModel;
-	float Pading00[50];
+	float Pading00[256-sizeof(XMFLOAT3)*3-sizeof(float)*4];
+};
+
+struct LightUniform
+{
+	XMFLOAT4 LightPositionAndRadius;
+	XMFLOAT4 LightOrientationAndNeerPlane;
+	XMFLOAT2 LightmapViewport;
+	XMFLOAT3 AmbientIntencity;
+	XMFLOAT3 Intencity;
 };
 
 class ShadowDemo : public D3D12Demo
@@ -19,12 +30,15 @@ class ShadowDemo : public D3D12Demo
 public:
 	ShadowDemo(HWND hWnd) : D3D12Demo(hWnd)
 	{
-		m_NumCBVSRVUAVDescriptors += 1;
-		m_NumDSVDescriptors += 1;
+		m_NumCBVSRVUAVDescriptors += 1;//Primitive uniform
+		m_NumDSVDescriptors += 2;
 	}
 protected:
 	void LoadCommonAssets();
 protected:
+	//Mesh
+	Mesh mMarry;
+	Mesh mPlane;
 
 	ComPtr<ID3D12Resource>		mMarryVBUpload;
 	ComPtr<ID3D12Resource>		mMarryVB;
@@ -42,6 +56,12 @@ protected:
 	D3D12_INDEX_BUFFER_VIEW		mPlaneIBView;
 	ComPtr<ID3D12Resource>		mSceneDepth;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneDepthViewHandle;
+
+	ComPtr<ID3D12Resource>		mPCSSDetph;
+	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphViewHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphSRVHandle;
+	ComPtr<ID3D12Resource>		mPCSSViewCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSViewCBViewHandle;
 };
 
 class PCSSDemo : public ShadowDemo
@@ -49,8 +69,7 @@ class PCSSDemo : public ShadowDemo
 public:
 	PCSSDemo(HWND hWnd) : ShadowDemo(hWnd)
 	{
-		m_NumCBVSRVUAVDescriptors += 2;
-		m_NumDSVDescriptors += 1;
+		m_NumCBVSRVUAVDescriptors += 7;
 	}
 protected:
 	virtual void InitPipelineStates() override;
@@ -62,33 +81,29 @@ private:
 	void LoadMarryPipelineState();
 	void LoadPlanePipelineState();
 
-	void LoadPCSSAssets();
 	void LoadMarryAssets();
 	void LoadPlaneAssets();
 	void LoadCommonAssets();
 
 private:
+
 	//Shadow Pass
 	ComPtr<ID3D12RootSignature> mPCSSRootSignature;
 	ComPtr<ID3D12PipelineState> mPCSSPSO;
 	ComPtr<ID3D12GraphicsCommandList> mPCSSCommandList;
-	ComPtr<ID3D12Resource>		mPCSSDetph;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphViewHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphSRVHandle;
-	ComPtr<ID3D12Resource>		mPCSSViewCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSViewCBViewHandle;
 	//Common
 	ComPtr<ID3D12Resource>		mSceneViewCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneViewCBHandle;
 	ComPtr<ID3D12Resource>		mLightCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mLightCBView;
 	//Marry pass
-	ComPtr<ID3D12RootSignature> mMarrayRootSignature;
-	ComPtr<ID3D12PipelineState> mMarrayPSO;
-	ComPtr<ID3D12GraphicsCommandList> mMarrayCommandList;
+	ComPtr<ID3D12RootSignature> mMarryRootSignature;
+	ComPtr<ID3D12PipelineState> mMarryPSO;
+	ComPtr<ID3D12GraphicsCommandList> mMarryCommandList;
 	ComPtr<ID3D12Resource>		mMarryMaterialCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarryMaterialCBView;
 	ComPtr<ID3D12Resource>		mMarrayDiffuseColorSR;
+	ComPtr<ID3D12Resource>		mMarrayDiffuseColorSRUpload;
 	D3D12_CPU_DESCRIPTOR_HANDLE mMarrayDiffuseColorSRV;
 	//Plane
 	ComPtr<ID3D12RootSignature> mPlaneRootSignature;
