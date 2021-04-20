@@ -9,7 +9,6 @@ void ShadowDemo::LoadCommonAssets()
 
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
-	CommandList->Close();
 	//VB
 	{
 		D3D12_HEAP_PROPERTIES HeapProperty;
@@ -26,7 +25,7 @@ void ShadowDemo::LoadCommonAssets()
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperty, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, __uuidof(ID3D12Resource), (void**)mMarryVBUpload.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperty, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mMarryVBUpload.GetAddressOf()));
 
 		void* pData;
 		mMarryVBUpload->Map(0, nullptr, &pData);
@@ -35,7 +34,7 @@ void ShadowDemo::LoadCommonAssets()
 
 		ZeroMemory(&HeapProperty, sizeof(HeapProperty));
 		HeapProperty.Type = D3D12_HEAP_TYPE_DEFAULT;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperty, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mMarryVB.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperty, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mMarryVB.GetAddressOf()));
 
 		mMarryVBView.BufferLocation = mMarryVB->GetGPUVirtualAddress();
 		mMarryVBView.StrideInBytes = sizeof(MeshVertex);
@@ -47,7 +46,7 @@ void ShadowDemo::LoadCommonAssets()
 		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
 		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		ResourceBarrier.Transition.pResource = mMarryVB.Get();
-		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
 	}
@@ -67,13 +66,15 @@ void ShadowDemo::LoadCommonAssets()
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_SOURCE, nullptr, __uuidof(ID3D12Resource), (void**)mMarryIB.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mMarryIBUpload.GetAddressOf()));
 		void* pData;
 		mMarryIBUpload->Map(0, nullptr, &pData);
 		memcpy(pData, mMarry.Indices.data(), mMarry.Indices.size() * sizeof(int));
 		mMarryIBUpload->Unmap(0, nullptr);
 
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mMarryIB.GetAddressOf()));
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mMarryIB.GetAddressOf()));
 		
 		mMarryIBView.BufferLocation = mMarryIB->GetGPUVirtualAddress();
 		mMarryIBView.SizeInBytes = mMarry.Indices.size() * sizeof(int);
@@ -85,13 +86,13 @@ void ShadowDemo::LoadCommonAssets()
 		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
 		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		ResourceBarrier.Transition.pResource = mMarryIB.Get();
-		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_GENERIC_READ;
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
 		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
 	}
 	//Plane VB
-	mPlane.LoadObj("../assets/floor/floor.obj");
+	mFloor.LoadObj("./assets/floor/floor.obj");
 	{
 		D3D12_HEAP_PROPERTIES HeapProperties;
 		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
@@ -99,18 +100,19 @@ void ShadowDemo::LoadCommonAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		ResourceDesc.Width = mPlane.Vertices.size() * sizeof(MeshVertex);
+		ResourceDesc.Width = mFloor.Vertices.size() * sizeof(MeshVertex);
 		ResourceDesc.Height = 1;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1, 0 };
 		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mFloorVBUpload.GetAddressOf()));
 
 		void* pData;
 		mFloorVBUpload->Map(0, nullptr, &pData);
-		memcpy(pData, mPlane.Vertices.data(), mPlane.Vertices.size() * sizeof(MeshVertex));
+		memcpy(pData, mFloor.Vertices.data(), mFloor.Vertices.size() * sizeof(MeshVertex));
 		mFloorVBUpload->Unmap(0, NULL);
 
 		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
@@ -137,19 +139,24 @@ void ShadowDemo::LoadCommonAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		ResourceDesc.Width = mPlane.Indices.size() * sizeof(int);
+		ResourceDesc.Width = mFloor.Indices.size() * sizeof(int);
 		ResourceDesc.Height = 1;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1, 0 };
 		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mFloorIBUpload.GetAddressOf()));
 
 		void* pData;
 		mFloorIBUpload->Map(0, nullptr, &pData);
-		memcpy(pData, mPlane.Indices.data(), mPlane.Indices.size() * sizeof(int));
+		memcpy(pData, mFloor.Indices.data(), mFloor.Indices.size() * sizeof(int));
 		mFloorIBUpload->Unmap(0, NULL);
+
+		ZeroMemory(&HeapProperties, sizeof(HeapProperties));
+		HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mFloorIB.GetAddressOf()));
 
 		CommandList->CopyResource(mFloorIB.Get(), mFloorIBUpload.Get());
 
@@ -244,7 +251,7 @@ void ShadowDemo::LoadCommonAssets()
 		ResourceDesc.Format = DXGI_FORMAT_UNKNOWN;
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, nullptr, __uuidof(ID3D12Resource), (void**)mPCSSViewCB.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mPCSSViewCB.GetAddressOf()));
 
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
@@ -276,7 +283,8 @@ void ShadowDemo::LoadCommonAssets()
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		ResourceDesc.SampleDesc = { 1,0 };
-		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
@@ -306,15 +314,16 @@ void ShadowDemo::LoadCommonAssets()
 		ResourceDesc.Height = 2048;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
-		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 		ResourceDesc.Format = DXGI_FORMAT_D32_FLOAT;
 		ResourceDesc.SampleDesc = { 1,0 };
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
 		ClearValue.Format = DXGI_FORMAT_D32_FLOAT;
 		ClearValue.DepthStencil.Depth = 1.0f;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &ClearValue, __uuidof(ID3D12Resource), (void**)mPCSSDetph.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperties, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, &ClearValue, __uuidof(ID3D12Resource), (void**)mPCSSDetph.GetAddressOf()));
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc;
 		ZeroMemory(&DSVDesc, sizeof(DSVDesc));
@@ -327,9 +336,9 @@ void ShadowDemo::LoadCommonAssets()
 		mPCSSDetphViewHandle.ptr += m_DSVDescriptorSize;
 		m_D3D12Device->CreateDepthStencilView(mPCSSDetph.Get(), &DSVDesc, mPCSSDetphViewHandle);
 
-		
 	}
 	
+	CommandList->Close();
 
 	{
 		ID3D12CommandList* List[] = { CommandList.Get() };
@@ -358,13 +367,21 @@ void PCSSDemo::Draw()
 	D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
 	RTVHandle.ptr += m_FrameIndex * m_DSVDescriptorSize;
 
-	D3D12_RESOURCE_BARRIER ResourceBarrier;
-	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
-	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_ALIASING;
-	ResourceBarrier.Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
-	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	mMarryCommandList->ResourceBarrier(1,&ResourceBarrier);
+	{
+		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
+		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier[0].Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
+		ResourceBarrier[0].Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+// 		ResourceBarrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+// 		ResourceBarrier[1].Transition.pResource = mSceneDepth.Get();
+// 		ResourceBarrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_READ;
+// 		ResourceBarrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+
+		mMarryCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
+	}
+	
 
 	const FLOAT ClearColor[] = { 0.f,0.f,0.f,0.f };
 	D3D12_RECT RTVRect = { 0,0,1920,1080 };
@@ -372,25 +389,49 @@ void PCSSDemo::Draw()
 	mMarryCommandList->ClearDepthStencilView(mSceneDepthViewHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 1, &RTVRect);
 
 	mMarryCommandList->OMSetRenderTargets(1, &RTVHandle, FALSE, &mSceneDepthViewHandle);
-	mMarryCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+	mMarryCommandList->SetDescriptorHeaps(1, mMarryScenePassDH.GetAddressOf());
 	mMarryCommandList->IASetIndexBuffer(&mMarryIBView);
 	mMarryCommandList->IASetVertexBuffers(0, 1, &mMarryVBView);
 	mMarryCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	D3D12_VIEWPORT Viewport = { 0.f,0.f,1920.f,1080.f,0.f,1.0f };
 	mMarryCommandList->RSSetViewports(1, &Viewport);
 	mMarryCommandList->RSSetScissorRects(1, &RTVRect);
-	mMarryCommandList->DrawIndexedInstanced(mMarry.Indices.size(), 1, 0, 0, 0);
+
+	for (UINT32 i = 0; i < mMarry.Sections.size(); ++i)
+	{
+		MeshSection& Section = mMarry.Sections[i];
+		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
+	}
+
 
 	mMarryCommandList->Close();
 
 	mFloorCommandList->OMSetRenderTargets(1, &RTVHandle, FALSE, &mSceneDepthViewHandle);
-	mFloorCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+	mFloorCommandList->SetDescriptorHeaps(1, mFloorScenePassDH.GetAddressOf());
 	mFloorCommandList->IASetIndexBuffer(&mFloorIBView);
 	mFloorCommandList->IASetVertexBuffers(0, 1, &mFloorVBView);
 	mFloorCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	mFloorCommandList->RSSetViewports(1, &Viewport);
 	mFloorCommandList->RSSetScissorRects(1, &RTVRect);
-	mFloorCommandList->DrawIndexedInstanced(mPlane.Indices.size(), 1, 0, 0, 0);
+	for (UINT32 i = 0; i < mMarry.Sections.size(); ++i)
+	{
+		MeshSection& Section = mMarry.Sections[i];
+		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
+	}
+	{
+		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
+		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier[0].Transition.pResource = m_BackBuffer[m_FrameIndex].Get();
+		ResourceBarrier[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+// 		ResourceBarrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+// 		ResourceBarrier[1].Transition.pResource = mSceneDepth.Get();
+// 		ResourceBarrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE ;
+// 		ResourceBarrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_READ;
+
+		mMarryCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
+	}
 
 	mFloorCommandList->Close();
 
@@ -401,6 +442,16 @@ void PCSSDemo::Draw()
 void PCSSDemo::DrawShadow()
 {
 	mPCSSCommandList->Reset(m_D3D12CmdAllocator.Get(), mPCSSPSO.Get());
+
+	{
+		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
+		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier[0].Transition.pResource = mPCSSDetph.Get();
+		ResourceBarrier[0].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		mPCSSCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
+	}
 	mPCSSCommandList->OMSetRenderTargets(0, NULL, FALSE, &mPCSSDetphViewHandle);
 	D3D12_RECT ClearRect = { 0, 0, 1920, 1080};
 	mPCSSCommandList->ClearDepthStencilView(mPCSSDetphViewHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 1, &ClearRect);
@@ -409,17 +460,38 @@ void PCSSDemo::DrawShadow()
 	D3D12_VIEWPORT RTViewport = { 0,0,1024,1024,0.f,1.0f };
 	mPCSSCommandList->RSSetScissorRects(1, &RTRect);
 	mPCSSCommandList->RSSetViewports(1, &RTViewport);
-	mPCSSCommandList->SetDescriptorHeaps(1, m_CBVSRVUAVDescHeap.GetAddressOf());
+	mPCSSCommandList->SetDescriptorHeaps(1, mMarryShadowPassDH.GetAddressOf());
 
 	mPCSSCommandList->IASetIndexBuffer(&mMarryIBView);
 	mPCSSCommandList->IASetVertexBuffers(0, 1, &mMarryVBView);
 	mPCSSCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	mPCSSCommandList->DrawIndexedInstanced(mMarry.Indices.size(), 1, 0, 0, 0);
 
+	for (UINT32 i = 0; i < mMarry.Sections.size(); ++i)
+	{
+		MeshSection& Section = mMarry.Sections[i];
+		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
+	}
+
+	mPCSSCommandList->SetDescriptorHeaps(1, mFloorShadowPassDH.GetAddressOf());
 	mPCSSCommandList->IASetIndexBuffer(&mFloorIBView);
 	mPCSSCommandList->IASetVertexBuffers(0, 1, &mFloorVBView);
 	mPCSSCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	mPCSSCommandList->DrawIndexedInstanced(mPlane.Indices.size(), 1, 0, 0, 0);
+
+	for (UINT32 i = 0; i < mFloor.Sections.size(); ++i)
+	{
+		MeshSection& Section = mFloor.Sections[i];
+		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
+	}
+
+	{
+		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
+		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier[0].Transition.pResource = mPCSSDetph.Get();
+		ResourceBarrier[0].Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		mPCSSCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
+	}
 
 	mPCSSCommandList->Close();
 

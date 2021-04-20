@@ -41,7 +41,7 @@ protected:
 protected:
 	//Mesh
 	Mesh mMarry;
-	Mesh mPlane;
+	Mesh mFloor;
 
 	ComPtr<ID3D12Resource>		mMarryVBUpload;
 	ComPtr<ID3D12Resource>		mMarryVB;
