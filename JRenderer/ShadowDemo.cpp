@@ -5,7 +5,7 @@ using namespace DirectX;
 
 void ShadowDemo::LoadCommonAssets()
 {
-	mMarry.LoadObj("./assets/mary/Marray.obj");
+	mMarry.LoadObj("./assets/mary/Marry.obj");
 
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
@@ -447,6 +447,7 @@ void PCSSDemo::LoadPCSSPipleState()
 		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
 		RootSignDesc.pParameters = Parameters;
 		RootSignDesc.NumParameters = 1;
+		RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 		ComPtr<ID3DBlob> Error;
 		ComPtr<ID3DBlob> RootSign;
@@ -462,11 +463,15 @@ void PCSSDemo::LoadPCSSPipleState()
 		D3D12_INPUT_ELEMENT_DESC InputDesc[] =
 		{
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"TANGENT",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,24,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,40,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 		};
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSDesc;
 		ZeroMemory(&GPSDesc, sizeof(GPSDesc));
 		GPSDesc.pRootSignature = mPCSSRootSignature.Get();
+		GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		GPSDesc.VS = { VS->GetBufferPointer(),VS->GetBufferSize() };
 		GPSDesc.BlendState.AlphaToCoverageEnable = FALSE;
 		GPSDesc.BlendState.IndependentBlendEnable = FALSE;
@@ -478,7 +483,11 @@ void PCSSDemo::LoadPCSSPipleState()
 		GPSDesc.InputLayout.pInputElementDescs = InputDesc;
 		GPSDesc.NumRenderTargets = 0;
 		GPSDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+		GPSDesc.DepthStencilState.DepthEnable = TRUE;
+		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.SampleDesc = { 1,0 };
+		GPSDesc.SampleMask = 0xffffffff;
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mPCSSPSO.GetAddressOf()));
 
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mPCSSPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPCSSCommandList.GetAddressOf()));
@@ -490,61 +499,72 @@ void PCSSDemo::LoadMarryPipelineState()
 {
 	{
 		D3D12_DESCRIPTOR_RANGE Ranges[2];
-		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+		ZeroMemory(&Ranges, sizeof(Ranges));
+		Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;//VertexShader Primitive View
 		Ranges[0].BaseShaderRegister = 0;
-		Ranges[0].NumDescriptors = 4;//Primitive View Material Light
+		Ranges[0].NumDescriptors = 4;
 		Ranges[0].OffsetInDescriptorsFromTableStart = 0;
 		Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		Ranges[1].BaseShaderRegister = 0;
 		Ranges[1].NumDescriptors = 2;
 		Ranges[1].OffsetInDescriptorsFromTableStart = 4;
 		D3D12_ROOT_PARAMETER Parameters[1];
+		ZeroMemory(Parameters, sizeof(Parameters));
 		Parameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 		Parameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 		Parameters[0].DescriptorTable.pDescriptorRanges = Ranges;
-		Parameters[0].DescriptorTable.NumDescriptorRanges = 2;
+		Parameters[0].DescriptorTable.NumDescriptorRanges = _countof(Ranges);
 
-		D3D12_STATIC_SAMPLER_DESC StaticSampler;
+		D3D12_STATIC_SAMPLER_DESC StaticSampler[2];
 		ZeroMemory(&StaticSampler, sizeof(StaticSampler));
-		StaticSampler.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		StaticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		StaticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		StaticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		//StaticSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		StaticSampler.ShaderRegister = 0;
-		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
-		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
-		RootSignDesc.NumParameters = 1;
-		RootSignDesc.pParameters = Parameters;
-		RootSignDesc.NumStaticSamplers = 1;
-		RootSignDesc.pStaticSamplers = &StaticSampler;
+		StaticSampler[0].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		StaticSampler[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		StaticSampler[0].ShaderRegister = 0;
+		StaticSampler[1].Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		StaticSampler[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		StaticSampler[1].ShaderRegister = 1;
+		D3D12_ROOT_SIGNATURE_DESC RSDesc;
+		ZeroMemory(&RSDesc, sizeof(RSDesc));
+		RSDesc.NumParameters = _countof(Parameters);
+		RSDesc.pParameters = Parameters;
+		RSDesc.NumStaticSamplers = _countof(StaticSampler);
+		RSDesc.pStaticSamplers = StaticSampler;
+		RSDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 		ComPtr<ID3DBlob> RootSign;
 		ComPtr<ID3DBlob> Error;
-		assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
-		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mMarryPSO.GetAddressOf()));
+		assert(S_OK == D3D12SerializeRootSignature(&RSDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
+		LOGA("%s\n", RootSign->GetBufferPointer());
+		assert(S_OK == m_D3D12Device->CreateRootSignature(0, RootSign->GetBufferPointer(), RootSign->GetBufferSize(), __uuidof(ID3D12RootSignature), (void**)mMarryRootSignature.GetAddressOf()));
 
 		D3D12_INPUT_ELEMENT_DESC InuptDesc[] = 
 		{
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 			{"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 			{"TANGENT",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,24,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
-			{"UV",0,DXGI_FORMAT_R32G32_FLOAT,0,40,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,40,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 		};
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK != D3DCompileFromFile(TEXT("Marry"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-		if (S_OK != D3DCompileFromFile(TEXT("Marry"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-
+		GetShaderParameterAllocations(VS.Get());
+		GetShaderParameterAllocations(PS.Get());
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC GPSDesc;
 		ZeroMemory(&GPSDesc, sizeof(GPSDesc));
 		GPSDesc.pRootSignature = mMarryRootSignature.Get();
@@ -574,6 +594,7 @@ void PCSSDemo::LoadMarryPipelineState()
 		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.DepthStencilState.StencilEnable = FALSE;
 		GPSDesc.SampleDesc = { 1,0 };
+		GPSDesc.SampleMask = 0xfffffff;
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mMarryPSO.GetAddressOf()));
 
@@ -604,10 +625,21 @@ void PCSSDemo::LoadFloorPipelineState()
 		RootParameter.DescriptorTable.pDescriptorRanges = Ranges;
 		RootParameter.DescriptorTable.NumDescriptorRanges = _countof(Ranges);
 
+		D3D12_STATIC_SAMPLER_DESC StaticSampler[1];
+		ZeroMemory(&StaticSampler, sizeof(StaticSampler));
+		StaticSampler[0].Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		StaticSampler[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		StaticSampler[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+		StaticSampler[0].ShaderRegister = 0;
+
 		D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
 		ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
 		RootSignDesc.pParameters = &RootParameter;
 		RootSignDesc.NumParameters = 1;
+		RootSignDesc.NumStaticSamplers = _countof(StaticSampler);
+		RootSignDesc.pStaticSamplers = StaticSampler;
 		RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 		ComPtr<ID3DBlob> RootSign;
@@ -621,17 +653,17 @@ void PCSSDemo::LoadFloorPipelineState()
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 			{"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 			{"TANGENT",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,24,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
-			{"UV",0,DXGI_FORMAT_R32G32_FLOAT,0,40,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
+			{"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,40,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
 		};
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Floor.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Floor.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
@@ -664,6 +696,7 @@ void PCSSDemo::LoadFloorPipelineState()
 		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.SampleDesc = { 1,0 };
+		GPSDesc.SampleMask = UINT_MAX;
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mFloorPSO.GetAddressOf()));
 

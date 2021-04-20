@@ -15,6 +15,14 @@ struct MeshVertex
 	XMFLOAT2 UV;
 };
 
+struct MeshSection
+{
+	int SectionIndex;
+	int StartOffset;
+	int VertexCount;
+	std::string MaterialName;
+};
+
 struct ViewUniform
 {
 	XMFLOAT4 ViewOrigin;
@@ -38,9 +46,11 @@ class Mesh
 public:
 	std::vector<MeshVertex> Vertices;
 	std::vector<int> Indices;
+	std::vector<MeshSection> Sections;
 
 	void LoadFBX(const char* Filename);
 	void LoadObj(const char* Filename);
+private:
 };
 
 class ObjLoader
@@ -84,6 +94,7 @@ class ObjLoader
 
 public:
 	bool Load(const char* filename);
+	bool CombineVertices(std::vector<MeshVertex>& OutAllVertices,std::vector<int>& OutAllIndices,std::vector<MeshSection>& AllSections);
 private:
 	bool ParseMaterial(const char* filename);
 	bool ParseLine(const std::string& line);

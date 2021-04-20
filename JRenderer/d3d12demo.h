@@ -92,3 +92,5 @@ protected:
 
 	HWND m_hWnd;
 };
+
+void GetShaderParameterAllocations(ID3DBlob* Code);

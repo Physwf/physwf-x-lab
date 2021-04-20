@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <fstream>
+#include <algorithm>
 
 using namespace DirectX;
 
@@ -338,7 +339,7 @@ void Mesh::LoadObj(const char* Filename)
 	ObjLoader Loader;
 	if (Loader.Load(Filename))
 	{
-
+		Loader.CombineVertices(Vertices, Indices, Sections);
 	}
 }
 
@@ -407,6 +408,32 @@ bool ObjLoader::Load(const char* filename)
 	}
 }
 
+bool ObjLoader::CombineVertices(std::vector<MeshVertex>& OutAllVertices, std::vector<int>& OutAllIndices, std::vector<MeshSection>& AllSections)
+{
+	OutAllVertices.clear();
+	OutAllIndices.clear();
+	AllSections.clear();
+	int i = 0;
+	int AccumulateVertexCount = 0;
+	for (auto& Pair : SubMeshes)
+	{
+		AllSections.emplace_back(MeshSection());
+		MeshSection& Section = AllSections.back();
+		Section.MaterialName = Pair.first;
+		Section.SectionIndex = i++;
+		Section.StartOffset = AccumulateVertexCount;
+		Section.VertexCount = Pair.second.Vertices.size();
+		AccumulateVertexCount += Section.VertexCount;
+		OutAllVertices.insert(OutAllVertices.end(), Pair.second.Vertices.begin(), Pair.second.Vertices.end());
+		OutAllIndices.insert(OutAllIndices.end(), Pair.second.Indices.begin(), Pair.second.Indices.end());
+		if (AccumulateVertexCount != 0)
+		{
+			std::for_each(OutAllIndices.begin() + AccumulateVertexCount, OutAllIndices.end(), [=](int& Value) {Value += AccumulateVertexCount; });
+		}
+	}
+	return true;
+}
+
 bool ObjLoader::ParseMaterial(const char* filename)
 {
 	std::string line;
@@ -438,7 +465,7 @@ bool ObjLoader::ParseLine(const std::string& line)
 		if (!ParseName(line, filename)) return false;
 		if (!ParseMaterial(filename.c_str())) return false;
 	}
-	else if (string_startwith(line, "g "))
+	else if (string_startwith(line, "o "))
 	{
 		std::string GroupName;
 		if (!ParseName(line, GroupName)) return false;

@@ -209,3 +209,52 @@ void D3D12Demo::WaitForComputeFrame()
 
 	m_FrameIndex = m_DXGISwapChain->GetCurrentBackBufferIndex();
 }
+
+void GetShaderParameterAllocations(ID3DBlob* Code)
+{
+	ID3D12ShaderReflection* pReflector = NULL;
+	D3DReflect(Code->GetBufferPointer(), Code->GetBufferSize(), IID_ID3D12ShaderReflection, (void**)&pReflector);
+	D3D12_SHADER_DESC ShaderDesc;
+	pReflector->GetDesc(&ShaderDesc);
+	for (UINT ResourceIndex = 0; ResourceIndex < ShaderDesc.BoundResources; ResourceIndex++)
+	{
+		D3D12_SHADER_INPUT_BIND_DESC BindDesc;
+		pReflector->GetResourceBindingDesc(ResourceIndex, &BindDesc);
+		if (BindDesc.Type == D3D10_SIT_CBUFFER || BindDesc.Type == D3D10_SIT_TBUFFER)
+		{
+			const UINT CBIndex = BindDesc.BindPoint;
+			ID3D12ShaderReflectionConstantBuffer* ConstantBuffer = pReflector->GetConstantBufferByName(BindDesc.Name);
+			D3D12_SHADER_BUFFER_DESC CBDesc;
+			ConstantBuffer->GetDesc(&CBDesc);
+			bool bGlobalCB = (strcmp(CBDesc.Name, "$Globals") == 0);
+			if (bGlobalCB)
+			{
+				for (UINT ContantIndex = 0; ContantIndex < CBDesc.Variables; ContantIndex++)
+				{
+					ID3D12ShaderReflectionVariable* Variable = ConstantBuffer->GetVariableByIndex(ContantIndex);
+					D3D12_SHADER_VARIABLE_DESC VariableDesc;
+					Variable->GetDesc(&VariableDesc);
+					if (VariableDesc.uFlags & D3D10_SVF_USED)
+					{
+						//OutParams.insert(std::make_pair<std::string, ParameterAllocation>(VariableDesc.Name, { CBIndex ,VariableDesc.StartOffset,VariableDesc.Size }));
+					}
+				}
+			}
+			else
+			{
+				//OutParams.insert(std::make_pair<std::string, ParameterAllocation>(CBDesc.Name, { CBIndex,0,0 }));
+			}
+		}
+		else if (BindDesc.Type == D3D10_SIT_TEXTURE || BindDesc.Type == D3D10_SIT_SAMPLER)
+		{
+			UINT BindCount = BindDesc.BindCount;
+
+			//OutParams.insert(std::make_pair<std::string, ParameterAllocation>(BindDesc.Name, { 0,BindDesc.BindPoint,BindCount }));
+		}
+		else if (BindDesc.Type == D3D11_SIT_UAV_RWTYPED || BindDesc.Type == D3D11_SIT_UAV_RWSTRUCTURED ||
+			BindDesc.Type == D3D11_SIT_UAV_RWBYTEADDRESS || BindDesc.Type == D3D11_SIT_UAV_RWSTRUCTURED_WITH_COUNTER ||
+			BindDesc.Type == D3D11_SIT_UAV_APPEND_STRUCTURED)
+		{
+		}
+	}
+}

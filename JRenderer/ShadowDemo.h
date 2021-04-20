@@ -20,11 +20,13 @@ struct ObjMaterialUniform
 struct LightUniform
 {
 	XMFLOAT4 LightPositionAndRadius;
-	XMFLOAT4 LightOrientationAndNeerPlane;
-	XMFLOAT2 LightmapViewport;
-	XMFLOAT3 AmbientIntencity;
+	XMFLOAT4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
+	XMFLOAT3 LightOrientation;
 	XMFLOAT3 Intencity;
+	XMFLOAT3 AmbientIntencity;
+	XMFLOAT2 LightmapViewport;
 };
+
 
 class ShadowDemo : public D3D12Demo
 {
