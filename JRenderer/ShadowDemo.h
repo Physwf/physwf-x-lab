@@ -48,23 +48,22 @@ protected:
 	ComPtr<ID3D12Resource>		mMarryIB;
 	D3D12_INDEX_BUFFER_VIEW		mMarryIBView;
 	ComPtr<ID3D12Resource>		mMarryPrimitiveCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mMarryPrimitiveCBView;
-	ComPtr<ID3D12Resource>		mPlaneVBUpload;
-	ComPtr<ID3D12Resource>		mPlaneVB;
-	D3D12_VERTEX_BUFFER_VIEW	mPlaneVBView;
-	ComPtr<ID3D12Resource>		mPlaneIBUpload;
-	ComPtr<ID3D12Resource>		mPlaneIB;
-	D3D12_INDEX_BUFFER_VIEW		mPlaneIBView;
-	ComPtr<ID3D12Resource>		mPlanePrimitiveCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPlanePrimitiveCBView;
+	ComPtr<ID3D12DescriptorHeap> mMarryShadowPassDH;
+	ComPtr<ID3D12Resource>		mFloorVBUpload;
+	ComPtr<ID3D12Resource>		mFloorVB;
+	D3D12_VERTEX_BUFFER_VIEW	mFloorVBView;
+	ComPtr<ID3D12Resource>		mFloorIBUpload;
+	ComPtr<ID3D12Resource>		mFloorIB;
+	D3D12_INDEX_BUFFER_VIEW		mFloorIBView;
+	ComPtr<ID3D12Resource>		mFloorPrimitiveCB;
+	ComPtr<ID3D12DescriptorHeap> mFloorShadowPassDH;
+
 	ComPtr<ID3D12Resource>		mSceneDepth;
 	D3D12_CPU_DESCRIPTOR_HANDLE mSceneDepthViewHandle;
 
 	ComPtr<ID3D12Resource>		mPCSSDetph;
 	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphViewHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSDetphSRVHandle;
 	ComPtr<ID3D12Resource>		mPCSSViewCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPCSSViewCBViewHandle;
 };
 
 class PCSSDemo : public ShadowDemo
@@ -82,10 +81,10 @@ private:
 private:
 	void LoadPCSSPipleState();
 	void LoadMarryPipelineState();
-	void LoadPlanePipelineState();
+	void LoadFloorPipelineState();
 
 	void LoadMarryAssets();
-	void LoadPlaneAssets();
+	void LoadFloorAssets();
 	void LoadCommonAssets();
 
 private:
@@ -96,22 +95,19 @@ private:
 	ComPtr<ID3D12GraphicsCommandList> mPCSSCommandList;
 	//Common
 	ComPtr<ID3D12Resource>		mSceneViewCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mSceneViewCBHandle;
 	ComPtr<ID3D12Resource>		mLightCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mLightCBView;
-	//Marry pass
+	//scene pass Marry
 	ComPtr<ID3D12RootSignature> mMarryRootSignature;
 	ComPtr<ID3D12PipelineState> mMarryPSO;
 	ComPtr<ID3D12GraphicsCommandList> mMarryCommandList;
 	ComPtr<ID3D12Resource>		mMarryMaterialCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mMarryMaterialCBView;
 	ComPtr<ID3D12Resource>		mMarrayDiffuseColorSR;
 	ComPtr<ID3D12Resource>		mMarrayDiffuseColorSRUpload;
-	D3D12_CPU_DESCRIPTOR_HANDLE mMarrayDiffuseColorSRV;
-	//Plane
-	ComPtr<ID3D12RootSignature> mPlaneRootSignature;
-	ComPtr<ID3D12PipelineState> mPlanePSO;
-	ComPtr<ID3D12GraphicsCommandList> mPlaneCommandList;
-	ComPtr<ID3D12Resource>		mPlaneMaterialCB;
-	D3D12_CPU_DESCRIPTOR_HANDLE mPlaneMaterialCBView;
+	ComPtr<ID3D12DescriptorHeap> mMarryScenePassDH;
+	//scene pass Floor
+	ComPtr<ID3D12RootSignature> mFloorRootSignature;
+	ComPtr<ID3D12PipelineState> mFloorPSO;
+	ComPtr<ID3D12GraphicsCommandList> mFloorCommandList;
+	ComPtr<ID3D12Resource>		mFloorMaterialCB;
+	ComPtr<ID3D12DescriptorHeap> mFloorScenePassDH;
 };
