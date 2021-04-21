@@ -371,7 +371,7 @@ void ShadowDemo::LoadCommonAssets()
 		ZeroMemory(&DSVDesc, sizeof(DSVDesc));
 		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
 		DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-		DSVDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
+		DSVDesc.Flags = D3D12_DSV_FLAG_NONE;
 		DSVDesc.Texture2D.MipSlice = 0;
 
 		mPCSSDetphViewHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
@@ -516,9 +516,8 @@ void PCSSDemo::DrawShadow()
 		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		mPCSSCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
 	}
-	mPCSSCommandList->OMSetRenderTargets(0, NULL, FALSE, &mPCSSDetphViewHandle);
-	D3D12_RECT ClearRect = { 0, 0, 2048, 2048 };
-	mPCSSCommandList->ClearDepthStencilView(mPCSSDetphViewHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 1, &ClearRect);
+	mPCSSCommandList->OMSetRenderTargets(0, NULL, TRUE, &mPCSSDetphViewHandle);
+	mPCSSCommandList->ClearDepthStencilView(mPCSSDetphViewHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
 	mPCSSCommandList->SetPipelineState(mPCSSPSO.Get());
 	D3D12_RECT RTRect = { 0,0,2048,2048 };
 	D3D12_VIEWPORT RTViewport = { 0,0,2048.f,2048.f,0.f,1.0f };
@@ -602,10 +601,7 @@ void PCSSDemo::LoadPCSSPipleState()
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 		}
-		if (S_OK != D3DCompileFromFile(TEXT("PCSS.hlsl"), nullptr, nullptr, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
-		{
-			LOGA("%s\n", Error->GetBufferPointer());
-		}
+
 		D3D12_INPUT_ELEMENT_DESC InputDesc[] =
 		{
 			{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0},
@@ -619,30 +615,21 @@ void PCSSDemo::LoadPCSSPipleState()
 		GPSDesc.pRootSignature = mPCSSRootSignature.Get();
 		GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		GPSDesc.VS = { VS->GetBufferPointer(),VS->GetBufferSize() };
-		GPSDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
 		GPSDesc.BlendState.AlphaToCoverageEnable = FALSE;
-		GPSDesc.BlendState.IndependentBlendEnable = TRUE;
-		GPSDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-		GPSDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-		GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
-		GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
-		GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-		GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-		GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-		GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+		GPSDesc.BlendState.IndependentBlendEnable = FALSE;
+		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		GPSDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		GPSDesc.RasterizerState.DepthClipEnable = TRUE;
 		GPSDesc.InputLayout.NumElements = _countof(InputDesc);
 		GPSDesc.InputLayout.pInputElementDescs = InputDesc;
-		GPSDesc.NumRenderTargets = 1;
+		GPSDesc.NumRenderTargets = 0;
 		GPSDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 		GPSDesc.DepthStencilState.DepthEnable = TRUE;
-		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.SampleDesc = { 1,0 };
-		GPSDesc.SampleMask = 0xffffffff;
+		GPSDesc.SampleMask = UINT_MAX;
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mPCSSPSO.GetAddressOf()));
 
 		assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mPCSSPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPCSSCommandList.GetAddressOf()));
@@ -1054,7 +1041,6 @@ void PCSSDemo::UpdateLight()
 	LightView.ViewOrigin.z = Light.LightPositionAndRadius.z;
 	LightView.ViewOrigin.w = 0.f;
 
-	XMFLOAT4X4 WorldToView;
 	XMMATRIX Translation = XMMatrixTranslation(-LightView.ViewOrigin.x,-LightView.ViewOrigin.y, -LightView.ViewOrigin.z);
 	XMFLOAT3 Eye = { LightView.ViewOrigin.x, LightView.ViewOrigin.y, LightView.ViewOrigin.z };
 	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
@@ -1080,7 +1066,6 @@ void PCSSDemo::UpdateView()
 	SceneView.ViewOrigin.z = -200.f;
 	SceneView.ViewOrigin.w = 0.f;
 
-	XMFLOAT4X4 WorldToView;
 	XMMATRIX Translation = XMMatrixTranslation(-SceneView.ViewOrigin.x, -SceneView.ViewOrigin.y, -SceneView.ViewOrigin.z);
 	XMFLOAT3 Eye = { SceneView.ViewOrigin.x, SceneView.ViewOrigin.y, SceneView.ViewOrigin.z };
 	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
