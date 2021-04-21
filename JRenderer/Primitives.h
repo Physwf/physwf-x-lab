@@ -6,6 +6,7 @@ using namespace DirectX;
 #include <vector>
 #include <string>
 #include <map>
+#include <functional>
 
 struct MeshVertex
 {
@@ -47,14 +48,17 @@ public:
 	std::vector<MeshVertex> Vertices;
 	std::vector<int> Indices;
 	std::vector<MeshSection> Sections;
+	std::vector<std::vector<char>> MaterialUniforms;
 
 	void LoadFBX(const char* Filename);
-	void LoadObj(const char* Filename);
+	void LoadObj(const char* Filename,std::function<void(void*, std::vector<char>&)> MaterialConverter);
 private:
+
 };
 
 class ObjLoader
 {
+public:
 	struct VertexIndex
 	{
 		int PositonIndex;
@@ -95,6 +99,7 @@ class ObjLoader
 public:
 	bool Load(const char* filename);
 	bool CombineVertices(std::vector<MeshVertex>& OutAllVertices,std::vector<int>& OutAllIndices,std::vector<MeshSection>& AllSections);
+	bool PackMaterial(std::function<void(void*, std::vector<char>&)> MaterialPacker, std::vector<std::vector<char>>& OutMaterialUniform);
 private:
 	bool ParseMaterial(const char* filename);
 	bool ParseLine(const std::string& line);

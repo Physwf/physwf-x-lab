@@ -334,12 +334,13 @@ void Mesh::LoadFBX(const char* pFileName)
 	}
 }
 
-void Mesh::LoadObj(const char* Filename)
+void Mesh::LoadObj(const char* Filename, std::function<void(void*, std::vector<char>&)> MaterialConverter)
 {
 	ObjLoader Loader;
 	if (Loader.Load(Filename))
 	{
 		Loader.CombineVertices(Vertices, Indices, Sections);
+		Loader.PackMaterial(MaterialConverter, MaterialUniforms);
 	}
 }
 
@@ -430,6 +431,19 @@ bool ObjLoader::CombineVertices(std::vector<MeshVertex>& OutAllVertices, std::ve
 		{
 			std::for_each(OutAllIndices.begin() + AccumulateVertexCount, OutAllIndices.end(), [=](int& Value) {Value += AccumulateVertexCount; });
 		}
+	}
+	return true;
+}
+
+bool ObjLoader::PackMaterial(std::function<void(void*, std::vector<char>&)> MaterialPacker, std::vector<std::vector<char>>& OutMaterialUniform)
+{
+	int i = 0;
+	OutMaterialUniform.clear();
+	OutMaterialUniform.resize(SubMeshes.size());
+	for (auto& Pair : SubMeshes)
+	{
+		ObjMaterial& M = Materials[Pair.first];
+		MaterialPacker(&M, OutMaterialUniform[i++]);
 	}
 	return true;
 }

@@ -14,7 +14,7 @@ struct ObjMaterialUniform
 	float Ni;//’€…‰¬ 
 	float alpha;
 	float ShadingModel;
-	float Pading00[256-sizeof(XMFLOAT3)*3-sizeof(float)*4];
+	char Pading00[256-sizeof(XMFLOAT3)*3-sizeof(float)*4];
 };
 
 struct LightUniform
@@ -25,6 +25,7 @@ struct LightUniform
 	XMFLOAT3 Intencity;
 	XMFLOAT3 AmbientIntencity;
 	XMFLOAT2 LightmapViewport;
+	char Padding00[256-sizeof(XMFLOAT4)*2-sizeof(XMFLOAT3)*3 - sizeof(XMFLOAT2)];
 };
 
 
@@ -89,6 +90,8 @@ private:
 	void LoadFloorAssets();
 	void LoadCommonAssets();
 
+	void UpdateLight();
+	void UpdateView();
 private:
 
 	//Shadow Pass

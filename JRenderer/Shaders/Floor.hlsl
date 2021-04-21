@@ -1,6 +1,6 @@
 cbuffer Primitive
 {
-    float3x3 LocalToWorld;
+    float4x4 LocalToWorld;
     float3 Translation;
 }
 
@@ -13,6 +13,26 @@ cbuffer View
 	float4 ViewSizeAndInvSize;
 	float4 ViewRectMin;
 }
+
+cbuffer Material
+{
+    float3 Ka;
+	float3 Kd;
+	float3 Ks;
+	float Ns;//高光指数
+	float Ni;//折射率
+	float ShadingModel;
+};
+
+cbuffer Light
+{
+    float4 LightPositionAndRadius;
+    float4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
+    float3 LightOrientation;
+    float3 Intencity;
+    float3 AmbientIntencity;
+    float2 LightmapViewport;
+};
 
 struct VSInput
 {
@@ -32,33 +52,13 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    float3 WorldPosition = mul(Input.Position,LocalToWorld);
-    Output.SVPosition = mul(float4(WorldPosition,1.0f),WorldToClip);
-    Output.WorldNormal = mul(Input.Normal,LocalToWorld);
+    float4 WorldPosition = mul(float4(Input.Position,1.f),LocalToWorld);
+    Output.SVPosition = mul(WorldPosition,WorldToClip);
+    Output.WorldNormal = mul(float4(Input.Normal,1.f),LocalToWorld).xyz;
     Output.UV = Input.UV;
 
     return Output;
 }
-
-cbuffer Light
-{
-    float4 LightPositionAndRadius;
-    float4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
-    float3 LightOrientation;
-    float3 Intencity;
-    float3 AmbientIntencity;
-    float2 LightmapViewport;
-};
-
-cbuffer Material
-{
-    float3 Ka;
-	float3 Kd;
-	float3 Ks;
-	float Ns;//高光指数
-	float Ni;//折射率
-	float ShadingModel;
-};
 
 Texture2D<float> ShadowDepthMap;
 SamplerState ShadowDepthMapSampler;
