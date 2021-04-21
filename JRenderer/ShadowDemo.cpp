@@ -1062,8 +1062,8 @@ void PCSSDemo::UpdateView()
 {
 	ViewUniform SceneView;
 	SceneView.ViewOrigin.x = 0.0f;
-	SceneView.ViewOrigin.y = 0.0f;
-	SceneView.ViewOrigin.z = -200.f;
+	SceneView.ViewOrigin.y = 10.0f;
+	SceneView.ViewOrigin.z = -100.f;
 	SceneView.ViewOrigin.w = 0.f;
 
 	XMMATRIX Translation = XMMatrixTranslation(-SceneView.ViewOrigin.x, -SceneView.ViewOrigin.y, -SceneView.ViewOrigin.z);
@@ -1072,8 +1072,9 @@ void PCSSDemo::UpdateView()
 	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
 	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1.0f, 10.f, 100.f);
-	//XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective));
-	XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
+	XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixTranspose(XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective)));
+	
+	//XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
 
 	XMVECTOR Determinant;
 	XMStoreFloat4x4(&SceneView.SvPositionToWorld, XMMatrixInverse(&Determinant, Perspective));

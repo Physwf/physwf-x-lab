@@ -92,21 +92,22 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
-    SampleCount = min(SampleCount,int2(-10,-10));
-    SampleCount = max(SampleCount,int2(10,10));
+    SampleCount = int2(1,1);
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
         for(int v = - SampleCount.y; v <= SampleCount.y;++v)
         {
+            /*
             float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u,v),0);
             if(ShadowDepth > HomoPosition.z)
             {
                 LightPassCount++;
             }
+            */
         }
     }
-    float fLightPercent = (float)LightPassCount / dot(SampleCount.xy,float2(1.0f,1.0f));
+    float fLightPercent = 0.5f;//(float)LightPassCount / dot(SampleCount.xy,float2(1.0f,1.0f));
     
     float3 L = normalize(LightPositionAndRadius.xyz - WorldPosition);
     float3 N = normalize(Input.WorldNormal);
