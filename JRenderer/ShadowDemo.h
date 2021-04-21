@@ -90,6 +90,7 @@ private:
 	void LoadFloorAssets();
 	void LoadCommonAssets();
 
+	void UpdatePrimitive();
 	void UpdateLight();
 	void UpdateView();
 private:

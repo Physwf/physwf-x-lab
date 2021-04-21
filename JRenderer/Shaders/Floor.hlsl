@@ -44,7 +44,7 @@ struct VSInput
 
 struct VSOutput
 {
-    float4 SVPosition : SV_Position;
+    float4 SVPosition : SV_POSITION;
     float3 WorldNormal : TEXCOORD0;
     float2 UV : TEXCOORD1;
 };
@@ -52,7 +52,7 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    float4 WorldPosition = mul(float4(Input.Position,1.f),LocalToWorld);
+    float4 WorldPosition = mul(LocalToWorld,float4(Input.Position,1.f));
     Output.SVPosition = mul(WorldPosition,WorldToClip);
     Output.WorldNormal = mul(float4(Input.Normal,1.f),LocalToWorld).xyz;
     Output.UV = Input.UV;
@@ -92,7 +92,8 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
-
+    SampleCount = min(SampleCount,int2(-10,-10));
+    SampleCount = max(SampleCount,int2(10,10));
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {

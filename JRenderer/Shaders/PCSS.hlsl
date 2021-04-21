@@ -1,6 +1,6 @@
 cbuffer Primitive
 {
-    float3x3 LocalToWorld;
+    float4x4 LocalToWorld;
     float3 Translation;
 }
 
@@ -30,7 +30,12 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    float3 WorldPosition = mul(Input.Position,LocalToWorld) + Translation;
-    Output.SVPosition = mul(float4(WorldPosition,1.0f),WorldToClip);
+    float4 WorldPosition = mul(LocalToWorld,float4(Input.Position,1.0f));
+    Output.SVPosition = mul(WorldToClip,WorldPosition);
     return Output;
+}
+
+float4 PSMain(VSOutput Input) :SV_Target
+{
+    return 0;
 }

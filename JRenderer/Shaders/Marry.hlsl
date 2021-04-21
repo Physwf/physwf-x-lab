@@ -96,6 +96,8 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
 
+    SampleCount = min(SampleCount,int2(-10,-10));
+    SampleCount = max(SampleCount,int2(10,10));
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
