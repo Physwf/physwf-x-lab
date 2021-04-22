@@ -80,17 +80,22 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float3 PreLightView = WorldPosition - LightPositionAndRadius.xyz;
     float3x3 WorldToLightView;
     WorldToLightView[2] = normalize(LightOrientation);
-    WorldToLightView[0] = cross(float3(0.f,1.0f,0.f),WorldToLightView[2]);
-    WorldToLightView[1] = cross(WorldToLightView[2],WorldToLightView[0]);
-    float3 LightViewPosition = mul(PreLightView,WorldToLightView);
+    WorldToLightView[0] = normalize(cross(WorldToLightView[2],float3(0.f,1.0f,0.f)));
+    WorldToLightView[1] = normalize(cross(WorldToLightView[0],WorldToLightView[2]));
+    float3 LightViewPosition = mul(WorldToLightView,PreLightView);
+
+    float Aspect=LightPerspectiveMatrix.x;
+    float TanHalfAlpha = LightPerspectiveMatrix.y;
+    float ZNear = LightPerspectiveMatrix.z;
+    float ZFar = LightPerspectiveMatrix.w;
 
     float4x4 LightViewToClip = (float4x4)0;
-    //LightViewToClip[0] = float4(1.f/(LightPerspectiveMatrix.x*LightPerspectiveMatrix.y),0,0,0);
-    //LightViewToClip[1] = float4(0,1.f/LightPerspectiveMatrix.y,0,0);
-    //LightViewToClip[2] = float4(0,0,(-LightPerspectiveMatrix.z-LightPerspectiveMatrix.w)/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w),2.f*LightPerspectiveMatrix.z*LightPerspectiveMatrix.w/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w));
-    //LightViewToClip[3] = float4(0,0,1,0);
+    LightViewToClip[0] = float4(1.f/(Aspect*TanHalfAlpha),0,0,0);
+    LightViewToClip[1] = float4(0,1.f/TanHalfAlpha,0,0);
+    LightViewToClip[2] = float4(0,0,(-ZFar-ZNear)/(ZNear-ZFar),2.f*ZNear*ZFar/(ZNear-ZFar));
+    LightViewToClip[3] = float4(0,0,1,0);
 
-    float Height = LightPerspectiveMatrix.y;
+    float Height = 1.f/LightPerspectiveMatrix.y;
     float Width = Height / LightPerspectiveMatrix.x;
     float fRange = LightPerspectiveMatrix.w / (LightPerspectiveMatrix.w - LightPerspectiveMatrix.z);
 
@@ -98,10 +103,13 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     LightViewToClip[1][1] = Height;
     LightViewToClip[2] = float4(0,0,fRange,1.0f);
     LightViewToClip[3] = float4(0,0,-fRange * LightPerspectiveMatrix.z,0);
+    float4 HomoPosition = mul(float4(LightViewPosition,1.0f),LightViewToClip);
 
-    float4 HomoPosition = mul(LightViewToClip,float4(LightViewPosition,1.0f));
+    //float4 HomoPosition = mul(LightViewToClip,float4(LightViewPosition,1.0f));
     HomoPosition.xyz /= HomoPosition.w;
-    float2 LightMapUV = saturate((HomoPosition.xy+float2(1.0f,1.0f))/2.f);
+    float2 LightMapUV = HomoPosition.xy+float2(1.0f,1.0f);
+    LightMapUV = LightMapUV/2.f;
+    LightMapUV.y = 1.f - LightMapUV.y;
     //
     float3 WorldToLightDir = WorldPosition - LightPositionAndRadius.xyz;
     float WorldToLightDist = dot(WorldToLightDir,LightOrientation);
@@ -125,12 +133,12 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     }
     float fLightPercent = 1 - (float)ShadowCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
     
-    fLightPercent = 1.f;
+    fLightPercent = 0.f;
 
     float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV ,0);
-    if(ShadowDepth > HomoPosition.z)
+    if(ShadowDepth > HomoPosition.z + 0.2)
     {
-        fLightPercent = 0.0f;
+        fLightPercent = 1.0f;
     }
 
 

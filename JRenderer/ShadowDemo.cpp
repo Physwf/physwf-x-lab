@@ -1008,7 +1008,7 @@ void PCSSDemo::UpdatePrimitive()
 
 	{
 		PrimitiveUniform Primitive;
-		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixTranslation(0.f,0.f,0.f));
+		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixIdentity());
 
 		void* pData;
 		mFloorPrimitiveCB->Map(0, 0, &pData);
@@ -1024,7 +1024,7 @@ void PCSSDemo::UpdateLight()
 	Light.LightPositionAndRadius = {0.0f,15.0f,-40.0f,3.0f };
 	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/4.f),10.f,500.f};
 	Light.Intencity = { 1.f,1.0f,1.0f,0 };
-	Light.AmbientIntencity = { 0.9f,0.9f,0.9f ,0 };
+	Light.AmbientIntencity = { 0.2f,0.2f,0.2f ,0 };
 	Light.LightmapViewport = { 2048.f,2048.f ,0 ,0 };
 
 	
