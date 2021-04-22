@@ -1008,7 +1008,7 @@ void PCSSDemo::UpdatePrimitive()
 
 	{
 		PrimitiveUniform Primitive;
-		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixIdentity());
+		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixTranslation(0.f,0.f,0.f));
 
 		void* pData;
 		mFloorPrimitiveCB->Map(0, 0, &pData);
@@ -1021,19 +1021,13 @@ void PCSSDemo::UpdatePrimitive()
 void PCSSDemo::UpdateLight()
 {
 	LightUniform Light;
-	Light.LightPositionAndRadius = {20.0f,20.0f,20.0f,3.0f };
-	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/2.f),10.f,10000.f};
-	Light.LightOrientation = { -1,-1,-1,0 };
+	Light.LightPositionAndRadius = {0.0f,15.0f,-40.0f,3.0f };
+	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/4.f),10.f,500.f};
 	Light.Intencity = { 1.f,1.0f,1.0f,0 };
-	Light.AmbientIntencity = { 0.3f,0.3f,0.3f ,0 };
+	Light.AmbientIntencity = { 0.9f,0.9f,0.9f ,0 };
 	Light.LightmapViewport = { 2048.f,2048.f ,0 ,0 };
 
-	{
-		void* pData;
-		mLightCB->Map(0, 0, &pData);
-		memcpy(pData, &Light, sizeof(LightUniform));
-		mLightCB->Unmap(0, 0);
-	}
+	
 
 	ViewUniform LightView;
 	LightView.ViewOrigin.x = Light.LightPositionAndRadius.x;
@@ -1045,11 +1039,16 @@ void PCSSDemo::UpdateLight()
 	XMFLOAT3 Eye = { LightView.ViewOrigin.x, LightView.ViewOrigin.y, LightView.ViewOrigin.z };
 	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
 	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
+	Light.LightOrientation = { At.x - Eye.x, At.y - Eye.y, At.z - Eye.z,0 };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
-	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f/2.f, 1.0f, 10.f, 200.f);
+	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f/2.f, 1.0f, 10.f, 500.f);
 	XMStoreFloat4x4(&LightView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective));
-	//XMStoreFloat4x4(&LightView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
-
+	{
+		void* pData;
+		mLightCB->Map(0, 0, &pData);
+		memcpy(pData, &Light, sizeof(LightUniform));
+		mLightCB->Unmap(0, 0);
+	}
 	{
 		void* pData;
 		mPCSSViewCB->Map(0, 0, &pData);
@@ -1061,23 +1060,30 @@ void PCSSDemo::UpdateLight()
 void PCSSDemo::UpdateView()
 {
 	ViewUniform SceneView;
-	SceneView.ViewOrigin.x = 20.0f;
-	SceneView.ViewOrigin.y = 20.0f;
-	SceneView.ViewOrigin.z = -20.f;
+	SceneView.ViewOrigin.x = 0;
+	SceneView.ViewOrigin.y = 10;
+	SceneView.ViewOrigin.z = 20;
 	SceneView.ViewOrigin.w = 0.f;
 
 	XMMATRIX Translation = XMMatrixTranslation(-SceneView.ViewOrigin.x, -SceneView.ViewOrigin.y, -SceneView.ViewOrigin.z);
 	XMFLOAT3 Eye = { SceneView.ViewOrigin.x, SceneView.ViewOrigin.y, SceneView.ViewOrigin.z };
-	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
+	XMFLOAT3 At = { 0.0f, 5.0f,0.0f };
 	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
 	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1920.f/1080.f, 10.f, 500.f);
-	XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixTranspose(XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective)));
-	
+	XMMATRIX VP = XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective);
+	XMStoreFloat4x4(&SceneView.WorldToClip, VP);
 	//XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
 
+	XMFLOAT4X4 SVPositionToClipPosition =
+	{
+		2.f/1920.f,		0,			0,0,
+		0,				-2.f/1080.f,0,0,
+		0,				0,			1,0,
+		-1,				1,			0,1
+	};
 	XMVECTOR Determinant;
-	XMStoreFloat4x4(&SceneView.SvPositionToWorld, XMMatrixInverse(&Determinant, Perspective));
+	XMStoreFloat4x4(&SceneView.SvPositionToWorld, XMMatrixMultiply(XMLoadFloat4x4(&SVPositionToClipPosition), XMMatrixInverse(&Determinant, VP)));
 	{
 		void* pData;
 		mSceneViewCB->Map(0, 0, &pData);

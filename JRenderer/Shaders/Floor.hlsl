@@ -29,9 +29,13 @@ cbuffer Light : register(b3)
     float4 LightPositionAndRadius;
     float4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
     float3 LightOrientation;
+    float Padding00;
     float3 Intencity;
+    float Padding01;
     float3 AmbientIntencity;
+    float Padding02;
     float2 LightmapViewport;
+    float2 Padding03;
 };
 
 struct VSInput
@@ -53,8 +57,8 @@ VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
     float4 WorldPosition = mul(LocalToWorld,float4(Input.Position,1.f));
-    Output.SVPosition = mul(WorldPosition,WorldToClip);
-    Output.WorldNormal = mul(float4(Input.Normal,1.f),LocalToWorld).xyz;
+    Output.SVPosition = mul(WorldToClip,WorldPosition);
+    Output.WorldNormal = mul(LocalToWorld,float4(Input.Normal,1.f)).xyz;
     Output.UV = Input.UV;
 
     return Output;
@@ -65,27 +69,39 @@ SamplerState ShadowDepthMapSampler;
 
 float3 SVPositionToWorldPosition(float4 SVPosition)
 {
-    float4 HomoPosition = mul(SvPositionToWorld,SVPosition);
+    float4 HomoPosition = mul(SvPositionToWorld,float4(SVPosition.xyz,1));
     return HomoPosition.xyz / HomoPosition.w;
 }
 
 void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
 {
-    float3 WorldPositionPreView = SVPositionToWorldPosition(Input.SVPosition);
-    float3 WorldPosition = WorldPositionPreView - LightPositionAndRadius.xyz; 
+    float3 WorldPosition = SVPositionToWorldPosition(Input.SVPosition);
+
+    float3 PreLightView = WorldPosition - LightPositionAndRadius.xyz;
     float3x3 WorldToLightView;
     WorldToLightView[2] = normalize(LightOrientation);
-    WorldToLightView[0] = cross(float3(0.f,1.0f,0.f), WorldToLightView[2]);
-    WorldToLightView[1] = cross(WorldToLightView[2], WorldToLightView[0]);
-    float3 LightViewPosition = mul(WorldToLightView,WorldPosition);
-    float4x4 LightViewToClip = {
-        {1.f/(LightPerspectiveMatrix.x*LightPerspectiveMatrix.y),0,0,0},
-        {0,1.f/LightPerspectiveMatrix.y,0,0},
-        {0,0,(-LightPerspectiveMatrix.z-LightPerspectiveMatrix.w)/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w),2.f*LightPerspectiveMatrix.z*LightPerspectiveMatrix.w/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w)},
-        {0,0,1,0},
-        };
+    WorldToLightView[0] = cross(float3(0.f,1.0f,0.f),WorldToLightView[2]);
+    WorldToLightView[1] = cross(WorldToLightView[2],WorldToLightView[0]);
+    float3 LightViewPosition = mul(PreLightView,WorldToLightView);
+
+    float4x4 LightViewToClip = (float4x4)0;
+    //LightViewToClip[0] = float4(1.f/(LightPerspectiveMatrix.x*LightPerspectiveMatrix.y),0,0,0);
+    //LightViewToClip[1] = float4(0,1.f/LightPerspectiveMatrix.y,0,0);
+    //LightViewToClip[2] = float4(0,0,(-LightPerspectiveMatrix.z-LightPerspectiveMatrix.w)/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w),2.f*LightPerspectiveMatrix.z*LightPerspectiveMatrix.w/(LightPerspectiveMatrix.z-LightPerspectiveMatrix.w));
+    //LightViewToClip[3] = float4(0,0,1,0);
+
+    float Height = LightPerspectiveMatrix.y;
+    float Width = Height / LightPerspectiveMatrix.x;
+    float fRange = LightPerspectiveMatrix.w / (LightPerspectiveMatrix.w - LightPerspectiveMatrix.z);
+
+    LightViewToClip[0][0] = Width;
+    LightViewToClip[1][1] = Height;
+    LightViewToClip[2] = float4(0,0,fRange,1.0f);
+    LightViewToClip[3] = float4(0,0,-fRange * LightPerspectiveMatrix.z,0);
+
     float4 HomoPosition = mul(LightViewToClip,float4(LightViewPosition,1.0f));
-    float2 LightMapUV = saturate(HomoPosition.xy);
+    HomoPosition.xyz /= HomoPosition.w;
+    float2 LightMapUV = saturate((HomoPosition.xy+float2(1.0f,1.0f))/2.f);
     //
     float3 WorldToLightDir = WorldPosition - LightPositionAndRadius.xyz;
     float WorldToLightDist = dot(WorldToLightDir,LightOrientation);
@@ -93,22 +109,32 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
     SampleCount = int2(5,5);
-    uint LightPassCount = 0;
+    uint ShadowCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
         for(int v = - SampleCount.y; v <= SampleCount.y;++v)
         {
             
-            float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u,v),0);
-            if(ShadowDepth > HomoPosition.z)
+            float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u/LightmapViewport.x,v/LightmapViewport.y),0);
+            if(ShadowDepth < HomoPosition.z)
             {
-                LightPassCount++;
+                ShadowCount++;
             }
             
         }
     }
-    float fLightPercent = (float)LightPassCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
+    float fLightPercent = 1 - (float)ShadowCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
     
+    fLightPercent = 1.f;
+
+    float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV ,0);
+    if(ShadowDepth > HomoPosition.z)
+    {
+        fLightPercent = 0.0f;
+    }
+
+
+
     float3 L = normalize(LightPositionAndRadius.xyz - WorldPosition);
     float3 N = normalize(Input.WorldNormal);
     float3 V = normalize(ViewOrigin.xyz - WorldPosition);
