@@ -117,7 +117,8 @@ private:
 	std::vector<XMFLOAT3> Normals;
 	std::vector<XMFLOAT2> TexCoords;
 
-	std::map<std::string, SubMesh> SubMeshes;
+	std::vector<SubMesh> SubMeshes;
+	std::map<std::string, SubMesh*> Material2SubMeshes;
 	std::map<std::string, ObjMaterial> Materials;
 	SubMesh* CurrentSubMesh;
 	ObjMaterial* CurrentMaterial;

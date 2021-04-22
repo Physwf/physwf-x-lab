@@ -416,21 +416,21 @@ bool ObjLoader::CombineVertices(std::vector<MeshVertex>& OutAllVertices, std::ve
 	AllSections.clear();
 	int i = 0;
 	int AccumulateVertexCount = 0;
-	for (auto& Pair : SubMeshes)
+	for (auto& SM : SubMeshes)
 	{
 		AllSections.emplace_back(MeshSection());
 		MeshSection& Section = AllSections.back();
-		Section.MaterialName = Pair.first;
+		Section.MaterialName = SM.MaterialName;
 		Section.SectionIndex = i++;
 		Section.StartOffset = AccumulateVertexCount;
-		Section.VertexCount = Pair.second.Vertices.size();
-		AccumulateVertexCount += Section.VertexCount;
-		OutAllVertices.insert(OutAllVertices.end(), Pair.second.Vertices.begin(), Pair.second.Vertices.end());
-		OutAllIndices.insert(OutAllIndices.end(), Pair.second.Indices.begin(), Pair.second.Indices.end());
+		Section.VertexCount = SM.Vertices.size();
+		OutAllVertices.insert(OutAllVertices.end(), SM.Vertices.begin(), SM.Vertices.end());
+		OutAllIndices.insert(OutAllIndices.end(), SM.Indices.begin(), SM.Indices.end());
 		if (AccumulateVertexCount != 0)
 		{
 			std::for_each(OutAllIndices.begin() + AccumulateVertexCount, OutAllIndices.end(), [=](int& Value) {Value += AccumulateVertexCount; });
 		}
+		AccumulateVertexCount += Section.VertexCount;
 	}
 	return true;
 }
@@ -440,9 +440,9 @@ bool ObjLoader::PackMaterial(std::function<void(void*, std::vector<char>&)> Mate
 	int i = 0;
 	OutMaterialUniform.clear();
 	OutMaterialUniform.resize(SubMeshes.size());
-	for (auto& Pair : SubMeshes)
+	for (auto& SM : SubMeshes)
 	{
-		ObjMaterial& M = Materials[Pair.second.MaterialName];
+		ObjMaterial& M = Materials[SM.MaterialName];
 		MaterialPacker(&M, OutMaterialUniform[i++]);
 	}
 	return true;
@@ -485,8 +485,9 @@ bool ObjLoader::ParseLine(const std::string& line)
 		if (!ParseName(line, GroupName)) return false;
 		if (GroupName != "default")
 		{
-			SubMeshes[GroupName] = SubMesh();
-			CurrentSubMesh = &SubMeshes[GroupName];
+			SubMeshes.push_back(SubMesh());
+			CurrentSubMesh = &SubMeshes.back();
+			Material2SubMeshes[GroupName] = CurrentSubMesh;
 		}
 	}
 	else if (string_startwith(line, "usemtl"))
@@ -637,7 +638,7 @@ bool ObjLoader::ParseTextCoord2D(const std::string& line, XMFLOAT2& TexCoord)
 		if (result.size() > 2)
 		{
 			TexCoord.x = (float)std::atof(result[1].c_str());
-			TexCoord.y = (float)std::atof(result[2].c_str());
+			TexCoord.y = 1.f -(float)std::atof(result[2].c_str());
 			return true;
 		}
 	}
