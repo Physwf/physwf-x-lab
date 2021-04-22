@@ -85,11 +85,11 @@ public:
 
 	struct ObjMaterial
 	{
-		XMFLOAT3 Ka;
-		XMFLOAT3 Kd;
-		XMFLOAT3 Ks;
-		XMFLOAT3 Ke;
-		XMFLOAT3 Tf;
+		XMFLOAT4 Ka;
+		XMFLOAT4 Kd;
+		XMFLOAT4 Ks;
+		XMFLOAT4 Ke;
+		XMFLOAT4 Tf;
 		float Ns;
 		float Ni;
 		float d;

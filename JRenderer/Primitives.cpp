@@ -442,7 +442,7 @@ bool ObjLoader::PackMaterial(std::function<void(void*, std::vector<char>&)> Mate
 	OutMaterialUniform.resize(SubMeshes.size());
 	for (auto& Pair : SubMeshes)
 	{
-		ObjMaterial& M = Materials[Pair.first];
+		ObjMaterial& M = Materials[Pair.second.MaterialName];
 		MaterialPacker(&M, OutMaterialUniform[i++]);
 	}
 	return true;
@@ -530,19 +530,19 @@ bool ObjLoader::ParseLine(const std::string& line)
 	{
 		XMFLOAT3 Color;
 		if (!ParseColor(line, Color)) return false;
-		CurrentMaterial->Kd = Color;
+		CurrentMaterial->Kd = XMFLOAT4(Color.x,Color.y,Color.z,0);
 	}
 	else if (string_startwith(line, "Ka "))
 	{
 		XMFLOAT3 Color;
 		if (!ParseColor(line, Color)) return false;
-		CurrentMaterial->Ka = Color;
+		CurrentMaterial->Ka = XMFLOAT4(Color.x, Color.y, Color.z, 0);
 	}
 	else if (string_startwith(line, "Tf "))
 	{
 		XMFLOAT3 Color;
 		if (!ParseColor(line, Color)) return false;
-		CurrentMaterial->Tf = Color;
+		CurrentMaterial->Tf = XMFLOAT4(Color.x, Color.y, Color.z, 0);
 	}
 	else if (string_startwith(line, "Ni "))
 	{
@@ -554,7 +554,7 @@ bool ObjLoader::ParseLine(const std::string& line)
 	{
 		XMFLOAT3 Color;
 		if (!ParseColor(line, Color)) return false;
-		CurrentMaterial->Ks = Color;
+		CurrentMaterial->Ks = XMFLOAT4(Color.x, Color.y, Color.z, 0);
 	}
 	else if (string_startwith(line, "Ns "))
 	{

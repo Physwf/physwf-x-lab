@@ -434,7 +434,7 @@ void PCSSDemo::Draw()
 	mMarryCommandList->ClearRenderTargetView(RTVHandle, ClearColor, 1, &RTVRect);
 	mMarryCommandList->ClearDepthStencilView(mSceneDepthViewHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 1, &RTVRect);
 
-	mMarryCommandList->OMSetRenderTargets(1, &RTVHandle, FALSE, &mSceneDepthViewHandle);
+	mMarryCommandList->OMSetRenderTargets(1, &RTVHandle, TRUE, &mSceneDepthViewHandle);
 	mMarryCommandList->SetDescriptorHeaps(1, mMarryScenePassDH.GetAddressOf());
 	mMarryCommandList->SetGraphicsRootSignature(mMarryRootSignature.Get());
 	mMarryCommandList->SetGraphicsRootDescriptorTable(0, mMarryScenePassDH->GetGPUDescriptorHandleForHeapStart());
@@ -463,7 +463,7 @@ void PCSSDemo::Draw()
 
 	mFloorCommandList->Reset(m_D3D12CmdAllocator.Get(), mFloorPSO.Get());
 
-	mFloorCommandList->OMSetRenderTargets(1, &RTVHandle, FALSE, &mSceneDepthViewHandle);
+	mFloorCommandList->OMSetRenderTargets(1, &RTVHandle, TRUE, &mSceneDepthViewHandle);
 	mFloorCommandList->SetDescriptorHeaps(1, mFloorScenePassDH.GetAddressOf());
 	mFloorCommandList->SetGraphicsRootSignature(mFloorRootSignature.Get());
 	mFloorCommandList->SetGraphicsRootDescriptorTable(0, mFloorScenePassDH->GetGPUDescriptorHandleForHeapStart());
@@ -626,7 +626,7 @@ void PCSSDemo::LoadPCSSPipleState()
 		GPSDesc.NumRenderTargets = 0;
 		GPSDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 		GPSDesc.DepthStencilState.DepthEnable = TRUE;
-		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		GPSDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
 		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.SampleDesc = { 1,0 };
 		GPSDesc.SampleMask = UINT_MAX;
@@ -719,7 +719,7 @@ void PCSSDemo::LoadMarryPipelineState()
 		GPSDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
 		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		GPSDesc.RasterizerState.FrontCounterClockwise = TRUE;
+		GPSDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		GPSDesc.NumRenderTargets = 1;
 		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		GPSDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -738,7 +738,7 @@ void PCSSDemo::LoadMarryPipelineState()
 		GPSDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
 		GPSDesc.DepthStencilState.StencilEnable = FALSE;
 		GPSDesc.SampleDesc = { 1,0 };
-		GPSDesc.SampleMask = 0xfffffff;
+		GPSDesc.SampleMask = UINT_MAX;
 
 		assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mMarryPSO.GetAddressOf()));
 
@@ -825,7 +825,7 @@ void PCSSDemo::LoadFloorPipelineState()
 		GPSDesc.PS = { PS->GetBufferPointer(),PS->GetBufferSize() };
 		GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
-		GPSDesc.RasterizerState.FrontCounterClockwise = TRUE;
+		GPSDesc.RasterizerState.FrontCounterClockwise = FALSE;
 		GPSDesc.NumRenderTargets = 1;
 		GPSDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 		GPSDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -1023,10 +1023,10 @@ void PCSSDemo::UpdateLight()
 	LightUniform Light;
 	Light.LightPositionAndRadius = {20.0f,20.0f,20.0f,3.0f };
 	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/2.f),10.f,10000.f};
-	Light.LightOrientation = { -1,-1,-1 };
-	Light.Intencity = { 1.f,1.0f,1.0f };
-	Light.AmbientIntencity = { 0.3f,0.3f,0.3f };
-	Light.LightmapViewport = { 2048.f,2048.f };
+	Light.LightOrientation = { -1,-1,-1,0 };
+	Light.Intencity = { 1.f,1.0f,1.0f,0 };
+	Light.AmbientIntencity = { 0.3f,0.3f,0.3f ,0 };
+	Light.LightmapViewport = { 2048.f,2048.f ,0 ,0 };
 
 	{
 		void* pData;
@@ -1061,9 +1061,9 @@ void PCSSDemo::UpdateLight()
 void PCSSDemo::UpdateView()
 {
 	ViewUniform SceneView;
-	SceneView.ViewOrigin.x = 0.0f;
-	SceneView.ViewOrigin.y = 10.0f;
-	SceneView.ViewOrigin.z = -100.f;
+	SceneView.ViewOrigin.x = 20.0f;
+	SceneView.ViewOrigin.y = 20.0f;
+	SceneView.ViewOrigin.z = -20.f;
 	SceneView.ViewOrigin.w = 0.f;
 
 	XMMATRIX Translation = XMMatrixTranslation(-SceneView.ViewOrigin.x, -SceneView.ViewOrigin.y, -SceneView.ViewOrigin.z);
@@ -1071,7 +1071,7 @@ void PCSSDemo::UpdateView()
 	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
 	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
-	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1.0f, 10.f, 100.f);
+	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1920.f/1080.f, 10.f, 500.f);
 	XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixTranspose(XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective)));
 	
 	//XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
@@ -1120,9 +1120,6 @@ void PCSSDemo::LoadMarryAssets()
 			CBVHandle.ptr += 2 * m_CBVSRVUAVDescriptorSize;
 			m_D3D12Device->CreateConstantBufferView(&CBVDesc, CBVHandle);
 		}
-
-		
-		
 	}
 	//diffuse map
 	{
@@ -1182,7 +1179,7 @@ void PCSSDemo::LoadMarryAssets()
 		SRVDesc.Texture2D.MipLevels = MetaData.mipLevels;
 		SRVDesc.Texture2D.MostDetailedMip = 0;
 		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		D3D12_CPU_DESCRIPTOR_HANDLE SRVHandle = m_CBVSRVUAVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		D3D12_CPU_DESCRIPTOR_HANDLE SRVHandle = mMarryScenePassDH->GetCPUDescriptorHandleForHeapStart();
 		SRVHandle.ptr += 5 * m_CBVSRVUAVDescriptorSize;
 		m_D3D12Device->CreateShaderResourceView(mMarrayDiffuseColorSR.Get(), &SRVDesc, SRVHandle);
 	}

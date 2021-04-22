@@ -52,18 +52,19 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    float4 WorldPosition = mul(float4(Input.Position,1.f),LocalToWorld);
+    float4 WorldPosition = mul(LocalToWorld,float4(Input.Position,1.f));
     Output.SVPosition = mul(WorldPosition,WorldToClip);
-    Output.WorldNormal = mul(float4(Input.Normal,1.f),LocalToWorld).xyz;
+    Output.WorldNormal = mul(LocalToWorld,float4(Input.Normal,1.f)).xyz;
     Output.UV = Input.UV;
 
     return Output;
 }
 
-Texture2D<float> ShadowDepthMap;
-SamplerState ShadowDepthMapSampler;
-Texture2D<float> DiffuseMap;
-SamplerState DiffuseMapSampler;
+Texture2D<float> ShadowDepthMap :register (t0);
+Texture2D<float4> DiffuseMap :register (t1);
+
+SamplerState ShadowDepthMapSampler :register (s0);
+SamplerState DiffuseMapSampler:register (s1);
 
 float3 SVPositionToWorldPosition(float4 SVPosition)
 {
@@ -96,38 +97,36 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
 
-    SampleCount = int2(1,1);
+    SampleCount = int2(5,5);
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
         for(int v = - SampleCount.y; v <= SampleCount.y;++v)
         {
-            /*
             float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u,v),0);
             if(ShadowDepth > HomoPosition.z)
             {
                 LightPassCount++;
             }
-            */
         }
     }
-    float fLightPercent = 0.5f;//(float)LightPassCount / dot(SampleCount.xy,float2(1.0f,1.0f));
+    float fLightPercent = (float)LightPassCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
     
     float3 L = normalize(LightPositionAndRadius.xyz - WorldPosition);
     float3 N = normalize(Input.WorldNormal);
     float3 V = normalize(ViewOrigin.xyz - WorldPosition);
     float3 H = normalize((L + V) / 2.f);
 
-    float3 BaseColor = DiffuseMap.Sample(DiffuseMapSampler,Input.UV);
+    float3 BaseColor = DiffuseMap.Sample(DiffuseMapSampler,Input.UV).rgb;
 
-    float3 AmibientBaseColor = mul(BaseColor,Ka);
-    float3 DiffuseBaseColor = mul(BaseColor,Kd);
+    float3 AmibientBaseColor = BaseColor*Ka;
+    float3 DiffuseBaseColor = BaseColor*Kd;
 
-    float3 AmbientColor = mul(AmibientBaseColor,AmbientIntencity);
-    float3 LightIntencity = Intencity.xyz * fLightPercent; 
+    float3 AmbientColor = AmibientBaseColor*AmbientIntencity;
+    float3 LightIntencity = Intencity * fLightPercent; 
 
-    float3 DiffuseColor = mul(LightIntencity, DiffuseBaseColor) * max(dot(L,N),0);
+    float3 DiffuseColor = (LightIntencity * DiffuseBaseColor) * max(dot(L,N),0);
     //float3 SpecularColor = LightIntencity * pow(dot(H,V),Ns);
 
-    OutColor = float4(AmbientColor + DiffuseColor,1.f);
+    OutColor = float4(BaseColor,1.f);
 }

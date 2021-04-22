@@ -1,10 +1,10 @@
-cbuffer Primitive
+cbuffer Primitive : register(b0)
 {
     float4x4 LocalToWorld;
     float3 Translation;
 }
 
-cbuffer View
+cbuffer View : register(b1)
 {
     float4 ViewOrigin;
 	float4x4 WorldToClip;
@@ -14,7 +14,7 @@ cbuffer View
 	float4 ViewRectMin;
 }
 
-cbuffer Material
+cbuffer Material : register(b2)
 {
     float3 Ka;
 	float3 Kd;
@@ -24,7 +24,7 @@ cbuffer Material
 	float ShadingModel;
 };
 
-cbuffer Light
+cbuffer Light : register(b3)
 {
     float4 LightPositionAndRadius;
     float4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
@@ -92,22 +92,22 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
-    SampleCount = int2(1,1);
+    SampleCount = int2(5,5);
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
         for(int v = - SampleCount.y; v <= SampleCount.y;++v)
         {
-            /*
+            
             float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u,v),0);
             if(ShadowDepth > HomoPosition.z)
             {
                 LightPassCount++;
             }
-            */
+            
         }
     }
-    float fLightPercent = 0.5f;//(float)LightPassCount / dot(SampleCount.xy,float2(1.0f,1.0f));
+    float fLightPercent = (float)LightPassCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
     
     float3 L = normalize(LightPositionAndRadius.xyz - WorldPosition);
     float3 N = normalize(Input.WorldNormal);
@@ -116,13 +116,13 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
 
     float3 BaseColor = float3(1.0f,1.0f,1.0f);
 
-    float3 AmibientBaseColor = mul(BaseColor,Ka);
-    float3 DiffuseBaseColor = mul(BaseColor,Kd);
+    float3 AmibientBaseColor = BaseColor*Ka;
+    float3 DiffuseBaseColor = BaseColor*Kd;
 
-    float3 AmbientColor = mul(AmibientBaseColor,AmbientIntencity);
+    float3 AmbientColor = AmibientBaseColor*AmbientIntencity;
     float3 LightIntencity = Intencity * fLightPercent; 
 
-    float3 DiffuseColor = mul(LightIntencity, DiffuseBaseColor) * max(dot(L,N),0);
+    float3 DiffuseColor = (LightIntencity * DiffuseBaseColor) * max(dot(L,N),0);
     //float3 SpecularColor = LightIntencity * pow(dot(H,V),Ns);
 
     OutColor = float4(AmbientColor + DiffuseColor,1.f);

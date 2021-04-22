@@ -7,25 +7,25 @@ using namespace DirectX;
 
 struct ObjMaterialUniform
 {
-	XMFLOAT3 ka;
-	XMFLOAT3 kd;
-	XMFLOAT3 ks;
+	XMFLOAT4 ka;
+	XMFLOAT4 kd;
+	XMFLOAT4 ks;
 	float Ns;//高光指数
 	float Ni;//折射率
 	float alpha;
 	float ShadingModel;
-	char Pading00[256-sizeof(XMFLOAT3)*3-sizeof(float)*4];
+	char Pading00[256-sizeof(XMFLOAT4)*3-sizeof(float)*4];
 };
 
 struct LightUniform
 {
 	XMFLOAT4 LightPositionAndRadius;
 	XMFLOAT4 LightPerspectiveMatrix;//aspect,tan(alpha/2),Zn,Zf
-	XMFLOAT3 LightOrientation;
-	XMFLOAT3 Intencity;
-	XMFLOAT3 AmbientIntencity;
-	XMFLOAT2 LightmapViewport;
-	char Padding00[256-sizeof(XMFLOAT4)*2-sizeof(XMFLOAT3)*3 - sizeof(XMFLOAT2)];
+	XMFLOAT4 LightOrientation;
+	XMFLOAT4 Intencity;
+	XMFLOAT4 AmbientIntencity;
+	XMFLOAT4 LightmapViewport;
+	char Padding00[256-sizeof(XMFLOAT4)*6];
 };
 
 
