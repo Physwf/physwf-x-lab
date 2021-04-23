@@ -73,16 +73,45 @@ float3 SVPositionToWorldPosition(float4 SVPosition)
     return HomoPosition.xyz / HomoPosition.w;
 }
 
+float3x3 XMMatrixLookToLH(float3 EyePosition,  float3 EyeDirection,  float3 UpDirection)
+{
+    float3 R2 = normalize(EyeDirection);
+
+    float3 R0 = cross(UpDirection, R2);
+    R0 = normalize(R0);
+
+    float3 R1 = cross(R2, R0);
+
+    float3 NegEyePosition = -(EyePosition);
+
+    float3 D0 = dot(R0, NegEyePosition);
+    float3 D1 = dot(R1, NegEyePosition);
+    float3 D2 = dot(R2, NegEyePosition);
+
+    float3x3 M;
+    M[0] = float3(R0.x,R0.y,R0.z);
+    M[1] = float3(R1.x,R1.y,R1.z);
+    M[2] = float3(R2.x,R2.y,R2.z);
+
+    M = transpose(M);
+    return M;
+}
+float3x3 XMMatrixLookAtLH(float3 EyePosition, float3 FocusPosition, float3 UpDirection)
+{
+    float3 EyeDirection = FocusPosition - EyePosition;
+    return XMMatrixLookToLH(EyePosition, EyeDirection, UpDirection);
+}
+
 void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
 {
     float3 WorldPosition = SVPositionToWorldPosition(Input.SVPosition);
 
     float3 PreLightView = WorldPosition - LightPositionAndRadius.xyz;
-    float3x3 WorldToLightView;
-    WorldToLightView[2] = normalize(LightOrientation);
-    WorldToLightView[0] = normalize(cross(WorldToLightView[2],float3(0.f,1.0f,0.f)));
-    WorldToLightView[1] = normalize(cross(WorldToLightView[0],WorldToLightView[2]));
-    float3 LightViewPosition = mul(WorldToLightView,PreLightView);
+    float3x3 WorldToLightView = XMMatrixLookToLH(LightPositionAndRadius.xyz,LightOrientation,float3(1.f,0.0f,0.f));
+    //WorldToLightView[2] = normalize(LightOrientation);
+    //WorldToLightView[0] = normalize(cross(float3(0.f,1.0f,0.f),WorldToLightView[2]));
+   // WorldToLightView[1] = normalize(cross(WorldToLightView[2],WorldToLightView[0]));
+    float3 LightViewPosition = mul(PreLightView,WorldToLightView);
 
     float Aspect=LightPerspectiveMatrix.x;
     float TanHalfAlpha = LightPerspectiveMatrix.y;
@@ -92,31 +121,31 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float4x4 LightViewToClip = (float4x4)0;
     LightViewToClip[0] = float4(1.f/(Aspect*TanHalfAlpha),0,0,0);
     LightViewToClip[1] = float4(0,1.f/TanHalfAlpha,0,0);
-    LightViewToClip[2] = float4(0,0,(-ZFar-ZNear)/(ZNear-ZFar),2.f*ZNear*ZFar/(ZNear-ZFar));
-    LightViewToClip[3] = float4(0,0,1,0);
+    LightViewToClip[2] = float4(0,0,(-ZFar-ZNear)/(ZNear-ZFar),1);
+    LightViewToClip[3] = float4(0,0,ZNear*ZFar/(ZNear-ZFar),0);
 
-    float Height = 1.f/LightPerspectiveMatrix.y;
-    float Width = Height / LightPerspectiveMatrix.x;
-    float fRange = LightPerspectiveMatrix.w / (LightPerspectiveMatrix.w - LightPerspectiveMatrix.z);
+    //float Height = 1.f/ TanHalfAlpha;
+    //float Width = Height / Aspect;
+    //float fRange = ZFar / (ZFar - ZNear);
 
-    LightViewToClip[0][0] = Width;
-    LightViewToClip[1][1] = Height;
-    LightViewToClip[2] = float4(0,0,fRange,1.0f);
-    LightViewToClip[3] = float4(0,0,-fRange * LightPerspectiveMatrix.z,0);
+    //LightViewToClip[0][0] = Width;
+    //LightViewToClip[1][1] = Height;
+    //LightViewToClip[2] = float4(0,0,fRange,1.0f);
+    //LightViewToClip[3] = float4(0,0,-fRange * LightPerspectiveMatrix.z,0);
     float4 HomoPosition = mul(float4(LightViewPosition,1.0f),LightViewToClip);
 
     //float4 HomoPosition = mul(LightViewToClip,float4(LightViewPosition,1.0f));
     HomoPosition.xyz /= HomoPosition.w;
-    float2 LightMapUV = HomoPosition.xy+float2(1.0f,1.0f);
+    float2 LightMapUV = (HomoPosition.xy*float2(1.0f,-1.0f))+float2(1.0f,1.0f);
     LightMapUV = LightMapUV/2.f;
-    LightMapUV.y = 1.f - LightMapUV.y;
+    //LightMapUV.y = 1.f - LightMapUV.y;
     //
     float3 WorldToLightDir = WorldPosition - LightPositionAndRadius.xyz;
     float WorldToLightDist = dot(WorldToLightDir,LightOrientation);
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
-    SampleCount = int2(5,5);
+    SampleCount = int2(7,7);
     uint ShadowCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
@@ -124,7 +153,7 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
         {
             
             float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV + float2(u/LightmapViewport.x,v/LightmapViewport.y),0);
-            if(ShadowDepth < HomoPosition.z)
+            if(ShadowDepth < HomoPosition.z + 0.022f)
             {
                 ShadowCount++;
             }
@@ -133,13 +162,13 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     }
     float fLightPercent = 1 - (float)ShadowCount /( (2.f*SampleCount.x + 1.f)*(2.f*SampleCount.y + 1.f));
     
-    fLightPercent = 0.f;
+    // fLightPercent = 0.f;
 
-    float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV ,0);
-    if(ShadowDepth > HomoPosition.z + 0.2)
-    {
-        fLightPercent = 1.0f;
-    }
+    // float ShadowDepth = ShadowDepthMap.SampleLevel(ShadowDepthMapSampler,LightMapUV ,0);
+    // if(ShadowDepth >  HomoPosition.z + 0.022f)
+    // {
+    //     fLightPercent = 1.0f;
+    // }
 
 
 
@@ -159,5 +188,5 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float3 DiffuseColor = (LightIntencity * DiffuseBaseColor) * max(dot(L,N),0);
     //float3 SpecularColor = LightIntencity * pow(dot(H,V),Ns);
 
-    OutColor = float4(AmbientColor + DiffuseColor,1.f);
+    OutColor = float4(DiffuseColor,1.f);
 }

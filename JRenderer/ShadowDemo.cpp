@@ -22,6 +22,7 @@ void PackObjMaterial(void* Material, std::vector<char>& UniformData)
 void ShadowDemo::LoadCommonAssets()
 {
 	mMarry.LoadObj("./assets/mary/Marry.obj", PackObjMaterial);
+	//mBall.LoadFBX("./Primitives/Sphere.fbx");
 
 	ComPtr<ID3D12GraphicsCommandList> CommandList;
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), nullptr, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
@@ -203,6 +204,7 @@ void ShadowDemo::LoadCommonAssets()
 
 		CommandList->ResourceBarrier(1, &ResourceBarrier);
 	}
+	
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC DHDesc;
 		ZeroMemory(&DHDesc, sizeof(DHDesc));
@@ -219,6 +221,7 @@ void ShadowDemo::LoadCommonAssets()
 		DHDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		assert(S_OK == m_D3D12Device->CreateDescriptorHeap(&DHDesc, __uuidof(ID3D12DescriptorHeap), (void**)mFloorShadowPassDH.GetAddressOf()));
 	}
+	
 	//marry Primitive Uniform
 	{
 		D3D12_HEAP_PROPERTIES HeapProperties;
@@ -274,6 +277,7 @@ void ShadowDemo::LoadCommonAssets()
 		CBVDesc.SizeInBytes = sizeof(PrimitiveUniform);
 		m_D3D12Device->CreateConstantBufferView(&CBVDesc, CBVHandle);
 	}
+	
 	//Shadow View
 	{
 		D3D12_HEAP_PROPERTIES HeapProperties;
@@ -307,7 +311,6 @@ void ShadowDemo::LoadCommonAssets()
 			CBVHandle.ptr += 1 * m_CBVSRVUAVDescriptorSize;
 			m_D3D12Device->CreateConstantBufferView(&CBVDesc, CBVHandle);
 		}
-		
 	}
 	//Scene Depth
 	{
@@ -458,6 +461,7 @@ void PCSSDemo::Draw()
 		mMarryCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
 	}
 
+	//mMarryCommandList->DrawIndexedInstanced(mBall.Indices.size(), 1, 0, 0, 0);
 
 	mMarryCommandList->Close();
 
@@ -478,6 +482,7 @@ void PCSSDemo::Draw()
 		MeshSection& Section = mFloor.Sections[i];
 		mFloorCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
 	}
+
 	{
 		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
 		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
@@ -536,20 +541,21 @@ void PCSSDemo::DrawShadow()
 		MeshSection& Section = mMarry.Sections[i];
 		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
 	}
+	//mPCSSCommandList->DrawIndexedInstanced(mBall.Indices.size(), 1, 0, 0, 0);
 
-	mPCSSCommandList->SetDescriptorHeaps(1, mFloorShadowPassDH.GetAddressOf());
-	mPCSSCommandList->SetGraphicsRootDescriptorTable(0, mFloorShadowPassDH->GetGPUDescriptorHandleForHeapStart());
-
-	mPCSSCommandList->IASetIndexBuffer(&mFloorIBView);
-	mPCSSCommandList->IASetVertexBuffers(0, 1, &mFloorVBView);
-	mPCSSCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	for (UINT32 i = 0; i < mFloor.Sections.size(); ++i)
-	{
-		MeshSection& Section = mFloor.Sections[i];
-		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
-	}
-
+	//floor
+// 	mPCSSCommandList->SetDescriptorHeaps(1, mFloorShadowPassDH.GetAddressOf());
+// 	mPCSSCommandList->SetGraphicsRootDescriptorTable(0, mFloorShadowPassDH->GetGPUDescriptorHandleForHeapStart());
+// 
+// 	mPCSSCommandList->IASetIndexBuffer(&mFloorIBView);
+// 	mPCSSCommandList->IASetVertexBuffers(0, 1, &mFloorVBView);
+// 	mPCSSCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+// 
+// 	for (UINT32 i = 0; i < mFloor.Sections.size(); ++i)
+// 	{
+// 		MeshSection& Section = mFloor.Sections[i];
+// 		mPCSSCommandList->DrawIndexedInstanced(Section.VertexCount, 1, Section.StartOffset, 0, 0);
+// 	}
 	{
 		D3D12_RESOURCE_BARRIER ResourceBarrier[1];
 		ZeroMemory(ResourceBarrier, sizeof(ResourceBarrier));
@@ -559,6 +565,7 @@ void PCSSDemo::DrawShadow()
 		ResourceBarrier[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 		mPCSSCommandList->ResourceBarrier(_countof(ResourceBarrier), ResourceBarrier);
 	}
+
 
 	mPCSSCommandList->Close();
 
@@ -999,7 +1006,7 @@ void PCSSDemo::UpdatePrimitive()
 {
 	{
 		PrimitiveUniform Primitive;
-		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixScaling(10.f,10.f,10.f));
+		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixScaling(50.f, 50.f, 50.f));
 		void* pData;
 		mMarryPrimitiveCB->Map(0, 0, &pData);
 		memcpy(pData, &Primitive, sizeof(Primitive));
@@ -1008,7 +1015,7 @@ void PCSSDemo::UpdatePrimitive()
 
 	{
 		PrimitiveUniform Primitive;
-		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixIdentity());
+		XMStoreFloat4x4(&Primitive.LocalToWorld, XMMatrixScaling(100.f, 1.f, 100.f)); 
 
 		void* pData;
 		mFloorPrimitiveCB->Map(0, 0, &pData);
@@ -1021,10 +1028,10 @@ void PCSSDemo::UpdatePrimitive()
 void PCSSDemo::UpdateLight()
 {
 	LightUniform Light;
-	Light.LightPositionAndRadius = {0.0f,15.0f,-40.0f,3.0f };
-	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/4.f),10.f,500.f};
+	Light.LightPositionAndRadius = {150.0f,150.0f,0.0f,3.0f };
+	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/4.f),10.f,100000.f};
 	Light.Intencity = { 1.f,1.0f,1.0f,0 };
-	Light.AmbientIntencity = { 0.2f,0.2f,0.2f ,0 };
+	Light.AmbientIntencity = { 0.4f,0.4f,0.4f ,0 };
 	Light.LightmapViewport = { 2048.f,2048.f ,0 ,0 };
 
 	
@@ -1038,10 +1045,10 @@ void PCSSDemo::UpdateLight()
 	XMMATRIX Translation = XMMatrixTranslation(-LightView.ViewOrigin.x,-LightView.ViewOrigin.y, -LightView.ViewOrigin.z);
 	XMFLOAT3 Eye = { LightView.ViewOrigin.x, LightView.ViewOrigin.y, LightView.ViewOrigin.z };
 	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
-	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
+	XMFLOAT3 Up = { 1.0f, 0.0f,0.0f };
 	Light.LightOrientation = { At.x - Eye.x, At.y - Eye.y, At.z - Eye.z,0 };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
-	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f/2.f, 1.0f, 10.f, 500.f);
+	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f/2.f, 1.0f, 10.f, 100000.f);
 	XMStoreFloat4x4(&LightView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective));
 	{
 		void* pData;
@@ -1060,20 +1067,19 @@ void PCSSDemo::UpdateLight()
 void PCSSDemo::UpdateView()
 {
 	ViewUniform SceneView;
-	SceneView.ViewOrigin.x = 0;
-	SceneView.ViewOrigin.y = 10;
-	SceneView.ViewOrigin.z = 20;
+	SceneView.ViewOrigin.x = 50;
+	SceneView.ViewOrigin.y = 100;
+	SceneView.ViewOrigin.z = 100;
 	SceneView.ViewOrigin.w = 0.f;
 
 	XMMATRIX Translation = XMMatrixTranslation(-SceneView.ViewOrigin.x, -SceneView.ViewOrigin.y, -SceneView.ViewOrigin.z);
 	XMFLOAT3 Eye = { SceneView.ViewOrigin.x, SceneView.ViewOrigin.y, SceneView.ViewOrigin.z };
-	XMFLOAT3 At = { 0.0f, 5.0f,0.0f };
+	XMFLOAT3 At = { 0.0f, 0.0f,0.0f };
 	XMFLOAT3 Up = { 0.0f, 1.0f,0.0f };
 	XMMATRIX Rotation = XMMatrixLookAtLH(XMLoadFloat3(&Eye), XMLoadFloat3(&At), XMLoadFloat3(&Up));
-	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1920.f/1080.f, 10.f, 500.f);
+	XMMATRIX Perspective = XMMatrixPerspectiveFovLH(3.14f / 2.f, 1920.f/1080.f, 10.f, 1000.f);
 	XMMATRIX VP = XMMatrixMultiply(XMMatrixMultiply(Translation, Rotation), Perspective);
 	XMStoreFloat4x4(&SceneView.WorldToClip, VP);
-	//XMStoreFloat4x4(&SceneView.WorldToClip, XMMatrixMultiply(XMMatrixMultiply(Perspective, Rotation), Translation));
 
 	XMFLOAT4X4 SVPositionToClipPosition =
 	{

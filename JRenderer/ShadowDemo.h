@@ -43,6 +43,7 @@ protected:
 	//Mesh
 	Mesh mMarry;
 	Mesh mFloor;
+	Mesh mBall;
 
 	ComPtr<ID3D12Resource>		mMarryVBUpload;
 	ComPtr<ID3D12Resource>		mMarryVB;
