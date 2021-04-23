@@ -142,12 +142,14 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     //LightMapUV.y = 1.f - LightMapUV.y;
     //
     float3 WorldToLightDir = WorldPosition - LightPositionAndRadius.xyz;
-    float WorldToLightDist = dot(WorldToLightDir,LightOrientation);
+    float WorldToLightDist = sqrt(dot(WorldToLightDir,LightOrientation));
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
-    int2 SampleCount = (int2)(LightmapViewport * SampleRadius);
+    int2 SampleCount = (int2)(SampleRadius);
 
-    SampleCount = int2(7,7);
+    //SampleCount = int2(7,7);
+    SampleCount = min(int2(7,7),SampleCount);
+
     uint LightPassCount = 0;
     for(int u = - SampleCount.x; u <= SampleCount.x;++u)
     {
