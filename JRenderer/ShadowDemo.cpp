@@ -404,11 +404,13 @@ void PCSSDemo::InitPipelineStates()
 
 	UpdatePrimitive();
 	UpdateView();
-	UpdateLight();
+	//UpdateLight();
 }
 
 void PCSSDemo::Draw()
 {
+	UpdateLight();
+
 	DrawShadow();
 
 	mMarryCommandList->Reset(m_D3D12CmdAllocator.Get(), mMarryPSO.Get());
@@ -1028,7 +1030,11 @@ void PCSSDemo::UpdatePrimitive()
 void PCSSDemo::UpdateLight()
 {
 	LightUniform Light;
-	Light.LightPositionAndRadius = {150.0f,150.0f,0.0f,3.0f };
+
+	ULONGLONG Tick = GetTickCount64();
+	float Theta = (float)Tick / 1000.f;
+
+	Light.LightPositionAndRadius = {150.0f*std::sinf(Theta),150.0f,150.0f*std::cosf(Theta),3.0f };
 	Light.LightPerspectiveMatrix = {1.0f,std::tanf(3.14f/4.f),10.f,100000.f};
 	Light.Intencity = { 1.f,1.0f,1.0f,0 };
 	Light.AmbientIntencity = { 0.4f,0.4f,0.4f ,0 };
