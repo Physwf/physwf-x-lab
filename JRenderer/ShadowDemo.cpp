@@ -606,7 +606,7 @@ void PCSSDemo::LoadPCSSPipleState()
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK != D3DCompileFromFile(TEXT("PCSS.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("ShadowMap.hlsl"), nullptr, nullptr, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 		}
@@ -706,12 +706,17 @@ void PCSSDemo::LoadMarryPipelineState()
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		D3D_SHADER_MACRO MarryMacro[] =
+		{
+			{"USE_DIFFUSE_MAP","1"},
+			{NULL,NULL},
+		};
+		if (S_OK != D3DCompileFromFile(TEXT("PCSS.hlsl"), MarryMacro, NULL, "VSMain", "vs_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("Marry.hlsl"), MarryMacro, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
@@ -813,12 +818,17 @@ void PCSSDemo::LoadFloorPipelineState()
 
 		ComPtr<ID3DBlob> VS;
 		ComPtr<ID3DBlob> PS;
-		if (S_OK != D3DCompileFromFile(TEXT("Floor.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+		D3D_SHADER_MACRO FloorMacro[] =
+		{
+			{"USE_DIFFUSE_MAP","0"},
+			{NULL,NULL},
+		};
+		if (S_OK != D3DCompileFromFile(TEXT("PCSS.hlsl"), FloorMacro, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;
 		}
-		if (S_OK != D3DCompileFromFile(TEXT("Floor.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+		if (S_OK != D3DCompileFromFile(TEXT("PCSS.hlsl"), FloorMacro, NULL, "PSMain", "ps_5_0", D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_DEBUG, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 		{
 			LOGA("%s\n", Error->GetBufferPointer());
 			return;

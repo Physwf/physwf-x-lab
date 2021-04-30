@@ -145,6 +145,7 @@ void PSMain(VSOutput Input,out float4 OutColor:SV_Target)
     float WorldToLightNearPlane = WorldToLightDist - LightPerspectiveMatrix.z;
     float SampleRadius = (WorldToLightNearPlane / WorldToLightDist) * LightPositionAndRadius.w;
     int2 SampleCount = (int2)(SampleRadius);
+    
     //SampleCount = int2(7,7);
     SampleCount = min(int2(7,7),SampleCount);
 
