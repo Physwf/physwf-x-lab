@@ -1,3 +1,5 @@
+#include "Sampling.hlsl"
+#include "microfacet.hlsl"
 
 struct VSInput
 {
@@ -52,14 +54,33 @@ void GSMain(
 }
 
 float fRoughness;
-float3 SpecularColor;
 TextureCube EnvironmentMap;
 SamplerState EnvironmentMapSampler;
-#define PI 3.14
-
-
 
 float4 PSMain(GSOutput Input) : SV_Target
 {
-    
+    float3 WorldPosition = normalize(Input.WorldPosition);
+    float3 N = normalize(WorldPosition);
+    float3 V = N;
+    const uint SmapleCount = 1024;
+    float3 Li = 0;
+    float TotalWeight = 0;
+    [unrool]
+    for(uint i=0;i<SmapleCount;++i)
+    {
+        float2 Xi = Hammersley(i,SmapleCount);
+        float3 H = ImportantSamplingGGX(Xi,fRoughness,N);
+        float3 L = 2*dot(V,H)*H - V;
+
+        float NoL = saturate(dot(N,L));
+
+        if(NoL > 0)
+        {
+            Li += EnvironmentMap.SampleLevel(EnvironmentMapSampler,L,0).rgb * NoL;
+            TotalWeight += NoL;
+        }
+    }
+    return Li / TotalWeight;
 }
+
+
