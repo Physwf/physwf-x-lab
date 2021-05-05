@@ -233,14 +233,63 @@ private:
 
 };
 
-class PBRShadingModelPrefilterIBL : public PBRShadingModel
+class PBRShadingModelPrecomputeIBL : public PBRShadingModel
 {
+public:
+	PBRShadingModelPrecomputeIBL(HWND hWnd) : PBRShadingModel(hWnd)
+	{
+		m_NumRTVDescriptors += 10;
+	}
 protected:
-	void LoadGenIrradiancePipelineState();
+	virtual void InitPipelineStates() override;
+	virtual void Draw() override;
+
+	void GenPrefilterEnvironmentMap();
+	void GenIntegratedBRDF();
+private:
 	void LoadGenPrefilterEnviPipelineState();
-protected:
-	ComPtr<ID3D12RootSignature> mGenIrradianceMapRootSignature;
-	ComPtr<ID3D12PipelineState> mGenIrradianceMapPSO;
+	void LoadGenIntegratedBRDFPipelineState();
+	void LoadPrimitiveBRDFPipelineState();
+	void LoadGenPrefilterEnviAssets();
+	void LoadGenIntegratedBRDFAssets();
+	void LoadPrimitiveAssets();
+private:
 	ComPtr<ID3D12RootSignature> mGenPrefilterEnvironmentMapRootSignature;
 	ComPtr<ID3D12PipelineState> mGenPrefilterEnvironmentMapPSO;
+	ComPtr<ID3D12GraphicsCommandList>	mGenPrefilterEnvironmentCmdList;
+	ComPtr<ID3D12Resource>		mPrefilterEnvironmentMap;
+	ComPtr<ID3D12Resource>		mGenPrefilterEnviromentVB;
+	ComPtr<ID3D12Resource>		mGenPrefilterEnviromentVBUpload;
+	D3D12_VERTEX_BUFFER_VIEW	mGenPrefilterEnviromentVBView;
+	ComPtr<ID3D12Resource>		mGenPrefilterEnviromentIB;
+	ComPtr<ID3D12Resource>		mGenPrefilterEnviromentIBUpload;
+	D3D12_INDEX_BUFFER_VIEW		mGenPrefilterEnvironmentIBView;
+	ComPtr<ID3D12Resource>		mGenPrefilterEnvironmentCBView;
+	ComPtr<ID3D12DescriptorHeap> mGenPrefilterEnvironmentDH;
+
+	ComPtr<ID3D12RootSignature> mGenIntegratedBRDFRootSignature;
+	ComPtr<ID3D12PipelineState> mGenIntegratedBRDFPSO;
+	ComPtr<ID3D12GraphicsCommandList>	mGenIntegratedBRDFCmdList;
+	ComPtr<ID3D12Resource>		mIntegratedBRDF;
+	ComPtr<ID3D12Resource>		mGenIntegratedBRDFVB;
+	ComPtr<ID3D12Resource>		mGenIntegratedBRDFVBUpload;
+	D3D12_VERTEX_BUFFER_VIEW	mGenIntegratedBRDFVBView;
+	ComPtr<ID3D12DescriptorHeap> mGenIntegratedBRDFDH;
+
+	ComPtr<ID3D12RootSignature> mPrimitiveRootSignature;
+	ComPtr<ID3D12PipelineState> mPrimitivePSO;
+	ComPtr<ID3D12GraphicsCommandList> mPrimitiveCommandList;
+	ComPtr<ID3D12DescriptorHeap> mPrimitiveDH;
+
+	Mesh							mPrimitive;
+	ComPtr<ID3D12Resource>			mPrimitiveVB;
+	D3D12_VERTEX_BUFFER_VIEW		mPrimitiveVBView;
+	ComPtr<ID3D12Resource>			mPrimitiveIB;
+	D3D12_INDEX_BUFFER_VIEW			mPrimitiveIBView;
+	ComPtr<ID3D12Resource>			mPrimitiveCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveCBV;
+	ComPtr<ID3D12Resource>			mPrimitiveViewCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveViewCBV;
+	ComPtr<ID3D12Resource>			mPrimitiveMaterialCB;
+	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveMaterialCBV;
 };
