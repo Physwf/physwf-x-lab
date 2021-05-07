@@ -8,6 +8,7 @@
 #include <d3dcompiler.h>
 #include <cassert>
 #include <vector>
+#include <string>
 
 #define FrameCount 2
 
@@ -94,3 +95,17 @@ protected:
 };
 
 void GetShaderParameterAllocations(ID3DBlob* Code);
+
+class SimpleInclude : public ID3DInclude
+{
+public: 
+	SimpleInclude(LPCSTR WorkingDir, LPCSTR SystemDir);
+
+	HRESULT __stdcall Open(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override;
+	HRESULT __stdcall Close(THIS_ LPCVOID pData);
+private:
+	std::string mWorkdingDir;
+	std::string mSystemDir;
+};
+
+extern SimpleInclude D3D12DemoInclude;

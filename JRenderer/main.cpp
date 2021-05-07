@@ -84,7 +84,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//MERL100Coordinate Demo(g_hWind);
 	//SkyBoxDemo Demo(g_hWind);
 	//PBRShadingModelRealIBL Demo(g_hWind);
-	PCSSDemo Demo(g_hWind);
+	PBRShadingModelPrecomputeIBL Demo(g_hWind);
+	//PCSSDemo Demo(g_hWind);
 	pDemo = &Demo;
 	Demo.Initialize();
 

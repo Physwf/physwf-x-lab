@@ -2610,17 +2610,17 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	ComPtr<ID3DBlob> GS;
 	ComPtr<ID3DBlob> PS;
 
-	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, &D3D12DemoInclude, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
 	}
-	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, NULL, "GSMain", "gs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, GS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, &D3D12DemoInclude, "GSMain", "gs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, GS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
 	}
-	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK != D3DCompileFromFile(TEXT("./GenPrefilterEnvironment.hlsl"), NULL, &D3D12DemoInclude, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
@@ -2694,12 +2694,12 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFPipelineState()
 
 	ComPtr<ID3DBlob> VS;
 	ComPtr<ID3DBlob> PS;
-	if (S_OK != D3DCompileFromFile(TEXT("./GenIntegratedBRDF.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK != D3DCompileFromFile(TEXT("./GenIntegratedBRDF.hlsl"), NULL, &D3D12DemoInclude, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
 	}
-	if (S_OK != D3DCompileFromFile(TEXT("./GenIntegratedBRDF.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK != D3DCompileFromFile(TEXT("./GenIntegratedBRDF.hlsl"), NULL, &D3D12DemoInclude, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
@@ -2775,12 +2775,12 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	ComPtr<ID3DBlob> VS;
 	ComPtr<ID3DBlob> PS;
 
-	if (S_OK == D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, NULL, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK == D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, &D3D12DemoInclude, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;
 	}
-	if (S_OK == D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, NULL, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
+	if (S_OK == D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, &D3D12DemoInclude, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
 		return;

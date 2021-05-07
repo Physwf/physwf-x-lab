@@ -1,5 +1,5 @@
 #include "d3d12demo.h"
-
+#include <fstream>
 
 void D3D12Demo::Initialize()
 {
@@ -258,3 +258,54 @@ void GetShaderParameterAllocations(ID3DBlob* Code)
 		}
 	}
 }
+
+SimpleInclude::SimpleInclude(LPCSTR WorkingDir, LPCSTR SystemDir)
+{
+	mWorkdingDir = WorkingDir;
+	mSystemDir = SystemDir;
+}
+
+HRESULT __stdcall SimpleInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
+{
+	std::string FilePath;
+
+	switch (IncludeType)
+	{
+	case D3D_INCLUDE_LOCAL:
+	{
+		FilePath = mWorkdingDir + "\\" + pFileName;
+		break;
+	}
+	case D3D_INCLUDE_SYSTEM:
+	{
+		FilePath = mSystemDir + "\\" + pFileName;
+		break;
+	}
+	}
+	std::ifstream IncludeFile(FilePath.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+
+	if (IncludeFile.is_open()) 
+	{
+		long long fileSize = IncludeFile.tellg();
+		char* buf = new char[fileSize];
+		IncludeFile.seekg(0, std::ios::beg);
+		IncludeFile.read(buf, fileSize);
+		IncludeFile.close();
+		*ppData = buf;
+		*pBytes = fileSize;
+	}
+	else 
+	{
+		return E_FAIL;
+	}
+	return S_OK;
+}
+
+HRESULT __stdcall SimpleInclude::Close(THIS_ LPCVOID pData)
+{
+	char* buf = (char*)pData;
+	delete[] buf;
+	return S_OK;
+}
+
+SimpleInclude D3D12DemoInclude("", "");
