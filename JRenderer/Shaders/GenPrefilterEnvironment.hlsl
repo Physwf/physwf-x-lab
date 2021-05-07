@@ -57,7 +57,7 @@ float fRoughness;
 TextureCube EnvironmentMap;
 SamplerState EnvironmentMapSampler;
 
-float4 PSMain(GSOutput Input) : SV_Target
+float3 PSMain(GSOutput Input) : SV_Target
 {
     float3 WorldPosition = normalize(Input.WorldPosition);
     float3 N = normalize(WorldPosition);

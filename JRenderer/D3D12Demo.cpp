@@ -308,4 +308,4 @@ HRESULT __stdcall SimpleInclude::Close(THIS_ LPCVOID pData)
 	return S_OK;
 }
 
-SimpleInclude D3D12DemoInclude("", "");
+SimpleInclude D3D12DemoInclude(".", ".");

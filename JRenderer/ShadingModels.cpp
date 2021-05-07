@@ -2448,7 +2448,7 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 
 void PBRShadingModelPrecomputeIBL::InitPipelineStates()
 {
-	PBRShadingModel::InitPipelineStates();
+	//PBRShadingModel::InitPipelineStates();
 
 	LoadGenPrefilterEnviPipelineState();
 	LoadGenIntegratedBRDFPipelineState();
@@ -2592,6 +2592,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	StaticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	StaticSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	StaticSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
@@ -2600,6 +2601,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	RootSignDesc.pParameters = RootParameters;
 	RootSignDesc.NumStaticSamplers = 1;
 	RootSignDesc.pStaticSamplers = &StaticSampler;
+	RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	ComPtr<ID3DBlob> RootSign;
 	ComPtr<ID3DBlob> Error;
@@ -2644,13 +2646,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 
 	GPSDesc.BlendState.IndependentBlendEnable = FALSE;
-	GPSDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-	GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
-	GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
-	GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-	GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+	GPSDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
 	GPSDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	GPSDesc.SampleMask = UINT_MAX;
@@ -2687,6 +2683,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFPipelineState()
 	D3D12_ROOT_SIGNATURE_DESC RootSignDesc;
 	ZeroMemory(&RootSignDesc, sizeof(RootSignDesc));
 	RootSignDesc.NumParameters = 0;
+	RootSignDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ComPtr<ID3DBlob> RootSign;
 	ComPtr<ID3DBlob> Error;
 	assert(S_OK == D3D12SerializeRootSignature(&RootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, RootSign.GetAddressOf(), Error.GetAddressOf()));
@@ -2722,12 +2719,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFPipelineState()
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	GPSDesc.NumRenderTargets = 1;
 	GPSDesc.RTVFormats[0] = DXGI_FORMAT_R32G32_FLOAT;
-	GPSDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
-	GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
-	GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
-	GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
-	GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-	GPSDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+	GPSDesc.BlendState.RenderTarget[0].BlendEnable = false;
 	GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	GPSDesc.DepthStencilState.DepthEnable = FALSE;
 	GPSDesc.DepthStencilState.StencilEnable = FALSE;

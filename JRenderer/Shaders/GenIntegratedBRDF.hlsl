@@ -3,7 +3,7 @@
 
 struct VSInput
 {
-    float2 Position : POSITIONT;
+    float2 Position : POSITION;
 };
 
 struct VSOutput
@@ -14,9 +14,9 @@ struct VSOutput
 
 VSOutput VSMain(VSInput Input)
 {
-    VSOutput Output = 0;
+    VSOutput Output = (VSOutput)0;
     Output.UV = float2(Input.Position.x + 1.0f / 2.0f,  -Input.Position.y + 1.0f / 2.0f);
-    Output.SVPosition = Input.Position;
+    Output.SVPosition = float4(Input.Position,0,1.0f);
     return Output;
 }
 
