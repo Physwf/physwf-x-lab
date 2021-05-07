@@ -238,6 +238,8 @@ class PBRShadingModelPrecomputeIBL : public PBRShadingModel
 public:
 	PBRShadingModelPrecomputeIBL(HWND hWnd) : PBRShadingModel(hWnd)
 	{
+		m_NumCBVSRVUAVDescriptors += 3;//
+
 		m_NumRTVDescriptors += 10;
 	}
 protected:
