@@ -2448,22 +2448,118 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 
 void PBRShadingModelPrecomputeIBL::InitPipelineStates()
 {
+	PBRShadingModel::InitPipelineStates();
 
+	LoadGenPrefilterEnviPipelineState();
+	LoadGenIntegratedBRDFPipelineState();
+	LoadPrimitiveBRDFPipelineState();
+	LoadGenPrefilterEnvironmentAssets();
+	LoadGenIntegratedBRDFAssets();
+	LoadPrimitiveAssets();
+
+	GenPrefilterEnvironmentMap();
+	GenIntegratedBRDF();
 }
 
 void PBRShadingModelPrecomputeIBL::Draw()
 {
-
+	DrawSkyBox();
+	WaitForPreviousFrame();
+	DrawPrimitives();
+	ExecuteDirectCommandList();
+	PostProcess();
 }
 
 void PBRShadingModelPrecomputeIBL::GenPrefilterEnvironmentMap()
 {
 
+	for (UINT32 i = 0; i < 8; ++i)
+	{
+		mGenPrefilterEnvironmentCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenPrefilterEnvironmentMapPSO.Get());
+
+		D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+		RTVHandle.ptr += (3 + i) * m_RTVDescriptorSize;
+		FLOAT Color[] = { 0,0,0,0 };
+		mGenPrefilterEnvironmentCmdList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
+		mGenPrefilterEnvironmentCmdList->OMSetRenderTargets(1, &RTVHandle, FALSE, NULL);
+		mGenPrefilterEnvironmentCmdList->IASetVertexBuffers(0, 1, &mGenPrefilterEnviromentVBView);
+		mGenPrefilterEnvironmentCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		mGenPrefilterEnvironmentCmdList->SetGraphicsRootSignature(mGenPrefilterEnvironmentMapRootSignature.Get());
+		mGenPrefilterEnvironmentCmdList->SetDescriptorHeaps(1, mGenPrefilterEnvironmentDH.GetAddressOf());
+		mGenPrefilterEnvironmentCmdList->SetGraphicsRootDescriptorTable(0, mGenPrefilterEnvironmentDH->GetGPUDescriptorHandleForHeapStart());
+		float fRoughness = 0.1f + i * 0.1;
+		mGenPrefilterEnvironmentCmdList->SetGraphicsRoot32BitConstants(1, 1, &fRoughness, 0);
+		D3D12_VIEWPORT VP = {0.f,0.f ,512.f ,512.f ,0.f ,1.f };
+		mGenPrefilterEnvironmentCmdList->RSSetViewports(1, &VP);
+		D3D12_RECT Rect = {0,0,512,512};
+		mGenPrefilterEnvironmentCmdList->RSSetScissorRects(1, &Rect);
+		mGenPrefilterEnvironmentCmdList->DrawInstanced(4, 1, 0, 0);
+
+		m_CommandLists.push_back(mGenPrefilterEnvironmentCmdList.Get());
+
+		WaitForPreviousFrame();
+		ExecuteDirectCommandList();
+	}
+	
 }
 
 void PBRShadingModelPrecomputeIBL::GenIntegratedBRDF()
 {
+	mGenIntegratedBRDFCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenIntegratedBRDFPSO.Get());
 
+	D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
+	RTVHandle.ptr += 11 * m_RTVDescriptorSize;
+	FLOAT Color[] = { 0,0,0,0 };
+	mGenIntegratedBRDFCmdList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
+	mGenIntegratedBRDFCmdList->OMSetRenderTargets(1, &RTVHandle, FALSE, NULL);
+	mGenIntegratedBRDFCmdList->IASetVertexBuffers(0, 1, &mGenIntegratedBRDFVBView);
+	mGenIntegratedBRDFCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	mGenIntegratedBRDFCmdList->SetGraphicsRootSignature(mGenIntegratedBRDFRootSignature.Get());
+	mGenIntegratedBRDFCmdList->SetDescriptorHeaps(1, mGenIntegratedBRDFDH.GetAddressOf());
+	mGenIntegratedBRDFCmdList->SetGraphicsRootDescriptorTable(0, mGenIntegratedBRDFDH->GetGPUDescriptorHandleForHeapStart());
+	D3D12_VIEWPORT VP = { 0.f,0.f ,512.f ,512.f ,0.f ,1.f };
+	mGenIntegratedBRDFCmdList->RSSetViewports(1, &VP);
+	D3D12_RECT Rect = { 0,0,512,512 };
+	mGenIntegratedBRDFCmdList->RSSetScissorRects(1, &Rect);
+	mGenIntegratedBRDFCmdList->DrawInstanced(4, 1, 0, 0);
+
+	mGenPrefilterEnvironmentCmdList->Close();
+
+	m_CommandLists.push_back(mGenPrefilterEnvironmentCmdList.Get());
+
+	ExecuteDirectCommandList();
+	WaitForPreviousFrame();
+}
+
+void PBRShadingModelPrecomputeIBL::DrawPrimitives()
+{
+	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitivePSO.Get());
+	FLOAT ClearColor[] = { 0,0,0,0 };
+	mPrimitiveCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
+	mPrimitiveCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, &mDepthStencialHandle);
+	mPrimitiveCommandList->IASetVertexBuffers(0, 1, &mPrimitiveVBView);
+	mPrimitiveCommandList->IASetIndexBuffer(&mPrimitiveIBView);
+	mPrimitiveCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	mPrimitiveCommandList->SetGraphicsRootSignature(mPrimitiveRootSignature.Get());
+	mPrimitiveCommandList->SetDescriptorHeaps(1, mPrimitiveDH.GetAddressOf());
+	mPrimitiveCommandList->SetGraphicsRootDescriptorTable(0, mPrimitiveDH->GetGPUDescriptorHandleForHeapStart());
+	mPrimitiveCommandList->RSSetScissorRects(1, &m_ScissorRect);
+	mPrimitiveCommandList->RSSetViewports(1, &m_Viewport);
+
+	mPrimitiveCommandList->DrawIndexedInstanced(mPrimitive.Indices.size(), 1, 0, 0, 0);
+
+	D3D12_RESOURCE_BARRIER ResourceBarrier;
+	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	ResourceBarrier.Transition.pResource = mHDRRT.Get();
+	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+	mPrimitiveCommandList->ResourceBarrier(1, &ResourceBarrier);
+
+	mPrimitiveCommandList->Close();
+
+	m_CommandLists.push_back(mPrimitiveCommandList.Get());
 }
 
 void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
@@ -2488,7 +2584,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	RootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	RootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	RootParameters[1].Constants.Num32BitValues = 1;
-	RootParameters[1].Constants.ShaderRegister = 0;
+	RootParameters[1].Constants.ShaderRegister = 1;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSampler;
 	ZeroMemory(&StaticSampler,sizeof(StaticSampler));
@@ -2726,25 +2822,21 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	mGenIntegratedBRDFCmdList->Close();
 }
 
-void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
+void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 {
-	ComPtr<ID3D12GraphicsCommandList> CommandList;
-	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), NULL, __uuidof(ID3D12GraphicsCommandList), (void**)CommandList.GetAddressOf()));
+	mGenPrefilterEnvironmentCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenPrefilterEnvironmentMapPSO.Get());
 	{
-		float CubeVertices[] =
+		//0-1
+		//2-3
+		float TriangleStripQuad[] =
 		{
-			//-z
-			-1.0f,1.0f, -1.0f,
-			1.0f, 1.0f, -1.0f,
-			-1.0f,-1.0f, -1.0f,
-			1.0f,-1.0f, -1.0f,
-			//+z
-			-1.0f,1.0f, 1.0f,
-			1.0f, 1.0f, 1.0f,
-			-1.0f,-1.0f, 1.0f,
-			1.0f,-1.0f, 1.0f,
+			-1.0f,1.0f, -1.f,
+			1.0f, 1.0f, -1.f,
+			-1.0f,-1.0f, -1.f,
+			1.0f,-1.0f, -1.f,
 		};
-		const UINT VertexBufferSize = sizeof(CubeVertices);
+
+		const UINT VertexBufferSize = sizeof(TriangleStripQuad);
 
 		D3D12_HEAP_PROPERTIES HeapProperites;
 		ZeroMemory(&HeapProperites, sizeof(HeapProperites));
@@ -2765,7 +2857,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 
 		void* pData;
 		mGenPrefilterEnviromentVBUpload->Map(0, 0, &pData);
-		memcpy(pData, CubeVertices, VertexBufferSize);
+		memcpy(pData, TriangleStripQuad, VertexBufferSize);
 		mGenPrefilterEnviromentVBUpload->Unmap(0, 0);
 
 		HeapProperites.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -2787,18 +2879,23 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 
 		mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
 	}
-	
+
 	{
-		UINT16 Indices[] =
+		struct GSView
 		{
-			1,5,3,3,5,7,//+x
-			4,0,6,6,0,2,//-x
-			4,5,0,0,5,1,//+y
-			7,6,3,3,6,2,//-y
-			5,4,7,7,4,6,//+z
-			0,1,2,2,1,3,//-z
+			XMFLOAT4X4 FaceTransform[6];
+			XMFLOAT4X4 Projection;
+			float padding[16];
 		};
-		const UINT32 IndexBufferSize = sizeof(Indices);
+
+		GSView View;
+		XMStoreFloat4x4(&View.FaceTransform[0], XMMatrixRotationY(PI / 2.f));//+X
+		XMStoreFloat4x4(&View.FaceTransform[1], XMMatrixRotationY(-PI / 2.f));//-X
+		XMStoreFloat4x4(&View.FaceTransform[2], XMMatrixRotationX(PI / 2.f)* XMMatrixRotationY(PI));//+Y
+		XMStoreFloat4x4(&View.FaceTransform[3], XMMatrixRotationX(-PI / 2.f)* XMMatrixRotationY(PI));//-Y
+		XMStoreFloat4x4(&View.FaceTransform[4], XMMatrixRotationY(PI));//+Z
+		XMStoreFloat4x4(&View.FaceTransform[5], XMMatrixIdentity());//-Z
+		XMStoreFloat4x4(&View.Projection, XMMatrixIdentity());
 
 		D3D12_HEAP_PROPERTIES HeapProperites;
 		ZeroMemory(&HeapProperites, sizeof(HeapProperites));
@@ -2808,57 +2905,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		ResourceDesc.Format = DXGI_FORMAT_R32_UINT;
-		ResourceDesc.Width = IndexBufferSize;
-		ResourceDesc.Height = 1;
-		ResourceDesc.DepthOrArraySize = 1;
-		ResourceDesc.MipLevels = 1;
-		ResourceDesc.SampleDesc = { 1,0 };
-		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnviromentIBUpload.GetAddressOf()));
-		void* pData;
-		mGenPrefilterEnviromentIBUpload->Map(0, 0, &pData);
-		memcpy(pData, Indices, IndexBufferSize);
-		mGenPrefilterEnviromentIBUpload->Unmap(0, 0);
-
-		HeapProperites.Type = D3D12_HEAP_TYPE_DEFAULT;
-
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnviromentIB.GetAddressOf()));
-
-		mGenPrefilterEnvironmentIBView.BufferLocation = mGenPrefilterEnviromentIB->GetGPUVirtualAddress();
-		mGenPrefilterEnvironmentIBView.Format = DXGI_FORMAT_R32_UINT;
-		mGenPrefilterEnvironmentIBView.SizeInBytes = IndexBufferSize;
-
-		mGenPrefilterEnvironmentCmdList->CopyResource(mGenPrefilterEnviromentIB.Get(), mGenPrefilterEnviromentIBUpload.Get());
-
-		D3D12_RESOURCE_BARRIER ResourceBarrier;
-		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
-		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		ResourceBarrier.Transition.pResource = mGenPrefilterEnviromentIB.Get();
-		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-
-		mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
-	}
-
-	{
-		struct ViewUniform
-		{
-			XMFLOAT4X4 WorldToProj;
-			char padding[256 - sizeof(XMFLOAT4X4)];
-		};
-		ViewUniform View;
-		XMStoreFloat4x4(&View.WorldToProj, XMMatrixIdentity() /*XMMatrixPerspectiveFovLH(90.0f,1920.f/1080.f,10,10000.f)*/);
-
-		D3D12_HEAP_PROPERTIES HeapProperites;
-		ZeroMemory(&HeapProperites, sizeof(HeapProperites));
-		HeapProperites.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-		D3D12_RESOURCE_DESC ResourceDesc;
-		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
-		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		ResourceDesc.Format = DXGI_FORMAT_R32_UINT;
-		ResourceDesc.Width = sizeof(ViewUniform);
+		ResourceDesc.Width = sizeof(GSView);
 		ResourceDesc.Height = 1;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
@@ -2868,13 +2915,13 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnvironmentCBView.GetAddressOf()));
 		void* pData;
 		mGenPrefilterEnvironmentCBView->Map(0, 0, &pData);
-		memcpy(pData, &View, sizeof(ViewUniform));
+		memcpy(pData, &View, sizeof(GSView));
 		mGenPrefilterEnvironmentCBView->Unmap(0, 0);
 
 		D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
 		ZeroMemory(&CBVDesc, sizeof(CBVDesc));
 		CBVDesc.BufferLocation = mGenPrefilterEnvironmentCBView->GetGPUVirtualAddress();
-		CBVDesc.SizeInBytes = sizeof(ViewUniform);
+		CBVDesc.SizeInBytes = sizeof(GSView);
 		D3D12_CPU_DESCRIPTOR_HANDLE Handle = mGenPrefilterEnvironmentDH->GetCPUDescriptorHandleForHeapStart();
 		m_D3D12Device->CreateConstantBufferView(&CBVDesc, Handle);
 	}
@@ -2890,7 +2937,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 		ResourceDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		ResourceDesc.Width = 512;
 		ResourceDesc.Height = 512;
-		ResourceDesc.DepthOrArraySize = 1;
+		ResourceDesc.DepthOrArraySize = 6;
 		ResourceDesc.MipLevels = 9;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
@@ -2898,18 +2945,54 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
 		ClearValue.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), (void**)mPrefilterEnvironmentMap.GetAddressOf()));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, &ClearValue, __uuidof(ID3D12Resource), (void**)mPrefilterEnvironmentMap.GetAddressOf()));
 
 		for (UINT32 i = 1; i < 9; ++i)
 		{
 			D3D12_RENDER_TARGET_VIEW_DESC RTVDesc;
 			ZeroMemory(&RTVDesc, sizeof(RTVDesc));
 			RTVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-			RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			RTVDesc.Texture2D.MipSlice = i;
+			RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+			RTVDesc.Texture2DArray.MipSlice = i;
+			RTVDesc.Texture2DArray.ArraySize = 6;
 			D3D12_CPU_DESCRIPTOR_HANDLE Handle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
 			Handle.ptr += (2 + i) * m_RTVDescriptorSize;
 			m_D3D12Device->CreateRenderTargetView(mPrefilterEnvironmentMap.Get(), &RTVDesc, Handle);
+		}
+
+		{
+			D3D12_RESOURCE_BARRIER ResourceBarrier;
+			ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+			ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			ResourceBarrier.Transition.pResource = mPrefilterEnvironmentMap.Get();
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+			mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
+
+			for (UINT32 i = 0; i < 6; ++i)
+			{
+				D3D12_TEXTURE_COPY_LOCATION DestLocation;
+				ZeroMemory(&DestLocation, sizeof(DestLocation));
+				DestLocation.pResource = mEnvironmentMap.Get();
+				DestLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				DestLocation.SubresourceIndex = i*9;
+				D3D12_TEXTURE_COPY_LOCATION SrcLocation;
+				ZeroMemory(&SrcLocation, sizeof(SrcLocation));
+				SrcLocation.pResource = mEnvironmentMap.Get();
+				SrcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				SrcLocation.SubresourceIndex = i;
+				D3D12_BOX CopyRegion;
+				ZeroMemory(&CopyRegion, sizeof(CopyRegion));
+				CopyRegion.left = 0;
+				CopyRegion.right = 512;
+				CopyRegion.top = 0;
+				CopyRegion.bottom = 512;
+				mGenPrefilterEnvironmentCmdList->CopyTextureRegion(&DestLocation, 0, 0, 0, &SrcLocation, &CopyRegion);
+			}
+
+			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
 		}
 	}
 
@@ -2925,6 +3008,12 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviAssets()
 		Handle.ptr += m_CBVSRVUAVDescriptorSize;
 		m_D3D12Device->CreateShaderResourceView(mEnvironmentMap.Get(), &SRVDesc, Handle);
 	}
+
+	mGenPrefilterEnvironmentCmdList->Close();
+
+	m_CommandLists.push_back(mGenPrefilterEnvironmentCmdList.Get());
+	WaitForPreviousFrame();
+	ExecuteDirectCommandList();
 }
 
 void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
@@ -3015,7 +3104,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 {
 	//Mesh
 	mPrimitive.LoadFBX("./Primitives/Sphere.fbx");
-
+	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitivePSO.Get());
 	//VB
 	ComPtr<ID3D12Resource> PrimitiveVBUpload;
 	{
@@ -3239,6 +3328,11 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 		}
 	}
 
-	
+	{
+		mPrimitiveCommandList->Close();
+		m_CommandLists.push_back(mPrimitiveCommandList.Get());
+		WaitForPreviousFrame();
+		ExecuteDirectCommandList();
+	}
 }
 

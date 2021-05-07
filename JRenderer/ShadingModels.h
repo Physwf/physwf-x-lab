@@ -246,11 +246,12 @@ protected:
 
 	void GenPrefilterEnvironmentMap();
 	void GenIntegratedBRDF();
+	void DrawPrimitives();
 private:
 	void LoadGenPrefilterEnviPipelineState();
 	void LoadGenIntegratedBRDFPipelineState();
 	void LoadPrimitiveBRDFPipelineState();
-	void LoadGenPrefilterEnviAssets();
+	void LoadGenPrefilterEnvironmentAssets();
 	void LoadGenIntegratedBRDFAssets();
 	void LoadPrimitiveAssets();
 private:
