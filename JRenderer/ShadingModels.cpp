@@ -2448,7 +2448,7 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 
 void PBRShadingModelPrecomputeIBL::InitPipelineStates()
 {
-	PBRShadingModel::InitPipelineStates();
+	//PBRShadingModel::InitPipelineStates();
 
 	LoadGenPrefilterEnviPipelineState();
 	LoadGenIntegratedBRDFPipelineState();
@@ -2646,7 +2646,13 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 
 	GPSDesc.BlendState.IndependentBlendEnable = FALSE;
-	GPSDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+	GPSDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
+	GPSDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+	GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 	GPSDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
 	GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	GPSDesc.SampleMask = UINT_MAX;
@@ -2719,7 +2725,13 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFPipelineState()
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	GPSDesc.NumRenderTargets = 1;
 	GPSDesc.RTVFormats[0] = DXGI_FORMAT_R32G32_FLOAT;
-	GPSDesc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+	GPSDesc.BlendState.RenderTarget[0].BlendEnable = TRUE;
+	GPSDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+	GPSDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+	GPSDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+	GPSDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	GPSDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+	GPSDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
 	GPSDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	GPSDesc.DepthStencilState.DepthEnable = FALSE;
 	GPSDesc.DepthStencilState.StencilEnable = FALSE;
@@ -2949,7 +2961,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		ResourceDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		ResourceDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		ResourceDesc.Width = 512;
 		ResourceDesc.Height = 512;
 		ResourceDesc.DepthOrArraySize = 6;
@@ -2960,14 +2972,14 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		//https://stackoverflow.com/questions/24975473/directx11-texture2d-formats
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
-		ClearValue.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, &ClearValue, __uuidof(ID3D12Resource), (void**)mPrefilterEnvironmentMap.GetAddressOf()));
 
 		for (UINT32 i = 1; i < 9; ++i)
 		{
 			D3D12_RENDER_TARGET_VIEW_DESC RTVDesc;
 			ZeroMemory(&RTVDesc, sizeof(RTVDesc));
-			RTVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+			RTVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 			RTVDesc.Texture2DArray.MipSlice = i;
 			RTVDesc.Texture2DArray.ArraySize = 6;
@@ -3016,7 +3028,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
 		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		SRVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		SRVDesc.Texture2D.MostDetailedMip = 0;
 		SRVDesc.Texture2D.MipLevels = 1;
 		SRVDesc.Texture2D.ResourceMinLODClamp = 0;

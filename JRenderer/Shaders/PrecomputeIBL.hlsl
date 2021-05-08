@@ -72,8 +72,8 @@ float4 PSMain(VSOutput Input) :SV_Target
     float NoV = saturate(dot(V,N));
     float3 R = 2 * dot(V,N) * N - V;
     float3 PrefilterdLi = PrefilterEnvMap(fRoughness,R);
-    float3 IntegratedBRDF = IntegratedIBL(fRoughness,NoV);
+    float2 IntegratedBRDF = IntegratedIBL(fRoughness,NoV);
 
     float3 Color = PrefilterdLi * (BaseColor.xyz*IntegratedBRDF.x + IntegratedBRDF.y);
-    return Color;
+    return float4(Color,1.f);
 }

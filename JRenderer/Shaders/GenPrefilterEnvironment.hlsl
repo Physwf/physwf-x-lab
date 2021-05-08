@@ -57,7 +57,7 @@ float fRoughness;
 TextureCube EnvironmentMap;
 SamplerState EnvironmentMapSampler;
 
-float3 PSMain(GSOutput Input) : SV_Target
+float4 PSMain(GSOutput Input) : SV_Target
 {
     float3 WorldPosition = normalize(Input.WorldPosition);
     float3 N = normalize(WorldPosition);
@@ -80,7 +80,7 @@ float3 PSMain(GSOutput Input) : SV_Target
             TotalWeight += NoL;
         }
     }
-    return Li / TotalWeight;
+    return float4(Li / TotalWeight,1.f);
 }
 
 
