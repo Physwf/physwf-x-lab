@@ -1927,13 +1927,18 @@ void PBRShadingModel::GenEnvironmentMap()
 
 	mGenEnviMapCmdList->DrawInstanced(4, 1, 0, 0);
 
-	D3D12_RESOURCE_BARRIER ResourceBarrier;
-	ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
-	ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	ResourceBarrier.Transition.pResource = mEnvironmentMap.Get();
-	ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-	mGenEnviMapCmdList->ResourceBarrier(1, &ResourceBarrier);
+	for (UINT32 i = 0; i < 6; ++i)
+	{
+		D3D12_RESOURCE_BARRIER ResourceBarrier;
+		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
+		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		ResourceBarrier.Transition.Subresource = i;
+		ResourceBarrier.Transition.pResource = mEnvironmentMap.Get();
+		ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+		mGenEnviMapCmdList->ResourceBarrier(1, &ResourceBarrier);
+	}
+	
 
 	mGenEnviMapCmdList->Close();
 
@@ -2448,7 +2453,10 @@ void PBRShadingModelRealIBL::DrawPrimitives()
 
 void PBRShadingModelPrecomputeIBL::InitPipelineStates()
 {
-	//PBRShadingModel::InitPipelineStates();
+	PBRShadingModel::InitPipelineStates();
+
+	GenEnvironmentMap();
+	WaitForPreviousFrame();
 
 	LoadGenPrefilterEnviPipelineState();
 	LoadGenIntegratedBRDFPipelineState();
@@ -2847,6 +2855,14 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	assert(S_OK == m_D3D12Device->CreateGraphicsPipelineState(&GPSDesc, __uuidof(ID3D12PipelineState), (void**)mGenIntegratedBRDFPSO.GetAddressOf()));
 	assert(S_OK == m_D3D12Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_D3D12CmdAllocator.Get(), mGenIntegratedBRDFPSO.Get(), __uuidof(ID3D12GraphicsCommandList), (void**)mPrimitiveCommandList.GetAddressOf()));
 	mPrimitiveCommandList->Close();
+
+	{
+		D3D12_DESCRIPTOR_HEAP_DESC DHDesc;
+		ZeroMemory(&DHDesc, sizeof(DHDesc));
+		DHDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		DHDesc.NumDescriptors = 5;
+		m_D3D12Device->CreateDescriptorHeap(&DHDesc, __uuidof(ID3D12DescriptorHeap),(void**)mPrimitiveDH.GetAddressOf());
+	}
 }
 
 void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
@@ -2881,6 +2897,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnviromentVBUpload.GetAddressOf()));
+		mGenPrefilterEnviromentVBUpload->SetName(TEXT("mGenPrefilterEnviromentVBUpload"));
 
 		void* pData;
 		mGenPrefilterEnviromentVBUpload->Map(0, 0, &pData);
@@ -2890,6 +2907,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		HeapProperites.Type = D3D12_HEAP_TYPE_DEFAULT;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnviromentVB.GetAddressOf()));
+		mGenPrefilterEnviromentVB->SetName(TEXT("mGenPrefilterEnviromentVB"));
 
 		mGenPrefilterEnviromentVBView.BufferLocation = mGenPrefilterEnviromentVB->GetGPUVirtualAddress();
 		mGenPrefilterEnviromentVBView.SizeInBytes = VertexBufferSize;
@@ -2940,6 +2958,8 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, __uuidof(ID3D12Resource), (void**)mGenPrefilterEnvironmentCBView.GetAddressOf()));
+		mGenPrefilterEnvironmentCBView->SetName(TEXT("mGenPrefilterEnvironmentCBView"));
+
 		void* pData;
 		mGenPrefilterEnvironmentCBView->Map(0, 0, &pData);
 		memcpy(pData, &View, sizeof(GSView));
@@ -2974,6 +2994,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
 		ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, &ClearValue, __uuidof(ID3D12Resource), (void**)mPrefilterEnvironmentMap.GetAddressOf()));
+		mPrefilterEnvironmentMap->SetName(TEXT("mPrefilterEnvironmentMap"));
 
 		for (UINT32 i = 1; i < 9; ++i)
 		{
@@ -2992,16 +3013,19 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 			D3D12_RESOURCE_BARRIER ResourceBarrier;
 			ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
 			ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-			ResourceBarrier.Transition.pResource = mPrefilterEnvironmentMap.Get();
-			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-			mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
+			ResourceBarrier.Transition.pResource = mEnvironmentMap.Get();
 
 			for (UINT32 i = 0; i < 6; ++i)
 			{
+				ResourceBarrier.Transition.Subresource = i;
+
+				ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+				ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+				mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
+
 				D3D12_TEXTURE_COPY_LOCATION DestLocation;
 				ZeroMemory(&DestLocation, sizeof(DestLocation));
-				DestLocation.pResource = mEnvironmentMap.Get();
+				DestLocation.pResource = mPrefilterEnvironmentMap.Get();
 				DestLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 				DestLocation.SubresourceIndex = i*9;
 				D3D12_TEXTURE_COPY_LOCATION SrcLocation;
@@ -3015,12 +3039,14 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 				CopyRegion.right = 512;
 				CopyRegion.top = 0;
 				CopyRegion.bottom = 512;
+				CopyRegion.front = 0;
+				CopyRegion.back = 1;
 				mGenPrefilterEnvironmentCmdList->CopyTextureRegion(&DestLocation, 0, 0, 0, &SrcLocation, &CopyRegion);
-			}
 
-			ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-			ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-			mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
+				ResourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+				ResourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+				mGenPrefilterEnvironmentCmdList->ResourceBarrier(1, &ResourceBarrier);
+			}
 		}
 	}
 
@@ -3032,9 +3058,10 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		SRVDesc.Texture2D.MostDetailedMip = 0;
 		SRVDesc.Texture2D.MipLevels = 1;
 		SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		D3D12_CPU_DESCRIPTOR_HANDLE Handle = mGenPrefilterEnvironmentDH->GetCPUDescriptorHandleForHeapStart();
 		Handle.ptr += m_CBVSRVUAVDescriptorSize;
-		m_D3D12Device->CreateShaderResourceView(mEnvironmentMap.Get(), &SRVDesc, Handle);
+		m_D3D12Device->CreateShaderResourceView(mPrefilterEnvironmentMap.Get(), &SRVDesc, Handle);
 	}
 
 	mGenPrefilterEnvironmentCmdList->Close();
@@ -3046,6 +3073,8 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 
 void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
 {
+	mGenIntegratedBRDFCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenIntegratedBRDFPSO.Get());
+
 	{
 		float Square[] = {
 			-1.0f,1.0f,
@@ -3102,13 +3131,14 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
 		D3D12_RESOURCE_DESC ResourceDesc;
 		ZeroMemory(&ResourceDesc, sizeof(ResourceDesc));
 		ResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		ResourceDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		ResourceDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 		ResourceDesc.Width = 512;
 		ResourceDesc.Height = 512;
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.MipLevels = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
-		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		ResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 		D3D12_CLEAR_VALUE ClearValue;
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
@@ -3126,6 +3156,14 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
 		Handle.ptr += (2 + 9) * m_RTVDescriptorSize;
 		m_D3D12Device->CreateRenderTargetView(mIntegratedBRDF.Get(), &RTVDesc, Handle);
 	}
+
+	{
+		mGenIntegratedBRDFCmdList->Close();
+		m_CommandLists.push_back(mGenIntegratedBRDFCmdList.Get());
+
+		WaitForPreviousFrame();
+		ExecuteDirectCommandList();
+	}
 }
 
 void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
@@ -3134,7 +3172,6 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 	mPrimitive.LoadFBX("./Primitives/Sphere.fbx");
 	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitivePSO.Get());
 	//VB
-	ComPtr<ID3D12Resource> PrimitiveVBUpload;
 	{
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
@@ -3149,20 +3186,20 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveVBUpload.GetAddressOf()));
-		PrimitiveVBUpload->SetName(TEXT("PrimitiveVBUpload"));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveVBUpload.GetAddressOf()));
+		mPrimitiveVBUpload->SetName(TEXT("PrimitiveVBUpload"));
 
 		void* pData;
-		PrimitiveVBUpload->Map(0, NULL, &pData);
+		mPrimitiveVBUpload->Map(0, NULL, &pData);
 		memcpy(pData, mPrimitive.Vertices.data(), mPrimitive.Vertices.size() * sizeof(MeshVertex));
-		PrimitiveVBUpload->Unmap(0, NULL);
+		mPrimitiveVBUpload->Unmap(0, NULL);
 
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveVB.GetAddressOf()));
 		mPrimitiveVB->SetName(TEXT("mPrimitiveVB"));
 
-		mPrimitiveCommandList->CopyResource(mPrimitiveVB.Get(), PrimitiveVBUpload.Get());
+		mPrimitiveCommandList->CopyResource(mPrimitiveVB.Get(), mPrimitiveVBUpload.Get());
 		D3D12_RESOURCE_BARRIER ResourceBarrier;
 		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
 		ResourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -3177,7 +3214,6 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 
 	}
 	//IB
-	ComPtr<ID3D12Resource> PrimitiveIBUpload;
 	{
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
@@ -3191,20 +3227,20 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 		ResourceDesc.SampleDesc = { 1,0 };
 		ResourceDesc.DepthOrArraySize = 1;
 		ResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)PrimitiveIBUpload.GetAddressOf()));
-		PrimitiveIBUpload->SetName(TEXT("PrimitiveIBUpload"));
+		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveIBUpload.GetAddressOf()));
+		mPrimitiveIBUpload->SetName(TEXT("PrimitiveIBUpload"));
 
 		void* pData;
-		PrimitiveIBUpload->Map(0, NULL, &pData);
+		mPrimitiveIBUpload->Map(0, NULL, &pData);
 		memcpy(pData, mPrimitive.Indices.data(), mPrimitive.Indices.size() * sizeof(int));
-		PrimitiveIBUpload->Unmap(0, NULL);
+		mPrimitiveIBUpload->Unmap(0, NULL);
 
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
 		HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, NULL, __uuidof(ID3D12Resource), (void**)mPrimitiveIB.GetAddressOf()));
 		mPrimitiveIB->SetName(TEXT("mPrimitiveIB"));
 
-		mPrimitiveCommandList->CopyResource(mPrimitiveIB.Get(), PrimitiveIBUpload.Get());
+		mPrimitiveCommandList->CopyResource(mPrimitiveIB.Get(), mPrimitiveIBUpload.Get());
 
 		D3D12_RESOURCE_BARRIER ResourceBarrier;
 		ZeroMemory(&ResourceBarrier, sizeof(ResourceBarrier));
@@ -3332,11 +3368,12 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 		{
 			D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 			ZeroMemory(&SRVDesc, sizeof(SRVDesc));
-			SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-			SRVDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-			SRVDesc.Texture2D.MipLevels = 9;
-			SRVDesc.Texture2D.MostDetailedMip = 0;
-			SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+			SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+			SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			SRVDesc.TextureCube.MipLevels = 9;
+			SRVDesc.TextureCube.MostDetailedMip = 0;
+			SRVDesc.TextureCube.ResourceMinLODClamp = 0;
+			SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			D3D12_CPU_DESCRIPTOR_HANDLE Handle = mPrimitiveDH->GetCPUDescriptorHandleForHeapStart();
 			Handle.ptr += 3 * m_CBVSRVUAVDescriptorSize;
 			m_D3D12Device->CreateShaderResourceView(mPrefilterEnvironmentMap.Get(), &SRVDesc, Handle);
@@ -3350,6 +3387,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			SRVDesc.Texture2D.MipLevels = 1;
 			SRVDesc.Texture2D.MostDetailedMip = 0;
 			SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+			SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			D3D12_CPU_DESCRIPTOR_HANDLE Handle = mPrimitiveDH->GetCPUDescriptorHandleForHeapStart();
 			Handle.ptr += 4 * m_CBVSRVUAVDescriptorSize;
 			m_D3D12Device->CreateShaderResourceView(mIntegratedBRDF.Get(), &SRVDesc, Handle);

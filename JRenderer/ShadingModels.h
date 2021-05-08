@@ -286,8 +286,10 @@ private:
 
 	Mesh							mPrimitive;
 	ComPtr<ID3D12Resource>			mPrimitiveVB;
+	ComPtr<ID3D12Resource>			mPrimitiveVBUpload;
 	D3D12_VERTEX_BUFFER_VIEW		mPrimitiveVBView;
 	ComPtr<ID3D12Resource>			mPrimitiveIB;
+	ComPtr<ID3D12Resource>			mPrimitiveIBUpload;
 	D3D12_INDEX_BUFFER_VIEW			mPrimitiveIBView;
 	ComPtr<ID3D12Resource>			mPrimitiveCB;
 	D3D12_CPU_DESCRIPTOR_HANDLE		mPrimitiveCBV;
