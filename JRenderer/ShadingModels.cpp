@@ -1908,10 +1908,10 @@ void PBRShadingModel::InitPipelineStates()
 
 void PBRShadingModel::GenEnvironmentMap()
 {
-	PIXBeginEvent(mGenEnviMapCmdList.Get(),0,TEXT("GenEnvironmentMap"));
 
 	mGenEnviMapCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenEnviMapPSO.Get());
 
+	PIXBeginEvent(mGenEnviMapCmdList.Get(), 0, TEXT("GenEnvironmentMap"));
 
 	mGenEnviMapCmdList->OMSetRenderTargets(1, &mGenEnviRTVHandle, FALSE, NULL);
 	const FLOAT ClearColor[] = { 0,0,0, 0 };
@@ -1939,10 +1939,10 @@ void PBRShadingModel::GenEnvironmentMap()
 		mGenEnviMapCmdList->ResourceBarrier(1, &ResourceBarrier);
 	}
 	
+	PIXEndEvent(mGenEnviMapCmdList.Get());
 
 	mGenEnviMapCmdList->Close();
 
-	PIXEndEvent(mGenEnviMapCmdList.Get());
 
 	m_CommandLists.push_back(mGenEnviMapCmdList.Get());
 }
@@ -2589,7 +2589,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	RootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	RootParameters[0].DescriptorTable.pDescriptorRanges = Ranges;
 	RootParameters[0].DescriptorTable.NumDescriptorRanges = _countof(Ranges);
-	RootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	RootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	RootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	RootParameters[1].Constants.Num32BitValues = 1;
 	RootParameters[1].Constants.ShaderRegister = 1;
@@ -2813,7 +2813,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	if (S_OK != D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, &D3D12DemoInclude, "VSMain", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, VS.GetAddressOf(), Error.GetAddressOf()))
 	{
 		LOGA("%s\n", Error->GetBufferPointer());
-		return;
+		return; 
 	}
 	if (S_OK != D3DCompileFromFile(TEXT("./PrecomputeIBL.hlsl"), NULL, &D3D12DemoInclude, "PSMain", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, PS.GetAddressOf(), Error.GetAddressOf()))
 	{
