@@ -15,7 +15,9 @@ struct VSOutput
 VSOutput VSMain(VSInput Input)
 {
     VSOutput Output = (VSOutput)0;
-    Output.UV = float2(Input.Position.x + 1.0f / 2.0f,  -Input.Position.y + 1.0f / 2.0f);
+    //Output.UV = float2(Input.Position.x + 1.0f / 2.0f,  -Input.Position.y + 1.0f / 2.0f);
+    Output.UV = (Input.Position + float2(1.f,1.f))/2.f;
+    Output.UV.y = 1.f - Output.UV.y;
     Output.SVPosition = float4(Input.Position,0,1.0f);
     return Output;
 }

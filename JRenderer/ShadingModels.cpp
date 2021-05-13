@@ -1693,6 +1693,7 @@ void PBRShadingModel::LoadCommonAssets()
 		DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		DSVDesc.Texture2D.MipSlice = 0;
+		DSVDesc.Flags = D3D12_DSV_FLAG_NONE;
 
 		mDepthStencialHandle = m_DSVDescHeap->GetCPUDescriptorHandleForHeapStart();
 		m_D3D12Device->CreateDepthStencilView(mDepthStencial.Get(), &DSVDesc, mDepthStencialHandle);
@@ -2545,7 +2546,7 @@ void PBRShadingModelPrecomputeIBL::DrawPrimitives()
 {
 	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitivePSO.Get());
 	FLOAT ClearColor[] = { 0,0,0,0 };
-	mPrimitiveCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
+	//mPrimitiveCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
 	mPrimitiveCommandList->ClearDepthStencilView(mDepthStencialHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
 	mPrimitiveCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, &mDepthStencialHandle);
 	mPrimitiveCommandList->IASetVertexBuffers(0, 1, &mPrimitiveVBView);
@@ -3312,6 +3313,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			XMFLOAT4 UpVector = { 0,1,0,0 };
 			XMMATRIX WorldToView = XMMatrixLookAtLH(XMLoadFloat4(&View.ViewOrigin), XMLoadFloat4(&Target), XMLoadFloat4(&UpVector));
 			XMMATRIX ViewToClip = XMMatrixPerspectiveFovLH(90.f, 1920.f / 1080.f, 1.0f, 10000.f);
+			XMStoreFloat4x4(&View.WorldToView, XMMatrixTranspose(WorldToView));
 			XMStoreFloat4x4(&View.WorldToClip, XMMatrixMultiply(WorldToView, ViewToClip));
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
@@ -3348,7 +3350,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			PBRMaterialUniform Material;
 			Material.BaseColor = { 1.0f,1.0f, 1.0f, 1.0f, };
 			Material.SpecularColor = { 1.0f,1.0f, 1.0f, 1.0f, };
-			Material.fRoughtness = 0.001f;
+			Material.fRoughtness = 0.9f;
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
 			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
