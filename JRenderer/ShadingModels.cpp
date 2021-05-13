@@ -1683,7 +1683,7 @@ void PBRShadingModel::LoadCommonAssets()
 
 		D3D12_CLEAR_VALUE ClearValue;
 		ClearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		ClearValue.DepthStencil.Depth = 0.0f;
+		ClearValue.DepthStencil.Depth = 1.0f;
 		ClearValue.DepthStencil.Stencil = 0;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &ClearValue, __uuidof(ID3D12Resource), (void**)mDepthStencial.GetAddressOf()));
 		mDepthStencial->SetName(TEXT("mDepthStencial"));
@@ -2546,6 +2546,7 @@ void PBRShadingModelPrecomputeIBL::DrawPrimitives()
 	mPrimitiveCommandList->Reset(m_D3D12CmdAllocator.Get(), mPrimitivePSO.Get());
 	FLOAT ClearColor[] = { 0,0,0,0 };
 	mPrimitiveCommandList->ClearRenderTargetView(mHDRRTVHandle, ClearColor, 0, NULL);
+	mPrimitiveCommandList->ClearDepthStencilView(mDepthStencialHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
 	mPrimitiveCommandList->OMSetRenderTargets(1, &mHDRRTVHandle, FALSE, &mDepthStencialHandle);
 	mPrimitiveCommandList->IASetVertexBuffers(0, 1, &mPrimitiveVBView);
 	mPrimitiveCommandList->IASetIndexBuffer(&mPrimitiveIBView);
@@ -2862,6 +2863,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 		D3D12_DESCRIPTOR_HEAP_DESC DHDesc;
 		ZeroMemory(&DHDesc, sizeof(DHDesc));
 		DHDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+		DHDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		DHDesc.NumDescriptors = 5;
 		m_D3D12Device->CreateDescriptorHeap(&DHDesc, __uuidof(ID3D12DescriptorHeap),(void**)mPrimitiveDH.GetAddressOf());
 	}
@@ -3007,7 +3009,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 			RTVDesc.Texture2DArray.MipSlice = i;
 			RTVDesc.Texture2DArray.ArraySize = 6;
 			D3D12_CPU_DESCRIPTOR_HANDLE Handle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
-			Handle.ptr += (2 + i) * m_RTVDescriptorSize;
+			Handle.ptr += (3 + i) * m_RTVDescriptorSize;
 			m_D3D12Device->CreateRenderTargetView(mPrefilterEnvironmentMap.Get(), &RTVDesc, Handle);
 		}
 
