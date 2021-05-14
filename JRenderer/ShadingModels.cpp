@@ -2487,7 +2487,7 @@ void PBRShadingModelPrecomputeIBL::GenPrefilterEnvironmentMap()
 		mGenPrefilterEnvironmentCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenPrefilterEnvironmentMapPSO.Get());
 
 		D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
-		RTVHandle.ptr += (3 + i) * m_RTVDescriptorSize;
+		RTVHandle.ptr += (4 + i) * m_RTVDescriptorSize;
 		FLOAT Color[] = { 0,0,0,0 };
 		mGenPrefilterEnvironmentCmdList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
 		mGenPrefilterEnvironmentCmdList->OMSetRenderTargets(1, &RTVHandle, FALSE, NULL);
@@ -2496,8 +2496,8 @@ void PBRShadingModelPrecomputeIBL::GenPrefilterEnvironmentMap()
 		mGenPrefilterEnvironmentCmdList->SetGraphicsRootSignature(mGenPrefilterEnvironmentMapRootSignature.Get());
 		mGenPrefilterEnvironmentCmdList->SetDescriptorHeaps(1, mGenPrefilterEnvironmentDH.GetAddressOf());
 		mGenPrefilterEnvironmentCmdList->SetGraphicsRootDescriptorTable(0, mGenPrefilterEnvironmentDH->GetGPUDescriptorHandleForHeapStart());
-		float fRoughness = 0.1f + i * 0.1;
-		mGenPrefilterEnvironmentCmdList->SetGraphicsRoot32BitConstants(1, 1, &fRoughness, 0);
+		float fRoughness =  0.1f + i * 0.1f;
+		mGenPrefilterEnvironmentCmdList->SetGraphicsRoot32BitConstants(1,1, &fRoughness, 0);
 		D3D12_VIEWPORT VP = {0.f,0.f ,512.f ,512.f ,0.f ,1.f };
 		mGenPrefilterEnvironmentCmdList->RSSetViewports(1, &VP);
 		D3D12_RECT Rect = {0,0,512,512};
@@ -2519,7 +2519,7 @@ void PBRShadingModelPrecomputeIBL::GenIntegratedBRDF()
 	mGenIntegratedBRDFCmdList->Reset(m_D3D12CmdAllocator.Get(), mGenIntegratedBRDFPSO.Get());
 
 	D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
-	RTVHandle.ptr += 11 * m_RTVDescriptorSize;
+	RTVHandle.ptr += 12 * m_RTVDescriptorSize;
 	FLOAT Color[] = { 0,0,0,0 };
 	mGenIntegratedBRDFCmdList->ClearRenderTargetView(RTVHandle, Color, 0, NULL);
 	mGenIntegratedBRDFCmdList->OMSetRenderTargets(1, &RTVHandle, FALSE, NULL);
@@ -2596,7 +2596,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	RootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 	RootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	RootParameters[1].Constants.Num32BitValues = 1;
-	RootParameters[1].Constants.ShaderRegister = 1;
+	RootParameters[1].Constants.ShaderRegister = 2;
 
 	D3D12_STATIC_SAMPLER_DESC StaticSampler;
 	ZeroMemory(&StaticSampler,sizeof(StaticSampler));
@@ -2835,7 +2835,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 
 	GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
-	GPSDesc.RasterizerState.FrontCounterClockwise = FALSE;
+	GPSDesc.RasterizerState.FrontCounterClockwise = TRUE;
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	GPSDesc.NumRenderTargets = 1;
 	GPSDesc.RTVFormats[0] = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -2935,7 +2935,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 		{
 			XMFLOAT4X4 FaceTransform[6];
 			XMFLOAT4X4 Projection;
-			float padding[16];
+			char padding[512-sizeof(XMFLOAT4X4)*7];
 		};
 
 		GSView View;
@@ -3169,7 +3169,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
 		RTVDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 		RTVDesc.Texture2D.MipSlice = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE Handle = m_RTVDescHeap->GetCPUDescriptorHandleForHeapStart();
-		Handle.ptr += (2 + 9) * m_RTVDescriptorSize;
+		Handle.ptr += (12) * m_RTVDescriptorSize;
 		m_D3D12Device->CreateRenderTargetView(mIntegratedBRDF.Get(), &RTVDesc, Handle);
 	}
 
@@ -3313,7 +3313,6 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			XMFLOAT4 UpVector = { 0,1,0,0 };
 			XMMATRIX WorldToView = XMMatrixLookAtLH(XMLoadFloat4(&View.ViewOrigin), XMLoadFloat4(&Target), XMLoadFloat4(&UpVector));
 			XMMATRIX ViewToClip = XMMatrixPerspectiveFovLH(90.f, 1920.f / 1080.f, 1.0f, 10000.f);
-			XMStoreFloat4x4(&View.WorldToView, XMMatrixTranspose(WorldToView));
 			XMStoreFloat4x4(&View.WorldToClip, XMMatrixMultiply(WorldToView, ViewToClip));
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
@@ -3350,7 +3349,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			PBRMaterialUniform Material;
 			Material.BaseColor = { 1.0f,1.0f, 1.0f, 1.0f, };
 			Material.SpecularColor = { 1.0f,1.0f, 1.0f, 1.0f, };
-			Material.fRoughtness = 0.9f;
+			Material.fRoughtness = 0.1f;
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
 			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
