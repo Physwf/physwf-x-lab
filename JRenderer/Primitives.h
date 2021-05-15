@@ -27,13 +27,12 @@ struct MeshSection
 struct ViewUniform
 {
 	XMFLOAT4 ViewOrigin;
-	XMFLOAT4X4 WorldToView;
 	XMFLOAT4X4 WorldToClip;
 	XMFLOAT4X4 ClipToWorld;
 	XMFLOAT4X4 SvPositionToWorld;
 	XMFLOAT4 ViewSizeAndInvSize;
 	XMFLOAT4 ViewRectMin;
-	char Pading00[512 - sizeof(XMFLOAT4) * 3 - sizeof(XMFLOAT4X4) * 4];
+	char Pading00[512 - sizeof(XMFLOAT4) * 3 - sizeof(XMFLOAT4X4) * 3];
 };
 
 struct PrimitiveUniform

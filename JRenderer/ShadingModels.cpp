@@ -2498,9 +2498,9 @@ void PBRShadingModelPrecomputeIBL::GenPrefilterEnvironmentMap()
 		mGenPrefilterEnvironmentCmdList->SetGraphicsRootDescriptorTable(0, mGenPrefilterEnvironmentDH->GetGPUDescriptorHandleForHeapStart());
 		float fRoughness =  0.1f + i * 0.1f;
 		mGenPrefilterEnvironmentCmdList->SetGraphicsRoot32BitConstants(1,1, &fRoughness, 0);
-		D3D12_VIEWPORT VP = {0.f,0.f ,512.f ,512.f ,0.f ,1.f };
+		D3D12_VIEWPORT VP = {0.f,0.f ,float(512>>(i+1)) ,float(512 >> (i + 1)) ,0.f ,1.f };
 		mGenPrefilterEnvironmentCmdList->RSSetViewports(1, &VP);
-		D3D12_RECT Rect = {0,0,512,512};
+		D3D12_RECT Rect = {0,0,(512 >> (i + 1)),(512 >> (i + 1 ))};
 		mGenPrefilterEnvironmentCmdList->RSSetScissorRects(1, &Rect);
 		mGenPrefilterEnvironmentCmdList->DrawInstanced(4, 1, 0, 0);
 
@@ -2653,7 +2653,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 	GPSDesc.InputLayout.pInputElementDescs = InputDesc;
 	GPSDesc.InputLayout.NumElements = _countof(InputDesc);
 	GPSDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+	GPSDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
 	GPSDesc.RasterizerState.FrontCounterClockwise = FALSE;
 	GPSDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 

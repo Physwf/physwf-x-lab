@@ -52,9 +52,11 @@ void GSMain(
     }
      
 }
-
-float fRoughness;
-TextureCube EnvironmentMap;
+cbuffer cbRoughness:register(b2)
+{
+    float fRoughness ;
+}
+TextureCube<float4> EnvironmentMap;
 SamplerState EnvironmentMapSampler;
 
 float4 PSMain(GSOutput Input) : SV_Target
@@ -80,7 +82,7 @@ float4 PSMain(GSOutput Input) : SV_Target
             TotalWeight += NoL;
         }
     }
-    return float4(Li / TotalWeight,1.f);
+    return float4(Li/TotalWeight,1.f);
 }
 
 

@@ -24,7 +24,6 @@ cbuffer Primitive : register(b0)
 cbuffer View  : register(b1)
 {
     float4 ViewOrigin;
-    float4x4 WorldToView;
     float4x4 WorldToClip;
 	float4x4 ClipToWorld;
 	float4x4 SvPositionToWorld;
@@ -37,9 +36,7 @@ VSOutput VSMain(VSInput Input)
     VSOutput Output = (VSOutput)0;
     Output.WorldPosition = mul(LocalToWorld,float4(Input.Position,1.f));
     Output.SvPosition = mul(WorldToClip,float4(Output.WorldPosition,1.f));
-    float4 Normal = mul(LocalToWorld,float4(Input.Normal,1.f));
-    Normal = mul(WorldToView,Normal);
-    Output.Normal = Normal.xyz;
+    Output.Normal = mul(LocalToWorld,float4(Input.Normal,1.f)).xyz;
     return Output;
 }
 
