@@ -1335,7 +1335,7 @@ void PBRShadingModel::LoadGenEnviAssets()
 		TexMetadata Metadata;
 		ScratchImage Image;
 
-		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/wide_street_02_1k.hdr"), &Metadata, Image));
+		assert(S_OK == LoadFromHDRFile(TEXT("./hdri/lilienstein_1k.hdr"), &Metadata, Image));
 
 		D3D12_HEAP_PROPERTIES HeapProps;
 		ZeroMemory(&HeapProps, sizeof(HeapProps));
@@ -2479,6 +2479,19 @@ void PBRShadingModelPrecomputeIBL::Draw()
 	PostProcess();
 }
 
+void PBRShadingModelPrecomputeIBL::OnMouseMove(float fScreenX, float fScreenY)
+{
+	PBRMaterialUniform Material;
+	Material.BaseColor = { 1.0f,1.0f, 1.0f, 1.0f, };
+	Material.SpecularColor = { 1.0f,1.0f, 1.0f, 1.0f, };
+	Material.fRoughtness = fScreenX;
+
+	void* pData;
+	mPrimitiveMaterialCB->Map(0, NULL, &pData);
+	memcpy(pData, &Material, sizeof(Material));
+	mPrimitiveMaterialCB->Unmap(0, NULL);
+}
+
 void PBRShadingModelPrecomputeIBL::GenPrefilterEnvironmentMap()
 {
 
@@ -2784,6 +2797,8 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	StaticSamplers[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 	StaticSamplers[0].ShaderRegister = 0;
 	StaticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	StaticSamplers[0].MinLOD = 0;
+	StaticSamplers[0].MaxLOD = 9.0f;
 	StaticSamplers[1].Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
 	StaticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -3065,15 +3080,15 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnvironmentAssets()
 	{
 		D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
-		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		SRVDesc.Texture2D.MostDetailedMip = 0;
-		SRVDesc.Texture2D.MipLevels = 1;
-		SRVDesc.Texture2D.ResourceMinLODClamp = 0;
+		SRVDesc.TextureCube.MostDetailedMip = 0;
+		SRVDesc.TextureCube.MipLevels = 1;
+		SRVDesc.TextureCube.ResourceMinLODClamp = 0;
 		SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		D3D12_CPU_DESCRIPTOR_HANDLE Handle = mGenPrefilterEnvironmentDH->GetCPUDescriptorHandleForHeapStart();
 		Handle.ptr += m_CBVSRVUAVDescriptorSize;
-		m_D3D12Device->CreateShaderResourceView(mPrefilterEnvironmentMap.Get(), &SRVDesc, Handle);
+		m_D3D12Device->CreateShaderResourceView(mEnvironmentMap.Get(), &SRVDesc, Handle);
 	}
 
 	mGenPrefilterEnvironmentCmdList->Close();
@@ -3160,6 +3175,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenIntegratedBRDFAssets()
 		ZeroMemory(&ClearValue, sizeof(ClearValue));
 		ClearValue.Format = DXGI_FORMAT_R32G32_FLOAT;
 		assert(S_OK == m_D3D12Device->CreateCommittedResource(&HeapProperites, D3D12_HEAP_FLAG_NONE, &ResourceDesc, D3D12_RESOURCE_STATE_RENDER_TARGET, &ClearValue, __uuidof(ID3D12Resource), (void**)mIntegratedBRDF.GetAddressOf()));
+		mIntegratedBRDF->SetName(TEXT("mIntegratedBRDF"));
 	}
 
 	{
@@ -3349,7 +3365,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			PBRMaterialUniform Material;
 			Material.BaseColor = { 1.0f,1.0f, 1.0f, 1.0f, };
 			Material.SpecularColor = { 1.0f,1.0f, 1.0f, 1.0f, };
-			Material.fRoughtness = 0.1f;
+			Material.fRoughtness = 0.2f;
 
 			D3D12_HEAP_PROPERTIES HeapProperties;
 			ZeroMemory(&HeapProperties, sizeof(HeapProperties));
@@ -3388,7 +3404,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveAssets()
 			SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			SRVDesc.TextureCube.MipLevels = 9;
 			SRVDesc.TextureCube.MostDetailedMip = 0;
-			SRVDesc.TextureCube.ResourceMinLODClamp = 0;
+			SRVDesc.TextureCube.ResourceMinLODClamp = 0.f;
 			SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			D3D12_CPU_DESCRIPTOR_HANDLE Handle = mPrimitiveDH->GetCPUDescriptorHandleForHeapStart();
 			Handle.ptr += 3 * m_CBVSRVUAVDescriptorSize;

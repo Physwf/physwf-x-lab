@@ -209,6 +209,7 @@ public:
 protected:
 	virtual void InitPipelineStates() override;
 	virtual void Draw() override;
+
 private:
 	void LoadPrimitivePipelineState();
 	void LoadPrimitiveAssets();
@@ -245,6 +246,7 @@ public:
 protected:
 	virtual void InitPipelineStates() override;
 	virtual void Draw() override;
+	virtual void OnMouseMove(float fScreenX, float fScreenY);
 
 	void GenPrefilterEnvironmentMap();
 	void GenIntegratedBRDF();

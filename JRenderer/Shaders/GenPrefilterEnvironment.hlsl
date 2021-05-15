@@ -64,7 +64,7 @@ float4 PSMain(GSOutput Input) : SV_Target
     float3 WorldPosition = normalize(Input.WorldPosition);
     float3 N = normalize(WorldPosition);
     float3 V = N;
-    const uint SmapleCount = 1024;
+    const uint SmapleCount = 2048;
     float3 Li = 0;
     float TotalWeight = 0;
     [unrool]

@@ -55,7 +55,8 @@ SamplerState IntegratedBRDFMapSampler;
 
 float3 PrefilterEnvMap(float fRoughness,float3 R)
 {
-    float3 Result = PrefilterEnvironmentMap.SampleLevel(PrefilterEnvironmentSampler,R,fRoughness);
+    float Lod = fRoughness*8.f;
+    float3 Result = PrefilterEnvironmentMap.SampleLevel(PrefilterEnvironmentSampler,R,Lod).rgb;
     return Result;
 }
 
