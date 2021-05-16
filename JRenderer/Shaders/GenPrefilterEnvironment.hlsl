@@ -59,11 +59,10 @@ cbuffer cbRoughness:register(b2)
 TextureCube<float4> EnvironmentMap;
 SamplerState EnvironmentMapSampler;
 
-float4 PSMain(GSOutput Input) : SV_Target
+float3 PrefilterEnvironmentMap(float Roughness, float3 R)
 {
-    float3 WorldPosition = normalize(Input.WorldPosition);
-    float3 N = normalize(WorldPosition);
-    float3 V = N;
+    float3 N = R;
+    float3 V = R;
     const uint SmapleCount = 2048;
     float3 Li = 0;
     float TotalWeight = 0;
@@ -71,7 +70,7 @@ float4 PSMain(GSOutput Input) : SV_Target
     for(uint i=0;i<SmapleCount;++i)
     {
         float2 Xi = Hammersley(i,SmapleCount);
-        float3 H = ImportantSamplingGGX(Xi,fRoughness,N);
+        float3 H = ImportantSamplingGGX(Xi,Roughness,N);
         float3 L = 2*dot(V,H)*H - V;
 
         float NoL = saturate(dot(N,L));
@@ -82,7 +81,46 @@ float4 PSMain(GSOutput Input) : SV_Target
             TotalWeight += NoL;
         }
     }
-    return float4(Li/TotalWeight,1.f);
+    return Li/TotalWeight;
+}
+
+float Gussian(float Sigma,float Miu, float X)
+{
+    float Delta = X - Miu;
+    return (1.0f / (Sigma * sqrt(2.0f * PI))) * exp(-(Delta*Delta)/(2.f * Sigma * Sigma));
+}
+
+float3 PrefilterEnvironmentMap_Gussian(float Roughness, float3 R)
+{
+    const uint SmapleCount = 1024;
+    float3 Li = 0;
+    float TotalWeight = 0;
+    float ThetaMax = PI / 2.0f * Roughness;
+    float CosThetaMax = cos(ThetaMax);
+    [unrool]
+    for(uint i=0;i<SmapleCount;++i)
+    {
+        float2 Xi = Hammersley(i,SmapleCount);
+        float3 H = UniformSampleCone(Xi,CosThetaMax);
+        float3x3 TangentSpace;
+
+        TangentSpace[2] = R;
+        CoordinateSystem(TangentSpace[2],TangentSpace[0],TangentSpace[1]);
+        float3 L = mul(H,TangentSpace);
+        float Weight = Gussian(0.5f,0.5f,Xi.x);
+        
+        Li += EnvironmentMap.SampleLevel(EnvironmentMapSampler,L,0).rgb * Weight;
+        TotalWeight += Weight;
+    }
+    return Li/TotalWeight;
+}
+
+float4 PSMain(GSOutput Input) : SV_Target
+{
+    float3 WorldPosition = normalize(Input.WorldPosition);
+    float3 N = normalize(WorldPosition);
+    float3 PrefilteredColor = PrefilterEnvironmentMap_Gussian(fRoughness,N);
+    return float4(PrefilteredColor,1.f);
 }
 
 

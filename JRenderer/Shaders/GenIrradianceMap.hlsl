@@ -1,3 +1,4 @@
+#include "Sampling.hlsl"
 
 struct VSInput
 {
@@ -54,22 +55,7 @@ void GSMain(
 TextureCube EnvironmentMap;
 SamplerState EnvironmentMapSampler;
 
-void CoordinateSystem(const float3 InZ,out float3 OutX, out float3 OutY )
-{
-    if(InZ.x == 0.f && InZ.y == 0.f)
-    {
-        OutX = float3(1.f,0.f,0.f);
-    }
-    else if(abs(InZ.x) > abs(InZ.y))
-    {
-        OutX = float3(-InZ.z, 0, InZ.x) / sqrt(InZ.x*InZ.x + InZ.z * InZ.z);
-    }
-    else 
-    {
-        OutX = float3( 0,InZ.z, -InZ.y) / sqrt(InZ.y*InZ.y + InZ.z * InZ.z);
-    }
-    OutY = cross(InZ,OutX);
-}
+
 
 float4 PSMain(GSOutput Input) : SV_Target
 {

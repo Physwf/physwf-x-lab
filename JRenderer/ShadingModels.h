@@ -241,7 +241,7 @@ public:
 	{
 		m_NumCBVSRVUAVDescriptors += 3;//
 
-		m_NumRTVDescriptors += 10;
+		m_NumRTVDescriptors += 11;
 	}
 protected:
 	virtual void InitPipelineStates() override;
