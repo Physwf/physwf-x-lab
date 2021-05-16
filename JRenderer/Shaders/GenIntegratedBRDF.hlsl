@@ -22,11 +22,8 @@ VSOutput VSMain(VSInput Input)
     return Output;
 }
 
-float2 PSMain(VSOutput Input) : SV_Target
+float2 IntegrateBRDF(float Roughness,float NoV)
 {
-    float fRoughness = Input.UV.x;
-    float NoV = Input.UV.y;
-
     float3 V;
     V.x = sqrt(1.0f - NoV * NoV);
     V.y = 0;
@@ -41,7 +38,7 @@ float2 PSMain(VSOutput Input) : SV_Target
     for(int i=0;i<SampleCount;++i)
     {
         float2 Xi = Hammersley(i,SampleCount);
-        float3 H = ImportantSamplingGGX(Xi,fRoughness,N);
+        float3 H = ImportantSamplingGGX(Xi,Roughness,N);
         float3 L = 2*dot(V,H)*H - V;
 
         float NoL = saturate(L.z);
@@ -50,7 +47,7 @@ float2 PSMain(VSOutput Input) : SV_Target
 
         if(NoL > 0)
         {
-            float G = G_Smith(fRoughness,NoV,NoL);
+            float G = G_Smith(Roughness,NoV,NoL);
 
             float G_Vis = G * VoH / (NoH * NoV);
             float Fc = pow(1-VoH,5);
@@ -59,4 +56,9 @@ float2 PSMain(VSOutput Input) : SV_Target
         }
     }
     return float2(A,B)/SampleCount;
+}
+
+float2 PSMain(VSOutput Input) : SV_Target
+{
+    return IntegrateBRDF(Input.UV.x,Input.UV.y);
 }
