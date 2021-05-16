@@ -738,7 +738,7 @@ void PBRShadingModel::LoadGenEnviPipelineState()
 
 		D3D12_STATIC_SAMPLER_DESC SamplerDesc;
 		ZeroMemory(&SamplerDesc, sizeof(D3D12_STATIC_SAMPLER_DESC));
-		SamplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+		SamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		SamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		SamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		SamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -853,7 +853,7 @@ void PBRShadingModel::LoadSkyboxPipelineState()
 
 		D3D12_STATIC_SAMPLER_DESC CubeMapSamplerDesc;
 		ZeroMemory(&CubeMapSamplerDesc, sizeof(CubeMapSamplerDesc));
-		CubeMapSamplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+		CubeMapSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		CubeMapSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -2119,7 +2119,7 @@ void PBRShadingModelRealIBL::LoadPrimitivePipelineState()
 
 		D3D12_STATIC_SAMPLER_DESC CubeMapSamplerDesc;
 		ZeroMemory(&CubeMapSamplerDesc, sizeof(CubeMapSamplerDesc));
-		CubeMapSamplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+		CubeMapSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		CubeMapSamplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 		CubeMapSamplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -2613,7 +2613,7 @@ void PBRShadingModelPrecomputeIBL::LoadGenPrefilterEnviPipelineState()
 
 	D3D12_STATIC_SAMPLER_DESC StaticSampler;
 	ZeroMemory(&StaticSampler,sizeof(StaticSampler));
-	StaticSampler.Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+	StaticSampler.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	StaticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -2790,7 +2790,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 
 	D3D12_STATIC_SAMPLER_DESC StaticSamplers[2];
 	ZeroMemory(StaticSamplers, sizeof(StaticSamplers));
-	StaticSamplers[0].Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+	StaticSamplers[0].Filter = D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
 	StaticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSamplers[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSamplers[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -2799,7 +2799,7 @@ void PBRShadingModelPrecomputeIBL::LoadPrimitiveBRDFPipelineState()
 	StaticSamplers[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	StaticSamplers[0].MinLOD = 0;
 	StaticSamplers[0].MaxLOD = 9.0f;
-	StaticSamplers[1].Filter = D3D12_FILTER_COMPARISON_MIN_LINEAR_MAG_MIP_POINT;
+	StaticSamplers[1].Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	StaticSamplers[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSamplers[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 	StaticSamplers[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
