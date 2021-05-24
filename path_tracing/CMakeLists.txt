@@ -1,13 +1,12 @@
 ﻿cmake_minimum_required (VERSION 3.4)
 
-set(DIR_PROJECT ".")
-
-add_executable(path_tracing 
-${DIR_PROJECT}/main.cpp
-${DIR_PROJECT}/path_tracing.cpp
-${DIR_PROJECT}/log.h
-${DIR_PROJECT}/utils.cpp
+file(GLOB_RECURSE DIR_SRC
+    "./*.cpp"
+    "./*.c"
+    "./*.h"
 )
+
+add_executable(path_tracing ${DIR_SRC})
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
