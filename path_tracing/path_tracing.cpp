@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
+#include "log.h"
 
 struct Vec
 {
@@ -301,16 +302,17 @@ struct Scene
 		if (RandomVec == Normal) return RandomUnitVectorInHemisphereOf(Normal);
 		Vec Tangent = Normal.Multiply(RandomVec);
 		Tangent.Normalize();
-		float theta = (rand() / (RAND_MAX + 1.0f)) * 3.1415926f / 2.0f;
-		float costheta = cosf(theta);
-		Vec Result = (costheta * Normal) + (1.0f - costheta)*(Normal*Tangent)*Tangent + sinf(theta) * (Tangent.Multiply(Normal));
-		Result.Normalize();
+		Vec BiTangent = Normal.Multiply(Tangent);
+		float Theta = (rand() / (RAND_MAX + 1.0f)) * 3.1415926f / 2.0f;
+		float Phi = (rand() / (RAND_MAX + 1.0f)) * 3.1415926f * 2.0f;
+		Vec UnitVec = {sinf(Theta)*cosf(Phi), sinf(Theta) * sinf(Phi) ,cosf(Theta)};
+		Vec Result = { Tangent * UnitVec,BiTangent * UnitVec, Normal * UnitVec};
 		return Result;
 	}
 
 	Color Radiance(const Ray& InRay, int Depth)
 	{
-		if (Depth > 8)
+		if (Depth > 5)
 		{
 			return Color::Black;
 		}
@@ -386,7 +388,7 @@ void SetUpScene()
 	S.Lights[0].Center = { 0,500,250 };
 	S.Lights[0].fRadius = 150;
 	S.Lights[0].Normal = { 0,-1,0 };
-	S.Lights[0].M.Emittance = {0.6f,0.5f,0.7f };
+	S.Lights[0].M.Emittance = {2.6f,4.5f,1.7f };
 	S.Lights[0].M.Reflectance = { 0,0,0 };
 
 	time_t t;
@@ -420,6 +422,7 @@ void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 			unsigned int c = (r << 16) + (g << 8 )+ b;
 			Pixel[y * 500 + x] = c;
 		}
+		X_LOG("%f%%\n", float(float(y * W) / float(W * H) * 100));
 	}
 	*Colors = Pixel;
 }

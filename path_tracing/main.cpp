@@ -73,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	return msg.wParam;
 }
-
+#include <stdio.h>
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
@@ -90,7 +90,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		extern bool SavePixelsToPNG(const WCHAR* pFileName, int W, int H, unsigned int* pPixels);
 		int W, H;
 		unsigned int* Colors;
-		const int numSample = 100;
+		const int numSample = 10000;
 		Render(W, H, numSample, &Colors);
 		WCHAR FileName[128] = { 0 };
 		wsprintf(FileName, L".\\PT%d.png", numSample);
