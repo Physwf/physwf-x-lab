@@ -397,10 +397,6 @@ void SetUpScene()
 #include <stdio.h>
 void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 {
-	Vector3i v3;
-	v3.X = 1;
-	v3.Y = 2;
-	v3.Z = 2;
 	W = 500;
 	H = 500;
 	unsigned int* Pixel = new unsigned int[W*H];

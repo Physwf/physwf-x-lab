@@ -4,6 +4,8 @@ file(GLOB_RECURSE DIR_SRC
     "./*.cpp"
     "./*.c"
     "./*.h"
+    "./*.inl"
+    "./*.inc"
 )
 
 add_executable(path_tracing ${DIR_SRC})
