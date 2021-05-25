@@ -2,6 +2,8 @@
 
 void TestMain()
 {
+	Vector2f V2f;
+
 	Vector3i v3;
 	v3.X = 1;
 	v3.Y = 2;

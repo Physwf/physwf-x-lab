@@ -18,7 +18,7 @@ public:
 
 	VectorBody(Vector2)
 
-	Vector2 Cross(const Vector2& rhs)
+	T Cross(const Vector2& rhs)
 	{
 		return Cross2(Elements, rhs.Elements);
 	}
@@ -63,12 +63,33 @@ public:
 	VectorBody(Vector4)
 };
 
+template<typename T>
+T Cross(const Vector2<T>& lhs, const Vector2<T>& rhs)
+{
+	return lhs.Cross(rhs);
+}
+
+template<typename T>
+T Dot(const Vector2<T>& lhs, const Vector2<T>& rhs)
+{
+	return lhs.Dot(rhs);
+}
+
+template<typename T>
+Vector3<T> Cross(const Vector3<T>& lhs,const Vector3<T>& rhs)
+{
+	return lhs.Cross(rhs);
+}
+
+template<typename T>
+T Dot(const Vector3<T>& lhs, const Vector3<T>& rhs)
+{
+	return lhs.Dot(rhs);
+}
+
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 
 typedef Vector4<int> Vector4i;
 typedef Vector2<float> Vector2f;
 typedef Vector3<float> Vector3f;
 typedef Vector4<float> Vector4f;
-
-typedef Vector4f LinerColor; 
-typedef Vector4i Color;

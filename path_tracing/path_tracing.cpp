@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <time.h>
 #include "log.h"
-#include "Vector.h"
+
 struct Vec
 {
 	float X, Y, Z;
