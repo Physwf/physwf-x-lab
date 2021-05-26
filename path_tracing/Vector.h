@@ -14,7 +14,7 @@ public:
 	};
 
 	Vector2() :X(0), Y(0) {}
-	Vector2(T InX, T InY, T InZ) : X(InX), Y(InY) {}
+	Vector2(T InX, T InY) : X(InX), Y(InY) {}
 
 	VectorBody(Vector2)
 

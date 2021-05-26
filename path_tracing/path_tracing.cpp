@@ -395,34 +395,72 @@ void SetUpScene()
 	srand((unsigned int)time(&t));
 }
 #include <stdio.h>
+#include "ParallelFor.h"
+#include "Windows.h"
 void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 {
 	W = 500;
 	H = 500;
 	unsigned int* Pixel = new unsigned int[W*H];
-	for (int y = 0; y < H; ++y)
+	HANDLE Events[5 * 5];
+	for (int i = 0; i < 25; ++i)
 	{
-		for (int x = 0; x < W; ++x)
-		{
-			//Ray R = S.C.GetPixelRay(250, 10);
-			Ray R = S.C.GetPixelRay(x, y);
-			Color C = { 0,0,0 };
-			for (int i = 0; i < iNumSample; ++i)
-			{
-				C = C + S.Radiance(R, 0);
-				//assert(C.R == C.G);
-				//assert(C.R == C.B);
-				//assert(C.R == C.B);
-			}
-			C = C / iNumSample;
-			C.Clamp();
-			unsigned char r = (unsigned char)(C.R * 255);
-			unsigned char g = (unsigned char)(C.G * 255);
-			unsigned char b = (unsigned char)(C.B * 255);
-			unsigned int c = (r << 16) + (g << 8 )+ b;
-			Pixel[y * 500 + x] = c;
-		}
-		X_LOG("%f%%\n", float(float(y * W) / float(W * H) * 100));
+		Events[i] = CreateEvent(0, true, false, NULL);
 	}
+	ParallelFor2D([=](Vector2i Index) 
+		{
+			int SizeX, SizeY;
+			SizeX = SizeY = 100;
+			int StartX = Index.X * SizeX;
+			int EndX = StartX + SizeX;
+			int StartY = Index.Y * SizeY;
+			int EndY = StartY + SizeY;
+			for (int y = StartY; y < EndY; ++y)
+			{
+				for (int x = StartX; x < EndX; ++x)
+				{
+					Ray R = S.C.GetPixelRay(x, y);
+					Color C = { 0,0,0 };
+					for (int i = 0; i < iNumSample; ++i)
+					{
+						C = C + S.Radiance(R, 0);
+					}
+					C = C / iNumSample;
+					C.Clamp();
+					unsigned char r = (unsigned char)(C.R * 255);
+					unsigned char g = (unsigned char)(C.G * 255);
+					unsigned char b = (unsigned char)(C.B * 255);
+					unsigned int c = (r << 16) + (g << 8) + b;
+					Pixel[y * 500 + x] = c;
+				}
+			}
+			//X_LOG("Index(%d,%d)\n", Index.X, Index.Y);
+			SetEvent(Events[Index.X + Index.Y * 5]);
+		}, Vector2i(5,5));
+// 	for (int y = 0; y < H; ++y)
+// 	{
+// 		for (int x = 0; x < W; ++x)
+// 		{
+// 			//Ray R = S.C.GetPixelRay(250, 10);
+// 			Ray R = S.C.GetPixelRay(x, y);
+// 			Color C = { 0,0,0 };
+// 			for (int i = 0; i < iNumSample; ++i)
+// 			{
+// 				C = C + S.Radiance(R, 0);
+// 				//assert(C.R == C.G);
+// 				//assert(C.R == C.B);
+// 				//assert(C.R == C.B);
+// 			}
+// 			C = C / iNumSample;
+// 			C.Clamp();
+// 			unsigned char r = (unsigned char)(C.R * 255);
+// 			unsigned char g = (unsigned char)(C.G * 255);
+// 			unsigned char b = (unsigned char)(C.B * 255);
+// 			unsigned int c = (r << 16) + (g << 8 )+ b;
+// 			Pixel[y * 500 + x] = c;
+// 		}
+// 		X_LOG("%f%%\n", float(float(y * W) / float(W * H) * 100));
+// 	}
+	WaitForMultipleObjects(_countof(Events), Events, TRUE, INFINITE);
 	*Colors = Pixel;
 }

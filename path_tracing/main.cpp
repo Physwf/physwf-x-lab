@@ -20,6 +20,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
+	void InitFixedThreadPool();
+	InitFixedThreadPool();
+
 	wc.cbSize = sizeof WNDCLASSEX;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = WindowProc;
@@ -90,7 +93,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		extern bool SavePixelsToPNG(const WCHAR* pFileName, int W, int H, unsigned int* pPixels);
 		int W, H;
 		unsigned int* Colors;
-		const int numSample = 10000;
+		const int numSample = 100000;
 		Render(W, H, numSample, &Colors);
 		WCHAR FileName[128] = { 0 };
 		wsprintf(FileName, L".\\PT%d.png", numSample);

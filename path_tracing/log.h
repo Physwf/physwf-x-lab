@@ -2,8 +2,11 @@
 
 #include <stdio.h>
 #include <cstdarg>
+#include <mutex>
 
 #define X_LOG(Format,...) XLOG(Format, __VA_ARGS__)
+
+std::mutex lk;
 
 inline void XLOG(const char* format, ...)
 {
@@ -13,5 +16,8 @@ inline void XLOG(const char* format, ...)
 	vsprintf_s(buffer, format, v_list);
 	va_end(v_list);
 	extern void OutputDebug(const char* Format);
-	OutputDebug(buffer);
+	{
+		std::lock_guard<std::mutex> guard(lk);
+		OutputDebug(buffer);
+	}
 }

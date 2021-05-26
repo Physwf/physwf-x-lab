@@ -1,6 +1,20 @@
 #pragma once
+#include <functional>
 
-void ThreadPoolInit();
-void ThreadPoolFini();
+class JFixedThreadPoolImpl;
 
+class JFixedThreadPool
+{
+public:
+	explicit JFixedThreadPool(size_t MaxThread);
+	~JFixedThreadPool();
 
+	void Execute(std::function<void()>&& Task);
+private:
+	JFixedThreadPoolImpl* Impl;
+};
+
+extern JFixedThreadPool* GFixThreadPool;
+
+void InitFixedThreadPool();
+void FiniFixedThreadPool();
