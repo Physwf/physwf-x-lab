@@ -397,20 +397,21 @@ void SetUpScene()
 #include <stdio.h>
 #include "ParallelFor.h"
 #include "Windows.h"
-void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
+void Render(int &W, int &H, int iNumSample, unsigned int** BackBuffer, std::function<void()> TileCallback)
 {
 	W = 500;
 	H = 500;
-	unsigned int* Pixel = new unsigned int[W*H];
-	HANDLE Events[5 * 5];
-	for (int i = 0; i < 25; ++i)
-	{
-		Events[i] = CreateEvent(0, true, false, NULL);
-	}
+	unsigned int* Pixel = new unsigned int[W*H]();
+	*BackBuffer = Pixel;
+// 	HANDLE Events[5 * 5];
+// 	for (int i = 0; i < 25; ++i)
+// 	{
+// 		Events[i] = CreateEvent(0, true, false, NULL);
+// 	}
 	ParallelFor2D([=](Vector2i Index) 
 		{
 			int SizeX, SizeY;
-			SizeX = SizeY = 100;
+			SizeX = SizeY = 10;
 			int StartX = Index.X * SizeX;
 			int EndX = StartX + SizeX;
 			int StartY = Index.Y * SizeY;
@@ -431,12 +432,13 @@ void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 					unsigned char g = (unsigned char)(C.G * 255);
 					unsigned char b = (unsigned char)(C.B * 255);
 					unsigned int c = (r << 16) + (g << 8) + b;
-					Pixel[y * 500 + x] = c;
+					Pixel[y * W + x] = c;
 				}
 			}
 			//X_LOG("Index(%d,%d)\n", Index.X, Index.Y);
-			SetEvent(Events[Index.X + Index.Y * 5]);
-		}, Vector2i(5,5));
+			//SetEvent(Events[Index.X + Index.Y * 5]);
+			TileCallback();
+		}, Vector2i(50,50));
 // 	for (int y = 0; y < H; ++y)
 // 	{
 // 		for (int x = 0; x < W; ++x)
@@ -461,6 +463,5 @@ void Render(int &W, int &H, int iNumSample, unsigned int** Colors)
 // 		}
 // 		X_LOG("%f%%\n", float(float(y * W) / float(W * H) * 100));
 // 	}
-	WaitForMultipleObjects(_countof(Events), Events, TRUE, INFINITE);
-	*Colors = Pixel;
+	//WaitForMultipleObjects(_countof(Events), Events, TRUE, INFINITE);
 }

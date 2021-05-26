@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <functional>
 
 void OutputDebug(const char* Format)
 {
@@ -12,6 +13,10 @@ LRESULT CALLBACK WindowProc(HWND hWnd,
 
 HWND g_hWind = NULL;
 
+unsigned int* BackBuffer;
+int W, H;
+const int numSample = 100000;
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	extern void SetUpScene();
@@ -20,8 +25,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
-	void InitFixedThreadPool();
+	extern void InitFixedThreadPool();
+	extern void Render(int& W, int& H, int iNumSample, unsigned int** BackBuffer,std::function<void()>);
 	InitFixedThreadPool();
+
 
 	wc.cbSize = sizeof WNDCLASSEX;
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -57,6 +64,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShowWindow(g_hWind, nCmdShow);
 
+	Render(W, H, numSample, &BackBuffer, [=]() { InvalidateRect(g_hWind, &wr,false); });
 
 
 	MSG msg;
@@ -88,23 +96,17 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 		// 通过窗口句柄获取该窗口的 DC
 		hdc = BeginPaint(hWnd, &ps);
-
-		extern void Render(int &W, int &H, int iNumSample, unsigned int** Colors);
-		extern bool SavePixelsToPNG(const WCHAR* pFileName, int W, int H, unsigned int* pPixels);
-		int W, H;
-		unsigned int* Colors;
-		const int numSample = 100000;
-		Render(W, H, numSample, &Colors);
-		WCHAR FileName[128] = { 0 };
-		wsprintf(FileName, L".\\PT%d.png", numSample);
-		SavePixelsToPNG(FileName, W, H, Colors);
+		//extern bool SavePixelsToPNG(const WCHAR * pFileName, int W, int H, unsigned int* pPixels);
+		//WCHAR FileName[128] = { 0 };
+		//wsprintf(FileName, L".\\PT%d.png", numSample);
+		//SavePixelsToPNG(FileName, W, H, BackBuffer);
 		for (int i = 0; i < H; i++)
 		{
 			for (int j = 0; j < W; ++j)
 			{
-				unsigned char R = (Colors[i*W + j] & 0xFF0000) >> 16;
-				unsigned char G = (Colors[i*W + j] & 0x00FF00) >> 8;
-				unsigned char B = Colors[i*W + j] & 0x0000FF;
+				unsigned char R = (BackBuffer[i*W + j] & 0xFF0000) >> 16;
+				unsigned char G = (BackBuffer[i*W + j] & 0x00FF00) >> 8;
+				unsigned char B = BackBuffer[i*W + j] & 0x0000FF;
 				SetPixel(hdc, j, i, RGB( R , G , B));
 				//SetPixel(hdc, j, i, 0x0000FF);
 			}
