@@ -1,8 +1,8 @@
 
-template <int NumberComponents>
+template <typename T,int NumberComponents>
 class GeneralizedColor
 {
-	float Components[NumberComponents];
+	T Components[NumberComponents];
 public:
 	GeneralizedColor() {}
 
@@ -100,23 +100,26 @@ public:
 	}
 };
 //Long Medium Short
-class LMSColor : public GeneralizedColor<3>
+class LMSColor : public GeneralizedColor<float,3>
 {
 public:
 	LMSColor(){}
 };
 
-class ColorSpace
+class DiscreteLMSColor : public GeneralizedColor<unsigned char, 3>
 {
-public:
-	static LMSColor XYZToRGB(const ColorSpace& XYZ)
-	{
 
-	}
-	static LMSColor RGBToXYZ(const ColorSpace& XYZ)
-	{
-
-	}
 };
+
+inline LMSColor XYZToRGB(const LMSColor& XYZ)
+{
+
+}
+inline LMSColor RGBToXYZ(const LMSColor& XYZ)
+{
+
+}
+
+typedef LMSColor			LinearColor;
 
 
