@@ -109,7 +109,51 @@ public:
 			if (Components[i] == rhs.Components[i]) return false;
 		return true;
 	}
+
+	friend GeneralizedColor Sqrt(const GeneralizedColor& Value)
+	{
+		GeneralizedColor Result;
+		for (int i = 0; i < NumberComponents; ++i)
+		{
+			Result.Components[i] = std::sqrtf(Value.Components[i]);
+		}
+		return Result;
+	}
+
+	friend GeneralizedColor Pow(const GeneralizedColor& Value,float exponent)
+	{
+		GeneralizedColor Result;
+		for (int i = 0; i < NumberComponents; ++i)
+		{
+			Result.Components[i] = std::powf(Value.Components[i], exponent);
+		}
+		return Result;
+	}
+
+	friend GeneralizedColor Exp(const GeneralizedColor& Value)
+	{
+		GeneralizedColor Result;
+		for (int i = 0; i < NumberComponents; ++i)
+		{
+			Result.Components[i] = std::exp(Value.Components[i]);
+		}
+		return Result;
+	}
 };
+
+template<typename T,int NumberComponents>
+inline  GeneralizedColor<T, NumberComponents> operator*(float Value, const GeneralizedColor<T, NumberComponents>& Color)
+{
+	return Color * Value;
+}
+
+template<typename T, int NumberComponents>
+inline  GeneralizedColor<T, NumberComponents> operator*(const GeneralizedColor<T, NumberComponents>& lhs, const GeneralizedColor<T, NumberComponents>& rhs)
+{
+	return lhs.operator*(rhs);
+}
+
+
 //Long Medium Short
 class LMSColor : public GeneralizedColor<float,3>
 {

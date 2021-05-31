@@ -18,6 +18,13 @@ public:
 			Result[i] = lhs[i] - rhs[i];
 		}
 	}
+	inline void Minus(const T* V)
+	{
+		for (int i = 0; i < Count; ++i)
+		{
+			Result[i] = -V[i];
+		}
+	}
 	inline T Dot(const T* lhs, const T* rhs)
 	{
 		T Result = 0;
@@ -80,6 +87,12 @@ Type operator-(const Type& rhs)								\
 {															\
 	Type Result;											\
 	Subtract(Elements, rhs.Elements, Result.Elements);		\
+	return Result;											\
+}															\
+Type operator-() const										\
+{															\
+	Type Result;											\
+	Minus(Result.Elements);									\
 	return Result;											\
 }															\
 Type operator*(const Type& rhs)								\

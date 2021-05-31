@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "Colorimetry.h"
+#include "Fresnel.h"
 
 class BxDF
 {
@@ -18,13 +19,19 @@ public:
 class SpecularReflection : public BxDF
 {
 public:
+
 	LinearColor f(const Vector3f& wo, const Vector3f& wi) const
 	{
 		return LinearColor(0.f);
 	}
 	LinearColor Sample_f(const Vector3f& wo, Vector3f* wi, const Vector2f& sample, float* pdf)
 	{
+		*wi = Vector3f(-wo.X,-wo.Y,wo.Z);
+		*pdf = 1;
 
 	}
 	float Pdf(const Vector3f& wo, const Vector3f& wi) { return 0.f; }
+private:
+	const LinearColor R;
+	const Fresnel* fresnel;
 };

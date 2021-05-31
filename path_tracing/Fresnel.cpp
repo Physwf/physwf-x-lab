@@ -12,7 +12,7 @@ float FrDielectirc(float cosThetaI, float etaI, float etaT)
 		cosThetaI = std::abs(cosThetaI);
 	}
 
-	float sinThetaI = std::sqrt(std::max(0.f, 1 - cosThetaI * cosThetaI));
+	float sinThetaI = std::sqrtf(std::max(0.f, 1 - cosThetaI * cosThetaI));
 	float sinTehtaT = etaI / etaT * sinThetaI;
 
 	if (sinTehtaT >= 1.f) return 1.f;//total reflection
@@ -36,9 +36,9 @@ LinearColor FrConductor(float cosThetaI, const LinearColor &etai, const LinearCo
 	LinearColor etak2 = etak * etak;
 
 	LinearColor t0 = eta2 - etak2 - sinThetaI2;
-	LinearColor a2plusb2 = std::sqrtf(t0 * t0 + 4 * eta2 * etak2);
+	LinearColor a2plusb2 = Sqrt(t0 * t0 + 4 * eta2 * etak2);
 	LinearColor t1 = a2plusb2 + cosThetaI2;
-	LinearColor a = std::sqrtf(0.5f * (a2plusb2 + t0));
+	LinearColor a = Sqrt(0.5f * (a2plusb2 + t0));
 	LinearColor t2 = (float)2 * cosThetaI * a;
 	LinearColor Rs = (t1 - t2) / (t1 + t2);
 
@@ -51,6 +51,10 @@ LinearColor FrConductor(float cosThetaI, const LinearColor &etai, const LinearCo
 
 LinearColor FresnelConductor::Evaluate(float cosI)
 {
-
+	return FrConductor(std::abs(cosI), etaI, etaT, k);
 }
 
+LinearColor FresnelDielectric::Evaluate(float cosI)
+{
+	return FrDielectirc(cosI,etaI,etaT);
+}
