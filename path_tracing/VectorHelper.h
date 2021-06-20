@@ -77,13 +77,13 @@ public:
 };
 
 #define VectorBody(Type)									\
-Type operator+(const Type& rhs)								\
+Type operator+(const Type& rhs) const						\
 {															\
 	Type Result;											\
 	Add(Elements, rhs.Elements, Result.Elements);			\
 	return Result;											\
 }															\
-Type operator-(const Type& rhs)								\
+Type operator-(const Type& rhs)	const						\
 {															\
 	Type Result;											\
 	Subtract(Elements, rhs.Elements, Result.Elements);		\
@@ -95,33 +95,33 @@ Type operator-() const										\
 	Minus(Result.Elements);									\
 	return Result;											\
 }															\
-Type operator*(const Type& rhs)								\
+Type operator*(const Type& rhs)	 const						\
 {															\
 	Type Result;											\
 	Multiply(Elements, rhs.Elements, Result.Elements);		\
 	return Result;											\
 }															\
 template<typename U>										\
-Type operator*(U value)										\
+Type operator*(U value)	const								\
 {															\
 	Vector3 Result;											\
 	Multiply<U>(Elements, value, Result.Elements);			\
 	return Result;											\
 }															\
-Type operator/(const Type& rhs)								\
+Type operator/(const Type& rhs)	const						\
 {															\
 	Type Result;											\
 	Devide(Elements, rhs.Elements, Result.Elements);		\
 	return Result;											\
 }															\
 template <typename U>										\
-Type operator/(U value)										\
+Type operator/(U value)	const								\
 {															\
 	Type Result;											\
 	Devide<U>(Elements, value, Result.Elements);			\
 	return Result;											\
 }															\
-T Dot(const Type& rhs)										\
+T Dot(const Type& rhs)	const								\
 {															\
 	return Dot(Elements, rhs.Elements);						\
 }															

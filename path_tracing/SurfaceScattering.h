@@ -35,3 +35,29 @@ private:
 	const LinearColor R;
 	const Fresnel* fresnel;
 };
+
+class LambertainReflection : public BxDF
+{
+public:
+	LambertainReflection(const LinearColor& InR) : R(InR) {}
+	LinearColor f(const Vector3f& wo, const Vector3f& wi) const;
+	LinearColor rho(const Vector3f& wo, int nSamples, const Vector2f* Smaples) const { return R; }
+	LinearColor rho(int nSamples, const Vector2f* Smaples1, const Vector2f* Smaples2) const { return R; }
+private:
+	const LinearColor R;
+};
+
+class FresnelSpecular : public BxDF
+{
+
+};
+
+class MicrofacetReflection : public BxDF
+{
+
+};
+
+class BSDF
+{
+
+};
