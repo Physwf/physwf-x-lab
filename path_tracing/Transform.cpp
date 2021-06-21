@@ -1,0 +1,28 @@
+#include "Transform.h"
+
+Transform Transform::operator*(const Transform& t)
+{
+	Transform Result;
+	XMStoreFloat4x4(&Result.M,	  XMMatrixMultiply(XMLoadFloat4x4(&M), XMLoadFloat4x4(&t.M)));
+	XMStoreFloat4x4(&Result.InvM, XMMatrixMultiply(XMLoadFloat4x4(&InvM), XMLoadFloat4x4(&t.InvM)));
+	return Result;
+}
+
+Transform Perspective(float fov, float aspect, float znear, float zfar)
+{
+	XMFLOAT4X4 M;
+	XMStoreFloat4x4(&M, XMMatrixPerspectiveFovLH(fov, aspect, znear, zfar));
+	return Transform(M);
+}
+Transform Translate(const Vector3f& delta)
+{
+	XMFLOAT4X4 m(1, 0, 0, delta.X, 0, 1, 0, delta.Y, 0, 0, 1, delta.Z, 0, 0, 0, 1);
+	XMFLOAT4X4 minv(1, 0, 0, -delta.X, 0, 1, 0, -delta.Y, 0, 0, 1, -delta.Z, 0, 0, 0, 1);
+	return Transform(m, minv);
+}
+Transform Scale(float x, float y, float z)
+{
+	XMFLOAT4X4 m(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1);
+	XMFLOAT4X4 minv(1 / x, 0, 0, 0, 0, 1 / y, 0, 0, 0, 0, 1 / z, 0, 0, 0, 0, 1);
+	return Transform(m, minv);
+}

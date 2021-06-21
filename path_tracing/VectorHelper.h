@@ -124,4 +124,12 @@ Type operator/(U value)	const								\
 T Dot(const Type& rhs)	const								\
 {															\
 	return Dot(Elements, rhs.Elements);						\
-}															
+}															\
+T LengthSquared()	const									\
+{															\
+	return Dot(Elements, Elements);							\
+}															\
+T Length()	const											\
+{															\
+	return std::sqrt(LengthSquared());						\
+}

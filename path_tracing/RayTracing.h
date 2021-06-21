@@ -41,7 +41,3 @@ struct SurfaceInteraction : public Interaction
 	BSDF* bsdf;
 };
 
-class Camera
-{
-
-};

@@ -100,6 +100,18 @@ T Dot(const Vector3<T>& lhs, const Vector3<T>& rhs)
 	return lhs.Dot(rhs);
 }
 
+template<typename T>
+Vector2<T> Normalize(const Vector2<T>& V)
+{
+	return V / V.Length();
+}
+
+template<typename T>
+Vector3<T> Normalize(const Vector3<T>& V)
+{
+	return V / V.Length();
+}
+
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 
 typedef Vector4<int> Vector4i;

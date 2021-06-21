@@ -15,9 +15,9 @@ public:
 		pMax = Vector2<T>(minNum, minNum);
 	}
 
-	explicit Bounds2(const Point2<T> &p) : pMin(p), pMax(p) {}
+	explicit Bounds2(const Vector2<T> &p) : pMin(p), pMax(p) {}
 
-	Bounds2(const Point2<T> &p1, const Point2<T> &p2) 
+	Bounds2(const Vector2<T> &p1, const Vector2<T> &p2)
 	{
 		pMin = Vector2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
 		pMax = Vector2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
@@ -99,3 +99,8 @@ public:
 private:
 	Vector3<T> pMin, pMax;
 };
+
+typedef Bounds2<int> Bounds2i; 
+typedef Bounds2<float> Bounds2f;
+typedef Bounds3<int> Bounds3i;
+typedef Bounds3<float> Bounds3f;
