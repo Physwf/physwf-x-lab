@@ -39,5 +39,6 @@ struct SurfaceInteraction : public Interaction
 	Vector3f dpdu, dpdv;
 	Vector3f dndu, dndv;
 	BSDF* bsdf;
+	const class SceneObject* object;
 };
 

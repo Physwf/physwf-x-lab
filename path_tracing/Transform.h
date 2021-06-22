@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "RayTracing.h"
+#include "Bounds.h"
 
 #include "DirectXMath.h"
 using namespace DirectX;
@@ -53,6 +54,7 @@ public:
 		XMStoreFloat4x4(&InvM, XMMatrixTranspose(XMLoadFloat4x4(&t.InvM)));
 		return Transform(M, InvM);
 	}
+	Bounds3f operator() (const Bounds3f& b) const;
 	Transform operator*(const Transform& t);
 	bool operator==(const Transform& t) const
 	{

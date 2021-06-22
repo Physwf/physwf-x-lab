@@ -112,6 +112,30 @@ Vector3<T> Normalize(const Vector3<T>& V)
 	return V / V.Length();
 }
 
+template <typename T>
+Vector2<T> Min(const Vector2<T>& p1, const Vector2<T>& p2)
+{
+	return Vector2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
+}
+
+template <typename T>
+Vector3<T> Min(const Vector3<T>& p1, const Vector3<T>& p2)
+{
+	return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
+}
+
+template <typename T>
+Vector2<T> Max(const Vector2<T>& p1, const Vector2<T>& p2)
+{
+	return Vector2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
+}
+
+template <typename T>
+Vector3<T> Max(const Vector3<T>& p1, const Vector3<T>& p2) 
+{
+	return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
+}
+
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 
 typedef Vector4<int> Vector4i;

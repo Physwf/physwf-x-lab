@@ -96,11 +96,29 @@ public:
 		Vector3<T> d = Diagonal();
 		return d.x * d.y * d.z;
 	}
-private:
 	Vector3<T> pMin, pMax;
 };
+
+template <typename T>
+Bounds3<T> Union(const Bounds3<T>& b, const Vector3<T>& p)
+{
+	Bounds3<T> ret;
+	ret.pMin = Min(b.pMin, p);
+	ret.pMax = Max(b.pMax, p);
+	return ret;
+}
+
+template <typename T>
+Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2)
+{
+	Bounds3<T> ret;
+	ret.pMin = Min(b1.pMin, b2.pMin);
+	ret.pMax = Max(b1.pMax, b2.pMax);
+	return ret;
+}
 
 typedef Bounds2<int> Bounds2i; 
 typedef Bounds2<float> Bounds2f;
 typedef Bounds3<int> Bounds3i;
 typedef Bounds3<float> Bounds3f;
+

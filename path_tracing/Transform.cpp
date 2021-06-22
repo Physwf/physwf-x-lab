@@ -8,6 +8,20 @@ Transform Transform::operator*(const Transform& t)
 	return Result;
 }
 
+Bounds3f Transform::operator()(const Bounds3f& b)
+{
+	const Transform& M = *this;
+	Bounds3f ret(M(Vector3f(b.pMin.X, b.pMin.Y, b.pMin.Z)));
+	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMin.Y, b.pMin.Z)));
+	ret = Union(ret, M(Vector3f(b.pMin.X, b.pMax.Y, b.pMin.Z)));
+	ret = Union(ret, M(Vector3f(b.pMin.X, b.pMin.Y, b.pMax.Z)));
+	ret = Union(ret, M(Vector3f(b.pMin.X, b.pMax.Y, b.pMax.Z)));
+	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMax.Y, b.pMin.Z)));
+	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMin.Y, b.pMax.Z)));
+	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMax.Y, b.pMax.Z)));
+	return ret;
+}
+
 Transform Perspective(float fov, float aspect, float znear, float zfar)
 {
 	XMFLOAT4X4 M;
