@@ -136,6 +136,12 @@ Vector3<T> Max(const Vector3<T>& p1, const Vector3<T>& p2)
 	return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
 }
 
+template<typename T>
+T Distance(const Vector3<T>& p1, const Vector3<T>& p2)
+{
+	return (p1 - p2).Length();
+}
+
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 
 typedef Vector4<int> Vector4i;

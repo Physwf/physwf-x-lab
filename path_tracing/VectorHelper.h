@@ -74,6 +74,22 @@ public:
 			Result[i] = lhs[i] / rhs[i];
 		}
 	}
+	inline bool Equal(const T* lhs, const T* rhs)
+	{
+		for (int i = 0; i < Count; ++i)
+		{
+			if (lhs[i] != rhs[i]) return false;
+		}
+		return true;
+	}
+	inline bool IsNearlyEqual(const T* lhs, const T* rhs)
+	{
+		for (int i = 0; i < Count; ++i)
+		{
+			if (!Math::IsNearlyEqual(lhs[i], rhs[i])) return false;
+		}
+		return true;
+	}
 };
 
 #define VectorBody(Type)									\
@@ -132,4 +148,21 @@ T LengthSquared()	const									\
 T Length()	const											\
 {															\
 	return std::sqrt(LengthSquared());						\
-}
+}															\
+bool operator==(const Type& rhs) const						\
+{															\
+	return Equal(Elements, rhs.Elements);					\
+}															\
+bool operator!=(const Type& rhs) const						\
+{															\
+	return !Equal(Elements, rhs.Elements);					\
+}															\
+bool IsNearlyEqual(const Type& rhs) const					\
+{															\
+	return IsNearlyEqual(Elements, rhs.Elements);			\
+}															\
+															\
+T operator[](int i) const									\
+{															\
+	return Elements[i];										\
+}															

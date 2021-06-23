@@ -8,7 +8,7 @@ Transform Transform::operator*(const Transform& t)
 	return Result;
 }
 
-Bounds3f Transform::operator()(const Bounds3f& b)
+Bounds3f Transform::operator()(const Bounds3f& b) const
 {
 	const Transform& M = *this;
 	Bounds3f ret(M(Vector3f(b.pMin.X, b.pMin.Y, b.pMin.Z)));
@@ -19,6 +19,25 @@ Bounds3f Transform::operator()(const Bounds3f& b)
 	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMax.Y, b.pMin.Z)));
 	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMin.Y, b.pMax.Z)));
 	ret = Union(ret, M(Vector3f(b.pMax.X, b.pMax.Y, b.pMax.Z)));
+	return ret;
+}
+
+SurfaceInteraction Transform::operator()(const SurfaceInteraction& si) const
+{
+	SurfaceInteraction ret;
+	ret.p = (*this)(si.p);
+
+	const Transform& t = *this;
+	ret.n = Normalize(t(si.n));
+	ret.wo = Normalize(t(si.wo));
+	ret.shape = si.shape;
+	ret.dpdu = t(si.dpdu);
+	ret.dpdv = t(si.dpdv);
+	ret.dndu = t(si.dndu);
+	ret.dndv = t(si.dndv);
+	ret.bsdf = si.bsdf;
+	ret.object = si.object;
+
 	return ret;
 }
 

@@ -34,11 +34,12 @@ struct SurfaceInteraction : public Interaction
 	SurfaceInteraction(
 		const Vector3f& InP, const Vector2f& InUV, const Vector3f& InWO, 
 		const Vector3f &Indpdu, const Vector3f &Indpdv, 
-		const Vector3f &Indndu, const Vector3f &Indndv);
+		const Vector3f &Indndu, const Vector3f &Indndv, const class Shape* sh);
 	Vector2f uv;
 	Vector3f dpdu, dpdv;
 	Vector3f dndu, dndv;
 	BSDF* bsdf;
-	const class SceneObject* object;
+	const class SceneObject* object = NULL;
+	const class Shape* shape = NULL;
 };
 

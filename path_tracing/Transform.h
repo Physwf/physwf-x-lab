@@ -71,6 +71,7 @@ public:
 	template <typename T>
 	inline Vector3<T> operator()(const Vector3<T>& p) const;
 	inline Ray operator()(const Ray& r) const;
+	SurfaceInteraction operator()(const SurfaceInteraction& si) const;
 private:
 	XMFLOAT4X4 M,InvM;
 };
