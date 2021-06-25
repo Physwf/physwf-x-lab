@@ -151,20 +151,50 @@ MeshObject::MeshObject(const Transform& InLocalToToWorld, const std::shared_ptr<
 	int InnTriangles, int InnVertices, Vector3f* Inp, Vector3f* Inn, Vector2f* Inuv, std::vector<int> InIndices)
 	: SceneObject(InLocalToToWorld, Inmaterial), nTriangles(InnTriangles), nVertices(InnVertices), p(Inp), n(Inn), uv(Inuv), Indices(Indices)
 {
-
+	BuildTriangle();
 }
 
 Bounds3f MeshObject::WorldBound() const
 {
-
+	return LocalToWorld(LocalBounds);
 }
 
 bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
-
+	float tHit;
+	for (const auto& t : Triangles)
+	{
+		if (t->Intersect(ray, &tHit, isect))
+		{
+			ray.tMax = tHit;
+			isect->object = this;
+			return true;
+		}
+	}
+	return false;
 }
 
 bool MeshObject::IntersectP(const Ray& ray) const
 {
+	for (const auto& t : Triangles)
+	{
+		if (t->IntersectP(ray))
+		{
+			return true;
+		}
+	}
+	return false;
+}
 
+void MeshObject::BuildTriangle()
+{
+	for (int i = 0; i < nTriangles; ++i)
+	{
+		std::shared_ptr<Triangle> t = std::make_shared<Triangle>(this, i);
+		Triangles.push_back(t);
+	}
+	for (int i = 0; i < nVertices; ++i)
+	{
+		LocalBounds = Union(LocalBounds, p[i]);
+	}
 }

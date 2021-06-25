@@ -51,7 +51,7 @@ public:
 	bool operator!=(const Bounds2<T> &b) const {
 		return b.pMin != pMin || b.pMax != pMax;
 	}
-private:
+
 	Vector2<T> pMin, pMax;
 };
 
