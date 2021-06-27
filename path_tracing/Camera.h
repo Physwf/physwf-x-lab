@@ -1,24 +1,36 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "Transform.h"
 #include "Bounds.h"
+#include "Filter.h"
 
-class Filter
+struct PhysicalPixel
 {
+	LinearColor contribSum = 0;
+	float filterWeightSum = 0;
+};
 
+struct DisplayPixel
+{
+	float xyz[3]{0};
+	float weight = 0;
 };
 
 class FilmTile
 {
 public:
-	FilmTile(const Bounds2i& pixelBounds);
+	FilmTile(const Bounds2i& pixelBounds,const Vector2f& filterRadius,const float* filterTable, int filterTableSize );
 	Bounds2i GetPixelBounds() const { return pixelBounds; }
 	void AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight = 1.0f);
 private:
 	const Bounds2i pixelBounds;
-
+	std::vector<PhysicalPixel> pixels;
+	const Vector2f filterRadius, invFilterRadius;
+	const float* filterTable;
+	const int filterTableSize;
 	friend class Film;
 };
 
@@ -34,6 +46,11 @@ public:
 	const Vector2i fullResolution;
 	Bounds2i bounds;
 	std::unique_ptr<Filter> filter;
+
+private:
+	std::unique_ptr<DisplayPixel[]> pixels;
+	static const int filterTableWidth = 16;
+	float filterTable[filterTableWidth*filterTableWidth];
 };
 
 class Camera

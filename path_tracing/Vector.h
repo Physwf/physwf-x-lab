@@ -17,6 +17,13 @@ public:
 	Vector2() :X(0), Y(0) {}
 	Vector2(T InX, T InY) : X(InX), Y(InY) {}
 
+	template <typename U>
+	explicit Vector2(const Vector2<U>& p)
+	{
+		X = T(p.X);
+		Y = T(p.Y);
+	}
+
 	VectorBody(Vector2)
 
 	T Cross(const Vector2& rhs)
@@ -37,6 +44,13 @@ public:
 
 	Vector3():X(0),Y(0),Z(0){}
 	Vector3(T InX, T InY, T InZ) : X(InX), Y(InY), Z(InZ){}
+
+	template <typename U>
+	explicit Vector3(const Vector3<U>& p)
+	{
+		X = T(p.X);
+		Y = T(p.Y);
+	}
 
 	VectorBody(Vector3)
 
@@ -115,25 +129,49 @@ Vector3<T> Normalize(const Vector3<T>& V)
 template <typename T>
 Vector2<T> Min(const Vector2<T>& p1, const Vector2<T>& p2)
 {
-	return Vector2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
+	return Vector2<T>(std::min(p1.X, p2.X), std::min(p1.Y, p2.Y));
 }
 
 template <typename T>
 Vector3<T> Min(const Vector3<T>& p1, const Vector3<T>& p2)
 {
-	return Vector3<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z));
+	return Vector3<T>(std::min(p1.X, p2.X), std::min(p1.Y, p2.Y), std::min(p1.Z, p2.Z));
 }
 
 template <typename T>
 Vector2<T> Max(const Vector2<T>& p1, const Vector2<T>& p2)
 {
-	return Vector2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
+	return Vector2<T>(std::max(p1.X, p2.X), std::max(p1.Y, p2.Y));
 }
 
 template <typename T>
 Vector3<T> Max(const Vector3<T>& p1, const Vector3<T>& p2) 
 {
-	return Vector3<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z));
+	return Vector3<T>(std::max(p1.X, p2.X), std::max(p1.Y, p2.Y), std::max(p1.Z, p2.Z));
+}
+
+template <typename T>
+Vector3<T> Floor(const Vector3<T>& p1)
+{
+	return Vector3<T>(std::floor(p1.X), std::floor(p1.Y), std::floor(p1.Z));
+}
+
+template <typename T>
+Vector2<T> Floor(const Vector2<T>& p1)
+{
+	return Vector2<T>(std::floor(p1.X), std::floor(p1.Y));
+}
+
+template <typename T>
+Vector3<T> Ceil(const Vector3<T>& p1)
+{
+	return Vector3<T>(std::ceil(p1.X), std::ceil(p1.Y), std::ceil(p1.Z));
+}
+
+template <typename T>
+Vector2<T> Ceil(const Vector2<T>& p1)
+{
+	return Vector2<T>(std::ceil(p1.X), std::ceil(p1.Y));
 }
 
 template<typename T>
