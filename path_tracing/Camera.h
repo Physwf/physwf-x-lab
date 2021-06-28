@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <mutex>
 
 #include "Transform.h"
 #include "Bounds.h"
@@ -25,6 +26,8 @@ public:
 	FilmTile(const Bounds2i& pixelBounds,const Vector2f& filterRadius,const float* filterTable, int filterTableSize );
 	Bounds2i GetPixelBounds() const { return pixelBounds; }
 	void AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight = 1.0f);
+	PhysicalPixel& GetPixel(const Vector2i& p);
+	const PhysicalPixel& GetPixel(const Vector2i& p) const;
 private:
 	const Bounds2i pixelBounds;
 	std::vector<PhysicalPixel> pixels;
@@ -51,6 +54,14 @@ private:
 	std::unique_ptr<DisplayPixel[]> pixels;
 	static const int filterTableWidth = 16;
 	float filterTable[filterTableWidth*filterTableWidth];
+	std::mutex tileMutex;
+
+	DisplayPixel& GetPixel(const Vector2i& p)
+	{
+		int width = bounds.pMax.X - bounds.pMin.X;
+		int offset = (p.X - bounds.pMin.X) + (p.Y - bounds.pMin.Y) * width;
+		return pixels[offset];
+	}
 };
 
 class Camera

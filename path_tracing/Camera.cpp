@@ -8,7 +8,41 @@ FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius
 
 void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight /*= 1.0f*/)
 {
+	Vector2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
+	Vector2i lu = (Vector2i)Ceil(pFilmDiscrete - filterRadius);
+	Vector2i rb = (Vector2i)Floor(pFilmDiscrete + filterRadius) + Vector2i(1,1);
+	lu = Max(lu, pixelBounds.pMin);
+	rb = Min(rb, pixelBounds.pMax);
 
+	for (int y = lu.Y; y < rb.Y; ++y)
+	{
+		for (int x = lu.X; x < rb.X; ++x)
+		{
+			float fx = std::abs((x - pFilmDiscrete.X) * invFilterRadius.X * filterTableSize);
+			fx = std::min((int)std::floor(fx), filterTableSize - 1);
+			float fy = std::abs((y - pFilmDiscrete.Y) * invFilterRadius.Y * filterTableSize);
+			fy = std::min((int)std::floor(fy), filterTableSize - 1);
+			int offset = fy * filterTableSize + fx;
+			float filterWeight = filterTable[offset];
+			PhysicalPixel& pixel = GetPixel(Vector2i());
+			pixel.contribSum += L * sampleWight * filterWeight;
+			pixel.filterWeightSum += filterWeight;
+		}
+	}
+}
+
+PhysicalPixel& FilmTile::GetPixel(const Vector2i& p)
+{
+	int width = pixelBounds.pMax.X - pixelBounds.pMin.X;
+	int offset = (p.X - pixelBounds.pMin.X) + (p.Y - pixelBounds.pMin.Y) * width;
+	return pixels[offset];
+}
+
+const PhysicalPixel& FilmTile::GetPixel(const Vector2i& p) const
+{
+	int width = pixelBounds.pMax.X - pixelBounds.pMin.X;
+	int offset = (p.X - pixelBounds.pMin.X) + (p.Y - pixelBounds.pMin.Y) * width;
+	return pixels[offset];
 }
 
 Film::Film(const Vector2i& Inresolution, std::unique_ptr<Filter> Infilter)
@@ -39,10 +73,29 @@ std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i& sampleBounds)
 {
 	Vector2f halfpixel = Vector2f(0.5f, 0.5f);
 	Bounds2f floatBounds = (Bounds2f)sampleBounds;
+	//include sampleBounds plus filter->radius
 	Vector2i leftUp =		(Vector2i)Ceil(floatBounds.pMin - halfpixel - filter->radius);
 	Vector2i rightDown =	(Vector2i)Floor(floatBounds.pMin - halfpixel + filter->radius) + Vector2i(1,1);
 	Bounds2i tilePixelBounds = Intersect(Bounds2i(leftUp,rightDown),bounds);
 	return std::make_unique<FilmTile>(tilePixelBounds, filter->radius,filterTable,filterTableWidth);
+}
+
+void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
+{
+	std::lock_guard<std::mutex> lk(tileMutex);
+	Bounds2i tileBounds = tile->GetPixelBounds();
+	for (int y = tileBounds.pMin.Y; y < tileBounds.pMax.Y; ++y)
+	{
+		for (int x = tileBounds.pMin.X; x < tileBounds.pMax.X; ++x)
+		{
+			const PhysicalPixel& tilePixel = tile->GetPixel(Vector2i(x,y));
+			DisplayPixel& mergePixel = GetPixel(Vector2i(x, y));
+			float xyz[3];
+			tilePixel.contribSum.ToXYZ(xyz);
+			for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
+			mergePixel.weight += tilePixel.filterWeightSum;
+		}
+	}
 }
 
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
