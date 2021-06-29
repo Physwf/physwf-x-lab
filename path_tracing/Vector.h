@@ -179,6 +179,11 @@ T Distance(const Vector3<T>& p1, const Vector3<T>& p2)
 {
 	return (p1 - p2).Length();
 }
+template <typename T>
+inline float DistanceSquared(const Vector3<T>& p1, const Vector3<T>& p2)
+{
+	return (p1 - p2).LengthSquared();
+}
 
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 

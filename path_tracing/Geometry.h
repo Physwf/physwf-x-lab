@@ -87,6 +87,7 @@ public:
 	virtual Bounds3f WorldBound() const = 0;
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
 	virtual bool IntersectP(const Ray& ray) const = 0;
+	virtual AreaLight* GetAreaLight() const = 0;
 protected:
 	const Transform LocalToWorld;
 	const Transform WorldToLocal;
