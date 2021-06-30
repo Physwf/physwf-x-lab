@@ -185,6 +185,19 @@ inline float DistanceSquared(const Vector3<T>& p1, const Vector3<T>& p2)
 	return (p1 - p2).LengthSquared();
 }
 
+template <typename T>
+Vector2<T> Lerp(float t, const Vector2<T>& v0, const Vector2<T>& v1)
+{
+	return (1.0f - t) * v0 + t * v1;
+}
+
+template <typename T>
+Vector3<T> Lerp(float t, const Vector3<T>& v0, const Vector3<T>& v1)
+{
+	return (1.0f - t) * v0 + t * v1;
+}
+
+
 typedef Vector2<int> Vector2i; 
 typedef Vector3<int> Vector3i; 
 typedef Vector4<int> Vector4i;

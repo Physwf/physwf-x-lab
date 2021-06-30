@@ -22,6 +22,8 @@ public:
 		return Value;
 	}
 
+	static float Lerp(float t, float v1, float v2) { return (1 - t) * v1 + t * v2; }
+
 	template <typename T>
 	T EuclidGCD(T a, T b)
 	{
