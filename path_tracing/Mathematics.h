@@ -3,7 +3,10 @@
 #include <cmath>
 #include "Vector.h"
 
-#define PI 3.1415926f
+#define PI		3.141592653f
+#define INV_PI	0.318309886f
+#define INV_2PI	0.159154943f
+#define INV_4PI	0.079577471f
 
 class Math
 {

@@ -49,12 +49,12 @@ LinearColor FrConductor(float cosThetaI, const LinearColor &etai, const LinearCo
 	return 0.5 * (Rp + Rs);
 }
 
-LinearColor FresnelConductor::Evaluate(float cosI)
+LinearColor FresnelConductor::Evaluate(float cosI) const
 {
 	return FrConductor(std::abs(cosI), etaI, etaT, k);
 }
 
-LinearColor FresnelDielectric::Evaluate(float cosI)
+LinearColor FresnelDielectric::Evaluate(float cosI) const
 {
 	return FrDielectirc(cosI,etaI,etaT);
 }

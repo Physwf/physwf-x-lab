@@ -58,6 +58,10 @@ public:
 			Result.Components[i] = Components[i] * Value;
 		return Result;
 	}
+	friend inline GeneralizedColor operator*(float Value, const GeneralizedColor& Color)
+	{
+		return Color * Value;
+	}
 	GeneralizedColor operator/(const GeneralizedColor& rhs) const
 	{
 		GeneralizedColor Result;
@@ -158,12 +162,6 @@ template<typename T,int NumberComponents>
 inline  GeneralizedColor<T, NumberComponents> operator*(float Value, const GeneralizedColor<T, NumberComponents>& Color)
 {
 	return Color * Value;
-}
-
-template<typename T, int NumberComponents>
-inline  GeneralizedColor<T, NumberComponents> operator*(const GeneralizedColor<T, NumberComponents>& lhs, const GeneralizedColor<T, NumberComponents>& rhs)
-{
-	return lhs.operator*(rhs);
 }
 
 
