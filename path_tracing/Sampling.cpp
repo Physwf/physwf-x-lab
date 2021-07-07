@@ -1,5 +1,54 @@
 #include "Sampling.h"
 
+void StratifiedSample1D(float* samples, int nSamples, RNG& rng, bool bJitter /*= true*/)
+{
+	float invNSamples = 1.f / nSamples;
+	for (int i = 0; i < nSamples; ++i)
+	{
+		float delta = bJitter ? rng.NextFloat() : 0.5f;
+		samples[i] = std::min((i + delta) * invNSamples, FloatOneMinusEpsilon);
+	}
+}
+
+void StratifiedSample2D(Vector2f* samples, int nx, int ny, RNG& rng, bool bJitter /*= true*/)
+{
+	float dx = 1.f / nx;
+	float dy = 1.f / ny;
+	for (int y = 0; y < ny; ++y)
+	{
+		for (int x = 0; x < nx; ++x)
+		{
+			float jx = bJitter ? rng.NextFloat() : 0.5f;
+			float jy = bJitter ? rng.NextFloat() : 0.5f;
+			samples->X = std::min((x + jx) * dx, FloatOneMinusEpsilon);
+			samples->Y = std::min((y + jy) * dy, FloatOneMinusEpsilon);
+			++samples;
+		}
+	}
+}
+
+void LatinHypercube(float* samples, int nSamples, int nDim, RNG& rng)
+{
+	float invNSamples = 1.f / nSamples;
+	for (int i = 0; i < nSamples; ++i)
+	{
+		for (int j = 0; i < nDim; ++j)
+		{
+			float sj = (i + rng.NextFloat()) * invNSamples;
+			samples[nDim * i + j] = std::min(sj, FloatOneMinusEpsilon);
+		}
+	}
+
+	for (int i = 0; i < nDim; ++i)
+	{
+		for (int j = 0; j < nSamples; ++j)
+		{
+			int other = j + rng.NextUint32(nSamples - j);
+			std::swap(samples[nDim * j + i], samples[nDim * other + i]);
+		}
+	}
+}
+
 Vector2f RejectionSampleDisk(RNG& rng)
 {
 	Vector2f p;

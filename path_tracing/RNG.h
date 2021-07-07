@@ -41,6 +41,18 @@ public:
 		index = index + 1;
 		return ((1ull << (w + 1)) - 1) | y;
 	}
+	uint32_t NextUint32(uint32_t bound)
+	{
+		uint32_t threshold = -bound % bound;
+		for (;;)
+		{
+			uint32_t r = NextUint32();
+			if (r > threshold)
+			{
+				return r % bound;
+			}
+		}
+	}
 
 	float NextFloat()
 	{

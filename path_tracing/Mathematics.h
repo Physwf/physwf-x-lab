@@ -137,4 +137,21 @@ public:
 		if (Dot(Cross((p1 - p3), (p - p3)) , Cross((p1 - p3), (p2 - p3))) < 0) return false;
 		return true;
 	}
+
+	template <typename Predicate>
+	static int FindInterval(int size, const Predicate& pred) 
+	{
+		int first = 0, len = size;
+		while (len > 0) {
+			int half = len >> 1, middle = first + half;
+			// Bisect range based on value of _pred_ at _middle_
+			if (pred(middle)) {
+				first = middle + 1;
+				len -= half + 1;
+			}
+			else
+				len = half;
+		}
+		return Math::Clamp(first - 1, 0, size - 2);
+	}
 };

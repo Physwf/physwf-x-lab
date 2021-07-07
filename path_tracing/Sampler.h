@@ -2,64 +2,199 @@
 
 #include "Vector.h"
 #include "RNG.h"
+#include "Sampling.h"
 
 #include <memory>
 #include <vector>
 
-class SampleGenerator
+class SampleGenerator1D
 {
 public:
-	SampleGenerator(int64_t nSamples) {}
-	virtual float Get1D(int64_t i) = 0;
-	virtual Vector2f Get2D(int64_t index) = 0;
-	virtual std::unique_ptr<SampleGenerator> Clone(int Seed) = 0;
-protected:
+	virtual float Get(int64_t index) = 0;
 };
 
-class StratifiedSampleGenerator : public SampleGenerator
+class SampleGenerator2D
 {
 public:
-	StratifiedSampleGenerator(int64_t xPixelSamples, int64_t yPixelSamples)
-		: SampleGenerator(xPixelSamples* yPixelSamples) 
-		, samples1D(xPixelSamples* yPixelSamples)
-		, samples2D(xPixelSamples* yPixelSamples)
-	{
-		StratifiedSample1D(&samples1D[0], xPixelSamples * yPixelSamples, rng);
-		StratifiedSample2D(&samples2D[0], xPixelSamples , yPixelSamples, rng);
-	}
-	
-	virtual float Get1D(int64_t i) override;
-	virtual Vector2f Get2D(int64_t i) override;
+	virtual Vector2f Get(int64_t index) = 0;
+};
 
-	virtual std::unique_ptr<SampleGenerator> Clone(int Seed);
-private:
-	void StratifiedSample1D(float* samples, int nSamples, RNG& rng, bool bJitter = true);
-	void StratifiedSample2D(Vector2f* samples, int nx, int ny, RNG& rng, bool bJitter = true);
+class SampleArrayGenerator1D
+{
+public:
+	SampleArrayGenerator1D(int n, int64_t samplesPerPixel) : sampleArray1D(n* samplesPerPixel) {}
+	const float* GetArray(int n, int64_t index)
+	{
+		return &sampleArray1D[index * n];
+	}
+protected:
+	std::vector<float> sampleArray1D;
+};
+
+class SampleArrayGenerator2D
+{
+public:
+	SampleArrayGenerator2D(int n, int64_t samplesPerPixel) : sampleArray2D(n* samplesPerPixel) {}
+	const Vector2f* GetArray(int n, int64_t index)
+	{
+		return &sampleArray2D[index * n];
+	}
+protected:
+	std::vector<Vector2f> sampleArray2D;
+};
+
+class StratifiedSampleGenerator1D : public SampleGenerator1D
+{
+public:
+	StratifiedSampleGenerator1D(int64_t nSamples)
+		: samples1D(nSamples) { }
+
+	void Generate(int64_t nSamples, RNG& rng)
+	{
+		StratifiedSample1D(&samples1D[0], nSamples, rng);
+		Shuffle(&samples1D[0], nSamples, 1, rng);
+	}
+	virtual float Get(int64_t index) override
+	{
+		return samples1D[index];
+	}
 private:
 	std::vector<float> samples1D;
-	std::vector<Vector2f> samples2D;
-	RNG rng;
 };
 
-class PixelSampler
+class StratifiedSampleGenerator2D : public SampleGenerator2D
 {
 public:
-	static std::unique_ptr<PixelSampler> CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples);
+	StratifiedSampleGenerator2D(int64_t xSamples, int64_t ySamples)
+		: samples2D(xSamples* ySamples) {}
+
+	void Generate(int64_t xSamples, int64_t ySamples, RNG& rng)
+	{
+		StratifiedSample2D(&samples2D[0], xSamples, ySamples, rng);
+		Shuffle(&samples2D[0], xSamples * ySamples, 1, rng);
+	}
+	virtual Vector2f Get(int64_t index) override
+	{
+		return samples2D[index];
+	}
+private:
+	std::vector<Vector2f> samples2D;
+};
+
+class StratifiedSampleArrayGenerator1D : public SampleArrayGenerator1D
+{
+public:
+	StratifiedSampleArrayGenerator1D(int64_t nSamples, int count)
+		: SampleArrayGenerator1D(count, nSamples) { }
+
+	void Generate(int64_t nSamples, int count, RNG& rng)
+	{
+		for (int64_t j = 0; j < nSamples; ++j)
+		{
+			StratifiedSample1D(&sampleArray1D[j * count], count, rng);
+		}
+	}
+};
+
+class LatinHypercubeSampleArrayGenerator2D : public SampleArrayGenerator2D
+{
+public:
+	LatinHypercubeSampleArrayGenerator2D(int64_t nSamples, int count)
+		: SampleArrayGenerator2D(count, nSamples) { }
+
+	void Generate(int64_t nSamples, int count, RNG& rng)
+	{
+		for (int64_t j = 0; j < nSamples; ++j)
+		{
+			LatinHypercube(&sampleArray2D[j * count].X, count, 2, rng);
+		}
+	}
+};
+
+class SamplerContext
+{
+public:
+	virtual void Generate() = 0;
+	virtual Vector2f GetPixel(int64_t index) = 0;
+	virtual float Get1D(int64_t index) = 0;
+	virtual Vector2f Get2D(int64_t index) = 0;
+};
+
+class StratifiedSamplerContext : public SamplerContext
+{
+public:
+	StratifiedSamplerContext(int xPixelSamples, int yPixelSamples, int nSampledDimensions)
+		: xPixelSamples(xPixelSamples)
+		, yPixelSamples(yPixelSamples)
+	{
+		for (int i = 0; i < nSampledDimensions; ++i) 
+		{
+			Generator1Ds.push_back(std::make_unique<StratifiedSampleGenerator1D>(xPixelSamples*yPixelSamples));
+			Generator2Ds.push_back(std::make_unique<StratifiedSampleGenerator2D>(xPixelSamples , yPixelSamples));
+		}
+	}
+
+	virtual void Generate() override
+	{
+		PixelGenerator->Generate(xPixelSamples, yPixelSamples, rng);
+		for (size_t i = 0; i < Generator1Ds.size(); ++i)
+		{
+			Generator1Ds[i]->Generate(xPixelSamples * yPixelSamples, rng);
+		}
+		for (size_t i = 0; i < Generator2Ds.size(); ++i)
+		{
+			Generator2Ds[i]->Generate(xPixelSamples , yPixelSamples, rng);
+		}
+	}
+
+	virtual Vector2f GetPixel(int64_t index) override
+	{
+		return PixelGenerator->Get(index);
+	}
+	virtual float Get1D(int64_t index) override
+	{
+		return Generator1Ds[current1DDimension++]->Get(index);
+	}
+	virtual Vector2f Get2D(int64_t index) override
+	{
+		return Generator2Ds[current2DDimension++]->Get(index);
+	}
+private:
+	std::unique_ptr<StratifiedSampleGenerator2D> PixelGenerator;
+	std::vector<std::unique_ptr<StratifiedSampleGenerator1D>> Generator1Ds;
+	std::vector<std::unique_ptr<StratifiedSampleGenerator2D>> Generator2Ds;
+	std::vector<std::unique_ptr<StratifiedSampleArrayGenerator1D>> ArrayGenerator1Ds;
+	std::vector<std::unique_ptr<LatinHypercubeSampleArrayGenerator2D>> ArrayGenerator2Ds;
+	RNG rng;
+	const int xPixelSamples, yPixelSamples;
+	int current1DDimension = 0, current2DDimension = 0;
+};
+
+class Sampler
+{
+public:
+	static std::unique_ptr<Sampler> CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions);
+	
+	float Get1D();
+	Vector2f Get2D();
 
 	virtual void StartPixel(const Vector2i& p);
 	Vector2f GetPixelSample(const Vector2i& pRaster);
 	virtual bool StartNextSample();
-	virtual std::unique_ptr<PixelSampler> Clone(int Seed);
+	virtual std::unique_ptr<Sampler> Clone(int Seed);
+	
 private:
-	PixelSampler(std::unique_ptr<SampleGenerator> InGenerator, int64_t samplesPerPixel)
-		: Generator(std::move(InGenerator))
+	Sampler(int64_t samplesPerPixel, std::unique_ptr<SamplerContext> context)
+		: currentPixel(0,0)
+		, currentPixelSampleIndex(0)
 		, samplesPerPixel(samplesPerPixel)
+		, context(std::move(context))
 	{}
-private:
+
 	Vector2i currentPixel;
 	int64_t currentPixelSampleIndex;
 
 	const int64_t samplesPerPixel;
 
-	std::unique_ptr<SampleGenerator> Generator;
+	std::unique_ptr<SamplerContext> context;
 };

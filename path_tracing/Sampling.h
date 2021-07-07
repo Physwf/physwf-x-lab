@@ -6,22 +6,34 @@
 #include "Vector.h"
 #include "RNG.h"
 
+template <typename T>
+void Shuffle(T* samp, int count, int nDimensions, RNG& rng) {
+	for (int i = 0; i < count; ++i) {
+		int other = i + rng.NextUint32(count - i);
+		for (int j = 0; j < nDimensions; ++j)
+			std::swap(samp[nDimensions * i + j], samp[nDimensions * other + j]);
+	}
+}
+
+void StratifiedSample1D(float* samples, int nSamples, RNG& rng, bool bJitter = true);
+void StratifiedSample2D(Vector2f* samples, int nx, int ny, RNG& rng, bool bJitter = true);
+void LatinHypercube(float* samples, int nSamples, int nDim, RNG& rng);
+
 struct Distribution1D
 {
-
-	Distribution1D(const float* f, int n):func(f,f+n), cdf(n+1)
+	Distribution1D(const float* f, int n) :func(f, f + n), cdf(n + 1)
 	{
 		cdf[0] = 0;
 		for (int i = 1; i < n + 1; ++i) cdf[i] = cdf[i - 1] + func[i - 1] / n;
-		funcInt = cdf[n];
+		funcIntegral = cdf[n];
 
-		if (funcInt == 0)
+		if (funcIntegral == 0)
 		{
 			for (int i = 1; i < n + 1; ++i) cdf[i] = float(i) / float(n);
 		}
 		else
 		{
-			for (int i = 1; i < n + 1; ++i) cdf[i] /= funcInt;
+			for (int i = 1; i < n + 1; ++i) cdf[i] /= funcIntegral;
 		}
 	}
 
@@ -29,25 +41,36 @@ struct Distribution1D
 
 	float SampleContinuous(float u, float* pdf, int* off = nullptr) const
 	{
+		int offset = Math::FindInterval((int)cdf.size(), [&](int index) { return cdf[index] <= u; });
+		if (off) *off = offset;
 
+		float du = u - cdf[offset];
+		if ((cdf[offset + 1] - cdf[offset]) > 0)
+		{
+			
+		}
 	}
 	int SampleDiscrete(float u, float* pdf = nullptr, float* uRemapped = nullptr) const
 	{
-
+		int offset = Math::FindInterval((int)cdf.size(), [&](int index) { return cdf[index] <= u; });
+		if (pdf) *pdf = funcIntegral > 0 ? func[offset] / (funcIntegral * Count()) : 0;
+		if (uRemapped) *uRemapped = (u - cdf[offset]) / (cdf[offset + 1] - cdf[offset]);
+		return offset;
 	}
 	float DiscretePDF(int index) const
 	{
-
+		return func[index] / (funcIntegral * Count());
 	}
 
 	std::vector<float> func, cdf;
-	float funcInt;
+	float funcIntegral;
 };
 
 class Distribution2D
 {
 
 };
+
 
 Vector2f RejectionSampleDisk(RNG& rng);
 
