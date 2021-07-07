@@ -8,6 +8,8 @@
 #define INV_2PI	0.159154943f
 #define INV_4PI	0.079577471f
 
+static const float FloatOneMinusEpsilon = 0x1.fffffep-1;
+
 class Math
 {
 public:
