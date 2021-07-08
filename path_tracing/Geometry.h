@@ -116,10 +116,13 @@ public:
 	virtual Bounds3f WorldBound() const;
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
+	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
 private:
 	friend class Triangle;
 
 	void BuildTriangle();
+
+	std::shared_ptr<Material> material;
 
 	const int nTriangles, nVertices;
 	std::vector<std::shared_ptr<Triangle>> Triangles;

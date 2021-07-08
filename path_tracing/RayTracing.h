@@ -40,6 +40,7 @@ struct SurfaceInteraction : public Interaction
 		const Vector3f &Indpdu, const Vector3f &Indpdv, 
 		const Vector3f &Indndu, const Vector3f &Indndv, const class Shape* sh);
 
+	void SetShadingGeometry(const Vector3f& dpdu, const Vector3f& dpdv, const Vector3f& dndu, const Vector3f& dndv, bool orientaionIsAuthoritative);
 	void ComputeScatteringFunctions(const Ray& ray, MemoryArena& arena);
 	LinearColor Le(const Vector3f& w);
 

@@ -202,6 +202,11 @@ Vector3<T> Lerp(float t, const Vector3<T>& v0, const Vector3<T>& v1)
 {
 	return (1.0f - t) * v0 + t * v1;
 }
+template <typename T>
+inline Vector3<T> Faceforward(const Vector3<T>& n, const Vector3<T>& v)
+{
+	return (Dot(n, v) < 0.f) ? -n : n;
+}
 
 
 typedef Vector2<int> Vector2i; 

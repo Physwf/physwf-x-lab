@@ -155,7 +155,14 @@ void GeometryObject::ComputeScatteringFunctions(SurfaceInteraction* isect, Memor
 
 MeshObject::MeshObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,
 	int InnTriangles, int InnVertices, Vector3f* Inp, Vector3f* Inn, Vector2f* Inuv, std::vector<int> InIndices)
-	: SceneObject(InLocalToToWorld), nTriangles(InnTriangles), nVertices(InnVertices), p(Inp), n(Inn), uv(Inuv), Indices(Indices)
+	: SceneObject(InLocalToToWorld)
+	, material(Inmaterial)
+	, nTriangles(InnTriangles)
+	, nVertices(InnVertices)
+	, p(Inp)
+	, n(Inn)
+	, uv(Inuv)
+	, Indices(Indices)
 {
 	BuildTriangle();
 }
@@ -190,6 +197,11 @@ bool MeshObject::IntersectP(const Ray& ray) const
 		}
 	}
 	return false;
+}
+
+void MeshObject::ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const
+{
+	material->ComputeScatteringFunctions(isect, arena);
 }
 
 void MeshObject::BuildTriangle()
