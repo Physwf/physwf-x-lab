@@ -8,6 +8,7 @@
 #include "Material.h"
 #include "Bounds.h"
 #include "Transform.h"
+#include "Light.h"
 
 class Shape
 {
@@ -80,29 +81,31 @@ private:
 class SceneObject
 {
 public:
-	SceneObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial)
-		:  LocalToWorld(InLocalToToWorld),WorldToLocal(Inverse(InLocalToToWorld)), material(Inmaterial)
+	SceneObject(const Transform& InLocalToToWorld)
+		:  LocalToWorld(InLocalToToWorld),WorldToLocal(Inverse(InLocalToToWorld))
 	{}
 	virtual ~SceneObject() {};
 	virtual Bounds3f WorldBound() const = 0;
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
 	virtual bool IntersectP(const Ray& ray) const = 0;
 	virtual AreaLight* GetAreaLight() const = 0;
+	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const = 0;
 protected:
 	const Transform LocalToWorld;
 	const Transform WorldToLocal;
-	std::shared_ptr<Material> material;
 };
 
 class GeometryObject : public SceneObject
 {
 public:
-	GeometryObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,const std::shared_ptr<Shape>& Inshape, const std::shared_ptr<Material>& Inmaterial);
+	GeometryObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,const std::shared_ptr<Shape>& Inshape);
 	virtual Bounds3f WorldBound() const;
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
+	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
 private:
 	std::shared_ptr<Shape> shape;
+	std::shared_ptr<Material> material;
 };
 
 class MeshObject : public SceneObject

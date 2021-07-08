@@ -121,9 +121,10 @@ bool Triangle::IntersectP(const Ray& ray) const
 
 }
 
-GeometryObject::GeometryObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,const std::shared_ptr<Shape>& Inshape, const std::shared_ptr<Material>& Inmaterial)
-	: SceneObject(InLocalToToWorld, Inmaterial),
-		shape(Inshape)
+GeometryObject::GeometryObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,const std::shared_ptr<Shape>& Inshape)
+	: SceneObject(InLocalToToWorld)
+	, material(Inmaterial)
+	, shape(Inshape)
 {
 	shape->SetTransform(&LocalToWorld, &WorldToLocal);
 }
@@ -147,9 +148,14 @@ bool GeometryObject::IntersectP(const Ray& ray) const
 	return shape->IntersectP(ray);
 }
 
+void GeometryObject::ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const
+{
+	material->ComputeScatteringFunctions(isect, arena);
+}
+
 MeshObject::MeshObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,
 	int InnTriangles, int InnVertices, Vector3f* Inp, Vector3f* Inn, Vector2f* Inuv, std::vector<int> InIndices)
-	: SceneObject(InLocalToToWorld, Inmaterial), nTriangles(InnTriangles), nVertices(InnVertices), p(Inp), n(Inn), uv(Inuv), Indices(Indices)
+	: SceneObject(InLocalToToWorld), nTriangles(InnTriangles), nVertices(InnVertices), p(Inp), n(Inn), uv(Inuv), Indices(Indices)
 {
 	BuildTriangle();
 }

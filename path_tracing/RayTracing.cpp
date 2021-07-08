@@ -8,6 +8,11 @@ SurfaceInteraction::SurfaceInteraction(const Vector3f& InP, const Vector2f& InUV
 {
 }
 
+void SurfaceInteraction::ComputeScatteringFunctions(const Ray& ray, MemoryArena& arena)
+{
+	object->ComputeScatteringFunctions(this, arena);
+}
+
 LinearColor SurfaceInteraction::Le(const Vector3f& w)
 {
 	const AreaLight* al = object->GetAreaLight();
