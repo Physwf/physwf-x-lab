@@ -75,7 +75,7 @@ class Distribution2D
 Vector2f RejectionSampleDisk(RNG& rng);
 
 Vector3f UniformSampleHemisphere(const Vector2f& u);
-float UniformSampleHemispherePdf();
+float UniformHemispherePdf();
 
 Vector3f UniformSampleSphere(const Vector2f& u);
 float UniformSpherePdf();

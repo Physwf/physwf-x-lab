@@ -67,7 +67,7 @@ Vector3f UniformSampleHemisphere(const Vector2f& u)
 	return Vector3f(r * std::cos(phi), r * std::sin(phi), z);
 }
 
-float UniformSampleHemispherePdf()
+float UniformHemispherePdf()
 {
 	return 0.5f / PI;
 }
