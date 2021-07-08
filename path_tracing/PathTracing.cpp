@@ -1,52 +1,70 @@
 #include "PathTracing.h"
-#include "ParallelFor.h"
+#include "Light.h"
 
-void SamplerIntegrator::Render(const Scene& scene)
+LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth /* = 0 */)
 {
-	Bounds2i imageBounds = camera->film->GetBounds();
-	Vector2i imageExtents = imageBounds.Diagonal();
+	LinearColor L(0.f), beta(1.f);
+	Ray ray(r);
+	bool specluarBounce = false;
+	int bounces;
 
-	const int tileSize = 16;
-	Vector2i nTiles((imageExtents.X + tileSize - 1) / tileSize, 
-					(imageExtents.Y + tileSize - 1) / tileSize);
+	float etaScale = 1;
 
+	for (bounces = 0;; ++bounces)
+	{
+		SurfaceInteraction isect;
+		bool foundIntersection = scene.Intersect(ray, &isect);
 
-	ParallelFor2D([&](Vector2i tile) {
-
-		int seed = tile.Y * nTiles.X + tile.X;
-		std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
-
-		int x0 = imageBounds.pMin.X + tile.X * tileSize;
-		int y0 = imageBounds.pMin.Y + tile.Y * tileSize;
-		int x1 = std::min(x0 + tileSize, imageBounds.pMax.X);
-		int y1 = std::min(y0 + tileSize, imageBounds.pMax.Y);
-		Bounds2i tileBounds(Vector2i(x0, y0), Vector2i(x1, y1));
-
-		std::unique_ptr<FilmTile> filmTile = camera->film->GetFilmTile(tileBounds);
-
-		int StartX = tileBounds.pMin.X;
-		int EndX = StartX + tileSize;
-		int StartY = tileBounds.pMin.Y;
-		int EndY = StartY + tileSize;
-		for (int y = StartY;y < EndY; ++y)
+		if (bounces == 0 || specluarBounce)
 		{
-			for (int x = StartY; x < EndY; ++x)
+			if (foundIntersection)
 			{
-				do 
-				{
-					Vector2f pixelSample = tileSampler->GetPixelSample(Vector2i(x, y));
-					Ray r;
-					float rayWeight = camera->GenerateRay(pixelSample,&r);
-
-					LinearColor L(0.f);
-					if (rayWeight > 0) L = Li(r, scene, *tileSampler);
-
-					filmTile->AddSample(pixelSample, L, rayWeight);
-
-				} while (tileSampler->StartNextPixel());
+				L += beta * isect.Le(-ray.d);
+			}
+		}
+		else
+		{
+			for (const auto& light : scene.infiniteLights)
+			{
+				L += beta * light->Le(ray);
 			}
 		}
 
-	}, nTiles);
-}
+		if(!foundIntersection || bounces >= maxDepth) break;
 
+		isect.ComputeScatteringFunctions(ray, arena);
+
+		const Distribution1D* distrib = lightDistribution->Lookup(isect.p);
+
+		if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0)
+		{
+			LinearColor Ld = beta * UniformSampleOneLight(isect, scene, arena, sampler, distrib);
+			L += Ld;
+		}
+
+		Vector3f wo = -ray.d, wi;
+		float pdf;
+		BxDFType flags;
+		LinearColor f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, BSDF_ALL, &flags);
+		beta *= f * AbsDot(wi,isect.shading.n) / pdf;
+		specluarBounce = (flags & BSDF_SPECULAR) != 0;
+		if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION))
+		{
+			float eta = isect.bsdf->eta;
+			etaScale *= (Dot(wo, isect.n) > 0) ? (eta * eta) : 1 / (eta * eta);
+		}
+		ray = isect.SpawnRay(wi);
+
+		//todo: subsurface scattering
+
+		LinearColor rrBeta = beta * etaScale;
+		if (rrBeta.MaxComponentValue() < rrThreshhold && bounces > 3)
+		{
+			float q = std::max(0.05f, 1.f - rrBeta.MaxComponentValue());
+			if(sampler.Get1D() < q) break;
+			beta /= 1.f - q;
+		}
+	}
+
+	return L;
+}

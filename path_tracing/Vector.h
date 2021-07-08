@@ -114,6 +114,12 @@ T Dot(const Vector3<T>& lhs, const Vector3<T>& rhs)
 	return lhs.Dot(rhs);
 }
 
+template <typename T>
+inline T AbsDot(const Vector3<T>& v1, const Vector3<T>& v2)
+{
+	return std::abs(Dot(v1, v2));
+}
+
 template<typename T>
 Vector2<T> Normalize(const Vector2<T>& V)
 {

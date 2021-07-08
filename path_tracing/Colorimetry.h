@@ -126,7 +126,21 @@ public:
 			if (Components[i] == rhs.Components[i]) return false;
 		return true;
 	}
-
+	float MaxComponentValue() const
+	{
+		float m = Components[0];
+		for (int i = 1; i < NumberComponents; ++i)
+		{
+			m = std::max(m, c[i]);
+		}
+		return m;
+	}
+	bool IsBlack() const
+	{
+		for (int i = 0; i < NumberComponents; ++i)
+			if (Components[i] != 0) return false;
+		return true;
+	}
 	friend GeneralizedColor Sqrt(const GeneralizedColor& Value)
 	{
 		GeneralizedColor Result;

@@ -2,6 +2,7 @@
 
 #include "Vector.h"
 #include "SurfaceScattering.h"
+#include "Memory.h"
 
 struct Ray
 {
@@ -39,14 +40,20 @@ struct SurfaceInteraction : public Interaction
 		const Vector3f &Indpdu, const Vector3f &Indpdv, 
 		const Vector3f &Indndu, const Vector3f &Indndv, const class Shape* sh);
 
-	void ComputeScatteringFunctions();
+	void ComputeScatteringFunctions(const Ray& ray, MemoryArena& arena);
 	LinearColor Le(const Vector3f& w);
 
 	Vector2f uv;
 	Vector3f dpdu, dpdv;
 	Vector3f dndu, dndv;
-	BSDF* bsdf;
-	const class SceneObject* object = NULL;
 	const class Shape* shape = NULL;
+	struct
+	{
+		Vector3f n;
+		Vector3f dpdu, dpdv;
+		Vector3f dndu, dndv;
+	} shading;
+	const class SceneObject* object = NULL;
+	BSDF* bsdf;
 };
 
