@@ -18,16 +18,20 @@ class GeneralizedColor
 protected:
 	T Components[NumberComponents];
 public:
-	GeneralizedColor() {}
+	GeneralizedColor() 
+	{
+		for (int i = 0; i < NumberComponents; ++i)
+			Components[i] = 0;
+	}
 	GeneralizedColor(T Value)
 	{
 		for (int i = 0; i < NumberComponents; ++i)
-			Result.Components[i] = Value;
+			Components[i] = Value;
 	}
 	GeneralizedColor(const GeneralizedColor& rhs)
 	{
 		for (int i = 0; i < NumberComponents; ++i)
-			Result.Components[i] = rhs.Components[i];
+			Components[i] = rhs.Components[i];
 	}
 
 	GeneralizedColor operator+(const GeneralizedColor& rhs) const
@@ -131,7 +135,7 @@ public:
 		float m = Components[0];
 		for (int i = 1; i < NumberComponents; ++i)
 		{
-			m = std::max(m, c[i]);
+			m = std::max(m, Components[i]);
 		}
 		return m;
 	}

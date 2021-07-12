@@ -38,6 +38,7 @@ class Sphere : public Shape
 {
 public:
 	Sphere(float InRadius);
+	virtual Bounds3f ObjectBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
 private:
 	float Radius;
@@ -55,25 +56,13 @@ private:
 class Triangle : public Shape
 {
 public:
-	Triangle(class MeshObject* InMesh, int triNumber)
-		: mesh(InMesh)
-	{
-		v = &mesh->Indices[3 * triNumber];
-	}
+	Triangle(class MeshObject* InMesh, int triNumber);
 	Bounds3f ObjectBound() const;
 	Bounds3f WorldBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
 private:
-	void GetUVs(Vector2f uv[3]) const
-	{
-		if (mesh->uv)
-		{
-			uv[0] = mesh->uv[v[0]];
-			uv[1] = mesh->uv[v[1]];
-			uv[2] = mesh->uv[v[2]];
-		}
-	}
+	void GetUVs(Vector2f uv[3]) const;
 	class MeshObject* mesh;
 	const int* v;
 };
@@ -103,6 +92,7 @@ public:
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
+	virtual AreaLight* GetAreaLight() const { return nullptr; }
 private:
 	std::shared_ptr<Shape> shape;
 	std::shared_ptr<Material> material;
@@ -117,6 +107,7 @@ public:
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
+	virtual AreaLight* GetAreaLight() const { return nullptr; }
 private:
 	friend class Triangle;
 

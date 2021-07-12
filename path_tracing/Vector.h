@@ -24,7 +24,7 @@ public:
 		Y = T(p.Y);
 	}
 
-	VectorBody(Vector2)
+	VectorBody(Vector2<T>)
 
 	T Cross(const Vector2& rhs)
 	{
@@ -52,9 +52,9 @@ public:
 		Y = T(p.Y);
 	}
 
-	VectorBody(Vector3)
+	VectorBody(Vector3<T>)
 
-	Vector3 Cross(const Vector3& rhs)
+	Vector3 Cross(const Vector3& rhs) const
 	{
 		Vector3 Result;
 		Cross3(Elements, rhs.Elements, Result.Elements);
@@ -75,7 +75,7 @@ public:
 	Vector4() :X(0), Y(0), Z(0), W(0) {}
 	Vector4(T InX, T InY, T InZ) : X(InX), Y(InY), Z(InZ) {}
 
-	VectorBody(Vector4)
+	VectorBody(Vector4<T>)
 };
 
 template <typename T>
@@ -103,7 +103,7 @@ T Dot(const Vector2<T>& lhs, const Vector2<T>& rhs)
 }
 
 template<typename T>
-Vector3<T> Cross(const Vector3<T>& lhs,const Vector3<T>& rhs)
+Vector3<T> Cross(const Vector3<T>& lhs,const Vector3<T>& rhs) 
 {
 	return lhs.Cross(rhs);
 }

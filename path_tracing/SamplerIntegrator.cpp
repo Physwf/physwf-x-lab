@@ -1,5 +1,6 @@
 #include "SamplerIntegrator.h"
 #include "ParallelFor.h"
+#include "SurfaceScattering.h"
 
 LinearColor UniformSampleAllLights(const Interaction& it, const Scene& scene, MemoryArena& arena, Sampler& sampler, const std::vector<int>& nLightSamples)
 {
@@ -101,6 +102,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 
 		int seed = tile.Y * nTiles.X + tile.X;
 		std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
+		MemoryArena arena;
 
 		int x0 = imageBounds.pMin.X + tile.X * tileSize;
 		int y0 = imageBounds.pMin.Y + tile.Y * tileSize;
@@ -125,7 +127,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 					float rayWeight = camera->GenerateRay(pixelSample, &r);
 
 					LinearColor L(0.f);
-					if (rayWeight > 0) L = Li(r, scene, *tileSampler);
+					if (rayWeight > 0) L = Li(r, scene, *tileSampler, arena);
 
 					filmTile->AddSample(pixelSample, L, rayWeight);
 

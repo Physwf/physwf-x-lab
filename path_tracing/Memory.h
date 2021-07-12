@@ -52,7 +52,7 @@ public:
 
 			if (!currentBlock)
 			{
-				currentAllocSize == std::max(nBytes, blockSize);
+				currentAllocSize = std::max(nBytes, blockSize);
 				currentBlock = AllocAligned<uint8_t>(currentAllocSize);
 			}
 			currentBlockPos = 0;

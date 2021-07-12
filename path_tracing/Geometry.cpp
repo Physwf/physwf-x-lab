@@ -6,6 +6,11 @@ Sphere::Sphere(float InRadius)
 {
 }
 
+Bounds3f Sphere::ObjectBound() const
+{
+	return Bounds3f({ -Radius,-Radius,-Radius }, { Radius,Radius,Radius });
+}
+
 bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const
 {
 	// x2+y2+z2=r2 o+d*s=(x,y,z) =>
@@ -55,6 +60,11 @@ Disk::Disk(float InRadius)
 bool Disk::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const
 {
 
+}
+
+Triangle::Triangle(class MeshObject* InMesh, int triNumber) : mesh(InMesh)
+{
+	v = &mesh->Indices[3 * triNumber];
 }
 
 Bounds3f Triangle::ObjectBound() const
@@ -119,6 +129,16 @@ bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect)
 bool Triangle::IntersectP(const Ray& ray) const
 {
 
+}
+
+void Triangle::GetUVs(Vector2f uv[3]) const
+{
+	if (mesh->uv)
+	{
+		uv[0] = mesh->uv[v[0]];
+		uv[1] = mesh->uv[v[1]];
+		uv[2] = mesh->uv[v[2]];
+	}
 }
 
 GeometryObject::GeometryObject(const Transform& InLocalToToWorld, const std::shared_ptr<Material>& Inmaterial,const std::shared_ptr<Shape>& Inshape)

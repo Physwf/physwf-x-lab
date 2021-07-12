@@ -103,9 +103,9 @@ template<typename T>
 inline Vector3<T> Transform::operator()(const Vector3<T>& p) const
 {
 	XMFLOAT3 P = { p.X,p.Y,p.Z };
-	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&V), XMLoadFloat4x4(&M));
-	XMStoreFloat4(&P,V);
-	return Vector3<T>(p.X, p.Y, p.Z);
+	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat4x4(&M));
+	XMStoreFloat3(&P,V);
+	return Vector3<T>(P.x, P.y, P.z);
 }
 
 inline Ray Transform::operator()(const Ray& r) const

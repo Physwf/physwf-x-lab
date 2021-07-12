@@ -2,8 +2,8 @@
 
 std::shared_ptr<Sampler> Sampler::CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions)
 {
-	std::shared_ptr<SamplerContext> context = std::make_unique<StratifiedSamplerContext>(xPixelSamples, yPixelSamples, nSampledDimensions);
-	return std::make_shared<Sampler>(xPixelSamples* yPixelSamples, context);
+	std::unique_ptr<SamplerContext> context = std::make_unique<StratifiedSamplerContext>(xPixelSamples, yPixelSamples, nSampledDimensions);
+	return std::make_shared<Sampler>(xPixelSamples * yPixelSamples, context);
 }
 
 void Sampler::StartPixel(const Vector2i& p)

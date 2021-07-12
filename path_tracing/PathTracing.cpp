@@ -1,5 +1,7 @@
 #include "PathTracing.h"
 #include "Light.h"
+#include "RayTracing.h"
+#include "SurfaceScattering.h"
 
 PathIntergrator::PathIntergrator(int maxDepth, std::shared_ptr<Camera> camera, std::shared_ptr<Sampler> sampler, float rrThreshold)
 	: SamplerIntegrator(camera,sampler)

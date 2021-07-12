@@ -27,8 +27,8 @@ public:
 		{
 			if (index > n)
 			{
-				assert(false, "Generator was never seeded");
-				return;
+				assert(false && "Generator was never seeded");
+				return 0;
 			}
 			twist();
 		}
@@ -41,6 +41,7 @@ public:
 		index = index + 1;
 		return ((1ull << (w + 1)) - 1) | y;
 	}
+
 	uint32_t NextUint32(uint32_t bound)
 	{
 		uint32_t threshold = -bound % bound;
@@ -89,8 +90,8 @@ private:
 	static constexpr int f = 1812433253;
 	uint32_t MT[n];
 	int index;
-	const int lower_mask = (1 << r) - 1;
-	const int upper_mask = ((1 << (w + 1)) - 1) | (~lower_mask);
+	const int lower_mask = (1ull << r) - 1ull;
+	const int upper_mask = ((1ull << (w + 1ull)) - 1ull) | (~lower_mask);
 };
 
 //https://www.pcg-random.org/download.html

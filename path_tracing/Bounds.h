@@ -19,8 +19,8 @@ public:
 
 	Bounds2(const Vector2<T> &p1, const Vector2<T> &p2)
 	{
-		pMin = Vector2<T>(std::min(p1.x, p2.x), std::min(p1.y, p2.y));
-		pMax = Vector2<T>(std::max(p1.x, p2.x), std::max(p1.y, p2.y));
+		pMin = Vector2<T>(std::min(p1.X, p2.X), std::min(p1.Y, p2.Y));
+		pMax = Vector2<T>(std::max(p1.X, p2.X), std::max(p1.Y, p2.Y));
 	}
 
 	template <typename U>
@@ -34,7 +34,7 @@ public:
 	T Area() const 
 	{
 		Vector2<T> d = pMax - pMin;
-		return (d.x * d.y);
+		return (d.X * d.Y);
 	}
 	inline const Vector2<T> &operator[](int i) const
 	{
@@ -68,8 +68,8 @@ public:
 	}
 	explicit Bounds3(const Vector3<T> &p) : pMin(p), pMax(p) {}
 	Bounds3(const Vector3<T> &p1, const Vector3<T> &p2) : 
-		pMin(std::min(p1.x, p2.x), std::min(p1.y, p2.y), std::min(p1.z, p2.z)),
-		pMax(std::max(p1.x, p2.x), std::max(p1.y, p2.y), std::max(p1.z, p2.z)) 
+		pMin(std::min(p1.X, p2.Y), std::min(p1.Y, p2.Y), std::min(p1.Z, p2.Z)),
+		pMax(std::max(p1.X, p2.Y), std::max(p1.Y, p2.Y), std::max(p1.Z, p2.Z))
 	{}
 	const Vector3<T> &operator[](int i) const
 	{
@@ -89,12 +89,12 @@ public:
 	T SurfaceArea() const 
 	{
 		Vector3<T> d = Diagonal();
-		return 2 * (d.x * d.y + d.x * d.z + d.y * d.z);
+		return 2 * (d.X * d.Y + d.X * d.Z + d.Y * d.Z);
 	}
 	T Volume() const 
 	{
 		Vector3<T> d = Diagonal();
-		return d.x * d.y * d.z;
+		return d.X * d.Y * d.Z;
 	}
 	Vector3<T> pMin, pMax;
 };

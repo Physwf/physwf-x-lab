@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Vector.h"
-#include "SurfaceScattering.h"
 #include "Memory.h"
+#include "Colorimetry.h"
 
 struct Ray
 {
@@ -55,6 +55,6 @@ struct SurfaceInteraction : public Interaction
 		Vector3f dndu, dndv;
 	} shading;
 	const class SceneObject* object = NULL;
-	BSDF* bsdf;
+	class BSDF* bsdf;
 };
 

@@ -4,28 +4,28 @@ template<typename T, int Count>
 class VectorHelper
 {
 public:
-	inline void Add(const T* lhs, const T* rhs, T* Result)
+	inline void Add(const T* lhs, const T* rhs, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
 			Result[i] = lhs[i] + rhs[i];
 		}
 	}
-	inline void Subtract(const T* lhs, const T* rhs, T* Result)
+	inline void Subtract(const T* lhs, const T* rhs, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
 			Result[i] = lhs[i] - rhs[i];
 		}
 	}
-	inline void Minus(const T* V)
+	inline void Minus(T* V) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
-			Result[i] = -V[i];
+			V[i] = -V[i];
 		}
 	}
-	inline T Dot(const T* lhs, const T* rhs)
+	inline T Dot(const T* lhs, const T* rhs) const
 	{
 		T Result = 0;
 		for (int i = 0; i < Count; ++i)
@@ -34,25 +34,25 @@ public:
 		}
 		return Result;
 	}
-	inline T Cross2(const T* lhs, const T* rhs)
+	inline T Cross2(const T* lhs, const T* rhs) const
 	{
 		return lhs[0] * rhs[1] - lhs[1] - rhs[0];
 	}
-	inline void Cross3(const T* lhs, const T* rhs, T* Result)
+	inline void Cross3(const T* lhs, const T* rhs, T* Result) const
 	{
 		Result[0] = lhs[1] * rhs[2] - lhs[2] * rhs[1];
 		Result[1] = lhs[0] * rhs[2] - lhs[2] * rhs[0];
 		Result[2] = lhs[0] * rhs[1] - lhs[1] * rhs[0];
 	}
 	template<typename U>
-	inline void Multiply(const T* lhs, U value, T* Result)
+	inline void Multiply(const T* lhs, U value, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
 			Result[i] = lhs[i] * (T)value;
 		}
 	}
-	inline void Multiply(const T* lhs, const T* rhs, T* Result)
+	inline void Multiply(const T* lhs, const T* rhs, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
@@ -60,21 +60,21 @@ public:
 		}
 	}
 	template<typename U>
-	inline void Devide(const T* lhs, U value, T* Result)
+	inline void Devide(const T* lhs, U value, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
 			Result[i] = lhs[i] / (T)value;
 		}
 	}
-	inline void Devide(const T* lhs, const T* rhs, T* Result)
+	inline void Devide(const T* lhs, const T* rhs, T* Result) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
 			Result[i] = lhs[i] / rhs[i];
 		}
 	}
-	inline bool Equal(const T* lhs, const T* rhs)
+	inline bool Equal(const T* lhs, const T* rhs) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
@@ -82,7 +82,7 @@ public:
 		}
 		return true;
 	}
-	inline bool IsNearlyEqual(const T* lhs, const T* rhs)
+	inline bool IsNearlyEqual(const T* lhs, const T* rhs) const
 	{
 		for (int i = 0; i < Count; ++i)
 		{
@@ -139,11 +139,11 @@ Type operator/(U value)	const								\
 }															\
 T Dot(const Type& rhs)	const								\
 {															\
-	return Dot(Elements, rhs.Elements);						\
+	return VectorHelper::Dot(Elements, rhs.Elements);		\
 }															\
 T LengthSquared()	const									\
 {															\
-	return Dot(Elements, Elements);							\
+	return VectorHelper::Dot(Elements, Elements);			\
 }															\
 T Length()	const											\
 {															\
@@ -159,9 +159,8 @@ bool operator!=(const Type& rhs) const						\
 }															\
 bool IsNearlyEqual(const Type& rhs) const					\
 {															\
-	return IsNearlyEqual(Elements, rhs.Elements);			\
+	return VectorHelper::IsNearlyEqual(Elements, rhs.Elements);		\
 }															\
-															\
 T operator[](int i) const									\
 {															\
 	return Elements[i];										\

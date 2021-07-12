@@ -15,17 +15,20 @@ std::shared_ptr<Scene> BuildTestScene()
 
 	Transform leftWallR = Transform::Rotate(0, -PI * 0.25f, 0);
 	Transform leftWallT = Transform::Translate(-100.f, 0, 0);
-	std::shared_ptr<Material> leftWallMat = std::make_shared<MatteMaterial>();
+	LinearColor pink;
+	std::shared_ptr<Material> leftWallMat = std::make_shared<MatteMaterial>(pink);
 	std::shared_ptr<SceneObject> leftWall = std::make_shared<MeshObject>(leftWallT * leftWallR, leftWallMat,2,4,Ps.data(),Ns.data(),UVs.data(), indices);
 
 	Transform rightWallR = Transform::Rotate(0, PI * 0.25f, 0);
 	Transform rightWallT = Transform::Translate(100.f, 0, 0);
-	std::shared_ptr<Material> rightWallMat = std::make_shared<MatteMaterial>();
+	LinearColor blue;
+	std::shared_ptr<Material> rightWallMat = std::make_shared<MatteMaterial>(blue);
 	std::shared_ptr<SceneObject> rightWall = std::make_shared<MeshObject>(rightWallT * rightWallR, rightWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
 
 	Transform topWallR = Transform::Rotate(-PI * 0.25f, 0, 0);
 	Transform topWallT = Transform::Translate(0, 100.f, 0);
-	std::shared_ptr<Material> topWallMat = std::make_shared<MatteMaterial>();
+	LinearColor gray;
+	std::shared_ptr<Material> topWallMat = std::make_shared<MatteMaterial>(gray);
 	std::shared_ptr<SceneObject> topWall = std::make_shared<MeshObject>(topWallT * topWallR, topWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
 
 	Transform backWallT = Transform::Translate(0, 0 , 100.f);
@@ -36,7 +39,7 @@ std::shared_ptr<Scene> BuildTestScene()
 	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallT * bottomWallR, topWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
 
 	Transform ballT = Transform::Translate(0, -75.f, 0);
-	std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>();
+	std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
 	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(25.0f);
 	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, ballMat, sphere);
 
@@ -97,7 +100,7 @@ void WriteImageHDR(const char* fileName, int width, int height, float* buffer)
 void Test_PathTracing()
 {
 	Transform cameraW;
-	Film* film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>());
+	Film* film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(0.1f,0.1f),0.5f));
 	std::shared_ptr<Camera> camera = std::make_shared<PerspectiveCamera>(cameraW, film, 90.f,1.0f,10000.f);
 	std::shared_ptr<Sampler> sampler = Sampler::CreateStratified(32,32,8);
 	float rrThreshold;

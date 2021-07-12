@@ -7,7 +7,9 @@ class Light;
 class Scene
 {
 public:
-	Scene(const std::vector<std::shared_ptr<SceneObject>>& Inobjects) : objects(Inobjects)
+	Scene(const std::vector<std::shared_ptr<SceneObject>>& Inobjects,const std::vector<std::shared_ptr<Light>> lights) 
+		: objects(Inobjects)
+		, lights(lights)
 	{}
 	Bounds3f WorldBound() const;
 	bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
