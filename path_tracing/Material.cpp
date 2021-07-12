@@ -24,3 +24,9 @@ void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction* si, MemoryAre
 	Fresnel* fresnel = ARENA_ALLOC(arena, FresnelConductor)(etaI, etaT, k);
 	si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(R, distribution, fresnel));
 }
+
+void MatteMaterial::ComputeScatteringFunctions(SurfaceInteraction* si, MemoryArena& arena)
+{
+	si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
+	si->bsdf->Add(ARENA_ALLOC(arena, LambertianReflection)(Kd));
+}

@@ -41,7 +41,30 @@ public:
 		XMStoreFloat4x4(&InvM, XMMatrixInverse(&D, XMLoadFloat4x4(&M)));
 	}
 	Transform(const XMFLOAT4X4& m, const XMFLOAT4X4& Invm) :M(m),InvM(Invm) { }
-
+	static Transform Identity()
+	{
+		XMFLOAT4X4 float4x4;
+		XMStoreFloat4x4(&float4x4, XMMatrixIdentity());
+		return Transform(float4x4);
+	}
+	static Transform Translate(float X, float Y, float Z)
+	{
+		XMFLOAT4X4 float4x4;
+		XMStoreFloat4x4(&float4x4, XMMatrixTranslation(X,Y,Z));
+		return Transform(float4x4);
+	}
+	static Transform Scale(float X, float Y, float Z)
+	{
+		XMFLOAT4X4 float4x4;
+		XMStoreFloat4x4(&float4x4, XMMatrixScaling(X, Y, Z));
+		return Transform(float4x4);
+	}
+	static Transform Rotate(float Pitch, float Yall, float Roll)
+	{
+		XMFLOAT4X4 float4x4;
+		XMStoreFloat4x4(&float4x4, XMMatrixRotationRollPitchYaw(Pitch, Yall, Roll));
+		return Transform(float4x4);
+	}
 	friend Transform Inverse(const Transform& t)
 	{
 		return Transform(t.InvM, t.M);

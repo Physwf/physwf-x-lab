@@ -8,13 +8,38 @@ std::shared_ptr<Scene> BuildTestScene()
 	std::vector<std::shared_ptr<SceneObject>> objects;
 	std::vector<std::shared_ptr<Light>> lights;
 
-	std::shared_ptr<SceneObject> leftWall = std::make_shared<MeshObject>();
-	std::shared_ptr<SceneObject> rightWall = std::make_shared<MeshObject>();
-	std::shared_ptr<SceneObject> topWall = std::make_shared<MeshObject>();
-	std::shared_ptr<SceneObject> backWall = std::make_shared<MeshObject>();
-	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>();
+	std::vector<Vector3f> Ps = { {-100.f,100.f,0.f},{100.f,100.f,0.f},{100.f,-100.f,0.f},{-100.f,-100.f,0.f}, };
+	std::vector<Vector3f> Ns = { {0.f,0.f,1.f}, {0.f,0.f,1.f}, {0.f,0.f,1.f}, {0.f,0.f,1.f}, };
+	std::vector<Vector2f> UVs = { {0,0}, {1.f,0}, {1.f,1.0f},  {0.f,1.0f} };
+	std::vector<int> indices = {0,1,2,2,3,0};
 
-	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>();
+	Transform leftWallR = Transform::Rotate(0, -PI * 0.25f, 0);
+	Transform leftWallT = Transform::Translate(-100.f, 0, 0);
+	std::shared_ptr<Material> leftWallMat = std::make_shared<MatteMaterial>();
+	std::shared_ptr<SceneObject> leftWall = std::make_shared<MeshObject>(leftWallT * leftWallR, leftWallMat,2,4,Ps.data(),Ns.data(),UVs.data(), indices);
+
+	Transform rightWallR = Transform::Rotate(0, PI * 0.25f, 0);
+	Transform rightWallT = Transform::Translate(100.f, 0, 0);
+	std::shared_ptr<Material> rightWallMat = std::make_shared<MatteMaterial>();
+	std::shared_ptr<SceneObject> rightWall = std::make_shared<MeshObject>(rightWallT * rightWallR, rightWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
+
+	Transform topWallR = Transform::Rotate(-PI * 0.25f, 0, 0);
+	Transform topWallT = Transform::Translate(0, 100.f, 0);
+	std::shared_ptr<Material> topWallMat = std::make_shared<MatteMaterial>();
+	std::shared_ptr<SceneObject> topWall = std::make_shared<MeshObject>(topWallT * topWallR, topWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
+
+	Transform backWallT = Transform::Translate(0, 0 , 100.f);
+	std::shared_ptr<SceneObject> backWall = std::make_shared<MeshObject>(backWallT, topWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
+
+	Transform bottomWallR = Transform::Rotate(PI * 0.25f, 0, 0);
+	Transform bottomWallT = Transform::Translate(0, -100.f, 0.f);
+	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallT * bottomWallR, topWallMat, 2, 4, Ps.data(), Ns.data(), UVs.data(), indices);
+
+	Transform ballT = Transform::Translate(0, -75.f, 0);
+	std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>();
+	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(25.0f);
+	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, ballMat, sphere);
+
 
 	objects.push_back(leftWall);
 	objects.push_back(rightWall);
@@ -23,7 +48,9 @@ std::shared_ptr<Scene> BuildTestScene()
 	objects.push_back(bottomWall);
 	objects.push_back(ball);
 
-	std::shared_ptr<Light> pl = std::make_shared<PointLight>();
+	Transform lightT = Transform::Translate(0, 100.f, 0);
+	LinearColor White(1000.f);
+	std::shared_ptr<Light> pl = std::make_shared<PointLight>(lightT, White);
 	lights.push_back(pl);
 
 	std::shared_ptr<Scene> scene = std::make_shared<Scene>(objects, lights);
