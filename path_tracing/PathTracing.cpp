@@ -1,6 +1,13 @@
 #include "PathTracing.h"
 #include "Light.h"
 
+PathIntergrator::PathIntergrator(int maxDepth, std::shared_ptr<Camera> camera, std::shared_ptr<Sampler> sampler, float rrThreshold)
+	: SamplerIntegrator(camera,sampler)
+	, maxDepth(maxDepth)
+	, rrThreshhold(rrThreshold)
+{
+}
+
 LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth /* = 0 */)
 {
 	LinearColor L(0.f), beta(1.f);

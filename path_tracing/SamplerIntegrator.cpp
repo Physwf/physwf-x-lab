@@ -30,6 +30,63 @@ LinearColor UniformSampleOneLight(const Interaction& it, const Scene& scene, Mem
 	return EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena) / lightPdf;
 }
 
+LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, const Light& light, const Vector2f& ulight, const Scene& scene, Sampler& sampler, MemoryArena& arena, bool specular /*= false*/)
+{
+	BxDFType bsdfFlags = specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
+	LinearColor Ld(0.f);
+
+	Vector3f wi;
+	float LightPdf = 0, scatteringPdf = 0;
+	VisibilityTester vt;
+	LinearColor Li = light.Sample_Li(it, ulight, &wi, &LightPdf, &vt);
+	if (LightPdf > 0 && !Li.IsBlack())
+	{
+		LinearColor f;
+		if (it.IsSurfaceInteraction())
+		{
+			const SurfaceInteraction& isect = (const SurfaceInteraction&)it;
+			f = isect.bsdf->f(isect.wo, wi, bsdfFlags) * AbsDot(wi, isect.shading.n);
+			scatteringPdf = isect.bsdf->Pdf(isect.wo, wi, bsdfFlags);
+		}
+		else
+		{
+			//media
+		}
+		if (!f.IsBlack())
+		{
+			if (/*hanleMedia*/false)
+			{
+
+			}
+			else
+			{
+				if (!vt.Unoccluded(scene))
+				{
+					Li = LinearColor(0.f);
+				}
+				else
+				{
+
+				}
+			}
+
+			if (!Li.IsBlack())
+			{
+				if (IsDeltaLight(light.flags))
+				{
+					Ld += f * Li / LightPdf;
+				}
+				else
+				{
+
+				}
+			}
+		}
+	}
+
+	return Ld;
+}
+
 void SamplerIntegrator::Render(const Scene& scene)
 {
 	Bounds2i imageBounds = camera->film->GetBounds();

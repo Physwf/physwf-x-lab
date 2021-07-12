@@ -45,6 +45,7 @@ public:
 	Bounds2i GetBounds() const;
 	std::unique_ptr<FilmTile> GetFilmTile(const Bounds2i& sampleBounds);
 	void MergeFilmTile(std::unique_ptr<FilmTile> tile);
+	std::unique_ptr<float[]> GetBuffer() const;
 
 	const Vector2i fullResolution;
 	Bounds2i bounds;
@@ -56,7 +57,7 @@ private:
 	float filterTable[filterTableWidth*filterTableWidth];
 	std::mutex tileMutex;
 
-	DisplayPixel& GetPixel(const Vector2i& p)
+	DisplayPixel& GetPixel(const Vector2i& p) const
 	{
 		int width = bounds.pMax.X - bounds.pMin.X;
 		int offset = (p.X - bounds.pMin.X) + (p.Y - bounds.pMin.Y) * width;
@@ -67,7 +68,10 @@ private:
 class Camera
 {
 public:
-	Camera(const Transform& InCameraToWorld):CameraToWorld(InCameraToWorld){}
+	Camera(const Transform& InCameraToWorld, Film* film)
+		: CameraToWorld(InCameraToWorld)
+		, film(film)
+	{}
 	virtual float GenerateRay(const Vector2f& sample, Ray* OutRay) const = 0;
 
 	Film* film;
@@ -78,12 +82,11 @@ protected:
 class PerspectiveCamera : public Camera
 {
 public:
-	PerspectiveCamera(const Transform& InCameraToWorld,int ScreenWidth, int ScreenHeight, float fov,float zNeer,float zFar)
-		: Camera(InCameraToWorld), 
-		CameraToNDC(Perspective(fov, (float)ScreenWidth / (float)ScreenHeight, zNeer, zFar)),
-		Viewport(Vector2i(0, 0),Vector2i(ScreenWidth, ScreenHeight))
+	PerspectiveCamera(const Transform& InCameraToWorld, Film* film, float fov,float zNeer,float zFar)
+		: Camera(InCameraToWorld, film)
+		, CameraToNDC(Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
 	{
-		Vector2i Resolution = Viewport.Diagonal();
+		Vector2i Resolution = film->fullResolution;
 		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f,0.f) * Translate(Vector3f(-1.f,-1.f,0.f));
 		ScreenToNDC = Inverse(NDCToScreen);
 		ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
@@ -94,6 +97,5 @@ private:
 	Transform NDCToScreen;
 	Transform ScreenToNDC;
 	Transform ScreenToCamera;
-	Bounds2i Viewport;
 	float FocalLength;
 };

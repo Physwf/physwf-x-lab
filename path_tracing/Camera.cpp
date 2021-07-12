@@ -98,6 +98,31 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 	}
 }
 
+std::unique_ptr<float[]> Film::GetBuffer() const
+{
+	std::unique_ptr<float[]> rgb(new float[3 * fullResolution.X * fullResolution.Y]);
+
+	int offset = 0;
+	for (int y = 0; y < fullResolution.Y; ++y)
+	{
+		for (int x = 0; x < fullResolution.X; ++x, ++offset)
+		{
+			DisplayPixel p = GetPixel(Vector2i(x, y));
+			XYZToRGB(p.xyz, &rgb[3 * offset]);
+			float filterWeightSum = p.weight;
+			if (filterWeightSum != 0)
+			{
+				float invWt = 1.f / filterWeightSum;
+				rgb[3 * offset + 0] = std::max(0.f, rgb[3 * offset + 0] * invWt);
+				rgb[3 * offset + 1] = std::max(0.f, rgb[3 * offset + 1] * invWt);
+				rgb[3 * offset + 2] = std::max(0.f, rgb[3 * offset + 2] * invWt);
+			}
+		}
+	}
+
+	return rgb;
+}
+
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
 {
 	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.X,0);

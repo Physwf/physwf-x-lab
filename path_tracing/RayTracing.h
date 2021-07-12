@@ -22,7 +22,7 @@ struct Interaction
 	Interaction() {}
 	Interaction(const Vector3f& InP, const Vector3f& InN, const Vector3f& InWO) :p(InP),n(InN),wo(InWO) {}
 	Interaction(const Vector3f& InP) :p(InP) {}
-
+	bool IsSurfaceInteraction() const { return n != Vector3f(); }
 	Ray SpawnRay(const Vector3f& d) const
 	{
 

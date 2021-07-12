@@ -173,7 +173,7 @@ private:
 class Sampler
 {
 public:
-	static std::unique_ptr<Sampler> CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions);
+	static std::shared_ptr<Sampler> CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions);
 	
 	float Get1D();
 	Vector2f Get2D();
