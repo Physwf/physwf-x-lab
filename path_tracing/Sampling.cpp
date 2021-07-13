@@ -113,4 +113,29 @@ Vector2f UniformSampleDisk(const Vector2f& u)
 	return Vector2f(r * std::cos(theta), r * std::sin(theta));
 }
 
+Vector2f ConcentricSampleDisk(const Vector2f& u)
+{
+	Vector2f uOffset = 2.f * u - Vector2f(1.0f, 1.0f);
+
+	if (uOffset.X == 0 && uOffset.Y == 0) return Vector2f(0, 0);
+
+	float theta, r;
+	if (std::abs(uOffset.X) > std::abs(uOffset.Y))
+	{
+		r = uOffset.X;
+		theta = PI_4 * (uOffset.Y / uOffset.X);
+	}
+	else
+	{
+		r = uOffset.Y;
+		theta = PI_2 - PI_4 * (uOffset.X / uOffset.Y);
+	}
+	return r * Vector2f(std::cos(theta), std::sin(theta));
+}
+
+Vector2f UniformSampleTriangle(const Vector2f& u)
+{
+	float su0 = std::sqrt(u[0]);
+	return Vector2f(1 - su0, u[1] * su0);
+}
 

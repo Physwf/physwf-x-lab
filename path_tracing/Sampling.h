@@ -85,12 +85,12 @@ Vector3f UniformSampleCone(const Vector2f& u, float thetamax, const Vector3f& x,
 float UniformConePdf(float thetamax);
 
 Vector2f UniformSampleDisk(const Vector2f& u);
-Vector2f ConcentircSampleDisk(const Vector2f& u);
+Vector2f ConcentricSampleDisk(const Vector2f& u);
 Vector2f UniformSampleTriangle(const Vector2f& u);
 
 inline Vector3f CosineSampleHemisphere(const Vector2f& u)
 {
-	Vector2f d = ConcentircSampleDisk(u);
+	Vector2f d = ConcentricSampleDisk(u);
 	float z = std::sqrt(std::max(0.f, 1 - d.X * d.X - d.Y * d.Y));
 	return Vector3f(d.X, d.Y, z);
 }

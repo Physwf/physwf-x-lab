@@ -10,8 +10,18 @@ public:
 	Scene(const std::vector<std::shared_ptr<SceneObject>>& Inobjects,const std::vector<std::shared_ptr<Light>> lights) 
 		: objects(Inobjects)
 		, lights(lights)
-	{}
-	Bounds3f WorldBound() const;
+	{
+		for (auto& obj : objects)
+		{
+			worldBounds = Union(worldBounds, obj->WorldBound());
+		}
+	}
+
+	Bounds3f WorldBound() const
+	{
+		return worldBounds;
+	}
+
 	bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	bool IntersectP(const Ray& ray) const;
 
@@ -19,4 +29,6 @@ public:
 	std::vector<std::shared_ptr<Light>> infiniteLights;
 protected:
 	std::vector<std::shared_ptr<SceneObject>> objects;
+private:
+	Bounds3f worldBounds;
 };

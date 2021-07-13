@@ -50,6 +50,7 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	Vector3f dpdv = Vector3f(pHit.Z * cosPhi, pHit.Z * sinPhi, -Radius * std::sin(Theta));
 
 	*isect = (*LocalToWorld)(SurfaceInteraction(pHit,Vector2f(u,v),-LocalRay.d, dpdu, dpdv, Vector3f(), Vector3f(),this));
+	return true;
 }
 
 Disk::Disk(float InRadius)
@@ -59,7 +60,7 @@ Disk::Disk(float InRadius)
 
 bool Disk::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const
 {
-
+	return false;
 }
 
 Triangle::Triangle(class MeshObject* InMesh, int triNumber) : mesh(InMesh)
@@ -128,7 +129,22 @@ bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect)
 
 bool Triangle::IntersectP(const Ray& ray) const
 {
+	Ray LocalRay = (*WorldToLocal)(ray);
+	float a, b, c, d;
+	const Vector3f& p0 = mesh->p[v[0]];
+	const Vector3f& p1 = mesh->p[v[1]];
+	const Vector3f& p2 = mesh->p[v[2]];
+	if (!Math::Plane(p0, p1, p2, &a, &b, &c, &d)) return false;
 
+	float t0 = -(a * LocalRay.o.X + b * LocalRay.o.Y + c * LocalRay.o.Z + d) / (a * LocalRay.d.X + b * LocalRay.d.Y + c * LocalRay.d.Z);
+	if (t0 < 0 || t0 > LocalRay.tMax) return false;
+
+	Vector3f pHit;
+	pHit = LocalRay(t0);
+
+	if (!Math::IsInsideTriangle(p0, p1, p2, pHit)) return false;
+
+	return true;
 }
 
 void Triangle::GetUVs(Vector2f uv[3]) const

@@ -120,7 +120,7 @@ Type operator*(const Type& rhs)	 const						\
 template<typename U>										\
 Type operator*(U value)	const								\
 {															\
-	Vector3 Result;											\
+	Type Result;											\
 	Multiply<U>(Elements, value, Result.Elements);			\
 	return Result;											\
 }															\

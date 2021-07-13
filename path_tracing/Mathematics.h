@@ -8,6 +8,8 @@
 #define INV_PI	0.318309886f
 #define INV_2PI	0.159154943f
 #define INV_4PI	0.079577471f
+#define PI_2	1.570796327f
+#define PI_4	0.785398163f
 
 template <typename T> class Vector3;
 typedef Vector3<float> Vector3f;

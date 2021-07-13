@@ -4,7 +4,7 @@
 
 bool VisibilityTester::Unoccluded(const Scene& scene) const
 {
-
+	return scene.IntersectP(p0.SpawnRayTo(p1));
 }
 
 Light::Light(int flags, const Transform& LightToWorld, int nSamples)
@@ -14,6 +14,11 @@ Light::Light(int flags, const Transform& LightToWorld, int nSamples)
 	WorldToLight(Inverse(LightToWorld))
 {
 
+}
+
+LinearColor Light::Le(const Ray& r) const
+{
+	return LinearColor(0.f);
 }
 
 AreaLight::AreaLight(const Transform& LightToWorld, int nSamples)

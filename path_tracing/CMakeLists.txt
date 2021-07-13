@@ -10,6 +10,7 @@ file(GLOB_RECURSE DIR_SRC
 
 add_executable(path_tracing ${DIR_SRC})
 target_include_directories(path_tracing PRIVATE "../x9")
+target_link_libraries(path_tracing libx9)
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")

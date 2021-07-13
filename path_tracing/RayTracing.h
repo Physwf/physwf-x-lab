@@ -25,7 +25,17 @@ struct Interaction
 	bool IsSurfaceInteraction() const { return n != Vector3f(); }
 	Ray SpawnRay(const Vector3f& d) const
 	{
-
+		return Ray(p, Normalize(d));
+	}
+	Ray SpawnRayTo(const Vector3f& p2) const
+	{
+		Vector3f d = p2 - p;
+		return Ray(p, Normalize(d));
+	}
+	Ray SpawnRayTo(const Interaction& it) const
+	{
+		Vector3f d = it.p - p;
+		return Ray(p, Normalize(d));
 	}
 	Vector3f p;
 	Vector3f n;

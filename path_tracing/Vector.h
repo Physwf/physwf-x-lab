@@ -91,25 +91,25 @@ inline Vector3<T> operator*(float Value, const Vector3<T>& v)
 }
 
 template<typename T>
-T Cross(const Vector2<T>& lhs, const Vector2<T>& rhs)
+inline T Cross(const Vector2<T>& lhs, const Vector2<T>& rhs)
 {
 	return lhs.Cross(rhs);
 }
 
 template<typename T>
-T Dot(const Vector2<T>& lhs, const Vector2<T>& rhs)
+inline T Dot(const Vector2<T>& lhs, const Vector2<T>& rhs)
 {
 	return lhs.Dot(rhs);
 }
 
 template<typename T>
-Vector3<T> Cross(const Vector3<T>& lhs,const Vector3<T>& rhs) 
+inline Vector3<T> Cross(const Vector3<T>& lhs,const Vector3<T>& rhs)
 {
 	return lhs.Cross(rhs);
 }
 
 template<typename T>
-T Dot(const Vector3<T>& lhs, const Vector3<T>& rhs)
+inline T Dot(const Vector3<T>& lhs, const Vector3<T>& rhs)
 {
 	return lhs.Dot(rhs);
 }
@@ -121,67 +121,67 @@ inline T AbsDot(const Vector3<T>& v1, const Vector3<T>& v2)
 }
 
 template<typename T>
-Vector2<T> Normalize(const Vector2<T>& V)
+inline Vector2<T> Normalize(const Vector2<T>& V)
 {
 	return V / V.Length();
 }
 
 template<typename T>
-Vector3<T> Normalize(const Vector3<T>& V)
+inline Vector3<T> Normalize(const Vector3<T>& V)
 {
 	return V / V.Length();
 }
 
 template <typename T>
-Vector2<T> Min(const Vector2<T>& p1, const Vector2<T>& p2)
+inline Vector2<T> Min(const Vector2<T>& p1, const Vector2<T>& p2)
 {
 	return Vector2<T>(std::min(p1.X, p2.X), std::min(p1.Y, p2.Y));
 }
 
 template <typename T>
-Vector3<T> Min(const Vector3<T>& p1, const Vector3<T>& p2)
+inline Vector3<T> Min(const Vector3<T>& p1, const Vector3<T>& p2)
 {
 	return Vector3<T>(std::min(p1.X, p2.X), std::min(p1.Y, p2.Y), std::min(p1.Z, p2.Z));
 }
 
 template <typename T>
-Vector2<T> Max(const Vector2<T>& p1, const Vector2<T>& p2)
+inline Vector2<T> Max(const Vector2<T>& p1, const Vector2<T>& p2)
 {
 	return Vector2<T>(std::max(p1.X, p2.X), std::max(p1.Y, p2.Y));
 }
 
 template <typename T>
-Vector3<T> Max(const Vector3<T>& p1, const Vector3<T>& p2) 
+inline Vector3<T> Max(const Vector3<T>& p1, const Vector3<T>& p2)
 {
 	return Vector3<T>(std::max(p1.X, p2.X), std::max(p1.Y, p2.Y), std::max(p1.Z, p2.Z));
 }
 
 template <typename T>
-Vector3<T> Floor(const Vector3<T>& p1)
+inline Vector3<T> Floor(const Vector3<T>& p1)
 {
 	return Vector3<T>(std::floor(p1.X), std::floor(p1.Y), std::floor(p1.Z));
 }
 
 template <typename T>
-Vector2<T> Floor(const Vector2<T>& p1)
+inline Vector2<T> Floor(const Vector2<T>& p1)
 {
 	return Vector2<T>(std::floor(p1.X), std::floor(p1.Y));
 }
 
 template <typename T>
-Vector3<T> Ceil(const Vector3<T>& p1)
+inline Vector3<T> Ceil(const Vector3<T>& p1)
 {
 	return Vector3<T>(std::ceil(p1.X), std::ceil(p1.Y), std::ceil(p1.Z));
 }
 
 template <typename T>
-Vector2<T> Ceil(const Vector2<T>& p1)
+inline Vector2<T> Ceil(const Vector2<T>& p1)
 {
 	return Vector2<T>(std::ceil(p1.X), std::ceil(p1.Y));
 }
 
 template<typename T>
-T Distance(const Vector3<T>& p1, const Vector3<T>& p2)
+inline T Distance(const Vector3<T>& p1, const Vector3<T>& p2)
 {
 	return (p1 - p2).Length();
 }
@@ -192,13 +192,13 @@ inline float DistanceSquared(const Vector3<T>& p1, const Vector3<T>& p2)
 }
 
 template <typename T>
-Vector2<T> Lerp(float t, const Vector2<T>& v0, const Vector2<T>& v1)
+inline Vector2<T> Lerp(float t, const Vector2<T>& v0, const Vector2<T>& v1)
 {
 	return (1.0f - t) * v0 + t * v1;
 }
 
 template <typename T>
-Vector3<T> Lerp(float t, const Vector3<T>& v0, const Vector3<T>& v1)
+inline Vector3<T> Lerp(float t, const Vector3<T>& v0, const Vector3<T>& v1)
 {
 	return (1.0f - t) * v0 + t * v1;
 }

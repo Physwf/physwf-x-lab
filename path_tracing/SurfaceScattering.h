@@ -35,7 +35,7 @@ public:
 class SpecularReflection : public BxDF
 {
 public:
-	SpecularReflection(const LinearColor& R, Fresnel* fresnel);
+	SpecularReflection(const LinearColor& R, Fresnel* fresnel) :BxDF(BSDF_SPECULAR), R(R), fresnel(fresnel) {}
 	virtual LinearColor f(const Vector3f& wo, const Vector3f& wi) const override
 	{
 		return LinearColor(0.f);

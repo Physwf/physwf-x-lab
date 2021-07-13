@@ -10,12 +10,14 @@
 class SampleGenerator1D
 {
 public:
+	virtual ~SampleGenerator1D() {};
 	virtual float Get(int64_t index) = 0;
 };
 
 class SampleGenerator2D
 {
 public:
+	virtual ~SampleGenerator2D() {};
 	virtual Vector2f Get(int64_t index) = 0;
 };
 
@@ -119,25 +121,24 @@ public:
 	virtual Vector2f GetPixel(int64_t index) = 0;
 	virtual float Get1D(int64_t index) = 0;
 	virtual Vector2f Get2D(int64_t index) = 0;
+
+	RNG rng;
 };
 
 class StratifiedSamplerContext : public SamplerContext
 {
 public:
 	StratifiedSamplerContext(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions)
-		: xPixelSamples(xPixelSamples)
+		: SamplerContext()
+		, xPixelSamples(xPixelSamples)
 		, yPixelSamples(yPixelSamples)
 	{
+		PixelGenerator = std::make_shared<StratifiedSampleGenerator2D>(xPixelSamples, yPixelSamples);
 		for (int i = 0; i < nSampledDimensions; ++i) 
 		{
-			Generator1Ds.push_back(std::make_unique<StratifiedSampleGenerator1D>(xPixelSamples*yPixelSamples));
-			Generator2Ds.push_back(std::make_unique<StratifiedSampleGenerator2D>(xPixelSamples , yPixelSamples));
+			Generator1Ds.push_back(std::make_shared<StratifiedSampleGenerator1D>(xPixelSamples * yPixelSamples));
+			Generator2Ds.push_back(std::make_shared<StratifiedSampleGenerator2D>(xPixelSamples , yPixelSamples));
 		}
-	}
-
-	~StratifiedSamplerContext()
-	{
-
 	}
 
 	virtual void Generate() override
@@ -166,12 +167,12 @@ public:
 		return Generator2Ds[current2DDimension++]->Get(index);
 	}
 private:
-	std::unique_ptr<StratifiedSampleGenerator2D> PixelGenerator;
-	std::vector<std::unique_ptr<StratifiedSampleGenerator1D>> Generator1Ds;
-	std::vector<std::unique_ptr<StratifiedSampleGenerator2D>> Generator2Ds;
-	std::vector<std::unique_ptr<StratifiedSampleArrayGenerator1D>> ArrayGenerator1Ds;
-	std::vector<std::unique_ptr<LatinHypercubeSampleArrayGenerator2D>> ArrayGenerator2Ds;
-	RNG rng;
+	std::shared_ptr<StratifiedSampleGenerator2D> PixelGenerator;
+	std::vector<std::shared_ptr<StratifiedSampleGenerator1D>> Generator1Ds;
+	std::vector<std::shared_ptr<StratifiedSampleGenerator2D>> Generator2Ds;
+	std::vector<std::shared_ptr<StratifiedSampleArrayGenerator1D>> ArrayGenerator1Ds;
+	std::vector<std::shared_ptr<LatinHypercubeSampleArrayGenerator2D>> ArrayGenerator2Ds;
+	
 	const int64_t xPixelSamples, yPixelSamples;
 	int current1DDimension = 0, current2DDimension = 0;
 };
@@ -189,7 +190,7 @@ public:
 	virtual bool StartNextSample();
 	virtual std::unique_ptr<Sampler> Clone(int Seed);
 	
-	Sampler(int64_t samplesPerPixel, std::unique_ptr<SamplerContext> context)
+	Sampler(int64_t samplesPerPixel, std::shared_ptr<SamplerContext> context)
 		: currentPixel(0,0)
 		, currentPixelSampleIndex(0)
 		, samplesPerPixel(samplesPerPixel)
@@ -202,5 +203,5 @@ private:
 
 	const int64_t samplesPerPixel;
 
-	std::unique_ptr<SamplerContext> context;
+	std::shared_ptr<SamplerContext> context;
 };

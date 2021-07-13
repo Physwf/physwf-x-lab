@@ -19,8 +19,8 @@ const int numSample = 100000;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	extern void SetUpScene();
-	SetUpScene();
+	//extern void SetUpScene();
+	//SetUpScene();
 
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -64,7 +64,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ShowWindow(g_hWind, nCmdShow);
 
-	Render(W, H, numSample, &BackBuffer, [=]() { InvalidateRect(g_hWind, &wr,false); });
+	//Render(W, H, numSample, &BackBuffer, [=]() { InvalidateRect(g_hWind, &wr,false); });
 
 
 	MSG msg;

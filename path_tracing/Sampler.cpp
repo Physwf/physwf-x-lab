@@ -2,7 +2,7 @@
 
 std::shared_ptr<Sampler> Sampler::CreateStratified(int64_t xPixelSamples, int64_t yPixelSamples, int nSampledDimensions)
 {
-	std::unique_ptr<SamplerContext> context = std::make_unique<StratifiedSamplerContext>(xPixelSamples, yPixelSamples, nSampledDimensions);
+	std::shared_ptr<SamplerContext> context = std::make_shared<StratifiedSamplerContext>(xPixelSamples, yPixelSamples, nSampledDimensions);
 	return std::make_shared<Sampler>(xPixelSamples * yPixelSamples, context);
 }
 
@@ -23,13 +23,20 @@ bool Sampler::StartNextSample()
 	return ++currentPixelSampleIndex < samplesPerPixel;
 }
 
+std::unique_ptr<Sampler> Sampler::Clone(int s)
+{
+	Sampler* sampler = new Sampler(*this);
+	sampler->context->rng.Seed(s);
+	return std::unique_ptr<Sampler>(sampler);
+}
+
 float Sampler::Get1D()
 {
-	context->Get1D(currentPixelSampleIndex);
+	return context->Get1D(currentPixelSampleIndex);
 }
 
 Vector2f Sampler::Get2D()
 {
-	context->Get2D(currentPixelSampleIndex);
+	return context->Get2D(currentPixelSampleIndex);
 }
 
