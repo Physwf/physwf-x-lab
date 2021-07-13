@@ -61,6 +61,8 @@ Film::Film(const Vector2i& Inresolution, std::unique_ptr<Filter> Infilter)
 			filterTable[offset] = filter->Evaluate(p);
 		}
 	}
+
+	bounds = Bounds2i(Vector2i(0,0), Vector2i(fullResolution.X, fullResolution.Y));
 }
 
 Bounds2i Film::GetBounds() const
@@ -68,14 +70,13 @@ Bounds2i Film::GetBounds() const
 	return bounds;
 }
 
-
 std::unique_ptr<FilmTile> Film::GetFilmTile(const Bounds2i& sampleBounds)
 {
 	Vector2f halfpixel = Vector2f(0.5f, 0.5f);
 	Bounds2f floatBounds = (Bounds2f)sampleBounds;
 	//include sampleBounds plus filter->radius
 	Vector2i leftUp =		(Vector2i)Ceil(floatBounds.pMin - halfpixel - filter->radius);
-	Vector2i rightDown =	(Vector2i)Floor(floatBounds.pMin - halfpixel + filter->radius) + Vector2i(1,1);
+	Vector2i rightDown =	(Vector2i)Floor(floatBounds.pMax - halfpixel + filter->radius) + Vector2i(1,1);
 	Bounds2i tilePixelBounds = Intersect(Bounds2i(leftUp,rightDown),bounds);
 	return std::make_unique<FilmTile>(tilePixelBounds, filter->radius,filterTable,filterTableWidth);
 }
@@ -125,7 +126,7 @@ std::unique_ptr<float[]> Film::GetBuffer() const
 
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
 {
-	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.X,0);
+	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.Y,0);
 	Vector3f pCamera = ScreenToCamera(pFilm);
 	*OutRay = Ray(Vector3f(0, 0, 0), Normalize(pCamera));
 	*OutRay = CameraToWorld(*OutRay);

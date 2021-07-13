@@ -189,10 +189,16 @@ class LMSColor : public GeneralizedColor<float,3>
 public:
 	LMSColor(){}
 	LMSColor(float Value) : GeneralizedColor<float, 3>(Value) {}
+	LMSColor(float r, float g, float b)
+	{
+		Components[0] = r;
+		Components[1] = g;
+		Components[2] = b;
+	}
 	LMSColor(const LMSColor& rhs) 
 	{
 		for (int i = 0; i < 3; ++i)
-			Components[i] /= rhs.Components[i];
+			Components[i] = rhs.Components[i];
 	}
 	LMSColor(const GeneralizedColor<float, 3>& v) : GeneralizedColor<float, 3>(v) {}
 

@@ -4,6 +4,9 @@
 #include "VectorHelper.h"
 #include "Mathematics.h"
 
+#include "DirectXMath.h"
+using namespace DirectX;
+
 template <typename T>
 class Vector2 : private VectorHelper<T, 2>
 {
@@ -50,6 +53,11 @@ public:
 	{
 		X = T(p.X);
 		Y = T(p.Y);
+	}
+
+	XMFLOAT3 ToXMFloat3() const
+	{
+		return XMFLOAT3(X,Y,Z);
 	}
 
 	VectorBody(Vector3<T>)

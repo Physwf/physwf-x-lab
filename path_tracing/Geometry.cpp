@@ -198,7 +198,7 @@ MeshObject::MeshObject(const Transform& InLocalToToWorld, const std::shared_ptr<
 	, p(Inp)
 	, n(Inn)
 	, uv(Inuv)
-	, Indices(Indices)
+	, Indices(InIndices)
 {
 	BuildTriangle();
 }
@@ -245,6 +245,7 @@ void MeshObject::BuildTriangle()
 	for (int i = 0; i < nTriangles; ++i)
 	{
 		std::shared_ptr<Triangle> t = std::make_shared<Triangle>(this, i);
+		t->SetTransform(&LocalToWorld, &WorldToLocal);
 		Triangles.push_back(t);
 	}
 	for (int i = 0; i < nVertices; ++i)

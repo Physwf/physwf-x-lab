@@ -65,7 +65,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ShowWindow(g_hWind, nCmdShow);
 
 	//Render(W, H, numSample, &BackBuffer, [=]() { InvalidateRect(g_hWind, &wr,false); });
-
+	void StartGround();
+	StartGround();
 
 	MSG msg;
 	while (true)

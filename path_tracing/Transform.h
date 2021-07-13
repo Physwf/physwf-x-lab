@@ -65,6 +65,15 @@ public:
 		XMStoreFloat4x4(&float4x4, XMMatrixRotationRollPitchYaw(Pitch, Yall, Roll));
 		return Transform(float4x4);
 	}
+	static Transform LookAt(const Vector3f& Eye, const Vector3f& At, const Vector3f& Up)
+	{
+		XMFLOAT4X4 float4x4;
+		XMFLOAT3 XMEye = Eye.ToXMFloat3();
+		XMFLOAT3 XMAt = At.ToXMFloat3();
+		XMFLOAT3 XMUp = Up.ToXMFloat3();
+		XMStoreFloat4x4(&float4x4, XMMatrixLookAtLH(XMLoadFloat3(&XMEye), XMLoadFloat3(&XMAt), XMLoadFloat3(&XMUp)));
+		return Transform(float4x4);
+	}
 	friend Transform Inverse(const Transform& t)
 	{
 		return Transform(t.InvM, t.M);
@@ -93,6 +102,8 @@ public:
 	}
 	template <typename T>
 	inline Vector3<T> operator()(const Vector3<T>& p) const;
+	template <typename T>
+	inline Vector3<T> Normal(const Vector3<T>& p) const;
 	inline Ray operator()(const Ray& r) const;
 	SurfaceInteraction operator()(const SurfaceInteraction& si) const;
 private:
@@ -107,13 +118,22 @@ inline Vector3<T> Transform::operator()(const Vector3<T>& p) const
 	XMStoreFloat3(&P,V);
 	return Vector3<T>(P.x, P.y, P.z);
 }
+template <typename T>
+inline Vector3<T> Transform::Normal(const Vector3<T>& n) const
+{
+	T x = n.X, y = n.Y, z = n.Z;
+	return Vector3<T>(	InvM.m[0][0] * x + InvM.m[1][0] * y + InvM.m[2][0] * z,
+						InvM.m[0][1] * x + InvM.m[1][1] * y + InvM.m[2][1] * z,
+						InvM.m[0][2] * x + InvM.m[1][2] * y + InvM.m[2][2] * z);
+}
 
 inline Ray Transform::operator()(const Ray& r) const
 {
 	Vector3f o = (*this)(r.o);
-	Vector3f d = (*this)(r.d);
+	Vector3f d = (*this).Normal(r.d);
 	return Ray(o,d);
 }
+
 
 Transform Perspective(float fov, float aspect, float znear, float zfar);
 Transform Translate(const Vector3f& delta);

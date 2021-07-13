@@ -118,9 +118,9 @@ private:
 	const int nTriangles, nVertices;
 	std::vector<std::shared_ptr<Triangle>> Triangles;
 	std::vector<int> Indices;
-	std::unique_ptr<Vector3f[]> p;
-	std::unique_ptr<Vector3f[]> n;
-	std::unique_ptr<Vector2f[]> uv;
+	Vector3f* p;
+	Vector3f* n;
+	Vector2f* uv;
 	Bounds3f LocalBounds;
 };
 

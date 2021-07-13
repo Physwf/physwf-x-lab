@@ -41,6 +41,7 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction& si) const
 	return ret;
 }
 
+
 Transform Perspective(float fov, float aspect, float znear, float zfar)
 {
 	XMFLOAT4X4 M;

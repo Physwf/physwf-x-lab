@@ -72,6 +72,7 @@ public:
 			}
 			MT[i] = MT[(i + m) % n] ^ xA;
 		}
+		index = 0;
 	}
 private:
 	static constexpr int w = 32;

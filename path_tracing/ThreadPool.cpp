@@ -96,7 +96,7 @@ void InitFixedThreadPool()
 {
 	SYSTEM_INFO SysInfo;
 	GetSystemInfo(&SysInfo);
-	GFixThreadPool = new JFixedThreadPool(SysInfo.dwNumberOfProcessors);
+	GFixThreadPool = new JFixedThreadPool(1/*SysInfo.dwNumberOfProcessors*/);
 }
 
 void FiniFixedThreadPool()

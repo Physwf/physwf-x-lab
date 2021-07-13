@@ -87,7 +87,7 @@ public:
 		, CameraToNDC(Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
 	{
 		Vector2i Resolution = film->fullResolution;
-		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f,0.f) * Translate(Vector3f(-1.f,-1.f,0.f));
+		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f,1.f) * Translate(Vector3f(-1.f,-1.f,0.f));
 		ScreenToNDC = Inverse(NDCToScreen);
 		ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
 	}

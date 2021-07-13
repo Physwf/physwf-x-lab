@@ -118,8 +118,9 @@ void SamplerIntegrator::Render(const Scene& scene)
 		int EndY = StartY + tileSize;
 		for (int y = StartY; y < EndY; ++y)
 		{
-			for (int x = StartY; x < EndY; ++x)
+			for (int x = StartX; x < EndX; ++x)
 			{
+				tileSampler->StartPixel(Vector2i(x,y));
 				do
 				{
 					Vector2f pixelSample = tileSampler->GetPixelSample(Vector2i(x, y));
