@@ -75,7 +75,10 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 		if (rrBeta.MaxComponentValue() < rrThreshhold && bounces > 3)
 		{
 			float q = std::max(0.05f, 1.f - rrBeta.MaxComponentValue());
-			if(sampler.Get1D() < q) break;
+			if (sampler.Get1D() < q)
+			{
+				break;
+			}
 			beta /= 1.f - q;
 		}
 	}

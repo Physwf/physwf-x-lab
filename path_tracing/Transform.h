@@ -103,6 +103,8 @@ public:
 	template <typename T>
 	inline Vector3<T> operator()(const Vector3<T>& p) const;
 	template <typename T>
+	inline Vector2<T> operator()(const Vector2<T>& p) const;
+	template <typename T>
 	inline Vector3<T> Normal(const Vector3<T>& p) const;
 	inline Ray operator()(const Ray& r) const;
 	SurfaceInteraction operator()(const SurfaceInteraction& si) const;
@@ -113,11 +115,31 @@ private:
 template<typename T>
 inline Vector3<T> Transform::operator()(const Vector3<T>& p) const
 {
-	XMFLOAT3 P = { p.X,p.Y,p.Z };
-	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat4x4(&M));
-	XMStoreFloat3(&P,V);
-	return Vector3<T>(P.x, P.y, P.z);
+	XMFLOAT4 P = { p.X,p.Y,p.Z, 1.f };
+	XMVECTOR V = XMVector4Transform(XMLoadFloat4(&P), XMLoadFloat4x4(&M));
+	XMStoreFloat4(&P,V);
+	return Vector3<T>(P.x / P.w, P.y / P.w, P.z / P.w);
+
+	T x = p.X, y = p.Y, z = p.Z , w = 1.f;
+	T new_w = M.m[3][0] * x + M.m[3][1] * y + M.m[3][2] * z + M.m[3][3] * w;
+	return Vector3<T>(	(M.m[0][0] * x + M.m[0][1] * y + M.m[0][2] * z + M.m[0][3] * w) / new_w,
+						(M.m[1][0] * x + M.m[1][1] * y + M.m[1][2] * z + M.m[1][3] * w) / new_w,
+						(M.m[2][0] * x + M.m[2][1] * y + M.m[2][2] * z + M.m[2][3] * w) / new_w);
 }
+
+template <typename T>
+inline Vector2<T> Transform::operator()(const Vector2<T>& p) const
+{
+	T x = p.X, y = p.Y, z = 0, w = 1.f;
+	return Vector2<T>(	(M.m[0][0] * x + M.m[0][1] * y + M.m[0][2] * z + M.m[0][3] * w),
+						(M.m[1][0] * x + M.m[1][1] * y + M.m[1][2] * z + M.m[1][3] * w));
+
+	XMFLOAT3 P = { p.X,p.Y, 0.f };
+	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat4x4(&M));
+	XMStoreFloat3(&P, V);
+	return Vector2<T>(P.x, P.y);
+}
+
 template <typename T>
 inline Vector3<T> Transform::Normal(const Vector3<T>& n) const
 {

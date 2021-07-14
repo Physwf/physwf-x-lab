@@ -127,8 +127,9 @@ std::unique_ptr<float[]> Film::GetBuffer() const
 
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
 {
-	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.Y,0);
-	Vector3f pCamera = ScreenToCamera(pFilm);
+	Vector2f pFilm = Vector2f(pixelSample.X, pixelSample.Y);
+	Vector2f NDC = ScreenToCamera(pFilm);
+	Vector3f pCamera(NDC.X,NDC.Y,1.0f);
 	*OutRay = Ray(Vector3f(0, 0, 0), Normalize(pCamera));
 	*OutRay = CameraToWorld(*OutRay);
 	return 1;
