@@ -167,17 +167,11 @@ public:
 	}
 	virtual float Get1D(int64_t index) override
 	{
-		if (current1DDimension < Generator1Ds.size())
-			return Generator1Ds[current1DDimension++]->Get(index);
-		else 
-			return rng.NextFloat();
+		return Generator1Ds[current1DDimension++]->Get(index);
 	}
 	virtual Vector2f Get2D(int64_t index) override
 	{
-		if (current2DDimension < Generator2Ds.size())
-			return Generator2Ds[current2DDimension++]->Get(index);
-		else
-			return Vector2f(rng.NextFloat(),rng.NextFloat());
+		return Generator2Ds[current2DDimension++]->Get(index);
 	}
 
 	virtual std::unique_ptr<SamplerContext> Clone() override

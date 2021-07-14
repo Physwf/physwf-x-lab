@@ -4,7 +4,7 @@ Transform Transform::operator*(const Transform& t)
 {
 	Transform Result;
 	XMStoreFloat4x4(&Result.M,	  XMMatrixMultiply(XMLoadFloat4x4(&M), XMLoadFloat4x4(&t.M)));
-	XMStoreFloat4x4(&Result.InvM, XMMatrixMultiply(XMLoadFloat4x4(&t.InvM), XMLoadFloat4x4(&InvM)));
+	XMStoreFloat4x4(&Result.InvM, XMMatrixMultiply(XMLoadFloat4x4(&InvM), XMLoadFloat4x4(&t.InvM)));
 	return Result;
 }
 
@@ -28,13 +28,13 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction& si) const
 	ret.p = (*this)(si.p);
 
 	const Transform& t = *this;
-	ret.n = Normalize(t.Normal(si.n));
-	ret.wo = Normalize(t.Normal(si.wo));
+	ret.n = Normalize(t(si.n));
+	ret.wo = Normalize(t(si.wo));
 	ret.shape = si.shape;
-	ret.dpdu = t.Normal(si.dpdu);
-	ret.dpdv = t.Normal(si.dpdv);
-	ret.dndu = t.Normal(si.dndu);
-	ret.dndv = t.Normal(si.dndv);
+	ret.dpdu = t(si.dpdu);
+	ret.dpdv = t(si.dpdv);
+	ret.dndu = t(si.dndu);
+	ret.dndv = t(si.dndv);
 	ret.bsdf = si.bsdf;
 	ret.object = si.object;
 

@@ -93,7 +93,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 	Bounds2i imageBounds = camera->film->GetBounds();
 	Vector2i imageExtents = imageBounds.Diagonal();
 
-	const int tileSize = 50;
+	const int tileSize = 16;
 	Vector2i nTiles((imageExtents.X + tileSize - 1) / tileSize,
 		(imageExtents.Y + tileSize - 1) / tileSize);
 
@@ -121,8 +121,6 @@ void SamplerIntegrator::Render(const Scene& scene)
 		{
 			for (int x = StartX; x < EndX; ++x)
 			{
-				x = 250;
-				y = 250;
 				tileSampler->StartPixel(Vector2i(x,y));
 				do
 				{
@@ -134,7 +132,6 @@ void SamplerIntegrator::Render(const Scene& scene)
 					if (rayWeight > 0) L = Li(r, scene, *tileSampler, arena);
 
 					filmTile->AddSample(pixelSample, L, rayWeight);
-					arena.Reset();
 
 				} while (tileSampler->StartNextSample());
 			}

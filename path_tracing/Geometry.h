@@ -40,7 +40,6 @@ public:
 	Sphere(float InRadius);
 	virtual Bounds3f ObjectBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
-	virtual bool IntersectP(const Ray& ray) const override;
 private:
 	float Radius;
 };

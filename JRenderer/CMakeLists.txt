@@ -1,5 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.15)
-file(GLOB_RECURSE DIR_SRC
+﻿file(GLOB_RECURSE DIR_SRC
     "./*.cpp"
     "./*.h"
 	"./*.rc"
@@ -7,17 +6,20 @@ file(GLOB_RECURSE DIR_SRC
 )
 add_executable(JRenderer ${DIR_SRC})
 
-set(DirectXTexDir "E:/DirectXTex/")
-set(DirectXMathDir "E:/DirectXMath/")
+set(DirectXTexDir "D:/DirectXTex/")
+set(DirectXMathDir "D:/DirectXMath/")
 
 MESSAGE(STATUS "FBX_SDK_HOME=$ENV{FBX_SDK_HOME}")
 target_include_directories(JRenderer PRIVATE "../x0/Include")
 target_include_directories(JRenderer PRIVATE $ENV{FBX_SDK_HOME}/include)
-find_library(FBXSDK_LIBRARY libfbxsdk PATHS $ENV{FBX_SDK_HOME}\\lib\\vs2015\\x64\\debug)
-find_library(DirectXTexLib DirectXTex HINTS ${DirectXTexDir}DirectXTex/Bin/Desktop_2017_Win10/x64/Debug/)
+find_library(FBXSDK_LIBRARY libfbxsdk HINTS $ENV{FBX_SDK_HOME}/lib/vs2015/x86/release)
+find_library(DirectXTexLib DirectXTex HINTS ${DirectXTexDir}DirectXTex/Bin/Desktop_2017_Win10/Win32/Debug/)
 target_include_directories(JRenderer PRIVATE ${DirectXTexDir}DirectXTex)
 target_include_directories(JRenderer PRIVATE ${DirectXMathDir}Inc)
 
+set_property(TARGET JRenderer
+    PROPERTY VS_PACKAGE_REFERENCES "WinPixEventRuntime"
+)
 #https://www.jianshu.com/p/66df9650a9e2
 ADD_CUSTOM_COMMAND(TARGET JRenderer
         PRE_BUILD
@@ -30,10 +32,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 
 SET(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 
-set_property(TARGET JRenderer PROPERTY VS_PACKAGE_REFERENCES "WinPixEventRuntime_1.0.*")
-
 MESSAGE(STATUS "operation system is ${CMAKE_SYSTEM}")
-MESSAGE(STATUS "FBXSDK_LIBRARY  is ${FBXSDK_LIBRARY}")
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	MESSAGE(STATUS "current platform: Linux ")

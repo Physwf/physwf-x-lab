@@ -87,10 +87,8 @@ public:
 		, CameraToNDC(Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
 	{
 		Vector2i Resolution = film->fullResolution;
-		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f, 1.0 ) * Translate(Vector3f(1.f, 1.f, 0.f));
+		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f,1.f) * Translate(Vector3f(-1.f,-1.f,0.f));
 		ScreenToNDC = Inverse(NDCToScreen);
-		Vector2f NDC = ScreenToNDC(Vector2f(0,0));
-		Vector3f Camera = Inverse(CameraToNDC)(Vector3f(NDC.X,NDC.Y,0));
 		ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
 	}
 	virtual float GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const override;
