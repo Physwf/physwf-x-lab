@@ -10,6 +10,11 @@ PathIntergrator::PathIntergrator(int maxDepth, std::shared_ptr<Camera> camera, s
 {
 }
 
+void PathIntergrator::Preprocess(const Scene& scene, Sampler& sampler)
+{
+	lightDistribution = CreateLightDistribution("uniform", scene);
+}
+
 LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth /* = 0 */)
 {
 	LinearColor L(0.f), beta(1.f);

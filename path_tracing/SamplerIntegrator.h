@@ -14,6 +14,7 @@ class SamplerIntegrator
 public:
 	SamplerIntegrator(std::shared_ptr<const Camera> Incamera, std::shared_ptr<Sampler> Insampler)
 		: camera(Incamera), sampler(Insampler) {}
+	virtual void Preprocess(const Scene& scene, Sampler& sampler) {}
 	virtual void Render(const Scene& scene);
 	virtual LinearColor Li(const Ray& ray, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth = 0) = 0;
 protected:

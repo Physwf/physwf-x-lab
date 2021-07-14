@@ -4,6 +4,7 @@
 FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius, const float* InfilterTable, int InfilterTableSize)
 	: pixelBounds(InpixelBounds),filterRadius(InfilterRadius), invFilterRadius(1 / filterRadius.X, 1 / filterRadius.Y), filterTable(InfilterTable), filterTableSize(InfilterTableSize)
 {
+	pixels = std::vector<PhysicalPixel>(std::max(0, pixelBounds.Area()));
 }
 
 void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight /*= 1.0f*/)
@@ -24,7 +25,7 @@ void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight
 			fy = std::min((int)std::floor(fy), filterTableSize - 1);
 			int offset = fy * filterTableSize + fx;
 			float filterWeight = filterTable[offset];
-			PhysicalPixel& pixel = GetPixel(Vector2i());
+			PhysicalPixel& pixel = GetPixel(Vector2i(x,y));
 			pixel.contribSum += L * sampleWight * filterWeight;
 			pixel.filterWeightSum += filterWeight;
 		}

@@ -118,9 +118,11 @@ class SamplerContext
 public:
 	virtual ~SamplerContext() {}
 	virtual void Generate() = 0;
+	virtual void StartNextSample() = 0;
 	virtual Vector2f GetPixel(int64_t index) = 0;
 	virtual float Get1D(int64_t index) = 0;
 	virtual Vector2f Get2D(int64_t index) = 0;
+	virtual std::unique_ptr<SamplerContext> Clone() = 0;
 
 	RNG rng;
 };
@@ -152,8 +154,13 @@ public:
 		{
 			Generator2Ds[i]->Generate(xPixelSamples , yPixelSamples, rng);
 		}
+		
 	}
-
+	virtual void StartNextSample() override
+	{
+		current1DDimension = 0;
+		current2DDimension = 0;
+	}
 	virtual Vector2f GetPixel(int64_t index) override
 	{
 		return PixelGenerator->Get(index);
@@ -165,6 +172,11 @@ public:
 	virtual Vector2f Get2D(int64_t index) override
 	{
 		return Generator2Ds[current2DDimension++]->Get(index);
+	}
+
+	virtual std::unique_ptr<SamplerContext> Clone() override
+	{
+		return std::unique_ptr<SamplerContext>(new StratifiedSamplerContext(*this));
 	}
 private:
 	std::shared_ptr<StratifiedSampleGenerator2D> PixelGenerator;
@@ -190,12 +202,20 @@ public:
 	virtual bool StartNextSample();
 	virtual std::unique_ptr<Sampler> Clone(int Seed);
 	
-	Sampler(int64_t samplesPerPixel, std::shared_ptr<SamplerContext> context)
+	Sampler(int64_t samplesPerPixel, std::unique_ptr<SamplerContext> context)
 		: currentPixel(0,0)
 		, currentPixelSampleIndex(0)
 		, samplesPerPixel(samplesPerPixel)
 		, context(std::move(context))
 	{}
+
+	Sampler(const Sampler& rhs) 
+		: currentPixel(0, 0)
+		, currentPixelSampleIndex(0)
+		, samplesPerPixel(rhs.samplesPerPixel)
+	{
+		context = rhs.context->Clone();
+	}
 private:
 
 	Vector2i currentPixel;
@@ -203,5 +223,5 @@ private:
 
 	const int64_t samplesPerPixel;
 
-	std::shared_ptr<SamplerContext> context;
+	std::unique_ptr<SamplerContext> context;
 };

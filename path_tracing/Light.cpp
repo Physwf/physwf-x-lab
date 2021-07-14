@@ -4,7 +4,7 @@
 
 bool VisibilityTester::Unoccluded(const Scene& scene) const
 {
-	return scene.IntersectP(p0.SpawnRayTo(p1));
+	return !scene.IntersectP(p0.SpawnRayTo(p1));
 }
 
 Light::Light(int flags, const Transform& LightToWorld, int nSamples)
@@ -68,4 +68,11 @@ UniformLightDistribution::UniformLightDistribution(const Scene& scene)
 const Distribution1D* UniformLightDistribution::Lookup(const Vector3f& p) const
 {
 	return distrib.get();
+}
+
+std::unique_ptr<LightDistribution> CreateLightDistribution(const std::string& name, const Scene& scene)
+{
+	if (name == "uniform" || scene.lights.size() == 1)
+		return std::unique_ptr<LightDistribution>{ new UniformLightDistribution(scene) };
+	return nullptr;
 }

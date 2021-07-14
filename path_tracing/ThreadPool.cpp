@@ -42,6 +42,7 @@ private:
 				This->Tasks = This->Tasks->Next;
 				LeaveCriticalSection(&This->CS);
 				Current->Func();
+				//delete Current;
 				EnterCriticalSection(&This->CS);
 			}
 			else if (This->bExit)
@@ -96,7 +97,7 @@ void InitFixedThreadPool()
 {
 	SYSTEM_INFO SysInfo;
 	GetSystemInfo(&SysInfo);
-	GFixThreadPool = new JFixedThreadPool(1/*SysInfo.dwNumberOfProcessors*/);
+	GFixThreadPool = new JFixedThreadPool(SysInfo.dwNumberOfProcessors*2);
 }
 
 void FiniFixedThreadPool()

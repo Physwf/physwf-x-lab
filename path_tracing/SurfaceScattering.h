@@ -35,7 +35,7 @@ public:
 class SpecularReflection : public BxDF
 {
 public:
-	SpecularReflection(const LinearColor& R, Fresnel* fresnel) :BxDF(BSDF_SPECULAR), R(R), fresnel(fresnel) {}
+	SpecularReflection(const LinearColor& R, Fresnel* fresnel) :BxDF(BxDFType(BSDF_REFLECTION | BSDF_SPECULAR)), R(R), fresnel(fresnel) {}
 	virtual LinearColor f(const Vector3f& wo, const Vector3f& wi) const override
 	{
 		return LinearColor(0.f);
@@ -55,7 +55,7 @@ private:
 class LambertianReflection : public BxDF
 {
 public:
-	LambertianReflection(const LinearColor& InR) : BxDF(BSDF_DIFFUSE), R(InR) {}
+	LambertianReflection(const LinearColor& InR) : BxDF(BxDFType(BSDF_REFLECTION | BSDF_DIFFUSE)), R(InR) {}
 	LinearColor f(const Vector3f& wo, const Vector3f& wi) const { return R * INV_PI; }
 	LinearColor rho(const Vector3f& wo, int nSamples, const Vector2f* Smaples) const { return R; }
 	LinearColor rho(int nSamples, const Vector2f* Smaples1, const Vector2f* Smaples2) const { return R; }

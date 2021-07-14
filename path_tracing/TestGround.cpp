@@ -62,8 +62,8 @@ std::shared_ptr<Scene> BuildTestScene()
 	//objects.push_back(bottomWall);
 	//objects.push_back(ball);
 
-	Transform lightT = Transform::Translate(0, 99.f, 0);
-	LinearColor White(1000.f);
+	Transform lightT = Transform::Translate(0, 98.f, 0);
+	LinearColor White(10000000.f);
 	std::shared_ptr<Light> pl = std::make_shared<PointLight>(lightT, White);
 	lights.push_back(pl);
 
@@ -94,7 +94,8 @@ void WriteImageBMP(const char* fileName, int width, int height, BYTE* rgbbuf)
 	bih.biClrImportant = 0;
 
 	FILE* stream;
-	if (0 != fopen_s(&stream, fileName, "rw"))
+	errno_t err = fopen_s(&stream, fileName, "w+");
+	if (err == 0)
 	{
 		fwrite(&bfh, sizeof(bfh), 1, stream);
 		fwrite(&bih, sizeof(bih), 1, stream);
@@ -114,16 +115,17 @@ void Test_PathTracing()
 	Transform cameraD = Transform::LookAt({ 0,0,-150.f }, { 0,0,0 }, { 0,1,0 });
 	Film* film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(0.02f,0.02f),0.5f));
 	std::shared_ptr<Camera> camera = std::make_shared<PerspectiveCamera>(cameraW * cameraD, film, PI_2,1.0f,10000.f);
-	std::shared_ptr<Sampler> sampler = Sampler::CreateStratified(32,32,8);
+	std::shared_ptr<Sampler> sampler = Sampler::CreateStratified(2,2,8);
 	float rrThreshold = 0.01f;
 	std::shared_ptr<PathIntergrator> integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
 	std::shared_ptr<Scene> scene = BuildTestScene();
 	integrator->Render(*scene.get());
 
+	Sleep(60000);
 	std::unique_ptr<float[]> buffer = film->GetBuffer();
 
 	std::unique_ptr<BYTE[]> buf(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
-	ToneMapping(buffer.get(), film->fullResolution.X, film->fullResolution.Y, buf.get());
+	ToneMapping(buffer.get(), film->fullResolution.X, film->fullResolution.Y, buf.get(), TMA_ACES);
 
 	WriteImageBMP("conabox.bmp", film->fullResolution.X, film->fullResolution.Y, buf.get());
 }

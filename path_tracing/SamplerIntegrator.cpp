@@ -97,6 +97,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 	Vector2i nTiles((imageExtents.X + tileSize - 1) / tileSize,
 		(imageExtents.Y + tileSize - 1) / tileSize);
 
+	Preprocess(scene, *sampler.get());
 
 	ParallelFor2D([&](Vector2i tile) {
 
@@ -135,7 +136,9 @@ void SamplerIntegrator::Render(const Scene& scene)
 				} while (tileSampler->StartNextSample());
 			}
 		}
+		camera->film->MergeFilmTile(std::move(filmTile));
 
 	}, nTiles);
+
 }
 

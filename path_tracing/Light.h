@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include "Colorimetry.h"
 #include "Transform.h"
@@ -101,3 +102,4 @@ private:
 	std::unique_ptr<Distribution1D> distrib;
 };
 
+std::unique_ptr<LightDistribution> CreateLightDistribution(const std::string& name, const Scene& scene);
