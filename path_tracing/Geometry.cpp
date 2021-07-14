@@ -24,7 +24,7 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	float c = ox * ox + oy * oy + oz * oz - Radius * Radius;
 
 	float t0, t1;
-	if (Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
+	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
 
 	if (t0 > LocalRay.tMax || t1 < 0) return false;//ray range out of sphere
 	float tShapeHit = t0;
@@ -50,6 +50,28 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	Vector3f dpdv = Vector3f(pHit.Z * cosPhi, pHit.Z * sinPhi, -Radius * std::sin(Theta));
 
 	*isect = (*LocalToWorld)(SurfaceInteraction(pHit,Vector2f(u,v),-LocalRay.d, dpdu, dpdv, Vector3f(), Vector3f(),this));
+	return true;
+}
+
+bool Sphere::IntersectP(const Ray& ray) const
+{
+	Ray LocalRay = (*WorldToLocal)(ray);
+	float ox = LocalRay.o.X, oy = LocalRay.o.Y, oz = LocalRay.o.Z;
+	float dx = LocalRay.d.X, dy = LocalRay.d.Y, dz = LocalRay.d.Z;
+	float a = dx * dx + dy * dy + dz * dz;
+	float b = 2 * (dx * ox + dy * oy + dz * oz);
+	float c = ox * ox + oy * oy + oz * oz - Radius * Radius;
+
+	float t0, t1;
+	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
+
+	if (t0 > LocalRay.tMax || t1 < 0) return false;//ray range out of sphere
+	float tShapeHit = t0;
+	if (t0 < 0)
+	{
+		tShapeHit = t1;
+		if (tShapeHit > LocalRay.tMax) return false;//ray range inside of sphere
+	}
 	return true;
 }
 
