@@ -49,15 +49,19 @@ public:
 	}
 	static Transform Translate(float X, float Y, float Z)
 	{
-		XMFLOAT4X4 float4x4;
-		XMStoreFloat4x4(&float4x4, XMMatrixTranslation(X,Y,Z));
-		return Transform(float4x4);
+		XMFLOAT4X4 m;
+		XMFLOAT4X4 minv;
+		XMStoreFloat4x4(&m, XMMatrixTranslation(X, Y, Z));
+		XMStoreFloat4x4(&minv, XMMatrixTranslation(-X, -Y, -Z));
+		return Transform(m, minv);
 	}
 	static Transform Scale(float X, float Y, float Z)
 	{
-		XMFLOAT4X4 float4x4;
-		XMStoreFloat4x4(&float4x4, XMMatrixScaling(X, Y, Z));
-		return Transform(float4x4);
+		XMFLOAT4X4 m;
+		XMFLOAT4X4 minv;
+		XMStoreFloat4x4(&m, XMMatrixScaling(X, Y, Z));
+		XMStoreFloat4x4(&minv, XMMatrixScaling(1.f / X, 1.f / Y, 1.f / Z));
+		return Transform(m, minv);
 	}
 	static Transform Rotate(float Pitch, float Yall, float Roll)
 	{
@@ -71,8 +75,14 @@ public:
 		XMFLOAT3 XMEye = Eye.ToXMFloat3();
 		XMFLOAT3 XMAt = At.ToXMFloat3();
 		XMFLOAT3 XMUp = Up.ToXMFloat3();
-		XMStoreFloat4x4(&float4x4, XMMatrixLookAtLH(XMLoadFloat3(&XMEye), XMLoadFloat3(&XMAt), XMLoadFloat3(&XMUp)));
+		XMStoreFloat4x4(&float4x4, XMMatrixLookAtRH(XMLoadFloat3(&XMEye), XMLoadFloat3(&XMAt), XMLoadFloat3(&XMUp)));
 		return Transform(float4x4);
+	}
+	static Transform Perspective(float fov, float aspect, float znear, float zfar)
+	{
+		XMFLOAT4X4 M;
+		XMStoreFloat4x4(&M, XMMatrixPerspectiveFovRH(fov, aspect, znear, zfar));
+		return Transform(M);
 	}
 	friend Transform Inverse(const Transform& t)
 	{
@@ -103,6 +113,8 @@ public:
 	template <typename T>
 	inline Vector3<T> operator()(const Vector3<T>& p) const;
 	template <typename T>
+	inline Vector2<T> operator()(const Vector2<T>& p) const;
+	template <typename T>
 	inline Vector3<T> Normal(const Vector3<T>& p) const;
 	inline Ray operator()(const Ray& r) const;
 	SurfaceInteraction operator()(const SurfaceInteraction& si) const;
@@ -113,11 +125,25 @@ private:
 template<typename T>
 inline Vector3<T> Transform::operator()(const Vector3<T>& p) const
 {
-	XMFLOAT3 P = { p.X,p.Y,p.Z };
-	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat4x4(&M));
-	XMStoreFloat3(&P,V);
-	return Vector3<T>(P.x, P.y, P.z);
+	XMFLOAT4 P = { p.X,p.Y,p.Z, 1.f };
+	XMVECTOR V = XMVector4Transform(XMLoadFloat4(&P), XMLoadFloat4x4(&M));
+	XMStoreFloat4(&P,V);
+	return Vector3<T>(P.x / P.w, P.y / P.w, P.z / P.w);
 }
+
+template <typename T>
+inline Vector2<T> Transform::operator()(const Vector2<T>& p) const
+{
+	T x = p.X, y = p.Y, z = 0, w = 1.f;
+	return Vector2<T>(	(M.m[0][0] * x + M.m[0][1] * y + M.m[0][2] * z + M.m[0][3] * w),
+						(M.m[1][0] * x + M.m[1][1] * y + M.m[1][2] * z + M.m[1][3] * w));
+
+	XMFLOAT3 P = { p.X,p.Y, 0.f };
+	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat4x4(&M));
+	XMStoreFloat3(&P, V);
+	return Vector2<T>(P.x, P.y);
+}
+
 template <typename T>
 inline Vector3<T> Transform::Normal(const Vector3<T>& n) const
 {
@@ -131,10 +157,5 @@ inline Ray Transform::operator()(const Ray& r) const
 {
 	Vector3f o = (*this)(r.o);
 	Vector3f d = (*this).Normal(r.d);
-	return Ray(o,d);
+	return Ray(o,d, r.tMax);
 }
-
-
-Transform Perspective(float fov, float aspect, float znear, float zfar);
-Transform Translate(const Vector3f& delta);
-Transform Scale(float x, float y, float z);
