@@ -125,9 +125,21 @@ std::unique_ptr<float[]> Film::GetBuffer() const
 	return rgb;
 }
 
+PerspectiveCamera::PerspectiveCamera(const Transform& InCameraToWorld, Film* film, float fov, float zNeer, float zFar) 
+	: Camera(InCameraToWorld, film)
+	, CameraToNDC(Transform::Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
+{
+	Vector2i Resolution = film->fullResolution;
+	NDCToScreen = Transform::Scale(Resolution.X / 2.f,- Resolution.Y / 2.f, 1.0) * Transform::Translate(1.f, -1.f, 0.f);
+	ScreenToNDC = Inverse(NDCToScreen);
+// 	Vector3f NDC = ScreenToNDC(Vector3f(250, 250, 0));
+// 	Vector3f pCamera = Inverse(CameraToNDC)(NDC);
+	ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
+}
+
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
 {
-	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.Y,0);
+	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.Y,0.f);
 	Vector3f pCamera = ScreenToCamera(pFilm);
 	*OutRay = Ray(Vector3f(0, 0, 0), Normalize(pCamera));
 	*OutRay = CameraToWorld(*OutRay);

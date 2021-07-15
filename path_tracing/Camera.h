@@ -82,20 +82,12 @@ protected:
 class PerspectiveCamera : public Camera
 {
 public:
-	PerspectiveCamera(const Transform& InCameraToWorld, Film* film, float fov,float zNeer,float zFar)
-		: Camera(InCameraToWorld, film)
-		, CameraToNDC(Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
-	{
-		Vector2i Resolution = film->fullResolution;
-		NDCToScreen = Scale(Resolution.X / 2.f, Resolution.Y / 2.f,1.f) * Translate(Vector3f(-1.f,-1.f,0.f));
-		ScreenToNDC = Inverse(NDCToScreen);
-		ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
-	}
+	PerspectiveCamera(const Transform& InCameraToWorld, Film* film, float fov,float zNeer,float zFar);
 	virtual float GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const override;
 private:
 	Transform CameraToNDC;
 	Transform NDCToScreen;
 	Transform ScreenToNDC;
 	Transform ScreenToCamera;
-	float FocalLength;
+	//float FocalLength;
 };
