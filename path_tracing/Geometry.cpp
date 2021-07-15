@@ -144,7 +144,7 @@ bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect)
 	
 	Vector2f uvHit = w0 * uv[0] + w1 * uv[1] + w2 * uv[2];
 
-	*isect = SurfaceInteraction(pHit, uvHit, -LocalRay.d, dpdu, dpdv, Vector3f(0, 0, 0), Vector3f(0, 0, 0),this);
+	*isect = (*LocalToWorld)(SurfaceInteraction(pHit, uvHit, -LocalRay.d, dpdu, dpdv, Vector3f(0, 0, 0), Vector3f(0, 0, 0),this));
 
 	return true;
 }
