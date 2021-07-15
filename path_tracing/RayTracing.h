@@ -30,12 +30,12 @@ struct Interaction
 	Ray SpawnRayTo(const Vector3f& p2) const
 	{
 		Vector3f d = p2 - p;
-		return Ray(p, Normalize(d));
+		return Ray(p, Normalize(d), d.Length());
 	}
 	Ray SpawnRayTo(const Interaction& it) const
 	{
 		Vector3f d = it.p - p;
-		return Ray(p, Normalize(d));
+		return Ray(p, Normalize(d), d.Length());
 	}
 	Vector3f p;
 	Vector3f n;
