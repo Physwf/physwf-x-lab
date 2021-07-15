@@ -100,7 +100,7 @@ private:
 class PCG32
 {
 public:
-	void Seed(uint64_t initstate, uint64_t initseq)
+	void Seed(uint64_t initseq, uint64_t initstate = 0x853c49e6748fea9bULL)
 	{
 		state = 0u;
 		inc = (initseq << 1u) | 1u;
@@ -137,4 +137,4 @@ private:
 	uint64_t inc;
 };
 
-using RNG = MT19937;
+using RNG = PCG32;
