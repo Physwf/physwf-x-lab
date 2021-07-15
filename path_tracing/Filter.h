@@ -20,10 +20,10 @@ class GaussianFilter : public Filter
 {
 public:
 	GaussianFilter(const Vector2f& radius, float Inalpha)
-		:Filter(radius),
-		alpha(Inalpha),
-		expX(std::exp(-alpha * radius.X * radius.X)),
-		expY(std::exp(-alpha * radius.Y * radius.Y))
+		: Filter(radius)
+		, alpha(Inalpha)
+		, expX(std::exp(-alpha * radius.X * radius.X))
+		, expY(std::exp(-alpha * radius.Y * radius.Y))
 	{}
 
 	float Evaluate(const Vector2f& p) const;
