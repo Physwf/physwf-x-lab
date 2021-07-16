@@ -147,10 +147,13 @@ inline Vector2<T> Transform::operator()(const Vector2<T>& p) const
 template <typename T>
 inline Vector3<T> Transform::Normal(const Vector3<T>& n) const
 {
-	T x = n.X, y = n.Y, z = n.Z;
-	return Vector3<T>(	InvM.m[0][0] * x + InvM.m[1][0] * y + InvM.m[2][0] * z,
-						InvM.m[0][1] * x + InvM.m[1][1] * y + InvM.m[2][1] * z,
-						InvM.m[0][2] * x + InvM.m[1][2] * y + InvM.m[2][2] * z);
+	XMFLOAT3 P = { n.X,n.Y,n.Z };
+	XMFLOAT3X3 NormalT;
+	XMStoreFloat3x3(&NormalT,XMMatrixTranspose(XMLoadFloat4x4(&InvM)));
+	XMVECTOR V = XMVector3Transform(XMLoadFloat3(&P), XMLoadFloat3x3(&NormalT));
+	XMStoreFloat3(&P, V);
+	return Vector3<T>(P.x, P.y, P.z);
+
 }
 
 inline Ray Transform::operator()(const Ray& r) const
