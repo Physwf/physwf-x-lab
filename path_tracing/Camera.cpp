@@ -1,5 +1,11 @@
 #include "Camera.h"
-
+#define LOG(format,...)									\
+	do {												\
+		char info[1024] = {'\n'};						\
+		sprintf(info, format, __VA_ARGS__);			\
+		void OutputDebug(const char* Format);\
+		OutputDebug(info);						\
+	} while (0);
 
 FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius, const float* InfilterTable, int InfilterTableSize)
 	: pixelBounds(InpixelBounds),filterRadius(InfilterRadius), invFilterRadius(1 / filterRadius.X, 1 / filterRadius.Y), filterTable(InfilterTable), filterTableSize(InfilterTableSize)
@@ -95,6 +101,7 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 			float xyz[3];
 			tilePixel.contribSum.ToXYZ(xyz);
 			for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
+			LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x, y, tilePixel.contribSum[0], tilePixel.contribSum[1], tilePixel.contribSum[2], mergePixel.xyz[0], mergePixel.xyz[1], mergePixel.xyz[2]);
 			mergePixel.weight += tilePixel.filterWeightSum;
 		}
 	}
@@ -102,7 +109,7 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 
 std::unique_ptr<float[]> Film::GetBuffer() const
 {
-	std::unique_ptr<float[]> rgb(new float[3 * fullResolution.X * fullResolution.Y]);
+	float* rgb = (new float[3 * fullResolution.X * fullResolution.Y]);
 
 	int offset = 0;
 	for (int y = 0; y < fullResolution.Y; ++y)
@@ -114,15 +121,19 @@ std::unique_ptr<float[]> Film::GetBuffer() const
 			float filterWeightSum = p.weight;
 			if (filterWeightSum != 0)
 			{
-				float invWt = 1.f / filterWeightSum;
+				float invWt = 1.f /*/ filterWeightSum*/;
 				rgb[3 * offset + 0] = std::max(0.f, rgb[3 * offset + 0] * invWt);
 				rgb[3 * offset + 1] = std::max(0.f, rgb[3 * offset + 1] * invWt);
 				rgb[3 * offset + 2] = std::max(0.f, rgb[3 * offset + 2] * invWt);
+				//if (rgb[3 * offset] != 0)
+				{
+					LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x,y, rgb[3 * offset + 0], rgb[3 * offset + 1],rgb[3 * offset + 2], p.xyz[0], p.xyz[1], p.xyz[2]);
+				}
 			}
 		}
 	}
 
-	return rgb;
+	return std::unique_ptr<float[]>(rgb);
 }
 
 PerspectiveCamera::PerspectiveCamera(const Transform& InCameraToWorld, Film* film, float fov, float zNeer, float zFar) 
@@ -130,10 +141,10 @@ PerspectiveCamera::PerspectiveCamera(const Transform& InCameraToWorld, Film* fil
 	, CameraToNDC(Transform::Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
 {
 	Vector2i Resolution = film->fullResolution;
-	NDCToScreen = Transform::Scale(Resolution.X / 2.f,- Resolution.Y / 2.f, 1.0) * Transform::Translate(1.f, -1.f, 0.f);
+	NDCToScreen = Transform::Scale(1.f, -1.f, 1.0) * Transform::Translate(1.f, 1.f, 0.f) * Transform::Scale(Resolution.X / 2.0f, Resolution.Y / 2.0f, 1.0);
 	ScreenToNDC = Inverse(NDCToScreen);
-// 	Vector3f NDC = ScreenToNDC(Vector3f(250, 250, 0));
-// 	Vector3f pCamera = Inverse(CameraToNDC)(NDC);
+	//Vector3f NDC = ScreenToNDC(Vector3f(250, 250, 0));
+	//Vector3f pCamera = Inverse(CameraToNDC)(NDC);
 	ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
 }
 
