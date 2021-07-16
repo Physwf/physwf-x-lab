@@ -4,7 +4,7 @@ Transform Transform::operator*(const Transform& t)
 {
 	Transform Result;
 	XMStoreFloat4x4(&Result.M,	  XMMatrixMultiply(XMLoadFloat4x4(&M), XMLoadFloat4x4(&t.M)));
-	XMStoreFloat4x4(&Result.InvM, XMMatrixMultiply(XMLoadFloat4x4(&InvM), XMLoadFloat4x4(&t.InvM)));
+	XMStoreFloat4x4(&Result.InvM, XMMatrixMultiply(XMLoadFloat4x4(&t.InvM), XMLoadFloat4x4(&InvM)));
 	return Result;
 }
 
