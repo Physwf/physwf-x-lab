@@ -203,6 +203,16 @@ public:
 	LMSColor(const GeneralizedColor<float, 3>& v) : GeneralizedColor<float, 3>(v) {}
 
 	void ToXYZ(float xyz[3]) const { RGBToXYZ(Components,xyz); }
+
+	float operator[](int i) const
+	{
+		return Components[i];
+	}
+
+	float& operator[](int i)
+	{
+		return Components[i];
+	}
 };
 
 class DiscreteLMSColor : public GeneralizedColor<unsigned char, 3>
