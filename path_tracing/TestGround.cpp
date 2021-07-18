@@ -78,7 +78,7 @@ std::shared_ptr<Scene> BuildTestScene()
 	objects.push_back(bottomWall);
 
 	Transform lightT = Transform::Translate(0, 98.f, 0);
-	LinearColor White(1000.f);
+	LinearColor White(100.f);
 	std::shared_ptr<Light> pl = std::make_shared<PointLight>(lightT, White);
 	lights.push_back(pl);
 
@@ -124,34 +124,46 @@ void WriteImageHDR(const char* fileName, int width, int height, float* buffer)
 
 }
 
-void Test_PathTracing()
-{
-	float xyz[3];
-	float rgb[3] = {100,0,0};
-	RGBToXYZ(rgb, xyz);
-	XYZToRGB(xyz, rgb);
-	//Transform cameraW = Transform::Translate(0,0,-150.f);
-	Transform cameraD = Transform::LookAt({ 0,0,-200.f }, { 0,0,100 }, { 0,1,0 });
-	Film* film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(5.f, 5.f),0.1f));
-	std::shared_ptr<Camera> camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.0f,1000.f);
-	std::shared_ptr<Sampler> sampler = Sampler::CreateStratified(2,2,8);
-	float rrThreshold = 0.02f;
-	std::shared_ptr<PathIntergrator> integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
-	std::shared_ptr<Scene> scene = BuildTestScene();
-	integrator->Render(*scene.get());
+Film* film;
+std::shared_ptr<PathIntergrator> integrator;
+std::shared_ptr<Camera> camera;
+std::shared_ptr<Sampler> sampler;
+std::shared_ptr<Scene> scene;
 
-	Sleep(100000);
+std::unique_ptr<BYTE[]> buf;
+
+void OnPathTracingProgress(Vector2i tile)
+{
 	std::unique_ptr<float[]> buffer = film->GetBuffer();
 
-	std::unique_ptr<BYTE[]> buf(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
 	ToneMapping(buffer.get(), film->fullResolution.X, film->fullResolution.Y, buf.get(), TMA_ACES);
+
+	void Display(BYTE* Data, size_t size, int width, int height);
+	Display(buf.get(), film->fullResolution.X * film->fullResolution.Y * 3, film->fullResolution.X, film->fullResolution.Y);
 
 	WriteImageBMP("conabox.bmp", film->fullResolution.X, film->fullResolution.Y, buf.get());
 }
+
+void Test_PathTracing()
+{
+	Transform cameraD = Transform::LookAt({ 0,0,-200.f }, { 0,0,100 }, { 0,1,0 });
+	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(1.f, 1.f),0.1f));
+	camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.0f,1000.f);
+	sampler = Sampler::CreateStratified(2, 2,8);
+	buf = std::unique_ptr<BYTE[]>(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
+
+	float rrThreshold = 0.002f;
+	integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
+	scene = BuildTestScene();
+	integrator->SetProgressListener(OnPathTracingProgress);
+	integrator->Render(*scene.get());
+
+}
+
+
 
 void StartGround()
 {
 	InitFixedThreadPool();
 	Test_PathTracing();
-	FiniFixedThreadPool();
 }

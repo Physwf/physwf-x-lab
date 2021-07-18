@@ -15,6 +15,7 @@ FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius
 
 void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight /*= 1.0f*/)
 {
+	LOG("x=%d,y=%d  %f %f %f %f\n", (int)pFilm.X, (int)pFilm.Y, L[0], L[1], L[2], sampleWight);
 	Vector2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
 	Vector2i lu = (Vector2i)Ceil(pFilmDiscrete - filterRadius);
 	Vector2i rb = (Vector2i)Floor(pFilmDiscrete + filterRadius) + Vector2i(1,1);
@@ -101,7 +102,7 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 			float xyz[3];
 			tilePixel.contribSum.ToXYZ(xyz);
 			for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
-			LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x, y, tilePixel.contribSum[0], tilePixel.contribSum[1], tilePixel.contribSum[2], mergePixel.xyz[0], mergePixel.xyz[1], mergePixel.xyz[2]);
+			//LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x, y, tilePixel.contribSum[0], tilePixel.contribSum[1], tilePixel.contribSum[2], mergePixel.xyz[0], mergePixel.xyz[1], mergePixel.xyz[2]);
 			mergePixel.weight += tilePixel.filterWeightSum;
 		}
 	}
@@ -127,7 +128,7 @@ std::unique_ptr<float[]> Film::GetBuffer() const
 				rgb[3 * offset + 2] = std::max(0.f, rgb[3 * offset + 2] * invWt);
 				//if (rgb[3 * offset] != 0)
 				{
-					LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x,y, rgb[3 * offset + 0], rgb[3 * offset + 1],rgb[3 * offset + 2], p.xyz[0], p.xyz[1], p.xyz[2]);
+					//LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x,y, rgb[3 * offset + 0], rgb[3 * offset + 1],rgb[3 * offset + 2], p.xyz[0], p.xyz[1], p.xyz[2]);
 				}
 			}
 		}

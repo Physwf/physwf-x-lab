@@ -17,8 +17,14 @@ public:
 	virtual void Preprocess(const Scene& scene, Sampler& sampler) {}
 	virtual void Render(const Scene& scene);
 	virtual LinearColor Li(const Ray& ray, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth = 0) = 0;
+
+	void SetProgressListener(std::function<void(Vector2i)> OnProgress)
+	{
+		OnRenderProgress = OnProgress;
+	}
 protected:
 	std::shared_ptr<const Camera> camera;
 private:
 	std::shared_ptr<Sampler> sampler;
+	std::function<void(Vector2i)> OnRenderProgress;
 };

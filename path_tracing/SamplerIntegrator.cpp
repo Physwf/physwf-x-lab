@@ -93,13 +93,13 @@ void SamplerIntegrator::Render(const Scene& scene)
 	Bounds2i imageBounds = camera->film->GetBounds();
 	Vector2i imageExtents = imageBounds.Diagonal();
 
-	const int tileSize = 500;
+	const int tileSize = 32;
 	Vector2i nTiles((imageExtents.X + tileSize - 1) / tileSize,
 		(imageExtents.Y + tileSize - 1) / tileSize);
 
 	Preprocess(scene, *sampler.get());
 
-	ParallelFor2D([&](Vector2i tile) {
+	ParallelFor2D([=](Vector2i tile) {
 
 		int seed = tile.Y * nTiles.X + tile.X;
 		std::unique_ptr<Sampler> tileSampler = sampler->Clone(seed);
@@ -138,6 +138,9 @@ void SamplerIntegrator::Render(const Scene& scene)
 			}
 		}
 		camera->film->MergeFilmTile(std::move(filmTile));
+
+		if(OnRenderProgress)
+			OnRenderProgress(tile);
 
 	}, nTiles);
 
