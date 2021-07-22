@@ -164,4 +164,8 @@ bool IsNearlyEqual(const Type& rhs) const					\
 T operator[](int i) const									\
 {															\
 	return Elements[i];										\
-}															
+}															\
+T& operator[](int i)										\
+{															\
+		return Elements[i];									\
+}

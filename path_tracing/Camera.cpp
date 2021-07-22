@@ -15,7 +15,7 @@ FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius
 
 void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight /*= 1.0f*/)
 {
-	LOG("x=%d,y=%d  %f %f %f %f\n", (int)pFilm.X, (int)pFilm.Y, L[0], L[1], L[2], sampleWight);
+	//LOG("x=%d,y=%d  %f %f %f %f\n", (int)pFilm.X, (int)pFilm.Y, L[0], L[1], L[2], sampleWight);
 	Vector2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
 	Vector2i lu = (Vector2i)Ceil(pFilmDiscrete - filterRadius);
 	Vector2i rb = (Vector2i)Floor(pFilmDiscrete + filterRadius) + Vector2i(1,1);

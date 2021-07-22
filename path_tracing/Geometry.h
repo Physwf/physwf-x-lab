@@ -8,7 +8,8 @@
 #include "Material.h"
 #include "Bounds.h"
 #include "Transform.h"
-#include "Light.h"
+
+class AreaLight;
 
 class Shape
 {
@@ -29,6 +30,11 @@ public:
 		LocalToWorld = InLocalToWorld;
 		WorldToLocal = InWorldToLocal;
 	}
+	virtual float Area() const = 0;
+	virtual Interaction Sample(const Vector2f& u, float* pdf) const = 0;
+	virtual float Pdf(const Interaction&) const { return 1.f / Area(); }
+	virtual Interaction Sample(const Interaction& ref, const Vector2f& u, float* pdf) const;
+	virtual float Pdf(const Interaction& ref, const Vector3f& wi) const;
 protected:
 	const Transform	*LocalToWorld, *WorldToLocal;
 
@@ -41,6 +47,10 @@ public:
 	virtual Bounds3f ObjectBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const override;
+	virtual float Area() const { return 4.f * PI * Radius * Radius; }
+	virtual Interaction Sample(const Vector2f& u, float* pdf) const;
+	virtual Interaction Sample(const Interaction& ref, const Vector2f& u, float* pdf) const;
+	float Pdf(const Interaction& ref, const Vector3f& wi) const;
 private:
 	float Radius;
 };
@@ -49,7 +59,11 @@ class Disk : public Shape
 {
 public:
 	Disk(float InRadius);
+	virtual Bounds3f ObjectBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
+	virtual bool IntersectP(const Ray& ray) const;
+	virtual float Area() const;
+	virtual Interaction Sample(const Vector2f& u, float* pdf) const;
 private:
 	float Radius;
 };
@@ -62,6 +76,8 @@ public:
 	Bounds3f WorldBound() const;
 	virtual bool Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const;
 	virtual bool IntersectP(const Ray& ray) const;
+	virtual float Area() const;
+	virtual Interaction Sample(const Vector2f& u, float* pdf) const;
 private:
 	void GetUVs(Vector2f uv[3]) const;
 	class MeshObject* mesh;

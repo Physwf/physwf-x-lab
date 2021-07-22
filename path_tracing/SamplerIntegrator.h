@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Colorimetry.h"
 #include "Scene.h"
 #include "Camera.h"

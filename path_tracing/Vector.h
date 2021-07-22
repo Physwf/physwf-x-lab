@@ -269,3 +269,16 @@ inline bool SameHemisphere(const Vector3f& w, const Vector3f& wp)
 {
 	return w.Z * wp.Z > 0;
 }
+template <typename T>
+inline void CoordinateSystem(const Vector3<T>& v1, Vector3<T>* v2, Vector3<T>* v3)
+{
+	if (std::abs(v1.X) > std::abs(v1.Y))
+	{
+		*v2 = Vector3<T>(-v1.Z, 0, v1.X) / std::sqrt(v1.X * v1.X + v1.Z * v1.Z);
+	}
+	else
+	{
+		*v2 = Vector3<T>(0, v1.Z, -v1.Y) / std::sqrt(v1.Y * v1.Y + v1.Z * v1.Z);
+	}
+	*v3 = Cross(v1, *v2);
+}

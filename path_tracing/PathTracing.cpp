@@ -55,7 +55,7 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 			LinearColor Ld = beta * UniformSampleOneLight(isect, scene, arena, sampler, distrib);
 			L += Ld;
 		}
-
+		///*if(bounces == 1)*/ break;
 		Vector3f wo = -ray.d, wi;
 		float pdf;
 		BxDFType flags;

@@ -5,6 +5,7 @@
 
 #include "Colorimetry.h"
 #include "Transform.h"
+#include "Geometry.h"
 
 class Scene;
 class Distribution1D;
@@ -84,6 +85,33 @@ private:
 
 };
 
+class DisffuseAreaLight : public AreaLight
+{
+public:
+	DisffuseAreaLight(const Transform& InLightToWorld, const LinearColor& emit,const std::shared_ptr<Shape>& shape, int nSamples, bool bTwoSide)
+		: AreaLight(InLightToWorld, nSamples)
+		, Lemit(emit)
+		, shape(shape)
+		, bTwoSide(bTwoSide)
+		, area(shape->Area())
+	{
+		shape->SetTransform(&LightToWorld, &WorldToLight);
+	}
+
+	virtual LinearColor L(const Interaction& intr, const Vector3f& w) const override;
+	virtual LinearColor Power() const;
+
+	virtual LinearColor Sample_Li(const Interaction& ref, const Vector2f& u, Vector3f* wi, float* pdf, VisibilityTester* vis) const override;
+	virtual float Pdf_Li(const Interaction& ref, const Vector3f& wi) const override;
+	virtual LinearColor Sample_Le(const Vector2f& u1, const Vector2f& u2, Ray* ray, Vector3f* nLight, float* pdfPos, float* pdfDir) const override;
+	virtual void Pdf_Le(const Ray& ray, const Vector3f& nLight, float* pdfPos, float* pdfDir) const override;
+
+private:
+	LinearColor Lemit;
+	const std::shared_ptr<Shape> shape;
+	bool bTwoSide;
+	const float area;
+};
 
 class LightDistribution
 {

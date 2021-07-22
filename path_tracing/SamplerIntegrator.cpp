@@ -1,6 +1,7 @@
 #include "SamplerIntegrator.h"
 #include "ParallelFor.h"
 #include "SurfaceScattering.h"
+#include "Light.h"
 
 LinearColor UniformSampleAllLights(const Interaction& it, const Scene& scene, MemoryArena& arena, Sampler& sampler, const std::vector<int>& nLightSamples)
 {
@@ -63,7 +64,7 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 			{
 				if (!vt.Unoccluded(scene))
 				{
-					Li = LinearColor(0.f);
+					//Li = LinearColor(0.f);
 				}
 				else
 				{
@@ -79,7 +80,8 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 				}
 				else
 				{
-
+					float weight = PowerHeuristic(1, LightPdf, 1, scatteringPdf);
+					Ld += f * Li * weight / LightPdf;
 				}
 			}
 		}

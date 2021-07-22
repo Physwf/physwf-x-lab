@@ -100,4 +100,9 @@ inline float CosineHemispherePdf(float cosTheta)
 	return cosTheta * 1.f / PI;
 }
 
+inline float PowerHeuristic(int nf, float fPdf, int ng, float gPdf)
+{
+	float f = nf * fPdf, g = ng * gPdf;
+	return (f * f) / (f * f + g * g);
+}
 

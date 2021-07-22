@@ -1,5 +1,6 @@
 #include "Geometry.h"
 #include "Mathematics.h"
+#include "Sampling.h"
 
 Sphere::Sphere(float InRadius)
 	:  Radius(InRadius)
@@ -75,14 +76,93 @@ bool Sphere::IntersectP(const Ray& ray) const
 	return true;
 }
 
+Interaction Sphere::Sample(const Vector2f& u, float* pdf) const
+{
+	Vector3f pObj = Radius * UniformSampleSphere(u);
+	Interaction it;
+	it.n = Normalize((*LocalToWorld)(pObj));
+	it.p = (*LocalToWorld)(pObj);
+	*pdf = 1 / Area();
+	return it;
+}
+
+Interaction Sphere::Sample(const Interaction& ref, const Vector2f& u, float* pdf) const
+{
+	return Interaction();
+}
+
+float Sphere::Pdf(const Interaction& ref, const Vector3f& wi) const
+{
+	return 0.f;
+}
+
 Disk::Disk(float InRadius)
 	: Radius(InRadius)
 {
 }
 
-bool Disk::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const
+Bounds3f Disk::ObjectBound() const
 {
-	return false;
+	return Bounds3f(Vector3f(-Radius, -Radius, 0), Vector3f(Radius, Radius, 0));
+}
+
+bool Disk::Intersect(const Ray& r, float* tHit, SurfaceInteraction* isect) const
+{
+	Ray ray = (*WorldToLocal)(r);
+	if (ray.d.Z == 0) return false;
+	float tShapeHit = -ray.o.Z / ray.d.Z;
+	if (tShapeHit <= 0 || tShapeHit >= ray.tMax) return false;
+
+	Vector3f pHit = ray(tShapeHit);
+	float dist2 = pHit.X * pHit.X + pHit.Y * pHit.Y;
+	if (dist2 > Radius * Radius) return false;
+
+	float phi = std::atan2(pHit.Y, pHit.X);
+	if (phi < 0) phi += 2 * PI;
+
+	float u = phi / (2 * PI);
+	float rHit = std::sqrt(dist2);
+	float v = (Radius - rHit) / Radius;
+
+	Vector3f dpdu(-2 * PI * pHit.Y, 2 * PI * pHit.X, 0);
+	Vector3f dpdv = Vector3f(pHit.X,pHit.Y,0.f) * (-Radius) / rHit;
+	
+	pHit.Z = 0;
+
+	*isect = (*LocalToWorld)(SurfaceInteraction(pHit, Vector2f(u, v), -ray.d, dpdu, dpdv, Vector3f(), Vector3f(), this));
+	*tHit = tShapeHit;
+
+	return true;
+}
+
+bool Disk::IntersectP(const Ray& r) const
+{
+	Ray ray = (*WorldToLocal)(r);
+	if (ray.d.Z == 0) return false;
+	float tShapeHit = -ray.o.Z / ray.d.Z;
+	if (tShapeHit <= 0 || tShapeHit >= ray.tMax) return false;
+
+	Vector3f pHit = ray(tShapeHit);
+	float dist2 = pHit.X * pHit.X + pHit.Y * pHit.Y;
+	if (dist2 > Radius * Radius) return false;
+
+	return true;
+}
+
+float Disk::Area() const
+{
+	return 2 * PI * Radius * Radius;
+}
+
+Interaction Disk::Sample(const Vector2f& u, float* pdf) const
+{
+	Vector2f pd = ConcentricSampleDisk(u);
+	Vector3f pObj(pd.X * Radius, pd.Y * Radius, 0);
+	Interaction it;
+	it.n = Normalize((*LocalToWorld)(Vector3f(0, 0, 1)));
+	it.p = (*LocalToWorld)(pObj);
+	*pdf = 1 / Area();
+	return it;
 }
 
 Triangle::Triangle(class MeshObject* InMesh, int triNumber) : mesh(InMesh)
@@ -167,6 +247,34 @@ bool Triangle::IntersectP(const Ray& ray) const
 	if (!Math::IsInsideTriangle(p0, p1, p2, pHit)) return false;
 
 	return true;
+}
+
+float Triangle::Area() const
+{
+	const Vector3f& p0 = mesh->p[v[0]];
+	const Vector3f& p1 = mesh->p[v[1]];
+	const Vector3f& p2 = mesh->p[v[2]];
+	return 0.5f * Cross(p1 - p0, p2 - p0).Length();
+}
+
+Interaction Triangle::Sample(const Vector2f& u, float* pdf) const
+{
+	Vector2f b = UniformSampleTriangle(u);
+	const Vector3f& p0 = mesh->p[v[0]];
+	const Vector3f& p1 = mesh->p[v[1]];
+	const Vector3f& p2 = mesh->p[v[2]];
+
+	Interaction it;
+	it.p = b[0] * p0 + b[1] * p1 + (1 - b[0] - b[1]) * p2;
+	it.n = Normalize(Cross(p1-p0,p2-p0));
+	if (mesh->n)
+	{
+		Vector3f ns(b[0] * mesh->n[v[0]] + b[1] * mesh->n[v[1]] + (1 - b[0] - b[1]) * mesh->n[v[2]]);
+		it.n = Faceforward(it.n, ns);
+	}
+
+	*pdf = 1 / Area();
+	return it;
 }
 
 void Triangle::GetUVs(Vector2f uv[3]) const
@@ -274,4 +382,34 @@ void MeshObject::BuildTriangle()
 	{
 		LocalBounds = Union(LocalBounds, p[i]);
 	}
+}
+
+Interaction Shape::Sample(const Interaction& ref, const Vector2f& u, float* pdf) const
+{
+	Interaction intr = Sample(u, pdf);
+	Vector3f wi = intr.p - ref.p;
+	if (wi.LengthSquared() == 0)
+	{
+		*pdf = 0;
+	}
+	else
+	{
+		wi = Normalize(wi);
+		*pdf *= DistanceSquared(ref.p, intr.p) / AbsDot(intr.n, wi);
+		if (std::isinf(*pdf)) *pdf = 0.f;
+	}
+	return intr;
+}
+
+float Shape::Pdf(const Interaction& ref, const Vector3f& wi) const
+{
+	Ray ray = ref.SpawnRay(wi);
+	float tHit;
+	SurfaceInteraction isectLight;
+
+	if (!Intersect(ray, &tHit, &isectLight)) return 0;
+
+	float pdf = DistanceSquared(ref.p, isectLight.p) / (AbsDot(isectLight.n, -wi) * Area());
+	if (std::isinf(pdf)) pdf = 0.f;
+	return pdf;
 }
