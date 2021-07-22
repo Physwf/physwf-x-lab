@@ -29,17 +29,17 @@ SurfaceInteraction Transform::operator()(const SurfaceInteraction& si) const
 
 	const Transform& t = *this;
 	ret.n = Normalize(t.Normal(si.n));
-	ret.wo = Normalize(t.Normal(si.wo));
+	ret.wo = Normalize(t(si.wo));
 	ret.shape = si.shape;
-	ret.dpdu = t.Normal(si.dpdu);
-	ret.dpdv = t.Normal(si.dpdv);
+	ret.dpdu = t(si.dpdu);
+	ret.dpdv = t(si.dpdv);
 	ret.dndu = t.Normal(si.dndu);
 	ret.dndv = t.Normal(si.dndv);
-	ret.shading.n = Normalize(t(si.shading.n));
+	ret.shading.n = Normalize(t.Normal(si.shading.n));
 	ret.shading.dpdu = t(si.shading.dpdu);
 	ret.shading.dpdv = t(si.shading.dpdv);
-	ret.shading.dndu = t(si.shading.dndu);
-	ret.shading.dndv = t(si.shading.dndv);
+	ret.shading.dndu = t.Normal(si.shading.dndu);
+	ret.shading.dndv = t.Normal(si.shading.dndv);
 	ret.bsdf = si.bsdf;
 	ret.object = si.object;
 
