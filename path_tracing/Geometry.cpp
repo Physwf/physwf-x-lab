@@ -159,7 +159,7 @@ Interaction Disk::Sample(const Vector2f& u, float* pdf) const
 	Vector2f pd = ConcentricSampleDisk(u);
 	Vector3f pObj(pd.X * Radius, pd.Y * Radius, 0);
 	Interaction it;
-	it.n = Normalize((*LocalToWorld)(Vector3f(0, 0, 1)));
+	it.n = Normalize((*LocalToWorld).Normal(Vector3f(0, 0, 1)));
 	it.p = (*LocalToWorld)(pObj);
 	*pdf = 1 / Area();
 	return it;
