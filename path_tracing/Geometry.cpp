@@ -196,7 +196,7 @@ bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect)
 	if (!Math::Plane(p0, p1, p2, &a, &b, &c, &d)) return false;
 
 	float t0 = -(a * LocalRay.o.X + b * LocalRay.o.Y + c * LocalRay.o.Z + d) / (a * LocalRay.d.X + b * LocalRay.d.Y + c * LocalRay.d.Z);
-	if (t0 < 0 || t0 > LocalRay.tMax) return false;
+	if (t0 <= 0 || t0 >= LocalRay.tMax) return false;
 
 	Vector3f pHit;
 	pHit = LocalRay(t0);
@@ -239,7 +239,8 @@ bool Triangle::IntersectP(const Ray& ray) const
 	if (!Math::Plane(p0, p1, p2, &a, &b, &c, &d)) return false;
 
 	float t0 = -(a * LocalRay.o.X + b * LocalRay.o.Y + c * LocalRay.o.Z + d) / (a * LocalRay.d.X + b * LocalRay.d.Y + c * LocalRay.d.Z);
-	if (t0 < 0 || t0 > LocalRay.tMax) return false;
+	if (std::abs(t0) < 0.0001) t0 = 0;
+	if (t0 <= 0 || t0 >= LocalRay.tMax) return false;
 
 	Vector3f pHit;
 	pHit = LocalRay(t0);

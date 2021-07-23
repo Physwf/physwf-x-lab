@@ -64,7 +64,7 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 			{
 				if (!vt.Unoccluded(scene))
 				{
-					//Li = LinearColor(0.f);
+					Li = LinearColor(0.f);
 				}
 				else
 				{
