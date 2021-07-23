@@ -80,8 +80,8 @@ Interaction Sphere::Sample(const Vector2f& u, float* pdf) const
 {
 	Vector3f pObj = Radius * UniformSampleSphere(u);
 	Interaction it;
-	it.n = Normalize((*LocalToWorld)(pObj));
-	it.p = (*LocalToWorld)(pObj);
+	it.n = Normalize((*LocalToWorld).Normal(pObj));
+	it.p = (*LocalToWorld).Point(pObj);
 	*pdf = 1 / Area();
 	return it;
 }
@@ -160,7 +160,7 @@ Interaction Disk::Sample(const Vector2f& u, float* pdf) const
 	Vector3f pObj(pd.X * Radius, pd.Y * Radius, 0);
 	Interaction it;
 	it.n = Normalize((*LocalToWorld).Normal(Vector3f(0, 0, 1)));
-	it.p = (*LocalToWorld)(pObj);
+	it.p = (*LocalToWorld).Point(pObj);
 	*pdf = 1 / Area();
 	return it;
 }
@@ -183,7 +183,7 @@ Bounds3f Triangle::WorldBound() const
 	const Vector3f& p0 = mesh->p[v[0]];
 	const Vector3f& p1 = mesh->p[v[1]];
 	const Vector3f& p2 = mesh->p[v[2]];
-	return Union(Bounds3f((*WorldToLocal)(p0), (*WorldToLocal)(p1)), (*WorldToLocal)(p2));
+	return Union(Bounds3f((*WorldToLocal).Point(p0), (*WorldToLocal).Point(p1)), (*WorldToLocal).Point(p2));
 }
 
 bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const

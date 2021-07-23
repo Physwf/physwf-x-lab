@@ -70,7 +70,7 @@ class PointLight : public Light
 public:
 	PointLight(const Transform& LightToWorld, const LinearColor& I)
 		:Light((int)LightFlags::DeltaPosition,LightToWorld),
-		pLight(LightToWorld(Vector3f(0,0,0))),
+		pLight(LightToWorld.Point(Vector3f(0,0,0))),
 		I(I)
 	{}
 

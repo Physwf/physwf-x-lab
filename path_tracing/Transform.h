@@ -111,11 +111,13 @@ public:
 		return XMMatrixIsIdentity(XMLoadFloat4x4(&M));
 	}
 	template <typename T>
-	inline Vector3<T> operator()(const Vector3<T>& p) const;
+	inline Vector3<T> Point(const Vector3<T>& p) const;
 	template <typename T>
 	inline Vector2<T> operator()(const Vector2<T>& p) const;
 	template <typename T>
 	inline Vector3<T> Normal(const Vector3<T>& p) const;
+	template <typename T>
+	inline Vector3<T> Vector(const Vector3<T>& p) const;
 	inline Ray operator()(const Ray& r) const;
 	SurfaceInteraction operator()(const SurfaceInteraction& si) const;
 private:
@@ -123,7 +125,7 @@ private:
 };
 
 template<typename T>
-inline Vector3<T> Transform::operator()(const Vector3<T>& p) const
+inline Vector3<T> Transform::Point(const Vector3<T>& p) const
 {
 	XMFLOAT4 P = { p.X,p.Y,p.Z, 1.f };
 	XMVECTOR V = XMVector4Transform(XMLoadFloat4(&P), XMLoadFloat4x4(&M));
@@ -156,9 +158,20 @@ inline Vector3<T> Transform::Normal(const Vector3<T>& n) const
 
 }
 
+template <typename T> 
+inline Vector3<T> Transform::Vector(const Vector3<T>& v) const
+{
+	XMFLOAT3 V = { v.X,v.Y,v.Z };
+	XMFLOAT3X3 VectorT;
+	XMStoreFloat3x3(&VectorT, XMLoadFloat4x4(&M));
+	XMVECTOR Vm = XMVector3Transform(XMLoadFloat3(&V), XMLoadFloat3x3(&VectorT));
+	XMStoreFloat3(&V, Vm);
+	return Vector3<T>(V.x, V.y, V.z);
+}
+
 inline Ray Transform::operator()(const Ray& r) const
 {
-	Vector3f o = (*this)(r.o);
-	Vector3f d = (*this).Normal(r.d);
+	Vector3f o = (*this).Point(r.o);
+	Vector3f d = (*this).Vector(r.d);
 	return Ray(o,d, r.tMax);
 }

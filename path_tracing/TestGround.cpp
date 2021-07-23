@@ -28,21 +28,6 @@ std::shared_ptr<Scene> BuildTestScene()
 
 	Transform leftWallR = Transform::Rotate(0, -PI_2, 0);
 	Transform leftWallT = Transform::Translate(-100.f, 0, 0);
-	Vector3f v1 = (leftWallR * leftWallT)(md.Ps[0]);
-	Vector3f v2 = (leftWallR * leftWallT)(md.Ps[1]);
-	Vector3f v3 = (leftWallR * leftWallT)(md.Ps[2]);
-	Vector3f v4 = (leftWallR * leftWallT)(md.Ps[3]);
-	Transform t = (leftWallR * leftWallT);
-	Transform it = Inverse(t);
-	v1 = it(v1);
-	v2 = it(v2);
-	v3 = it(v3);
-	v4 = it(v4);
-	Vector3f v5 = t(Vector3f(0, 0, -200.f));
-	Ray r = Ray(Vector3f(0, 0, -200.f),Vector3f(0, 0, 1));
-
-	Ray r1 = it(r);
-	Ray r2 = t(r1);
 	LinearColor pink(1.0f,0.1,0.4);
 	std::shared_ptr<Material> leftWallMat = std::make_shared<MatteMaterial>(pink);
 	std::shared_ptr<SceneObject> leftWall = std::make_shared<MeshObject>(leftWallR * leftWallT, leftWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
@@ -55,10 +40,11 @@ std::shared_ptr<Scene> BuildTestScene()
 
 	Transform topWallR = Transform::Rotate(-PI_2, 0, 0);
 	Transform topWallT = Transform::Translate(0, 100.f, 0);
-	LinearColor gray(0.4f, 0.4, 0.4);
+	LinearColor gray(0.6f, 0.6, 0.6);
 	std::shared_ptr<Material> topWallMat = std::make_shared<MatteMaterial>(gray);
 	std::shared_ptr<SceneObject> topWall = std::make_shared<MeshObject>(topWallR * topWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
+	Transform backWallR = Transform::Rotate(0, 0, PI_2);
 	Transform backWallT = Transform::Translate(0, 0, 100.f);
 	std::shared_ptr<SceneObject> backWall = std::make_shared<MeshObject>(backWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
@@ -78,11 +64,12 @@ std::shared_ptr<Scene> BuildTestScene()
 	objects.push_back(backWall);
 	objects.push_back(bottomWall);
 
-	Transform lightT = Transform::Translate(0, 98.f, 0);
-	LinearColor White(100.f);
+	Transform lightR = Transform::Rotate(PI_2, 0, 0);
+	Transform lightT = Transform::Translate(0, 100.f, 0);
+	LinearColor White(10.f);
 	std::shared_ptr<Light> pl = std::make_shared<PointLight>(lightT, White);
-	std::shared_ptr<Shape> d = std::make_shared<Disk>(25.f);
-	std::shared_ptr<Light> dl = std::make_shared<DisffuseAreaLight>(lightT, White,d, 1024, true);
+	std::shared_ptr<Shape> d = std::make_shared<Disk>(20.f);
+	std::shared_ptr<Light> dl = std::make_shared<DisffuseAreaLight>(lightR * lightT, White,d, 1024, false);
 	//lights.push_back(pl);
 	lights.push_back(dl);
 
@@ -153,10 +140,10 @@ void Test_PathTracing()
 	Transform cameraD = Transform::LookAt({ 0,0,-200.f }, { 0,0,100 }, { 0,1,0 });
 	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(1.f, 1.f),0.1f));
 	camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.0f,1000.f);
-	sampler = Sampler::CreateStratified(16, 16, 8);
+	sampler = Sampler::CreateStratified(4, 4, 8);
 	buf = std::unique_ptr<BYTE[]>(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
 
-	float rrThreshold = 0.002f;
+	float rrThreshold = 0.001f;
 	integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
 	scene = BuildTestScene();
 	integrator->SetProgressListener(OnPathTracingProgress);

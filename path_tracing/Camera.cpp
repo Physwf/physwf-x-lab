@@ -152,7 +152,7 @@ PerspectiveCamera::PerspectiveCamera(const Transform& InCameraToWorld, Film* fil
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const
 {
 	Vector3f pFilm = Vector3f(pixelSample.X, pixelSample.Y,0.f);
-	Vector3f pCamera = ScreenToCamera(pFilm);
+	Vector3f pCamera = ScreenToCamera.Point(pFilm);
 	*OutRay = Ray(Vector3f(0, 0, 0), Normalize(pCamera));
 	*OutRay = CameraToWorld(*OutRay);
 	return 1;
