@@ -70,9 +70,9 @@ public:
 	StratifiedSampleGenerator2D(int64_t xSamples, int64_t ySamples)
 		: samples2D(xSamples* ySamples) {}
 
-	void Generate(int64_t xSamples, int64_t ySamples, RNG& rng)
+	void Generate(int64_t xSamples, int64_t ySamples, RNG& rng, bool bJitter)
 	{
-		StratifiedSample2D(&samples2D[0], xSamples, ySamples, rng);
+		StratifiedSample2D(&samples2D[0], xSamples, ySamples, rng, bJitter);
 		Shuffle(&samples2D[0], xSamples * ySamples, 1, rng);
 	}
 	virtual Vector2f Get(int64_t index) override
@@ -145,14 +145,14 @@ public:
 
 	virtual void Generate() override
 	{
-		PixelGenerator->Generate(xPixelSamples, yPixelSamples, rng);
+		PixelGenerator->Generate(xPixelSamples, yPixelSamples, rng, true);
 		for (size_t i = 0; i < Generator1Ds.size(); ++i)
 		{
 			Generator1Ds[i]->Generate(xPixelSamples * yPixelSamples, rng);
 		}
 		for (size_t i = 0; i < Generator2Ds.size(); ++i)
 		{
-			Generator2Ds[i]->Generate(xPixelSamples , yPixelSamples, rng);
+			Generator2Ds[i]->Generate(xPixelSamples , yPixelSamples, rng, true);
 		}
 		
 	}

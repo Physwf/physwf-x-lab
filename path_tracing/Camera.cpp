@@ -15,13 +15,12 @@ FilmTile::FilmTile(const Bounds2i& InpixelBounds, const Vector2f& InfilterRadius
 
 void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight /*= 1.0f*/)
 {
-	//LOG("x=%d,y=%d  %f %f %f %f\n", (int)pFilm.X, (int)pFilm.Y, L[0], L[1], L[2], sampleWight);
 	Vector2f pFilmDiscrete = pFilm - Vector2f(0.5f, 0.5f);
 	Vector2i lu = (Vector2i)Ceil(pFilmDiscrete - filterRadius);
 	Vector2i rb = (Vector2i)Floor(pFilmDiscrete + filterRadius) + Vector2i(1,1);
 	lu = Max(lu, pixelBounds.pMin);
 	rb = Min(rb, pixelBounds.pMax);
-
+	//LOG("lu(%d,%d),size(%d,%d)\n", lu.X,lu.Y,(rb-lu).X, (rb - lu).Y);
 	for (int y = lu.Y; y < rb.Y; ++y)
 	{
 		for (int x = lu.X; x < rb.X; ++x)
@@ -32,6 +31,7 @@ void FilmTile::AddSample(const Vector2f& pFilm, LinearColor L, float sampleWight
 			fy = std::min((int)std::floor(fy), filterTableSize - 1);
 			int offset = fy * filterTableSize + fx;
 			float filterWeight = filterTable[offset];
+			//LOG("(%d,%d) (%f,%f,%f) offset:%d filterWeight:%f sampleWight:%f\n", x, y, L[0], L[1], L[2], offset, filterWeight, sampleWight);
 			PhysicalPixel& pixel = GetPixel(Vector2i(x,y));
 			pixel.contribSum += L * sampleWight * filterWeight;
 			pixel.filterWeightSum += filterWeight;
@@ -102,7 +102,6 @@ void Film::MergeFilmTile(std::unique_ptr<FilmTile> tile)
 			float xyz[3];
 			tilePixel.contribSum.ToXYZ(xyz);
 			for (int i = 0; i < 3; ++i) mergePixel.xyz[i] += xyz[i];
-			//LOG("x=%d,y=%d  %f %f %f | %f %f %f\n", x, y, tilePixel.contribSum[0], tilePixel.contribSum[1], tilePixel.contribSum[2], mergePixel.xyz[0], mergePixel.xyz[1], mergePixel.xyz[2]);
 			mergePixel.weight += tilePixel.filterWeightSum;
 		}
 	}
@@ -142,11 +141,13 @@ PerspectiveCamera::PerspectiveCamera(const Transform& InCameraToWorld, Film* fil
 	, CameraToNDC(Transform::Perspective(fov, (float)film->fullResolution.X / (float)film->fullResolution.Y, zNeer, zFar))
 {
 	Vector2i Resolution = film->fullResolution;
-	NDCToScreen = Transform::Scale(1.f, -1.f, 1.0) * Transform::Translate(1.f, 1.f, 0.f) * Transform::Scale(Resolution.X / 2.0f, Resolution.Y / 2.0f, 1.0);
+	NDCToScreen = Transform::Scale(1.f, -1.f, 1.0) * Transform::Translate(1.f, 1.f, 0.f) * Transform::Scale(Resolution.X / 2.f, Resolution.Y / 2.f, 1.0);
 	ScreenToNDC = Inverse(NDCToScreen);
-	//Vector3f NDC = ScreenToNDC(Vector3f(250, 250, 0));
-	//Vector3f pCamera = Inverse(CameraToNDC)(NDC);
-	ScreenToCamera = Inverse(CameraToNDC) * ScreenToNDC;
+	//Vector3f NDC1 = ScreenToNDC.Point(Vector3f(0, 0, 0));
+	//Vector3f NDC2 = ScreenToNDC.Point(Vector3f(500, 500, 0));
+	ScreenToCamera = ScreenToNDC * Inverse(CameraToNDC);
+	//Vector3f pCamera1 = ScreenToCamera.Point(Vector3f(0, 0, 0));
+	//Vector3f pCamera2 = ScreenToCamera.Point(Vector3f(500, 500, 0));
 }
 
 float PerspectiveCamera::GenerateRay(const Vector2f& pixelSample, Ray* OutRay) const

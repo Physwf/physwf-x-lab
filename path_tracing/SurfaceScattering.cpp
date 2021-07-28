@@ -7,6 +7,8 @@ LinearColor BxDF::Sample_f(const Vector3f& wo, Vector3f* wi, const Vector2f& u, 
 	*wi = CosineSampleHemisphere(u);
 	if (wo.Z < 0) wi->Z *= -1;
 	*pdf = Pdf(wo, *wi);
+// 	*pdf = INV_PI;
+// 	*wi = Normalize(Vector3f((float)rand()/RAND_MAX - 0.5f, (float)rand() / RAND_MAX - 0.5f, (float)rand() / RAND_MAX));
 	return f(wo, *wi);
 }
 
