@@ -47,8 +47,8 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	float invZRadius = 1 / zRadius;
 	float cosPhi = pHit.X * invZRadius;
 	float sinPhi = pHit.Y * invZRadius;
-	Vector3f dpdu(-2 * PI * pHit.Y, 2 * PI * pHit.X, 0);
-	Vector3f dpdv = Vector3f(pHit.Z * cosPhi, pHit.Z * sinPhi, -Radius * std::sin(Theta));
+	Vector3f dpdv(-2 * PI * pHit.Y, 2 * PI * pHit.X, 0);
+	Vector3f dpdu = Vector3f(pHit.Z * cosPhi, pHit.Z * sinPhi, -Radius * std::sin(Theta));
 
 	*isect = (*LocalToWorld)(SurfaceInteraction(pHit,Vector2f(u,v),-LocalRay.d, dpdu, dpdv, Vector3f(), Vector3f(),this));
 	return true;
