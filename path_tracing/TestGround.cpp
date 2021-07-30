@@ -29,6 +29,10 @@ std::shared_ptr<Scene> BuildTestScene()
 	md.UVs = { {0,0}, {1.f,0}, {1.f,1.0f},  {0.f,1.0f} };
 	md.indices = {0,1,2,2,3,0};
 
+	LinearColor eta(0.8f, 0.6f, 0.3f);
+	LinearColor k(0.4f, 0.6f, 0.3f);
+	std::shared_ptr<Material> metalMat = std::make_shared<MetalMaterial>(eta, k, 0.1f);
+
 	Transform leftWallR = Transform::Rotate(0, -PI_2, 0);
 	Transform leftWallT = Transform::Translate(-fSize, 0, zOffset);
 	LinearColor pink(1.0f,0.1,0.4);
@@ -55,10 +59,11 @@ std::shared_ptr<Scene> BuildTestScene()
 	Transform bottomWallT = Transform::Translate(0, -fSize, zOffset);
 	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallR * bottomWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
-	Transform ballT = Transform::Translate(0, -75.f, 0);
-	std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
-	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(25.f);
-	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, ballMat, sphere);
+	Transform ballT = Transform::Translate(0, -0.75f, 0);
+	//std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
+
+	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.25f);
+	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, metalMat, sphere);
 
 	objects.push_back(ball);
 	objects.push_back(backWall);
@@ -68,8 +73,8 @@ std::shared_ptr<Scene> BuildTestScene()
 	objects.push_back(bottomWall);
 
 	Transform lightR = Transform::Rotate(PI_2, 0, 0);
-	Transform lightT = Transform::Translate(0, 0.90f * fSize, zOffset);
-	LinearColor White(10.f);
+	Transform lightT = Transform::Translate(0, 0.99f * fSize, zOffset);
+	LinearColor White(100.f);
 	std::shared_ptr<Light> pl = std::make_shared<PointLight>(lightT, White);
 	std::shared_ptr<Shape> d = std::make_shared<Disk>(0.2f);
 	std::shared_ptr<Light> dl = std::make_shared<DisffuseAreaLight>(lightR * lightT, White,d, 1024, false);
@@ -141,12 +146,12 @@ void OnPathTracingProgress(Vector2i tile)
 void Test_PathTracing()
 {
 	Transform cameraD = Transform::LookAt({ 0,0,zOffset -2.f * fSize }, { 0,0,1 }, { 0,1,0 });
-	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(.5f, 0.5f),0.1f));
+	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(1.0f, 1.0f),0.1f));
 	camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.f,1000.f);
 	sampler = Sampler::CreateStratified(8, 8, 1);
 	buf = std::unique_ptr<BYTE[]>(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
 
-	float rrThreshold = 00.1f;
+	float rrThreshold = 0.001f;
 	integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
 	scene = BuildTestScene();
 	integrator->SetProgressListener(OnPathTracingProgress);

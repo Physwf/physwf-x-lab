@@ -60,7 +60,9 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 		float pdf;
 		BxDFType flags;
 		LinearColor f = isect.bsdf->Sample_f(wo, &wi, sampler.Get2D(), &pdf, BSDF_ALL, &flags);
+		if (f.IsBlack() || pdf == 0) break;
 		beta *= f * AbsDot(wi,isect.shading.n) / pdf;
+
 		specluarBounce = (flags & BSDF_SPECULAR) != 0;
 		if ((flags & BSDF_SPECULAR) && (flags & BSDF_TRANSMISSION))
 		{
@@ -79,6 +81,6 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 			beta /= 1.f - q;
 		}
 	}
-
+	//assert(!std::isnan(L[0]));
 	return L;
 }

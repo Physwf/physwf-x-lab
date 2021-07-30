@@ -18,7 +18,12 @@ public:
 class MetalMaterial : public Material
 {
 public:
+	MetalMaterial(const LinearColor eta, const LinearColor& k, float alpha) : eta(eta), k(k), alpha(alpha) {}
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* si, MemoryArena& arena);
+private:
+	LinearColor eta;//for the metal
+	LinearColor k;
+	float alpha;
 };
 
 class MatteMaterial : public Material

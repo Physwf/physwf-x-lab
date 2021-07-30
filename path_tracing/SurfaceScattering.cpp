@@ -63,7 +63,7 @@ LinearColor MicrofacetReflection::Sample_f(const Vector3f& wo, Vector3f* wi, con
 	if (Dot(wo, wh) < 0) return 0.f;
 	*wi = Reflect(wo, wh);
 	if (!SameHemisphere(wo, *wi)) return LinearColor(0);
-	*pdf = distribution->Pdf(wo, wh) / 4 * Dot(wo, wh);
+	*pdf = distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
 	return f(wo, *wi);
 }
 
