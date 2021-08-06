@@ -85,6 +85,25 @@ public:
 	bool operator!=(const Bounds3<T> &b) const {
 		return b.pMin != pMin || b.pMax != pMax;
 	}
+	bool IntersectP(const Ray& ray, float* hit0 = NULL, float* hit1 = NULL)
+	{
+		float t0 = 0, t1 = ray.tMax;
+		for (int i = 0;i < 3; ++i)
+		{
+			float invRayDir = 1.f / ray.d[i];
+			float tNear = (pMin[i] - ray.o[i]) * invRayDir;
+			float tFar = (pMax[i] - ray.o[i]) * invRayDir;
+
+			if (tNear > tFar) std::swap(tNear, tFar);
+
+			t0 = tNear > t0 ? tNear : t0;
+			t1 = tFar < t1 ? tFar : t1;
+			if (t0 > t1) return false;
+		}
+		if (hit0) *hit0 = t0;
+		if (hit1) *hit1 = t1;
+		return true;
+	}
 	Vector3<T> Diagonal() const { return pMax - pMin; }
 	T SurfaceArea() const 
 	{

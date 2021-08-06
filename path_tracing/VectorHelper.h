@@ -137,6 +137,38 @@ Type operator/(U value)	const								\
 	Devide<U>(Elements, value, Result.Elements);			\
 	return Result;											\
 }															\
+Type& operator+=(const Type& rhs) const						\
+{															\
+	Add(Elements, rhs.Elements, Elements);					\
+	return *this;											\
+}															\
+Type& operator-=(const Type& rhs) const						\
+{															\
+	Subtract(Elements, rhs.Elements, Elements);				\
+	return *this;											\
+}															\
+Type& operator*=(const Type& rhs) const						\
+{															\
+	Multiply(Elements, rhs.Elements, Elements);				\
+	return *this;											\
+}															\
+template <typename U>										\
+Type& operator*=(U value) const								\
+{															\
+	Multiply<U>(Elements, value, Elements);					\
+	return *this;											\
+}															\
+Type& operator/=(const Type& rhs) const						\
+{															\
+	Devide(Elements, rhs.Elements, Elements);				\
+	return *this;											\
+}															\
+template <typename U>										\
+Type& operator/=(U value) const								\
+{															\
+	Devide(Elements, value, Elements);						\
+	return *this;											\
+}															\
 T Dot(const Type& rhs)	const								\
 {															\
 	return VectorHelper::Dot(Elements, rhs.Elements);		\
@@ -167,5 +199,17 @@ T operator[](int i) const									\
 }															\
 T& operator[](int i)										\
 {															\
-		return Elements[i];									\
-}
+	return Elements[i];										\
+}															\
+int MaxComponentIndex() const								\
+{															\
+	int j =0;												\
+	for(int i=1;i<Count;++i)								\
+	{														\
+		if (Elements[i] > Elements[j])						\
+		{													\
+			j = i;											\
+		}													\
+	}														\
+	return j;												\
+}						

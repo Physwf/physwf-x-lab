@@ -115,6 +115,48 @@ private:
 	std::shared_ptr<Material> material;
 };
 
+template<typename T>
+class KDNode
+{
+public:
+	KDNode(Bounds3f Bounds)
+		: WorldBounds(Bounds)
+		, Left(NULL)
+		, Right(NULL)
+		, IsLeafNode(false)
+	{}
+
+	bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
+	bool IntersectP(const Ray& ray) const;
+
+	std::vector<T> Elements;
+	Bounds3f WorldBounds;
+	KDNode* Left;
+	KDNode* Right;
+	bool IsLeafNode;
+};
+
+template<typename T>
+bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
+{
+	if (!WorldBounds.IntersectP(ray)) return false;
+
+	if (IsLeafNode)
+	{
+
+	}
+	else
+	{
+		
+	}
+}
+
+template<typename T>
+bool KDNode<T>::IntersectP(const Ray& ray) const
+{
+
+}
+
 class MeshObject : public SceneObject
 {
 public:
@@ -139,5 +181,13 @@ private:
 	Vector3f* n;
 	Vector2f* uv;
 	Bounds3f LocalBounds;
+
+	KDNode<int>* KDTree;
 };
+
+
+
+KDNode<int>* BuildMesh(const std::vector<std::shared_ptr<Triangle>>& triangles,std::vector<int> Indices);
+
+KDNode<int>* BuildScene(const std::vector<std::shared_ptr<SceneObject>>& objects);
 

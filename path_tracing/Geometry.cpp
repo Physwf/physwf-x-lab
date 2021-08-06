@@ -383,6 +383,12 @@ void MeshObject::BuildTriangle()
 	{
 		LocalBounds = Union(LocalBounds, p[i]);
 	}
+	std::vector<int> Indices(Triangles.size());
+	for (int i = 0; i < (int)Triangles.size(); ++i)
+	{
+		Indices[i] = i;
+	}
+	KDTree = BuildMesh(Triangles, Indices);
 }
 
 Interaction Shape::Sample(const Interaction& ref, const Vector2f& u, float* pdf) const
@@ -413,4 +419,60 @@ float Shape::Pdf(const Interaction& ref, const Vector3f& wi) const
 	float pdf = DistanceSquared(ref.p, isectLight.p) / (AbsDot(isectLight.n, -wi) * Area());
 	if (std::isinf(pdf)) pdf = 0.f;
 	return pdf;
+}
+
+KDNode<int>* BuildMesh(const std::vector<std::shared_ptr<Triangle>>& triangles, std::vector<int> Indices)
+{
+	Bounds3f WorldBounds;
+	int i = 0;
+	for (int i : Indices)
+	{
+		WorldBounds = Union(WorldBounds, triangles[i]->WorldBound());
+	}
+
+	KDNode<int>* Node = new KDNode<int>(WorldBounds);
+
+	if (triangles.size() < 4ull)
+	{
+		Node->IsLeafNode = true;
+		Node->Elements = Indices;
+		return Node;
+	}
+
+	Vector3f WorldCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
+
+	std::vector<Vector3f> TriangleCenters(triangles.size());
+	Vector3f SquareDiff;
+	for (int i : Indices)
+	{
+		Bounds3f WorldBounds = triangles[i]->WorldBound();
+		Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
+		TriangleCenters[i++] = TriangleCenter;
+
+		Vector3f Diff = TriangleCenter - WorldCenter;
+		SquareDiff += (Diff * Diff);
+	}
+	int SplitAxis = SquareDiff.MaxComponentIndex();
+
+	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
+		{
+			if (SplitAxis == 0)
+				return TriangleCenters[A].X > TriangleCenters[B].X;
+			else if (SplitAxis == 1)
+				return TriangleCenters[A].Y > TriangleCenters[B].Y;
+			else if (SplitAxis == 2)
+				return TriangleCenters[A].Z > TriangleCenters[B].Z;
+		});
+
+	int MiddleIndex = Indices.size() / 2;
+
+	Node->Left = BuildMesh(triangles, std::vector<int>(Indices.begin(), Indices.begin()+MiddleIndex));
+	Node->Right = BuildMesh(triangles, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
+
+	return Node;
+}
+
+KDNode<int>* BuildScene(const std::vector<std::shared_ptr<SceneObject>>& objects)
+{
+
 }
