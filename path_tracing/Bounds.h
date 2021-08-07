@@ -85,7 +85,7 @@ public:
 	bool operator!=(const Bounds3<T> &b) const {
 		return b.pMin != pMin || b.pMax != pMax;
 	}
-	bool IntersectP(const Ray& ray, float* hit0 = NULL, float* hit1 = NULL)
+	bool IntersectP(const Ray& ray, float* hit0 = NULL, float* hit1 = NULL) const
 	{
 		float t0 = 0, t1 = ray.tMax;
 		for (int i = 0;i < 3; ++i)

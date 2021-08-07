@@ -352,7 +352,13 @@ bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 // 		}
 // 	}
 // 	return false;
-	return Root->Intersect(ray, isect);
+	float tMin;
+	if (Root->Intersect(ray, &tMin, isect))
+	{
+		ray.tMax = tMin;
+		return true;
+	}
+	return false;
 }
 
 bool MeshObject::IntersectP(const Ray& ray) const
@@ -433,50 +439,3 @@ float Shape::Pdf(const Interaction& ref, const Vector3f& wi) const
 	return pdf;
 }
 
-template<typename T>
-KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, std::vector<int> Indices)
-{
-	Bounds3f WorldBounds;
-	int i = 0;
-	for (int i : Indices)
-	{
-		WorldBounds = Union(WorldBounds, AllElements[i]->WorldBound());
-	}
-
-	KDNode<int>* Node = new KDNode<T>(AllElements,WorldBounds);
-
-	if (AllElements.size() < 4ull)
-	{
-		Node->IsLeafNode = true;
-		Node->Indices = Indices;
-		return Node;
-	}
-
-	Vector3f WorldCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
-
-	Vector3f SquareDiff;
-	for (int i : Indices)
-	{
-		Vector3f TriangleCenter = elementsCenters[i];
-		Vector3f Diff = TriangleCenter - WorldCenter;
-		SquareDiff += (Diff * Diff);
-	}
-	int SplitAxis = SquareDiff.MaxComponentIndex();
-
-	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
-		{
-			if (SplitAxis == 0)
-				return elementsCenters[A].X > elementsCenters[B].X;
-			else if (SplitAxis == 1)
-				return elementsCenters[A].Y > elementsCenters[B].Y;
-			else if (SplitAxis == 2)
-				return elementsCenters[A].Z > elementsCenters[B].Z;
-		});
-
-	int MiddleIndex = Indices.size() / 2;
-
-	Node->Left = BuildMesh(AllElements, elementsCenters, std::vector<int>(Indices.begin(), Indices.begin()+MiddleIndex));
-	Node->Right = BuildMesh(AllElements, elementsCenters, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
-
-	return Node;
-}

@@ -119,7 +119,7 @@ template<typename T>
 class KDNode
 {
 public:
-	KDNode(const std::vector<T>& InAllElements, Bounds3f Bounds)
+	KDNode(const std::vector<std::shared_ptr<T>>& InAllElements, Bounds3f Bounds)
 		: AllElements(InAllElements)
 		, WorldBounds(Bounds)
 		, Left(NULL)
@@ -131,7 +131,7 @@ public:
 	bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	bool IntersectP(const Ray& ray) const;
 
-	const std::vector<T>& AllElements;
+	const std::vector<std::shared_ptr<T>>& AllElements;
 	std::vector<int> Indices;
 	Bounds3f WorldBounds;
 	KDNode* Left;
@@ -146,19 +146,22 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 
 	if (IsLeafNode)
 	{
+		bool bIntersect = false;
 		for (int i : Indices)
 		{
 			float t;
 			SurfaceInteraction insection;
-			if (AllElements[i].IntersectP(ray))
+			if (AllElements[i]->Intersect(ray,&t,&insection))
 			{
 				if (t < ray.tMax)
 				{
 					ray.tMax = t;
 					*isect = insection;
+					bIntersect = true;
 				}
 			}
 		}
+		return bIntersect;
 	}
 	else
 	{
@@ -166,8 +169,8 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 		assert(Right != nullptr);
 		float lt0, lt1;
 		float rt0, rt1;
-		bool bLeft = Left->WorldBounds.IntersectP(ray, lt0, lt1);
-		bool bRight = Right->WorldBounds.IntersectP(ray, rt0, rt1);
+		bool bLeft = Left->WorldBounds.IntersectP(ray, &lt0, &lt1);
+		bool bRight = Right->WorldBounds.IntersectP(ray, &rt0, &rt1);
 		if (bLeft && bRight)
 		{
 			KDNode* Next = NULL;
@@ -182,10 +185,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 				Next = Right;
 				Last = Left;
 			}
-			if (!Next->Intersect(ray, tHit, isect))
-			{
-				return Last->Intersect(ray, tHit, isect);
-			}
+			return Last->Intersect(ray, tHit, isect);
 		}
 		else if (bLeft)
 		{
@@ -198,6 +198,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 		else
 		{
 			assert(false);
+			return false;
 		}
 	}
 
@@ -206,29 +207,19 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 template<typename T>
 bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
-	float t;
-	if (Intersect(ray, t, isect))
-	{
-		ray.tMax = t;
-		return true;
-	}
-	return false;
-}
-
-template<typename T>
-bool KDNode<T>::IntersectP(const Ray& ray) const
-{
 	if (!WorldBounds.IntersectP(ray)) return false;
 
 	if (IsLeafNode)
 	{
+		bool bIntersect = false;
 		for (int i : Indices)
 		{
-			if (AllElements[i].IntersectP(ray, &t, &insection))
+			if (AllElements[i]->Intersect(ray, isect))
 			{
-				return true;
+				bIntersect = true;
 			}
 		}
+		return bIntersect;
 	}
 	else
 	{
@@ -236,8 +227,8 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 		assert(Right != nullptr);
 		float lt0, lt1;
 		float rt0, rt1;
-		bool bLeft = Left->WorldBounds.IntersectP(ray, lt0, lt1);
-		bool bRight = Right->WorldBounds.IntersectP(ray, rt0, rt1);
+		bool bLeft = Left->WorldBounds.IntersectP(ray, &lt0, &lt1);
+		bool bRight = Right->WorldBounds.IntersectP(ray, &rt0, &rt1);
 		if (bLeft && bRight)
 		{
 			KDNode* Next = NULL;
@@ -252,10 +243,63 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 				Next = Right;
 				Last = Left;
 			}
-			if (!Next->IntersectP(ray))
+			return Last->Intersect(ray, isect);
+		}
+		else if (bLeft)
+		{
+			return Left->Intersect(ray, isect);
+		}
+		else if (bRight)
+		{
+			return Right->Intersect(ray, isect);
+		}
+		else
+		{
+			assert(false);
+			return false;
+		}
+	}
+}
+
+template<typename T>
+bool KDNode<T>::IntersectP(const Ray& ray) const
+{
+	if (!WorldBounds.IntersectP(ray,NULL,NULL)) return false;
+
+	if (IsLeafNode)
+	{
+		for (int i : Indices)
+		{
+			if (AllElements[i]->IntersectP(ray))
 			{
-				return Last->IntersectP(ray);
+				return true;
 			}
+		}
+		return false;
+	}
+	else
+	{
+		assert(Left != nullptr);
+		assert(Right != nullptr);
+		float lt0, lt1;
+		float rt0, rt1;
+		bool bLeft = Left->WorldBounds.IntersectP(ray, &lt0, &lt1);
+		bool bRight = Right->WorldBounds.IntersectP(ray, &rt0, &rt1);
+		if (bLeft && bRight)
+		{
+			KDNode* Next = NULL;
+			KDNode* Last = NULL;
+			if (lt0 < rt0)
+			{
+				Next = Left;
+				Last = Right;
+			}
+			else
+			{
+				Next = Right;
+				Last = Left;
+			}
+			return Last->IntersectP(ray);
 		}
 		else if (bLeft)
 		{
@@ -268,6 +312,7 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 		else
 		{
 			assert(false);
+			return false;
 		}
 	}
 }
@@ -301,4 +346,50 @@ private:
 };
 
 template<typename T>
-KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, std::vector<int> Indices);
+KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, std::vector<int> Indices)
+{
+	Bounds3f WorldBounds;
+	int i = 0;
+	for (int i : Indices)
+	{
+		WorldBounds = Union(WorldBounds, AllElements[i]->WorldBound());
+	}
+
+	KDNode<T>* Node = new KDNode<T>(AllElements, WorldBounds);
+
+	if (AllElements.size() < 4ull)
+	{
+		Node->IsLeafNode = true;
+		Node->Indices = Indices;
+		return Node;
+	}
+
+	Vector3f WorldCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
+
+	Vector3f SquareDiff;
+	for (int i : Indices)
+	{
+		Vector3f TriangleCenter = elementsCenters[i];
+		Vector3f Diff = TriangleCenter - WorldCenter;
+		SquareDiff += (Diff * Diff);
+	}
+	int SplitAxis = SquareDiff.MaxComponentIndex();
+
+	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
+		{
+			if (SplitAxis == 0)
+				return elementsCenters[A].X > elementsCenters[B].X;
+			else if (SplitAxis == 1)
+				return elementsCenters[A].Y > elementsCenters[B].Y;
+			else /*if (SplitAxis == 2)*/
+				return elementsCenters[A].Z > elementsCenters[B].Z;
+		});
+
+	int MiddleIndex = Indices.size() / 2;
+
+	Node->Left = BuildKDTree<T>(AllElements, elementsCenters, std::vector<int>(Indices.begin(), Indices.begin() + MiddleIndex));
+	Node->Right = BuildKDTree<T>(AllElements, elementsCenters, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
+
+	return Node;
+}
+

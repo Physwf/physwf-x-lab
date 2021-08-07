@@ -90,6 +90,18 @@ public:
 		}
 		return true;
 	}
+	inline int MaxComponentIndex(const T* Elements) const
+	{
+		int j = 0;					
+		for (int i = 1; i < Count; ++i)
+		{
+			if (Elements[i] > Elements[j])
+			{
+				j = i;
+			}
+		}
+		return j;
+	}
 };
 
 #define VectorBody(Type)									\
@@ -137,34 +149,34 @@ Type operator/(U value)	const								\
 	Devide<U>(Elements, value, Result.Elements);			\
 	return Result;											\
 }															\
-Type& operator+=(const Type& rhs) const						\
+Type& operator+=(const Type& rhs) 							\
 {															\
 	Add(Elements, rhs.Elements, Elements);					\
 	return *this;											\
 }															\
-Type& operator-=(const Type& rhs) const						\
+Type& operator-=(const Type& rhs) 							\
 {															\
 	Subtract(Elements, rhs.Elements, Elements);				\
 	return *this;											\
 }															\
-Type& operator*=(const Type& rhs) const						\
+Type& operator*=(const Type& rhs)							\
 {															\
 	Multiply(Elements, rhs.Elements, Elements);				\
 	return *this;											\
 }															\
 template <typename U>										\
-Type& operator*=(U value) const								\
+Type& operator*=(U value)									\
 {															\
 	Multiply<U>(Elements, value, Elements);					\
 	return *this;											\
 }															\
-Type& operator/=(const Type& rhs) const						\
+Type& operator/=(const Type& rhs)							\
 {															\
 	Devide(Elements, rhs.Elements, Elements);				\
 	return *this;											\
 }															\
 template <typename U>										\
-Type& operator/=(U value) const								\
+Type& operator/=(U value)									\
 {															\
 	Devide(Elements, value, Elements);						\
 	return *this;											\
@@ -203,13 +215,5 @@ T& operator[](int i)										\
 }															\
 int MaxComponentIndex() const								\
 {															\
-	int j =0;												\
-	for(int i=1;i<Count;++i)								\
-	{														\
-		if (Elements[i] > Elements[j])						\
-		{													\
-			j = i;											\
-		}													\
-	}														\
-	return j;												\
+	return VectorHelper::MaxComponentIndex(Elements);		\
 }						
