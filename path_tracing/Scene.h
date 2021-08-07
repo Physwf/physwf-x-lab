@@ -15,6 +15,22 @@ public:
 		{
 			worldBounds = Union(worldBounds, obj->WorldBound());
 		}
+
+		std::vector<int> Indices(objects.size());
+		for (int i = 0; i < (int)objects.size(); ++i)
+		{
+			Indices[i] = i;
+		}
+
+		std::vector<Vector3f> objectCenters(objects.size());
+		Vector3f SquareDiff;
+		for (int i : Indices)
+		{
+			Bounds3f WorldBounds = objects[i]->WorldBound();
+			Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
+			objectCenters[i++] = TriangleCenter;
+		}
+		Root = BuildKDTree<SceneObject>(Inobjects, objectCenters, Indices);
 	}
 
 	Bounds3f WorldBound() const
@@ -31,4 +47,5 @@ protected:
 	std::vector<std::shared_ptr<SceneObject>> objects;
 private:
 	Bounds3f worldBounds;
+	KDNode<SceneObject> *Root;
 };

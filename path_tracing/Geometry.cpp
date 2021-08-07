@@ -341,29 +341,31 @@ Bounds3f MeshObject::WorldBound() const
 
 bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
-	float tHit;
-	for (const auto& t : Triangles)
-	{
-		if (t->Intersect(ray, &tHit, isect))
-		{
-			ray.tMax = tHit;
-			isect->object = this;
-			return true;
-		}
-	}
-	return false;
+// 	float tHit;
+// 	for (const auto& t : Triangles)
+// 	{
+// 		if (t->Intersect(ray, &tHit, isect))
+// 		{
+// 			ray.tMax = tHit;
+// 			isect->object = this;
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+	return Root->Intersect(ray, isect);
 }
 
 bool MeshObject::IntersectP(const Ray& ray) const
 {
-	for (const auto& t : Triangles)
-	{
-		if (t->IntersectP(ray))
-		{
-			return true;
-		}
-	}
-	return false;
+// 	for (const auto& t : Triangles)
+// 	{
+// 		if (t->IntersectP(ray))
+// 		{
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+	return Root->IntersectP(ray);
 }
 
 void MeshObject::ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const
@@ -383,12 +385,22 @@ void MeshObject::BuildTriangle()
 	{
 		LocalBounds = Union(LocalBounds, p[i]);
 	}
+
 	std::vector<int> Indices(Triangles.size());
 	for (int i = 0; i < (int)Triangles.size(); ++i)
 	{
 		Indices[i] = i;
 	}
-	KDTree = BuildMesh(Triangles, Indices);
+
+	std::vector<Vector3f> TriangleCenters(nTriangles);
+	Vector3f SquareDiff;
+	for (int i : Indices)
+	{
+		Bounds3f WorldBounds = Triangles[i]->WorldBound();
+		Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
+		TriangleCenters[i++] = TriangleCenter;
+	}
+	Root = BuildKDTree<Triangle>(Triangles, TriangleCenters, Indices);
 }
 
 Interaction Shape::Sample(const Interaction& ref, const Vector2f& u, float* pdf) const
@@ -421,34 +433,31 @@ float Shape::Pdf(const Interaction& ref, const Vector3f& wi) const
 	return pdf;
 }
 
-KDNode<int>* BuildMesh(const std::vector<std::shared_ptr<Triangle>>& triangles, std::vector<int> Indices)
+template<typename T>
+KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, std::vector<int> Indices)
 {
 	Bounds3f WorldBounds;
 	int i = 0;
 	for (int i : Indices)
 	{
-		WorldBounds = Union(WorldBounds, triangles[i]->WorldBound());
+		WorldBounds = Union(WorldBounds, AllElements[i]->WorldBound());
 	}
 
-	KDNode<int>* Node = new KDNode<int>(WorldBounds);
+	KDNode<int>* Node = new KDNode<T>(AllElements,WorldBounds);
 
-	if (triangles.size() < 4ull)
+	if (AllElements.size() < 4ull)
 	{
 		Node->IsLeafNode = true;
-		Node->Elements = Indices;
+		Node->Indices = Indices;
 		return Node;
 	}
 
 	Vector3f WorldCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
 
-	std::vector<Vector3f> TriangleCenters(triangles.size());
 	Vector3f SquareDiff;
 	for (int i : Indices)
 	{
-		Bounds3f WorldBounds = triangles[i]->WorldBound();
-		Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
-		TriangleCenters[i++] = TriangleCenter;
-
+		Vector3f TriangleCenter = elementsCenters[i];
 		Vector3f Diff = TriangleCenter - WorldCenter;
 		SquareDiff += (Diff * Diff);
 	}
@@ -457,22 +466,17 @@ KDNode<int>* BuildMesh(const std::vector<std::shared_ptr<Triangle>>& triangles, 
 	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
 		{
 			if (SplitAxis == 0)
-				return TriangleCenters[A].X > TriangleCenters[B].X;
+				return elementsCenters[A].X > elementsCenters[B].X;
 			else if (SplitAxis == 1)
-				return TriangleCenters[A].Y > TriangleCenters[B].Y;
+				return elementsCenters[A].Y > elementsCenters[B].Y;
 			else if (SplitAxis == 2)
-				return TriangleCenters[A].Z > TriangleCenters[B].Z;
+				return elementsCenters[A].Z > elementsCenters[B].Z;
 		});
 
 	int MiddleIndex = Indices.size() / 2;
 
-	Node->Left = BuildMesh(triangles, std::vector<int>(Indices.begin(), Indices.begin()+MiddleIndex));
-	Node->Right = BuildMesh(triangles, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
+	Node->Left = BuildMesh(AllElements, elementsCenters, std::vector<int>(Indices.begin(), Indices.begin()+MiddleIndex));
+	Node->Right = BuildMesh(AllElements, elementsCenters, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
 
 	return Node;
-}
-
-KDNode<int>* BuildScene(const std::vector<std::shared_ptr<SceneObject>>& objects)
-{
-
 }
