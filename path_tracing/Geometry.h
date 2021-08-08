@@ -243,7 +243,7 @@ bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 				Next = Right;
 				Last = Left;
 			}
-			return Last->Intersect(ray, isect);
+			return Next->Intersect(ray, isect) || Last->Intersect(ray, isect);
 		}
 		else if (bLeft)
 		{
@@ -299,7 +299,7 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 				Next = Right;
 				Last = Left;
 			}
-			return Last->IntersectP(ray);
+			return Next->IntersectP(ray) || Last->IntersectP(ray);
 		}
 		else if (bLeft)
 		{
@@ -357,7 +357,7 @@ KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const
 
 	KDNode<T>* Node = new KDNode<T>(AllElements, WorldBounds);
 
-	if (AllElements.size() < 4ull)
+	if (Indices.size() < 4ull)
 	{
 		Node->IsLeafNode = true;
 		Node->Indices = Indices;

@@ -30,7 +30,7 @@ public:
 			Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
 			objectCenters[i++] = TriangleCenter;
 		}
-		Root = BuildKDTree<SceneObject>(Inobjects, objectCenters, Indices);
+		Root = BuildKDTree<SceneObject>(objects, objectCenters, Indices);
 	}
 
 	Bounds3f WorldBound() const

@@ -356,6 +356,7 @@ bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 	if (Root->Intersect(ray, &tMin, isect))
 	{
 		ray.tMax = tMin;
+		isect->object = this;
 		return true;
 	}
 	return false;

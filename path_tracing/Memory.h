@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <algorithm>
 
 #define L1_CACHE_LINE_SIZE 64
 
