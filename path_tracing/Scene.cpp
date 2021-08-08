@@ -2,6 +2,7 @@
 
 bool Scene::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
+// 	Ray ray2 = ray;
 // 	bool bHit = false;
 // 	for (const auto& o : objects)
 // 	{
@@ -11,6 +12,10 @@ bool Scene::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 // 			break;
 // 		}
 // 	}
+// 	//return bHit;
+// 	bool bHit2 = Root->Intersect(ray2, isect);
+// 	assert(bHit == bHit2);
+// 	assert(ray.tMax == ray2.tMax);
 // 	return bHit;
 	return Root->Intersect(ray, isect);
 }

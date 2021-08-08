@@ -154,6 +154,15 @@ Bounds3<T> Intersect(const Bounds3<T> &b1, const Bounds3<T>& b2)
 	return ret;
 }
 
+template <typename T>
+bool Overlaps(const Bounds3<T> &b1, const Bounds3<T>& b2)
+{
+	bool x = (b1.pMax.X >= b2.pMin.X) && (b1.pMin.X <= b2.pMax.X);
+	bool y = (b1.pMax.Y >= b2.pMin.Y) && (b1.pMin.Y <= b2.pMax.Y);
+	bool z = (b1.pMax.Z >= b2.pMin.Z) && (b1.pMin.Z <= b2.pMax.Z);
+	return (x && y && z);
+}
+
 typedef Bounds2<int> Bounds2i; 
 typedef Bounds2<float> Bounds2f;
 typedef Bounds3<int> Bounds3i;

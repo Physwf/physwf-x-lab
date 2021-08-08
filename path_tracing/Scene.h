@@ -22,15 +22,19 @@ public:
 			Indices[i] = i;
 		}
 
-		std::vector<Vector3f> objectCenters(objects.size());
+		std::vector<Vector3f> objectCenters;
+		std::vector<Bounds3f> AllWorldBounds;
+		Bounds3f SceneWorldBounds;
 		Vector3f SquareDiff;
 		for (int i : Indices)
 		{
 			Bounds3f WorldBounds = objects[i]->WorldBound();
+			AllWorldBounds.push_back(WorldBounds);
+			SceneWorldBounds = Union(SceneWorldBounds, WorldBounds);
 			Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
-			objectCenters[i++] = TriangleCenter;
+			objectCenters.push_back(TriangleCenter);
 		}
-		Root = BuildKDTree<SceneObject>(objects, objectCenters, Indices);
+		Root = BuildKDTree<SceneObject>(objects, objectCenters, SceneWorldBounds, AllWorldBounds, Indices);
 	}
 
 	Bounds3f WorldBound() const

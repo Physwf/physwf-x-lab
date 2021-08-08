@@ -156,6 +156,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 				if (t < ray.tMax)
 				{
 					ray.tMax = t;
+					*tHit = t;
 					*isect = insection;
 					bIntersect = true;
 				}
@@ -185,7 +186,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 				Next = Right;
 				Last = Left;
 			}
-			return Last->Intersect(ray, tHit, isect);
+			return Next->Intersect(ray, tHit, isect) || Last->Intersect(ray, tHit, isect);
 		}
 		else if (bLeft)
 		{
@@ -346,49 +347,68 @@ private:
 };
 
 template<typename T>
-KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, std::vector<int> Indices)
+KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const std::vector<Vector3f>& elementsCenters, Bounds3f WorldBounds, const std::vector<Bounds3f>& AllWorldBounds, std::vector<int> Indices, int depth = 0)
 {
-	Bounds3f WorldBounds;
-	int i = 0;
-	for (int i : Indices)
-	{
-		WorldBounds = Union(WorldBounds, AllElements[i]->WorldBound());
-	}
+// 	Bounds3f WorldBounds;
+// 	int i = 0;
+// 	for (int i : Indices)
+// 	{
+// 		WorldBounds = Union(WorldBounds, elementsWorldBounds[i]);
+// 	}
 
 	KDNode<T>* Node = new KDNode<T>(AllElements, WorldBounds);
 
-	if (Indices.size() < 4ull)
+	if (Indices.size() < 4ull || depth > 10)
 	{
 		Node->IsLeafNode = true;
 		Node->Indices = Indices;
 		return Node;
 	}
 
+
 	Vector3f WorldCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
 
 	Vector3f SquareDiff;
 	for (int i : Indices)
 	{
-		Vector3f TriangleCenter = elementsCenters[i];
-		Vector3f Diff = TriangleCenter - WorldCenter;
+		Vector3f Diff = elementsCenters[i] - WorldCenter;
 		SquareDiff += (Diff * Diff);
 	}
 	int SplitAxis = SquareDiff.MaxComponentIndex();
 
-	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
+// 	std::sort(Indices.begin(), Indices.end(), [=](int A, int B)
+// 		{
+// 			if (SplitAxis == 0)
+// 				return elementsCenters[A].X > elementsCenters[B].X;
+// 			else if (SplitAxis == 1)
+// 				return elementsCenters[A].Y > elementsCenters[B].Y;
+// 			else /*if (SplitAxis == 2)*/
+// 				return elementsCenters[A].Z > elementsCenters[B].Z;
+// 		});
+
+	float CenterAxis = (WorldBounds.pMax[SplitAxis] + WorldBounds.pMin[SplitAxis]) / 2.f;
+
+	//int MiddleIndex = Indices.size() / 2;
+	Bounds3f LeftWorldBounds = WorldBounds;
+	LeftWorldBounds.pMax[SplitAxis] = CenterAxis;
+	Bounds3f RightWorldBounds = WorldBounds;
+	RightWorldBounds.pMin[SplitAxis] = CenterAxis;
+
+	std::vector<int> LeftIndices, RightIndices;
+	for (int i : Indices)
+	{
+		if (Overlaps(LeftWorldBounds, AllWorldBounds[i]))
 		{
-			if (SplitAxis == 0)
-				return elementsCenters[A].X > elementsCenters[B].X;
-			else if (SplitAxis == 1)
-				return elementsCenters[A].Y > elementsCenters[B].Y;
-			else /*if (SplitAxis == 2)*/
-				return elementsCenters[A].Z > elementsCenters[B].Z;
-		});
+			LeftIndices.push_back(i);
+		}
+		if (Overlaps(RightWorldBounds, AllWorldBounds[i]))
+		{
+			RightIndices.push_back(i);
+		}
+	}
 
-	int MiddleIndex = Indices.size() / 2;
-
-	Node->Left = BuildKDTree<T>(AllElements, elementsCenters, std::vector<int>(Indices.begin(), Indices.begin() + MiddleIndex));
-	Node->Right = BuildKDTree<T>(AllElements, elementsCenters, std::vector<int>(Indices.begin() + MiddleIndex, Indices.end()));
+	Node->Left = BuildKDTree<T>(AllElements, elementsCenters, LeftWorldBounds, AllWorldBounds, LeftIndices, depth + 1);
+	Node->Right = BuildKDTree<T>(AllElements, elementsCenters, RightWorldBounds, AllWorldBounds, RightIndices,depth + 1);
 
 	return Node;
 }

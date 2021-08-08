@@ -125,6 +125,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 			for (int x = StartX; x < EndX; ++x)
 			{
 				tileSampler->StartPixel(Vector2i(x,y));
+				int i = 0;
 				do
 				{
 					Vector2f pixelSample = tileSampler->GetPixelSample(Vector2i(x, y));
@@ -133,7 +134,7 @@ void SamplerIntegrator::Render(const Scene& scene)
 
 					LinearColor L(0.f);
 					if (rayWeight > 0) L = Li(r, scene, *tileSampler, arena);
-
+					i++;
 					filmTile->AddSample(pixelSample, L, rayWeight);
 					arena.Reset();
 

@@ -355,7 +355,6 @@ bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 	float tMin;
 	if (Root->Intersect(ray, &tMin, isect))
 	{
-		ray.tMax = tMin;
 		isect->object = this;
 		return true;
 	}
@@ -399,15 +398,19 @@ void MeshObject::BuildTriangle()
 		Indices[i] = i;
 	}
 
-	std::vector<Vector3f> TriangleCenters(nTriangles);
+	std::vector<Vector3f> TriangleCenters;
+	std::vector<Bounds3f> AllWorldBounds;
+	Bounds3f MeshWorldBounds;
 	Vector3f SquareDiff;
 	for (int i : Indices)
 	{
 		Bounds3f WorldBounds = Triangles[i]->WorldBound();
+		MeshWorldBounds = Union(MeshWorldBounds, WorldBounds);
+		AllWorldBounds.push_back(WorldBounds);
 		Vector3f TriangleCenter = (WorldBounds.pMax + WorldBounds.pMin) / 2.f;
-		TriangleCenters[i++] = TriangleCenter;
+		TriangleCenters.push_back(TriangleCenter);
 	}
-	Root = BuildKDTree<Triangle>(Triangles, TriangleCenters, Indices);
+	Root = BuildKDTree<Triangle>(Triangles, TriangleCenters, MeshWorldBounds, AllWorldBounds, Indices);
 }
 
 Interaction Shape::Sample(const Interaction& ref, const Vector2f& u, float* pdf) const
