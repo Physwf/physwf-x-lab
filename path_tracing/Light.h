@@ -113,6 +113,27 @@ private:
 	const float area;
 };
 
+class InfiniteAreaLight : public Light
+{
+public:
+	InfiniteAreaLight(const Transform& LightToWorld, const LinearColor& L, int nSamples, const std::string& texturefile)
+		: Light((int)LightFlags::Infinite,LightToWorld)
+	{}
+
+	void Preprocess(const Scene& scene)
+	{
+		scene.WorldBound().BoundShpere(worldCenter,worldRadius);
+	}
+
+	virtual LinearColor Sample_Li(const Interaction& ref, const Vector2f& u, Vector3f* wi, float* pdf, VisibilityTester* vis);
+	virtual LinearColor Power() const;
+	virtual LinearColor Le() const;
+
+private:
+	Vector3f worldCenter;
+	float worldRadius;
+};
+
 class LightDistribution
 {
 public: 

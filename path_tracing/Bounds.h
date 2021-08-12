@@ -115,6 +115,12 @@ public:
 		Vector3<T> d = Diagonal();
 		return d.X * d.Y * d.Z;
 	}
+	void BoundShpere(Vector3f& center, float& radius)
+	{
+		center = (pMin + pMax) / 2.f;
+		Vector3f BoundSize = pMax - pMin;
+		radius = BoundSize[BoundSize.MaxComponentIndex()];
+	}
 	Vector3<T> pMin, pMax;
 };
 

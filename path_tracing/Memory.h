@@ -91,3 +91,13 @@ private:
 	std::list<std::pair<size_t, uint8_t*>>  usedBlocks;
 	std::list<std::pair<size_t, uint8_t*>>  availableBlocks;
 };
+
+template<typename T>
+class BlockArray2D
+{
+public:
+	BlockArray2D(int u, int v, const T* d = nullptr);
+private:
+	T* data;
+	const int uDim, vDim;
+};

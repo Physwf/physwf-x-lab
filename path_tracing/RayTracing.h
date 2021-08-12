@@ -66,5 +66,7 @@ struct SurfaceInteraction : public Interaction
 	} shading;
 	const class SceneObject* object = NULL;
 	class BSDF* bsdf;
+	mutable Vector3f dpdx, dpdy;
+	mutable float dudx = 0, dvdx = 0, dudy = 0, dvdy = 0;
 };
 
