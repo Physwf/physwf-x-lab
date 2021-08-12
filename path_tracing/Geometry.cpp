@@ -27,7 +27,9 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	float t0, t1;
 	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
 
-	if (t0 > LocalRay.tMax || t1 < 0) return false;//ray range out of sphere
+	if (t0 < 0.000001f) t0 = 0;
+
+	if (t0 >= LocalRay.tMax || t1 <= 0) return false;//ray range out of sphere
 	float tShapeHit = t0;
 	if (t0 < 0)
 	{
@@ -66,7 +68,9 @@ bool Sphere::IntersectP(const Ray& ray) const
 	float t0, t1;
 	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
 
-	if (t0 > LocalRay.tMax || t1 < 0) return false;//ray range out of sphere
+	if (t0 < 0.000001f) t0 = 0;
+
+	if (t0 >= LocalRay.tMax || t1 <= 0) return false;//ray range out of sphere
 	float tShapeHit = t0;
 	if (t0 < 0)
 	{
@@ -111,7 +115,9 @@ bool Disk::Intersect(const Ray& r, float* tHit, SurfaceInteraction* isect) const
 	Ray ray = (*WorldToLocal)(r);
 	if (ray.d.Z == 0) return false;
 	float tShapeHit = -ray.o.Z / ray.d.Z;
+	if (std::abs(tShapeHit) < 0.000001f) tShapeHit = 0;
 	if (tShapeHit <= 0 || tShapeHit >= ray.tMax) return false;
+
 
 	Vector3f pHit = ray(tShapeHit);
 	float dist2 = pHit.X * pHit.X + pHit.Y * pHit.Y;
@@ -196,6 +202,7 @@ bool Triangle::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect)
 	if (!Math::Plane(p0, p1, p2, &a, &b, &c, &d)) return false;
 
 	float t0 = -(a * LocalRay.o.X + b * LocalRay.o.Y + c * LocalRay.o.Z + d) / (a * LocalRay.d.X + b * LocalRay.d.Y + c * LocalRay.d.Z);
+	if (std::abs(t0) < 0.000001) t0 = 0;
 	if (t0 <= 0 || t0 >= LocalRay.tMax) return false;
 
 	Vector3f pHit;
@@ -239,7 +246,7 @@ bool Triangle::IntersectP(const Ray& ray) const
 	if (!Math::Plane(p0, p1, p2, &a, &b, &c, &d)) return false;
 
 	float t0 = -(a * LocalRay.o.X + b * LocalRay.o.Y + c * LocalRay.o.Z + d) / (a * LocalRay.d.X + b * LocalRay.d.Y + c * LocalRay.d.Z);
-	if (std::abs(t0) < 0.0001) t0 = 0;
+	if (std::abs(t0) < 0.000001) t0 = 0;
 	if (t0 <= 0 || t0 >= LocalRay.tMax) return false;
 
 	Vector3f pHit;
@@ -341,7 +348,8 @@ Bounds3f MeshObject::WorldBound() const
 
 bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
-// 	float tHit;
+// 	float tHit = 0;
+// 	Ray ray2 = ray;
 // 	for (const auto& t : Triangles)
 // 	{
 // 		if (t->Intersect(ray, &tHit, isect))
@@ -351,8 +359,7 @@ bool MeshObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 // 			return true;
 // 		}
 // 	}
-// 	return false;
-	float tMin;
+	float tMin = 0;
 	if (Root->Intersect(ray, &tMin, isect))
 	{
 		isect->object = this;

@@ -137,12 +137,13 @@ public:
 	KDNode* Left;
 	KDNode* Right;
 	bool IsLeafNode;
+	bool HasOverlap;
 };
 
 template<typename T>
 bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) const
 {
-	if (!WorldBounds.IntersectP(ray)) return false;
+	//if (!WorldBounds.IntersectP(ray)) return false;
 
 	if (IsLeafNode)
 	{
@@ -150,14 +151,12 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 		for (int i : Indices)
 		{
 			float t;
-			SurfaceInteraction insection;
-			if (AllElements[i]->Intersect(ray,&t,&insection))
+			if (AllElements[i]->Intersect(ray,&t, isect))
 			{
 				if (t < ray.tMax)
 				{
 					ray.tMax = t;
 					*tHit = t;
-					*isect = insection;
 					bIntersect = true;
 				}
 			}
@@ -186,7 +185,16 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 				Next = Right;
 				Last = Left;
 			}
-			return Next->Intersect(ray, tHit, isect) || Last->Intersect(ray, tHit, isect);
+			if (HasOverlap)
+			{
+				bool bNextHit = Next->Intersect(ray, tHit, isect);
+				bool bLastHit = Last->Intersect(ray, tHit, isect);
+				return bNextHit || bLastHit;
+			}
+			else
+			{
+				return Next->Intersect(ray, tHit, isect) || Last->Intersect(ray, tHit, isect);
+			}
 		}
 		else if (bLeft)
 		{
@@ -198,7 +206,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 		}
 		else
 		{
-			assert(false);
+			//assert(false);
 			return false;
 		}
 	}
@@ -208,7 +216,7 @@ bool KDNode<T>::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect
 template<typename T>
 bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 {
-	if (!WorldBounds.IntersectP(ray)) return false;
+	//if (!WorldBounds.IntersectP(ray)) return false;
 
 	if (IsLeafNode)
 	{
@@ -244,7 +252,16 @@ bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 				Next = Right;
 				Last = Left;
 			}
-			return Next->Intersect(ray, isect) || Last->Intersect(ray, isect);
+			if (HasOverlap)
+			{
+				bool bNextHit = Next->Intersect(ray, isect);
+				bool bLastHit = Last->Intersect(ray, isect);
+				return bNextHit || bLastHit;
+			}
+			else
+			{
+				return Next->Intersect(ray, isect) || Last->Intersect(ray, isect);
+			}
 		}
 		else if (bLeft)
 		{
@@ -256,7 +273,7 @@ bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 		}
 		else
 		{
-			assert(false);
+			//assert(false);
 			return false;
 		}
 	}
@@ -265,7 +282,7 @@ bool KDNode<T>::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 template<typename T>
 bool KDNode<T>::IntersectP(const Ray& ray) const
 {
-	if (!WorldBounds.IntersectP(ray,NULL,NULL)) return false;
+	//if (!WorldBounds.IntersectP(ray,NULL,NULL)) return false;
 
 	if (IsLeafNode)
 	{
@@ -300,7 +317,16 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 				Next = Right;
 				Last = Left;
 			}
-			return Next->IntersectP(ray) || Last->IntersectP(ray);
+			if (HasOverlap)
+			{
+				bool bNextHit = Next->IntersectP(ray);
+				bool bLastHit = Last->IntersectP(ray);
+				return bNextHit || bLastHit;
+			}
+			else
+			{
+				return Next->IntersectP(ray) || Last->IntersectP(ray);
+			}
 		}
 		else if (bLeft)
 		{
@@ -312,7 +338,7 @@ bool KDNode<T>::IntersectP(const Ray& ray) const
 		}
 		else
 		{
-			assert(false);
+			//assert(false);
 			return false;
 		}
 	}
@@ -358,7 +384,7 @@ KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const
 
 	KDNode<T>* Node = new KDNode<T>(AllElements, WorldBounds);
 
-	if (Indices.size() < 4ull || depth > 10)
+	if (Indices.size() < 10ull || depth > 10)
 	{
 		Node->IsLeafNode = true;
 		Node->Indices = Indices;
@@ -395,16 +421,26 @@ KDNode<T>* BuildKDTree(const std::vector<std::shared_ptr<T>>& AllElements, const
 	RightWorldBounds.pMin[SplitAxis] = CenterAxis;
 
 	std::vector<int> LeftIndices, RightIndices;
+	bool bRight = false;
+	bool bLeft = false;
+	Node->HasOverlap = true;
 	for (int i : Indices)
 	{
 		if (Overlaps(LeftWorldBounds, AllWorldBounds[i]))
 		{
 			LeftIndices.push_back(i);
+			bLeft = true;
 		}
 		if (Overlaps(RightWorldBounds, AllWorldBounds[i]))
 		{
 			RightIndices.push_back(i);
+			bRight = true;
 		}
+		if (bLeft && bRight)
+		{
+			Node->HasOverlap = true;
+		}
+		bLeft = bRight = false;
 	}
 
 	Node->Left = BuildKDTree<T>(AllElements, elementsCenters, LeftWorldBounds, AllWorldBounds, LeftIndices, depth + 1);
