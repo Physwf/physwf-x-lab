@@ -92,12 +92,54 @@ private:
 	std::list<std::pair<size_t, uint8_t*>>  availableBlocks;
 };
 
-template<typename T>
+template<typename T,int logBlockSize/*BlockSize的log值*/>
 class BlockArray2D
 {
 public:
-	BlockArray2D(int u, int v, const T* d = nullptr);
+	BlockArray2D(int u, int v, const T* d = nullptr)
+		: uDim(u), vDim(v),uBlocks(RoundUp(uDim) >> logBlockSize)
+	{
+		int nAlloc = RoundUp(uDim) * RoundUp(vDim);//
+		data = AllocAligned<T>(nAlloc);
+		for (int i = 0; i < nAlloc; ++i) new (&data[i])T();
+		if (d)
+			for (int v = 0; v < vDim; ++v)
+				for (int u = 0; u < uDim; ++u)
+					(*this)(u, v) = d[v * uDim + u];
+	}
+	~BlockArray2D()
+	{
+		for (int i = 0; i < uDim * vDim; ++i) data[i].~T();
+		FreeAligned(data);
+	}
+	int uSize() const { return uDim; }
+	int vSize() const { return vDim; }
+	constexpr int BlockSize() const { return 1 << logBlockSize; }
+	int RoundUp(int x) const//补足使返回值能被blocksize整除
+	{
+		return (x + BlockSize() - 1) & ~(BlockSize() - 1);
+		//								使尾数为0
+	}
+	int Block(int a) const { return a >> logBlockSize; }
+	int Offset(int a) const { return (a & (BlockSize() - 1)); }
+	T& operator()(int u, int v)
+	{
+		int bu = Block(u), bv = Block(v);
+		int ou = Offset(u), ov = Offset(v);
+		int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
+		offset += BlockSize() * ov + ou;
+		return data[offset];
+	}
+	const T& operator(int u, int v) const
+	{
+		int bu = Block(u), bv = Block(v);
+		int ou = Offset(u), ov = Offset(v);
+		int offset = BlockSize() * BlockSize() * (uBlocks * bv + bu);
+		offset += BlockSize() * ov + ou;
+		return data[offset];
+	}
 private:
 	T* data;
-	const int uDim, vDim;
+	const int uDim, vDim;//数组的两个维度大小
+	const int uBlocks;//u方向的block数量
 };
