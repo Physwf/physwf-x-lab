@@ -18,3 +18,5 @@ extern JFixedThreadPool* GFixThreadPool;
 
 void InitFixedThreadPool();
 void FiniFixedThreadPool();
+int	MaxThreadIndex();
+extern __declspec(thread) int ThreadIndex;

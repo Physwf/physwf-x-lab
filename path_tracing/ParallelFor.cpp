@@ -4,18 +4,25 @@
 class ParalleForTask1D
 {
 public:
-	ParalleForTask1D(std::function<void(size_t)> InFunc1D, size_t InIndex)
-		: Func1D(InFunc1D), Index(InIndex)
+	ParalleForTask1D(std::function<void(size_t)> InFunc1D, size_t InMaxIndex, size_t InChunkSize)
+		: Func1D(InFunc1D), MaxIndex(InMaxIndex), ChunckSize(InChunkSize)
 	{
 	}
 
 	void operator()()
 	{
-		Func1D(Index);
+		size_t IndexStart = NextIndex;
+		size_t IndexEnd = std::max(IndexStart + ChunckSize, MaxIndex);
+		for (size_t i = IndexStart; i < IndexEnd; ++i)
+		{
+			Func1D(i);
+		}
 	}
 private:
 	std::function<void(size_t)> Func1D;
-	size_t Index;
+	size_t MaxIndex;
+	size_t ChunckSize;
+	size_t NextIndex = 0;
 };
 
 class ParalleForTask2D
@@ -35,15 +42,12 @@ private:
 	Vector2i Index;
 };
 
-void ParallelFor(std::function<void(size_t)> Func, size_t Count)
+void ParallelFor(std::function<void(size_t)> Func, size_t Count,size_t chunkSize)
 {
-	for (size_t i = 0; i < Count; ++i)
+	ParalleForTask1D Task1D(Func, Count, chunkSize);
+	if (GFixThreadPool != NULL)
 	{
-		ParalleForTask1D Task1D(Func, i);
-		if (GFixThreadPool != NULL)
-		{
-			GFixThreadPool->Execute(Task1D);
-		}
+		GFixThreadPool->Execute(Task1D);
 	}
 }
 

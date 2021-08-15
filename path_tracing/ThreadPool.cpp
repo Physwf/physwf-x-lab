@@ -95,10 +95,8 @@ JFixedThreadPool* GFixThreadPool;
 
 void InitFixedThreadPool()
 {
-	SYSTEM_INFO SysInfo;
-	GetSystemInfo(&SysInfo);
-	GFixThreadPool = new JFixedThreadPool(SysInfo.dwNumberOfProcessors);
-	//GFixThreadPool = new JFixedThreadPool(1);
+	//GFixThreadPool = new JFixedThreadPool(MaxThreadIndex);
+	GFixThreadPool = new JFixedThreadPool(1);
 }
 
 void FiniFixedThreadPool()
@@ -108,3 +106,12 @@ void FiniFixedThreadPool()
 		delete GFixThreadPool;
 	}
 }
+
+int MaxThreadIndex()
+{
+	SYSTEM_INFO SysInfo;
+	GetSystemInfo(&SysInfo);
+	return SysInfo.dwNumberOfProcessors;
+}
+
+__declspec(thread) int ThreadIndex;

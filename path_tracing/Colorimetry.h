@@ -139,6 +139,15 @@ public:
 		}
 		return m;
 	}
+	GeneralizedColor Clamp(float low = 0, float high = std::numeric_limits<float>::infinity()) const
+	{
+		GeneralizedColor ret;
+		for (int i = 0; i < NumberComponents; ++i)
+		{
+			ret.Components[i] = Math::Clamp(Components[i],low,high);
+		}
+		return ret;
+	}
 	bool IsBlack() const
 	{
 		for (int i = 0; i < NumberComponents; ++i)
@@ -174,6 +183,8 @@ public:
 		}
 		return Result;
 	}
+
+	static const int nSamples = NumberComponents;
 };
 
 template<typename T,int NumberComponents>
@@ -202,6 +213,22 @@ public:
 	}
 	LMSColor(const GeneralizedColor<float, 3>& v) : GeneralizedColor<float, 3>(v) {}
 
+	static LMSColor FromRGB(const float rgb[3])
+	{
+		LMSColor c;
+		c.Components[0] = rgb[0];
+		c.Components[1] = rgb[1];
+		c.Components[2] = rgb[2];
+		return c;
+	}
+
+	void ToRGB(float* rgb) const
+	{
+		rgb[0] = Components[0];
+		rgb[1] = Components[1];
+		rgb[2] = Components[2];
+	}
+
 	void ToXYZ(float xyz[3]) const { RGBToXYZ(Components,xyz); }
 
 	float operator[](int i) const
@@ -212,6 +239,11 @@ public:
 	float& operator[](int i)
 	{
 		return Components[i];
+	}
+	float y() const
+	{
+		const float YWeight[3] = { 0.212671f, 0.715160f, 0.072169f };
+		return YWeight[0] * Components[0] + YWeight[1] * Components[1] + YWeight[2] * Components[2];
 	}
 };
 

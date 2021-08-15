@@ -143,4 +143,68 @@ public:
 		}
 		return Math::Clamp(first - 1, 0, size - 2);
 	}
+
+	template <typename T>
+	static constexpr bool IsPowerOf2(T v)
+	{
+		return v && !(v & (v - 1));
+	}
+
+	static int32_t RoundUpPower2(int32_t v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		return v + 1;
+	}
+
+	static int64_t RoundUpPower2(int64_t v)
+	{
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		return v + 1;
+	}
+
+	static int Log2Int(uint32_t v)
+	{
+		unsigned long lz = 0;
+		if (_BitScanReverse(&lz, v)) return lz;
+		return 0;
+	}
+
+	static int Log2Int(int32_t v) {
+		return Log2Int(uint32_t(v));
+	}
+
+	static int Log2Int(uint64_t v)
+	{
+		unsigned long lz = 0;
+#if defined(_WIN64)
+		_BitScanReverse64(&lz, v);
+#else
+		if (_BitScanReverse(&lz, v >> 32))
+			lz += 32;
+		else
+			_BitScanReverse(&lz, v & 0xffffffff);
+#endif // _WIN64
+		return lz;
+	}
+
+	static int Log2Int(int64_t v)
+	{
+		return Log2Int(uint64_t(v));
+	}
+
+	inline float Log2(float x)
+	{
+		const float invLog2 = 1.442695040888963387004650940071;
+		return std::log(x) * invLog2;
+	}
 };
