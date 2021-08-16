@@ -202,7 +202,7 @@ public:
 		return Log2Int(uint64_t(v));
 	}
 
-	inline float Log2(float x)
+	static float Log2(float x)
 	{
 		const float invLog2 = 1.442695040888963387004650940071;
 		return std::log(x) * invLog2;

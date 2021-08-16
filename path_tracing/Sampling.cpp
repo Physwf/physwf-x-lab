@@ -139,3 +139,14 @@ Vector2f UniformSampleTriangle(const Vector2f& u)
 	return Vector2f(1 - su0, u[1] * su0);
 }
 
+Distribution2D::Distribution2D(const float* data, int nu, int nv)
+{
+	pConditionalV.reserve(nv);
+	for (int v = 0; v < nv; ++v)
+		pConditionalV.emplace_back(new Distribution1D(&data[v * nu], nu));
+
+	std::vector<float> marginalFunc;
+	for (int v = 0; v < nv; ++v)
+		marginalFunc.push_back(pConditionalV[v]->funcIntegral);
+	pMarginal.reset(new Distribution1D(&marginalFunc[0],nv));
+}

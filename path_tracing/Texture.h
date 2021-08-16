@@ -5,6 +5,9 @@
 #include "Memory.h"
 
 #include <memory>
+#include <string>
+#include <vector>
+#include <map>
 
 class SurfaceInteraction;
 
@@ -35,7 +38,14 @@ private:
 
 float Lanczos(float, float tau = 2.f);
 float GammaCorrect(float v);
-float InverseGammaCorrect(v);
+float InverseGammaCorrect(float v);
+inline bool HasExtension(const std::string& value, const std::string& ending) {
+	if (ending.size() > value.size()) return false;
+	return std::equal(
+		ending.rbegin(), ending.rend(), value.rbegin(),
+		[](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+std::unique_ptr<LMSColor[]> ReadImage(const std::string& name, Vector2i* resolution);
 
 enum class ImageWrap { Repeat, Black, Clamp };
 struct ResampleWeight
@@ -67,11 +77,11 @@ private:
 			for (int j = 0; j < 4; ++i)
 			{
 				float pos = wt[i].firstTexel + j + 0.5f;
-				wt[i].Weight = Lanczos((pos - center) / filterWidth);
+				wt[i].Weight[j] = Lanczos((pos - center) / filterWidth);
 			}
 
 			float invSumWts = 1 / (wt[i].Weight[0] + wt[i].Weight[1] + wt[i].Weight[2] + wt[i].Weight[3]);
-			for (int j = 0; j < 4; ++j) wt[i].Weight *= invSumWts;
+			for (int j = 0; j < 4; ++j) wt[i].Weight[j] *= invSumWts;
 		}
 		return wt;
 	}
@@ -94,12 +104,12 @@ T MipMap<T>::LookUp(const Vector2f& st, float width /*= 0.f*/) const
 	if (level < 0)
 		return triangle(0, st);
 	else if (level >= Levels() - 1)
-		return Texel(Levels() - 1.0, 0);
+		return Texel(Levels() - 1, 0, 0);
 	else
 	{
 		int iLevel = std::floor(level);
 		float delta = level - iLevel;
-		return Math::Lerp(delta, triangle(iLevel, st), triangle(iLevel + 1.st));
+		return Lerp(delta, triangle(iLevel, st), triangle(iLevel + 1, st));
 	}
 }
 
@@ -130,7 +140,8 @@ const T& MipMap<T>::Texel(int level, int s, int t) const
 		s = Math::Clamp(s, 0, l.uSize() - 1);
 		t = Math::Clamp(t, 0, l.vSize() - 1);
 	case ImageWrap::Black:
-		if (s < 0 || s >= (int)l.uSize() || t < 0 || t >= l.vSize()) return 0.f;
+		static const T black = 0.f;
+		if (s < 0 || s >= (int)l.uSize() || t < 0 || t >= l.vSize()) return black;
 	}
 	return l(s, t);
 }
@@ -152,11 +163,11 @@ T MipMap<T>::triangle(int level, const Vector2f& st) const
 }
 
 template <typename T>
-MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= false*/, float maxAniso /*= 8.f*/, ImageWrap wrapmode /*= ImageWrap::Repeat*/)
+MipMap<T>::MipMap(const Vector2i& res, const T* data, bool doTri /*= false*/, float maxAniso /*= 8.f*/, ImageWrap wrapmode /*= ImageWrap::Repeat*/)
 	: doTrilinear(doTri)
 	, maxAnisotropy(maxAnisotropy)
 	, wrapMode(wrapmode)
-	, resolution(resolution)
+	, resolution(res)
 {
 	std::unique_ptr<T[]> resampledImage = nullptr;
 	if (!Math::IsPowerOf2(resolution[0]) || !Math::IsPowerOf2(resolution[1]))
@@ -165,7 +176,7 @@ MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= fals
 		std::unique_ptr<ResampleWeight[]> sWeights = resampleWeights(resolution[0], resPow2[0]);
 		resampledImage.reset(new T[resPow2[0] * resPow2[1]]);
 
-		ParallelFor([&](int t) 
+		ParallelFor([&](size_t t) 
 			{
 				for (int s = 0; s < resPow2[0]; ++s)
 				{
@@ -178,7 +189,7 @@ MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= fals
 						else if (wrapMode == ImageWrap::Clamp)
 							origS = Math::Clamp(origS, 0, resolution[0] - 1);
 						if (origS >= 0 && origS < (int)resolution[0])
-							resampledImage[t * resPow2[0] + s] += sWeights[s].weight[j] * data[t * resolution[0] + origS];
+							resampledImage[t * resPow2[0] + s] += sWeights[s].Weight[j] * data[t * resolution[0] + origS];
 					}
 				}
 			}, resolution[1], 16);
@@ -188,19 +199,22 @@ MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= fals
 		int nThreads = MaxThreadIndex();
 		for (int i = 0; i < nThreads; ++i)
 			resampleBufs.push_back(new T[resPow2[1]]);
-		ParallelFor([&](int t)
+		ParallelFor([&](size_t s)
 			{
 				T* workData = resampleBufs[ThreadIndex];
-				for (t = 0; t < resPow2[1]; ++t)
+				for (int t = 0; t < resPow2[1]; ++t)
 				{
 					workData[t] = 0.f;
-					int offset = tWeights[t].firstTexel + j;
-					if (wrapMode == ImageWrap::Repeat)
-						offset = offset % resolution[1];
-					else if (wrapMode == ImageWrap::Clamp)
-						workData[t] += tWeights[t].weight[j] * resampledImage[offset * resPow2[0] + s];
+					for (int j = 0; j < 4; ++j)
+					{
+						int offset = tWeights[t].firstTexel + j;
+						if (wrapMode == ImageWrap::Repeat)
+							offset = offset % resolution[1];
+						else if (wrapMode == ImageWrap::Clamp)
+							workData[t] += tWeights[t].Weight[j] * resampledImage[offset * resPow2[0] + s];
+					}
 				}
-				for (int t = 0; t < resPow2[i]; ++t)
+				for (int t = 0; t < resPow2[1]; ++t)
 					resampledImage[t*resPow2[0] + s] = clamp(workData[t]);
 			}, resPow2[0], 32);
 		for (auto ptr : resampleBufs) delete[] ptr;
@@ -210,7 +224,7 @@ MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= fals
 	int nLevels = 1 + Math::Log2Int(std::max(resolution[0], resolution[1]));
 	pyramid.resize(nLevels);
 
-	pyramid[0].reset(new BlockArray2D<T>(resolution[0], resolution[1],resampledImage ? resampledImage.get(), data));
+	pyramid[0].reset(new BlockArray2D<T>(resolution[0], resolution[1],resampledImage ? resampledImage.get(): data));
 
 	for (int i = 1; i < nLevels; ++i)
 	{
@@ -218,11 +232,11 @@ MipMap<T>::MipMap(const Vector2i& resolution, const T* data, bool doTri /*= fals
 		int tRes = std::max(1, pyramid[i - 1]->vSize() / 2);
 		pyramid[i].reset(new BlockArray2D<T>(sRes, tRes));
 
-		ParallelFor([&](int t)
+		ParallelFor([&](size_t t)
 			{
 				for (int s = 0; s < sRes; ++s)
 				{
-					(*pyramid[i])(s, t) = 
+					(*pyramid[i])(s, (int)t) = 
 						0.25f * (Texel(i - 1, 2 * s, 2 * t) +
 								Texel(i - 1, 2 * s + 1, 2 * t) +
 								Texel(i - 1, 2 * s, 2 * t + 1) +
@@ -295,7 +309,7 @@ private:
 		from.ToRGB(rgb);
 		*to = LinearColor::FromRGB(rgb);
 	}
-	static void convertOut(Float from, Float *to) { *to = from; }
+	static void convertOut(float from, float *to) { *to = from; }
 	std::unique_ptr<TextureMapping2D> mapping;
 	MipMap<Tstore> *mipmap;
 	static std::map<TexInfo, std::unique_ptr<MipMap<Tstore>>> textures;

@@ -21,3 +21,15 @@ bool Math::IsInsideTriangle(const Vector3f& p1, const Vector3f& p2, const Vector
 	return true;
 }
 
+float SphericalTheta(const Vector3f& v)
+{
+	return std::acos(Math::Clamp(v.Z, -1.f, 1.f));
+}
+
+float SphericalPhi(const Vector3f& v)
+{
+	float p = std::atan2(v.Y, v.X);
+	return (p < 0) ? (p + 2 * PI) : p;
+}
+
+

@@ -254,4 +254,9 @@ class DiscreteLMSColor : public GeneralizedColor<unsigned char, 3>
 
 typedef LMSColor LinearColor;
 
+inline LMSColor Lerp(float t, const LMSColor& s1, const LMSColor& s2) 
+{
+	return (1 - t) * s1 + t * s2;
+}
+
 

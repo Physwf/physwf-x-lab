@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #include "Vector.h"
 #include "RNG.h"
+#include "Math.h"
 
 template <typename T>
 void Shuffle(T* samp, int count, int nDimensions, RNG& rng) {
@@ -47,8 +49,12 @@ struct Distribution1D
 		float du = u - cdf[offset];
 		if ((cdf[offset + 1] - cdf[offset]) > 0)
 		{
-			
+			du /= (cdf[offset + 1] - cdf[offset]);
 		}
+
+		if (pdf) *pdf = (funcIntegral > 0) ? func[offset] / funcIntegral : 0;
+
+		return (offset + du) / Count();
 	}
 	int SampleDiscrete(float u, float* pdf = nullptr, float* uRemapped = nullptr) const
 	{
@@ -68,7 +74,26 @@ struct Distribution1D
 
 class Distribution2D
 {
-
+public:
+	Distribution2D(const float* data, int nu, int nv);
+	Vector2f SampleContinuous(const Vector2f& u, float* pdf) const
+	{
+		float pdfs[2];
+		int v;
+		float d1 = pMarginal->SampleContinuous(u[1], &pdfs[1], &v);
+		float d0 = pConditionalV[v]->SampleContinuous(u[0], &pdfs[0]);
+		*pdf = pdfs[0] * pdfs[1];
+		return Vector2f(d0, d1);
+	}
+	float Pdf(const Vector2f& p) const
+	{
+		int iu = Math::Clamp(int(p[0] * pConditionalV[0]->Count() - 1), 0, pConditionalV[0]->Count() - 1);
+		int iv = Math::Clamp(int(p[1] * pMarginal->Count()), 0, pMarginal->Count() - 1);
+		return pConditionalV[iv]->func[iu] / pMarginal->funcIntegral;
+	}
+private:
+	std::vector<std::unique_ptr<Distribution1D>> pConditionalV;
+	std::unique_ptr<Distribution1D> pMarginal;
 };
 
 

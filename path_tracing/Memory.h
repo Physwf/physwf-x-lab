@@ -92,7 +92,7 @@ private:
 	std::list<std::pair<size_t, uint8_t*>>  availableBlocks;
 };
 
-template<typename T,int logBlockSize/*BlockSize的log值*/>
+template<typename T,int logBlockSize=2/*BlockSize的log值*/>
 class BlockArray2D
 {
 public:
@@ -130,7 +130,7 @@ public:
 		offset += BlockSize() * ov + ou;
 		return data[offset];
 	}
-	const T& operator(int u, int v) const
+	const T& operator()(int u, int v) const
 	{
 		int bu = Block(u), bv = Block(v);
 		int ou = Offset(u), ov = Offset(v);

@@ -6,9 +6,12 @@
 #include "Colorimetry.h"
 #include "Transform.h"
 #include "Geometry.h"
+#include "Scene.h"
+#include "Texture.h"
 
 class Scene;
 class Distribution1D;
+class Distribution2D;
 
 class VisibilityTester
 {
@@ -116,22 +119,24 @@ private:
 class InfiniteAreaLight : public Light
 {
 public:
-	InfiniteAreaLight(const Transform& LightToWorld, const LinearColor& L, int nSamples, const std::string& texturefile)
-		: Light((int)LightFlags::Infinite,LightToWorld)
-	{}
+	InfiniteAreaLight(const Transform& LightToWorld, const LinearColor& L, int nSamples, const std::string& texturefile);
 
 	void Preprocess(const Scene& scene)
 	{
 		scene.WorldBound().BoundShpere(worldCenter,worldRadius);
 	}
 
-	virtual LinearColor Sample_Li(const Interaction& ref, const Vector2f& u, Vector3f* wi, float* pdf, VisibilityTester* vis);
-	virtual LinearColor Power() const;
-	virtual LinearColor Le() const;
-
+	virtual LinearColor Sample_Li(const Interaction& ref, const Vector2f& u, Vector3f* wi, float* pdf, VisibilityTester* vis) const override;
+	virtual LinearColor Power() const override;
+	virtual LinearColor Le(const Ray& r) const override;
+	virtual float Pdf_Li(const Interaction& ref, const Vector3f& wi) const override;
+	virtual LinearColor Sample_Le(const Vector2f& u1, const Vector2f& u2, Ray* ray, Vector3f* nLight, float* pdfPos, float* pdfDir) const override;
+	virtual void Pdf_Le(const Ray& ray, const Vector3f& nLight, float* pdfPos, float* pdfDir) const override;
 private:
+	std::unique_ptr<MipMap<LMSColor>> Lmap;
 	Vector3f worldCenter;
 	float worldRadius;
+	std::unique_ptr<Distribution2D> distribution;
 };
 
 class LightDistribution

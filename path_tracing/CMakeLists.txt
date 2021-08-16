@@ -10,7 +10,10 @@ file(GLOB_RECURSE DIR_SRC
 
 add_executable(path_tracing ${DIR_SRC})
 target_include_directories(path_tracing PRIVATE "../x9")
+target_include_directories(path_tracing PRIVATE "../x4")
+target_include_directories(path_tracing PRIVATE "../x4/Include")
 target_link_libraries(path_tracing libx9)
+target_link_libraries(path_tracing x4)
 SET(EXECUTABLE_OUTPUT_PATH  ${CMAKE_BINARY_DIR})
 
 add_definitions(-DUNICODE -D_UNICODE)

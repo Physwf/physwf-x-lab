@@ -1,6 +1,7 @@
 #include "Light.h"
 #include "Sampling.h"
 #include "Scene.h"
+#include "ParallelFor.h"
 
 bool VisibilityTester::Unoccluded(const Scene& scene) const
 {
@@ -143,4 +144,107 @@ void DisffuseAreaLight::Pdf_Le(const Ray& ray, const Vector3f& n, float* pdfPos,
 	Interaction it(ray.o, n, Vector3f(n));
 	*pdfPos = shape->Pdf(it);
 	*pdfDir = bTwoSide ? (.5 * CosineHemispherePdf(AbsDot(n, ray.d))) : CosineHemispherePdf(Dot(n, ray.d));
+}
+
+InfiniteAreaLight::InfiniteAreaLight(const Transform& LightToWorld, const LinearColor& L, int nSamples, const std::string& texturefile) 
+	: Light((int)LightFlags::Infinite, LightToWorld)
+{
+	Vector2i resolution;
+	std::unique_ptr<LMSColor[]> texels(nullptr);
+	if (texturefile != "")
+	{
+		texels = ReadImage(texturefile, &resolution);
+	}
+
+	Lmap.reset(new MipMap<LMSColor>(resolution, texels.get()));
+
+	int width = 2 * Lmap->Width(), height = Lmap->Height();
+	std::unique_ptr<float[]> img(new float[width * height]);
+	float fwidth = 0.5f / std::min(width, height);
+	ParallelFor([&](int64_t v) 
+		{
+			float vp = (v + 0.5f) / (float)height;
+			float sinTheta = std::sin(PI * (v + 0.5f) / height);
+			for (int u = 0; u < width; ++u)
+			{
+				float up = (u + .5f) / (float)width;
+				img[u + v * width] = Lmap->LookUp(Vector2f(up,vp), fwidth).y();
+				img[u + v * width] *= sinTheta;
+			}
+		}, height, 32);
+
+	distribution.reset(new Distribution2D(img.get(), width, height));
+}
+
+LinearColor InfiniteAreaLight::Sample_Li(const Interaction& ref, const Vector2f& u, Vector3f* wi, float* pdf, VisibilityTester* vis) const
+{
+	float mapPdf;
+	Vector2f uv = distribution->SampleContinuous(u, &mapPdf);
+	if (mapPdf == 0) return 0;
+	
+	float theta = uv[1] * PI, phi = uv[0] * 2 * PI;
+	float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
+	float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+	*wi = LightToWorld.Vector(Vector3f(sinTheta*cosPhi,sinTheta*sinPhi,cosTheta));
+	*pdf = mapPdf / (2 * PI * PI * sinTheta);
+	if (sinTheta == 0) *pdf = 0;
+
+	*vis = VisibilityTester(ref, Interaction(ref.p + *wi * (2 * worldRadius)));
+
+	return Lmap->LookUp(uv);
+}
+
+LinearColor InfiniteAreaLight::Power() const
+{
+	return PI * worldRadius * worldRadius * LinearColor(Lmap->LookUp(Vector2f(0.5f, 0.5f), 0.5f));
+}
+
+LinearColor InfiniteAreaLight::Le(const Ray& r) const
+{
+	Vector3f w = Normalize(WorldToLight.Vector(r.d));
+	Vector2f st(SphericalPhi(w) * INV_2PI, SphericalTheta(w) * INV_PI);
+	return LinearColor(Lmap->LookUp(st));
+}
+
+float InfiniteAreaLight::Pdf_Li(const Interaction& ref, const Vector3f& wiW) const
+{
+	Vector3f wi = WorldToLight.Vector(wiW);
+	float theta = SphericalTheta(wi), phi = SphericalPhi(wi);
+	float sinTheta = std::sin(theta);
+	if (sinTheta == 0) return 0;
+	return distribution->Pdf(Vector2f(phi * INV_2PI, theta * INV_PI) / (2 * PI * PI * sinTheta));
+}
+
+LinearColor InfiniteAreaLight::Sample_Le(const Vector2f& u1, const Vector2f& u2, Ray* ray, Vector3f* nLight, float* pdfPos, float* pdfDir) const
+{
+	Vector2f u = u1;
+	float mapPdf;
+	Vector2f uv = distribution->SampleContinuous(u, &mapPdf);
+	if (mapPdf == 0) return 0;
+	float theta = uv[1] * PI, phi = uv[0] * 2 * PI;
+	float cosTheta = std::cos(theta), sinTheta = std::sin(theta);
+	float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+	Vector3f d = -LightToWorld.Vector(Vector3f(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta));
+	*nLight = d;
+
+	Vector3f v1, v2;
+	CoordinateSystem(-d, &v1, &v2);
+	Vector2f cd = ConcentricSampleDisk(u2);
+	Vector3f pDisk = worldCenter + worldRadius * (cd.X * v1 + cd.Y * v2);
+	*ray = Ray(pDisk + worldRadius * -d, d);
+
+	*pdfDir = sinTheta == 0 ? 0 : mapPdf / (2 * PI * PI * sinTheta);
+	*pdfPos = 1 / (PI * worldRadius * worldRadius);
+
+	return Lmap->LookUp(uv);
+}
+
+void InfiniteAreaLight::Pdf_Le(const Ray& ray, const Vector3f& nLight, float* pdfPos, float* pdfDir) const
+{
+	Vector3f d = -WorldToLight.Vector(ray.d);
+	float theta = SphericalTheta(d), phi = SphericalPhi(d);
+	Vector2f uv(phi * INV_2PI, theta * INV_PI);
+	float mapPdf = distribution->Pdf(uv);
+	*pdfDir = mapPdf / (2 * PI * PI * std::sin(theta));
+	*pdfPos = 1 / (PI * worldRadius * worldRadius);
 }
