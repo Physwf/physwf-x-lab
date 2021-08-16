@@ -29,8 +29,9 @@ std::shared_ptr<Scene> BuildTestScene()
 	md.UVs = { {0,0}, {1.f,0}, {1.f,1.0f},  {0.f,1.0f} };
 	md.indices = {0,1,2,2,3,0};
 
-	LinearColor eta(0.8f, 0.6f, 0.3f);
-	LinearColor k(0.4f, 0.6f, 0.3f);
+	//LinearColor eta(0.8f, 0.6f, 0.3f);
+	LinearColor eta(0.0f, 0.0f, 0.0f);
+	LinearColor k(1.0f, 1.0f, 1.0f);
 	std::shared_ptr<Material> metalMat = std::make_shared<MetalMaterial>(eta, k, 0.1f);
 
 	Transform leftWallR = Transform::Rotate(0, -PI_2, 0);
@@ -59,18 +60,18 @@ std::shared_ptr<Scene> BuildTestScene()
 	Transform bottomWallT = Transform::Translate(0, -fSize, zOffset);
 	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallR * bottomWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
-	Transform ballT = Transform::Translate(0, -0.75f, 0);
+	Transform ballT = Transform::Translate(0, -0.6f, 0);
 	//std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
 
-	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.25f);
+	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.4f);
 	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, metalMat, sphere);
 
 	objects.push_back(ball);
-	objects.push_back(backWall);
-	objects.push_back(leftWall);
-	objects.push_back(rightWall);
-	objects.push_back(topWall);
-	objects.push_back(bottomWall);
+	//objects.push_back(backWall);
+	//objects.push_back(leftWall);
+	//objects.push_back(rightWall);
+	//objects.push_back(topWall);
+	//objects.push_back(bottomWall);
 
 	Transform lightR = Transform::Rotate(PI_2, 0, 0);
 	Transform lightT = Transform::Translate(0, 0.99f * fSize, zOffset);
@@ -79,48 +80,14 @@ std::shared_ptr<Scene> BuildTestScene()
 	std::shared_ptr<Shape> d = std::make_shared<Disk>(0.2f);
 	std::shared_ptr<Light> dl = std::make_shared<DisffuseAreaLight>(lightR * lightT, White,d, 1024, false);
 	//lights.push_back(pl);
-	lights.push_back(dl);
+	//lights.push_back(dl);
+
+	Transform Identity = Transform::Identity();
+	std::shared_ptr<Light> il = std::make_shared<InfiniteAreaLight>(Identity,1.f,1024,"immenstadter_horn_1k.hdr");
+	lights.push_back(il);
 
 	std::shared_ptr<Scene> scene = std::make_shared<Scene>(objects, lights);
 	return scene;
-}
-
-void WriteImageBMP(const char* fileName, int width, int height, BYTE* rgbbuf)
-{
-	BITMAPFILEHEADER bfh;
-	BITMAPINFOHEADER bih;
-	bfh.bfType = 0x4d42;
-	bfh.bfReserved1 = 0;
-	bfh.bfReserved2 = 0;
-	bfh.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + width * height * 3;
-	bfh.bfOffBits = 0x36;
-
-	bih.biSize = sizeof(BITMAPINFOHEADER);
-	bih.biWidth = width;
-	bih.biHeight = height;
-	bih.biPlanes = 1;
-	bih.biBitCount = 24;
-	bih.biCompression = 0;
-	bih.biSizeImage = 0;
-	bih.biXPelsPerMeter = 0;
-	bih.biYPelsPerMeter = 0;
-	bih.biClrUsed = 0;
-	bih.biClrImportant = 0;
-
-	FILE* stream;
-	errno_t err = fopen_s(&stream, fileName, "w+b");
-	if (err == 0)
-	{
-		fwrite(&bfh, sizeof(bfh), 1, stream);
-		fwrite(&bih, sizeof(bih), 1, stream);
-		fwrite(rgbbuf, width * height * 3, 1, stream);
-		fclose(stream);
-	}
-}
-
-void WriteImageHDR(const char* fileName, int width, int height, float* buffer)
-{
-
 }
 
 Film* film;
@@ -139,8 +106,6 @@ void OnPathTracingProgress(Vector2i tile)
 
 	void Display(BYTE* Data, size_t size, int width, int height);
 	Display(buf.get(), film->fullResolution.X * film->fullResolution.Y * 3, film->fullResolution.X, film->fullResolution.Y);
-
-	//WriteImageBMP("conabox.bmp", film->fullResolution.X, film->fullResolution.Y, buf.get());
 }
 
 void Test_PathTracing()
@@ -148,7 +113,7 @@ void Test_PathTracing()
 	Transform cameraD = Transform::LookAt({ 0,0,zOffset -2.f * fSize }, { 0,0,1 }, { 0,1,0 });
 	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(1.0f, 1.0f),0.1f));
 	camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.f,1000.f);
-	sampler = Sampler::CreateStratified(8, 8, 1);
+	sampler = Sampler::CreateStratified(16, 16, 1);
 	buf = std::unique_ptr<BYTE[]>(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
 
 	float rrThreshold = 0.001f;

@@ -121,7 +121,7 @@ class InfiniteAreaLight : public Light
 public:
 	InfiniteAreaLight(const Transform& LightToWorld, const LinearColor& L, int nSamples, const std::string& texturefile);
 
-	void Preprocess(const Scene& scene)
+	virtual void Preprocess(const Scene& scene) override
 	{
 		scene.WorldBound().BoundShpere(worldCenter,worldRadius);
 	}
