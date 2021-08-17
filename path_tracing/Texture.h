@@ -133,8 +133,8 @@ const T& MipMap<T>::Texel(int level, int s, int t) const
 	switch (wrapMode)
 	{
 	case ImageWrap::Repeat:
-		s = s % l.uSize();
-		t = t % l.vSize();
+		s = Math::Mod(s, l.uSize());
+		t = Math::Mod(t, l.vSize());
 		break;
 	case ImageWrap::Clamp:
 		s = Math::Clamp(s, 0, l.uSize() - 1);
@@ -224,23 +224,23 @@ MipMap<T>::MipMap(const Vector2i& res, const T* data, bool doTri /*= false*/, fl
 	int nLevels = 1 + Math::Log2Int(std::max(resolution[0], resolution[1]));
 	pyramid.resize(nLevels);
 
-	pyramid[0].reset(new BlockArray2D<T>(resolution[0], resolution[1],resampledImage ? resampledImage.get(): data));
+	pyramid[0].reset(new BlockArray2D<T>(resolution[0], resolution[1], resampledImage ? resampledImage.get() : data));
 
-	for (int i = 1; i < nLevels; ++i)
+	for (int i = 1; i < nLevels; ++i )
 	{
 		int sRes = std::max(1, pyramid[i - 1]->uSize() / 2);
 		int tRes = std::max(1, pyramid[i - 1]->vSize() / 2);
 		pyramid[i].reset(new BlockArray2D<T>(sRes, tRes));
-
+			
 		ParallelFor([&](size_t t)
 			{
 				for (int s = 0; s < sRes; ++s)
 				{
-					(*pyramid[i])(s, (int)t) = 
-						0.25f * (Texel(i - 1, 2 * s, 2 * t) +
-								Texel(i - 1, 2 * s + 1, 2 * t) +
-								Texel(i - 1, 2 * s, 2 * t + 1) +
-								Texel(i - 1, 2 * s + 1, 2 * t + 1));
+					(*pyramid[i])(s, (int)t) =
+						0.25f * (Texel(i - 1, 2 * s,		2 * t) +
+								Texel(i - 1,  2 * s + 1,	2 * t) +
+								Texel(i - 1,  2 * s,		2 * t + 1) +
+								Texel(i - 1,  2 * s + 1,	2 * t + 1));
 				}
 			}, tRes, 16);
 	}

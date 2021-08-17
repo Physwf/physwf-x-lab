@@ -35,14 +35,15 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 			{
 				L += beta * isect.Le(-ray.d);
 			}
-		}
-		else
-		{
-			for (const auto& light : scene.infiniteLights)
+			else
 			{
-				L += beta * light->Le(ray);
+				for (const auto& light : scene.infiniteLights)
+				{
+					L += beta * light->Le(ray);
+				}
 			}
 		}
+		
 
 		if(!foundIntersection || bounces >= maxDepth) break;
 

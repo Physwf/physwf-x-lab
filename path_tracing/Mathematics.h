@@ -207,4 +207,11 @@ public:
 		const float invLog2 = 1.442695040888963387004650940071;
 		return std::log(x) * invLog2;
 	}
+
+	template <typename T>
+	static T Mod(T a, T b) 
+	{
+		T result = a - (a / b) * b;
+		return (T)((result < 0) ? result + b : result);
+	}
 };

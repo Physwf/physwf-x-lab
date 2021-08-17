@@ -158,7 +158,7 @@ InfiniteAreaLight::InfiniteAreaLight(const Transform& LightToWorld, const Linear
 
 	Lmap.reset(new MipMap<LMSColor>(resolution, texels.get()));
 
-	int width = 2 * Lmap->Width(), height = Lmap->Height();
+	int width = 2 * Lmap->Width(), height = 2 *  Lmap->Height();
 	std::unique_ptr<float[]> img(new float[width * height]);
 	float fwidth = 0.5f / std::min(width, height);
 	ParallelFor([&](int64_t v) 
