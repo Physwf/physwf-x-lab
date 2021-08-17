@@ -8,6 +8,7 @@ public:
 	{
 		InitializeCriticalSection(&CS);
 		InitializeConditionVariable(&CV);
+		FinishEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		for (size_t i = 0; i < MaxThread; ++i)
 		{
 			CreateThread(NULL, 0, ThreadRun, this, 0, NULL);
@@ -27,13 +28,17 @@ public:
 		EnterCriticalSection(&CS);
 		Tasks = new Task(std::move(Func), Tasks);
 		LeaveCriticalSection(&CS);
+		ResetEvent(FinishEvent);
 		WakeConditionVariable(&CV);
+		WaitForSingleObject(FinishEvent, INFINITE);
 	}
 private:
 	static DWORD WINAPI ThreadRun(LPVOID Param)
 	{
+		static int index = 0;
 		JFixedThreadPoolImpl* This = (JFixedThreadPoolImpl*)Param;
 		EnterCriticalSection(&This->CS);
+		ThreadIndex = index++;
 		while (true)
 		{
 			if (This->Tasks != NULL)
@@ -51,6 +56,7 @@ private:
 			}
 			else
 			{
+				SetEvent(This->FinishEvent);
 				SleepConditionVariableCS(&This->CV, &This->CS, INFINITE);
 			}
 		}
@@ -61,14 +67,15 @@ private:
 	struct Task
 	{
 		Task(std::function<void()>&& InFunc, Task* InNext) : Func(InFunc), Next(InNext)
-		{}
-
+		{
+		}
 		std::function<void()> Func;
 		Task* Next;
 	};
 
 	CRITICAL_SECTION CS;
 	CONDITION_VARIABLE CV;
+	HANDLE FinishEvent;
 	BOOL bExit;
 	Task* Tasks;
 };
@@ -111,6 +118,7 @@ int MaxThreadIndex()
 {
 	SYSTEM_INFO SysInfo;
 	GetSystemInfo(&SysInfo);
+	return 1;
 	return SysInfo.dwNumberOfProcessors;
 }
 
