@@ -51,9 +51,11 @@ void ParallelFor(std::function<void(size_t)> Func, size_t Count,size_t chunkSize
 		Task1D.NextIndex = i;
 		if (GFixThreadPool != NULL)
 		{
-			GFixThreadPool->Execute(Task1D);
+			GFixThreadPool->AppendTask(Task1D);
 		}
 	}
+	GFixThreadPool->StartWork();
+	GFixThreadPool->WaitForFinish();
 }
 
 void ParallelFor2D(std::function<void(Vector2i)> Func, Vector2i Count)
@@ -65,9 +67,11 @@ void ParallelFor2D(std::function<void(Vector2i)> Func, Vector2i Count)
 			ParalleForTask2D Task2D(Func,Vector2i(x,y));
 			if (GFixThreadPool != NULL)
 			{
-				GFixThreadPool->Execute(Task2D);
+				GFixThreadPool->AppendTask(Task2D);
 			}
 		}
 	}
+	GFixThreadPool->StartWork();
+	GFixThreadPool->WaitForFinish();
 }
 

@@ -9,7 +9,9 @@ public:
 	explicit JFixedThreadPool(size_t MaxThread);
 	~JFixedThreadPool();
 
-	void Execute(std::function<void()>&& Task);
+	void AppendTask(std::function<void()>&& Task);
+	void StartWork();
+	void WaitForFinish();
 private:
 	JFixedThreadPoolImpl* Impl;
 };

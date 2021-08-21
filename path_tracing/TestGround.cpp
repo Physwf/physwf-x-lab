@@ -6,6 +6,8 @@
 #include "Light.h"
 #include "Geometry.h"
 
+#include <thread>
+
 struct MeshData
 {
 	std::vector<Vector3f> Ps;
@@ -60,10 +62,10 @@ std::shared_ptr<Scene> BuildTestScene()
 	Transform bottomWallT = Transform::Translate(0, -fSize, zOffset);
 	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallR * bottomWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
-	Transform ballT = Transform::Translate(0, -0.6f, 0);
+	Transform ballT = Transform::Translate(0, -0.0f, 0);
 	//std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
 
-	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.4f);
+	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.8f);
 	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, metalMat, sphere);
 
 	objects.push_back(ball);
@@ -83,7 +85,7 @@ std::shared_ptr<Scene> BuildTestScene()
 	//lights.push_back(dl);
 
 	Transform Identity = Transform::Identity();
-	std::shared_ptr<Light> il = std::make_shared<InfiniteAreaLight>(Identity,1.f,1024,"immenstadter_horn_1k.hdr");
+	std::shared_ptr<Light> il = std::make_shared<InfiniteAreaLight>(Identity,1.f,1024,"piazza_martin_lutero_1k.hdr");
 	lights.push_back(il);
 
 	std::shared_ptr<Scene> scene = std::make_shared<Scene>(objects, lights);
@@ -126,5 +128,5 @@ void Test_PathTracing()
 void StartGround()
 {
 	InitFixedThreadPool();
-	Test_PathTracing();
+	(new std::thread(Test_PathTracing))->detach();
 }
