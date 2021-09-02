@@ -3,6 +3,7 @@
 #include "SurfaceScattering.h"
 #include "Light.h"
 
+
 LinearColor UniformSampleAllLights(const Interaction& it, const Scene& scene, MemoryArena& arena, Sampler& sampler, const std::vector<int>& nLightSamples)
 {
 	return LinearColor(0);
@@ -64,7 +65,7 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 			{
 				if (!vt.Unoccluded(scene))
 				{
-					Li = LinearColor(0.f);
+					//Li = LinearColor(0.f);
 				}
 				else
 				{
@@ -82,10 +83,60 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 				{
 					float weight = PowerHeuristic(1, LightPdf, 1, scatteringPdf);
 					Ld += f * Li * weight / LightPdf;
-
 				}
 			}
 		}
+	}
+
+	//sample BSDF
+	if (!IsDeltaLight(light.flags))
+	{
+		LinearColor f;
+		bool sampledSpecular = false;
+		if (it.IsSurfaceInteraction())
+		{
+			BxDFType sampledType;
+			const SurfaceInteraction& isect = (const SurfaceInteraction&)it;
+			f = isect.bsdf->Sample_f(isect.wo, &wi, uShading, &scatteringPdf, bsdfFlags, &sampledType);
+			f *= AbsDot(wi, isect.shading.n);
+			sampledSpecular = (sampledType & BSDF_SPECULAR) != 0;
+		}
+		else
+		{
+			//medium
+		}
+
+		if (!f.IsBlack() && scatteringPdf > 0)
+		{
+			float weight = 1;
+			if (!sampledSpecular)
+			{
+				LightPdf = light.Pdf_Li(it, wi);
+				if (LightPdf == 0) return Ld;
+				weight = PowerHeuristic(1, scatteringPdf, 1, LightPdf);
+			}
+
+			SurfaceInteraction lightIsect;
+			Ray ray = it.SpawnRay(wi);
+
+			bool foundSurfaceInteraction = /* handleMedia*/ /*? :*/ scene.Intersect(ray, &lightIsect);
+
+			LinearColor Li;
+			if (foundSurfaceInteraction)
+			{
+				if (lightIsect.object->GetAreaLight() == &light)
+				{
+					Li = lightIsect.Le(-wi);
+				}
+			}
+			else
+			{
+				Li = light.Le(ray);
+			}
+
+			if (!Li.IsBlack()) Ld += f * Li * weight / scatteringPdf;
+		}
+		
 	}
 	assert(!std::isnan(Ld[0]));
 	return Ld;
