@@ -27,7 +27,8 @@ bool Sphere::Intersect(const Ray& ray, float* tHit, SurfaceInteraction* isect) c
 	float t0, t1;
 	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
 
-	if (t0 < 0.000001f) t0 = 0;
+	if (std::abs(t0) < 0.000001f) t0 = 0;
+	if (std::abs(t1) < 0.000001f) t1 = 0;
 
 	if (t0 >= LocalRay.tMax || t1 <= 0) return false;//ray range out of sphere
 	float tShapeHit = t0;
@@ -68,7 +69,8 @@ bool Sphere::IntersectP(const Ray& ray) const
 	float t0, t1;
 	if (!Math::Quadratic(a, b, c, &t0, &t1)) return false;//no intersection
 
-	if (t0 < 0.000001f) t0 = 0;
+	if (std::abs(t0) < 0.000001f) t0 = 0;
+	if (std::abs(t1) < 0.000001f) t1 = 0;
 
 	if (t0 >= LocalRay.tMax || t1 <= 0) return false;//ray range out of sphere
 	float tShapeHit = t0;
