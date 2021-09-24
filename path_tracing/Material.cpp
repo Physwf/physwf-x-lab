@@ -15,7 +15,7 @@ void MirrorMaterial::ComputeScatteringFunctions(SurfaceInteraction* si, MemoryAr
 void MetalMaterial::ComputeScatteringFunctions(SurfaceInteraction* si, MemoryArena& arena)
 {
 	si->bsdf = ARENA_ALLOC(arena, BSDF)(*si);
-	MicrofacetDistribution* distribution = ARENA_ALLOC(arena, TrowbridgeReitzDistribution)(alpha);
+	MicrofacetDistribution* distribution = ARENA_ALLOC(arena, BeckmannDistribution2)(alpha);
 	Fresnel* fresnel = ARENA_ALLOC(arena, FresnelConductor)(1.0f, eta, k);
 	si->bsdf->Add(ARENA_ALLOC(arena, MicrofacetReflection)(1.0f, distribution, fresnel));
 }

@@ -191,7 +191,7 @@ T LengthSquared()	const									\
 }															\
 T Length()	const											\
 {															\
-	return std::sqrt(LengthSquared());						\
+	return std::sqrtf(LengthSquared());						\
 }															\
 bool operator==(const Type& rhs) const						\
 {															\
