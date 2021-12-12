@@ -1,31 +1,15 @@
 #pragma once
 
 #include <vector>
+#include "Algebra.h"
+#include "Geometry.h"
 
-template<typename T>
-T Factorial(T n)
-{
-	T ret = 1;
-	while (n > 1)
-	{
-		ret *= n;
-		n--;
-	}
-	return ret;
-}
-
-template<typename T>
-T Combination(T n, T k)
-{
-	return Factorial(n) / (Factorial(n - k) * Factorial(k));
-}
-
-template<typename T, int N>
+template<int N>
 class Bezier
 {
 public:
 	Bezier() {}
-	Bezier(const std::vector<T>& CPs) 
+	Bezier(const std::vector<QPoint2D>& CPs)
 	{
 		int Count = (int)CPs.size();
 		if (Count > N) Count = N;
@@ -33,15 +17,15 @@ public:
 			ControlPoints[i] = CPs[i];
 	}
 
-	void UpdateControlPoints(const std::vector<T>& CPs);
-	T Interpolate(double t);
+	void UpdateControlPoints(const std::vector<QPoint2D>& CPs);
+	QPoint2D Interpolate(double t);
 
 private:
-	T ControlPoints[N];
+	QPoint2D ControlPoints[N];
 };
 
-template<typename T, int N>
-void Bezier<T, N>::UpdateControlPoints(const std::vector<T>& CPs)
+template<int N>
+void Bezier<N>::UpdateControlPoints(const std::vector <QPoint2D>& CPs)
 {
 	int Count = (int)CPs.size();
 	if (Count > N) Count = N;
@@ -49,8 +33,8 @@ void Bezier<T, N>::UpdateControlPoints(const std::vector<T>& CPs)
 		ControlPoints[i] = CPs[i];
 }
 
-template<typename T, int N>
-T Bezier<T, N>::Interpolate(double t)
+template<int N>
+QPoint2D Bezier<N>::Interpolate(double t)
 {
 	T ret;
 	for (int i = 0; i < N; ++i)

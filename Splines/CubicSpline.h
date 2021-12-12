@@ -1,11 +1,15 @@
 #pragma once
 
-template<typename T,int n>
+#include "Algebra.h"
+#include "Geometry.h"
+
+template<int N>
 class CubicSpline
 {
 public:
 	CubicSpline() {}
 
 private:
-	T ControlPoints[n];
+	QPoint2D ControlPoints[N];
+	float Solution[N][4];
 };

@@ -7,6 +7,8 @@ ${DIR_PROJECT}/Bezier.cpp
 ${DIR_PROJECT}/Bezier.h
 ${DIR_PROJECT}/CubicSpline.cpp
 ${DIR_PROJECT}/CubicSpline.h
+${DIR_PROJECT}/Geometry.h
+${DIR_PROJECT}/Algebra.h
 )
 
 add_definitions(-DUNICODE -D_UNICODE)
