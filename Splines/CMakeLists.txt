@@ -2,14 +2,15 @@
 
 set(DIR_PROJECT ".")
 
-add_executable(Splines 
-${DIR_PROJECT}/Bezier.cpp
-${DIR_PROJECT}/Bezier.h
-${DIR_PROJECT}/CubicSpline.cpp
-${DIR_PROJECT}/CubicSpline.h
-${DIR_PROJECT}/Geometry.h
-${DIR_PROJECT}/Algebra.h
+file(GLOB_RECURSE DIR_SRC
+    "./*.cpp"
+    "./*.c"
+    "./*.h"
+    "./*.inl"
+    "./*.inc"
 )
+
+add_executable(Splines ${DIR_SRC})
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
