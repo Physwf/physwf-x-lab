@@ -141,12 +141,12 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="StopWatch.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WindowsGDI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CaptureAnImage.cpp" />
+    <ClCompile Include="CombineImages.cpp" />
     <ClCompile Include="DragImage.cpp" />
     <ClCompile Include="LoadBMP.cpp" />
     <ClCompile Include="WindowsGDI.cpp" />

@@ -27,9 +27,6 @@
     <ClInclude Include="WindowsGDI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StopWatch.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WindowsGDI.cpp">
@@ -42,6 +39,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DragImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CombineImages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
