@@ -251,7 +251,7 @@ void InfBitmap::Scale(double dbScale, double dbOffsetX, double dbOffsetY, UINT64
 		}
 		//printf("\n");
 	}
-	BMP_WritePixels_Gray("D:/scaletest.bmp", ScreenW, ScreenH, Data.get(), ScreenW * ScreenH);
+	//BMP_WritePixels_Gray("D:/scaletest.bmp", ScreenW, ScreenH, Data.get(), ScreenW * ScreenH);
 }
 
 void InfBitmap::GenerateMipMap()

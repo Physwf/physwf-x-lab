@@ -283,10 +283,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 	{
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		double DeltaScale = 0.01 * (double)zDelta / WHEEL_DELTA;
-		g_dbScale += DeltaScale;
-		if (g_dbScale < 0.01) g_dbScale = 0.01;
-		if (g_dbScale > 10.0) g_dbScale = 10.0;
+		double DeltaScale = 1.0;
+		if (zDelta < 0)
+		{
+			DeltaScale = 0.95 /** (double)abs(zDelta) / WHEEL_DELTA*/;
+		}
+		else
+		{
+			DeltaScale = 1.05/* * (double)abs(zDelta) / WHEEL_DELTA*/;
+		}
+		g_dbScale *= DeltaScale;
+		//if (g_dbScale < 0.005) g_dbScale = 0.005;
+		//if (g_dbScale > 10.0) g_dbScale = 10.0;
 		printf("zDelta:%d DeltaScale:%f g_dbScale:%f \n", zDelta, DeltaScale, g_dbScale);
 		RECT rect;
 		GetWindowRect(hWnd, &rect);
