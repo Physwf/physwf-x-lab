@@ -13,6 +13,7 @@ add_subdirectory(x8)
 add_subdirectory(HDRIViewer)
 add_subdirectory(x9)
 add_subdirectory(Splines)
+add_subdirectory(InfImage)
 
 add_definitions(-DUNICODE -D_UNICODE)
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
