@@ -184,70 +184,80 @@ void InfBitmap::Reconstruct(UINT64 Width, UINT64 Height, std::unique_ptr<BYTE[]>
 	}
 }
 
-void InfBitmap::Scale(double dbScale, double dbOffsetX, double dbOffsetY, UINT64 ScreenW, UINT64 ScreenH, UINT64& OutW, UINT64& OutH, std::unique_ptr<BYTE[]>& Data)
+void InfBitmap::Render(double dbScale, int X, int Y, UINT32 ScreenW, UINT32 ScreenH, std::unique_ptr<BYTE[]>& OutData)
 {
 	if (dbScale > 1.0)
 	{
 		dbScale = 1.0;
 	}
 	UINT32 Level = 0;
-	for (;Level < m_vecMips.size()-1; ++Level)
+	for (; Level < m_vecMips.size() - 1; ++Level)
 	{
 		double MipScale = 1.0 / (1 << Level);
-		if(dbScale >= MipScale) break;
+		if (dbScale >= MipScale) break;
 	}
 	if (Level == m_vecMips.size() - 1)
 	{
 		dbScale = 1.0 / (1 << Level);//Min Scale
 	}
-	Data.reset(new BYTE[ScreenW * ScreenH]);
-	OutW = dbScale * m_vecMips[0]->Width();
-	OutH = dbScale * m_vecMips[0]->Height();
+	OutData.reset(new BYTE[ScreenW * ScreenH]);
+	UINT64 W = dbScale * m_vecMips[0]->Width();
+	UINT64 H = dbScale * m_vecMips[0]->Height();
 
-	UINT64 OffsetX = dbOffsetX * OutW;
-	UINT64 OffsetY = dbOffsetY * OutH;
+	int SrcStartX = -X;
+	int SrcStartY = -Y;
+	int SrcEndX = SrcStartX + ScreenW;
+	int SrcEndY = SrcStartY + ScreenH;
+	if (SrcStartX < 0) SrcStartX = 0;
+	if (SrcStartY < 0) SrcStartY = 0;
+	if (SrcStartX > W) SrcStartX = W;
+	if (SrcStartY > H) SrcStartY = H;
+	if (SrcEndX > W) SrcEndX = W;
+	if (SrcEndY > H) SrcEndY = H;
+
+	int DstStartX = X;
+	int DstStartY = Y;
+	if (DstStartX < 0) DstStartX = 0;
+	if (DstStartY < 0) DstStartY = 0;
+	if (DstStartX > ScreenW) DstStartX = ScreenW;
+	if (DstStartY > ScreenH) DstStartY = ScreenH;
+	int DstEndX = ScreenW;
+	int DstEndY = ScreenH;
+
+	printf("SrcStartX:%d SrcStartY:%d, SrcEndX:%d, SrcEndY:%d\n", SrcStartX, SrcStartY, SrcEndX, SrcEndY);
+	printf("DstStartX:%d DstStartY:%d, DstEndX:%d, DstEndY:%d\n", DstStartX, DstStartY, DstEndX, DstEndY);
+	printf("----------------\n");
+
 	if (dbScale == 1.0 / (1 << Level))
 	{
 		InfMipMap* MipMap = m_vecMips[Level];
-		OffsetX = dbOffsetX * MipMap->Width();
-		OffsetY = dbOffsetY * MipMap->Height();
-		OutW = MipMap->Width();
-		OutH = MipMap->Height();
-		UINT64 CopyLen = ScreenW;
-		if (OffsetX + ScreenW > MipMap->Width())
+		int CopyLen = SrcEndX - SrcStartX;
+		for (int y = 0; y < DstEndY - DstStartY; ++y)
 		{
-			CopyLen = MipMap->Width() - OffsetX;
-		}
-		for (UINT64 y = 0; y < ScreenH; ++y)
-		{
-			if (y >= OutH) break;
-			memcpy(Data.get() + (ScreenH - y - 1) * ScreenW, MipMap->Data() + OffsetX + (/*MipMap->Height() - (OffsetY + ScreenH) +*/ y) * MipMap->Width(), CopyLen);
+			memcpy(OutData.get() + (ScreenH - y - DstStartY - 1) * ScreenW + DstStartX, MipMap->Data() + SrcStartX + (y + SrcStartY) * MipMap->Width(), CopyLen);
 			//memset(Data.get() + y * ScreenW, 0xff, 100);
 		}
 		return;
 	}
 	double DownScale = 1.0 / (1 << Level);
 	double UpScale = 1.0 / (1 << (Level - 1));
-	
+
 	InfMipMap* DownMipMap = m_vecMips[Level];
-	InfMipMap* UpMipMap = m_vecMips[Level-1];
-	for (UINT64 y = 0; y < ScreenH; ++y)
+	InfMipMap* UpMipMap = m_vecMips[Level - 1];
+	for (int y = DstStartY; y < DstEndY; ++y)
 	{
-		UINT64 Y = OffsetY + y;
-		UINT64 DownY = DownMipMap->Height() * double(Y) / double(OutH);
-		UINT64 UpY = UpMipMap->Height() * double(Y) / double(OutH);
-		for (UINT64 x = 0; x < ScreenW; ++x)
+		int DownY = DownMipMap->Height() * double(y - Y) / double(H);
+		int UpY = UpMipMap->Height() * double(y - Y) / double(H);
+		for (int x = 0; x < ScreenW; ++x)
 		{
-			UINT64 X = OffsetX + x;
-			UINT64 DownX = DownMipMap->Width() * double(X) / double(OutW);
-			UINT64 UpX = UpMipMap->Width() * double(X) / double(OutW);
-			if(DownX >= DownMipMap->Width() || DownY >= DownMipMap->Height() ) continue;
+			int DownX = DownMipMap->Width() * double(x-X) / double(W);
+			int UpX = UpMipMap->Width() * double(x - X) / double(W);
+			if (DownX >= DownMipMap->Width() || DownY >= DownMipMap->Height()) continue;
 			BYTE DownPixel = DownMipMap->Pixel(DownX, DownY);
 			BYTE UpPixel = UpMipMap->Pixel(UpX, UpY);
 			double t = (dbScale - DownScale) / (UpScale - DownScale);
-			Data[x + (ScreenH - y - 1) * ScreenW] = (1.0 - t) * DownPixel + t * UpPixel;
+			OutData[x + (ScreenH - y - 1) * ScreenW] = (1.0 - t) * DownPixel + t * UpPixel;
 			//printf("x:%d,y:%d, pixel:%d", (int)x, (int)y, Data[x + (ScreenH - y - 1) * ScreenW]);
-			//Data[x + y * ScreenW] = (1.0 - t) * DownPixel + t * UpPixel;
 		}
 		//printf("\n");
 	}

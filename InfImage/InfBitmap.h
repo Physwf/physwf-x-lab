@@ -22,7 +22,7 @@ public:
 	UINT64 Height() const;
 
 	void Reconstruct(UINT64 Width, UINT64 Height, std::unique_ptr<BYTE[]> Data);
-	void Scale(double dbScale, double dbOffsetX, double dbOffsetY, UINT64 ScreenW, UINT64 ScreenH, UINT64& OutW, UINT64& OutH, std::unique_ptr<BYTE[]>& OutData);
+	void Render(double dbScale, int X, int Y, UINT32 ScreenW, UINT32 ScreenH, std::unique_ptr<BYTE[]>& OutData);
 private:
 	void GenerateMipMap();
 	UINT64 CeilToPowerOf2(UINT64 Value);

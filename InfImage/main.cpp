@@ -6,6 +6,7 @@
 #include "Resource.h"
 
 #include "InfBitmap.h"
+#include "InfImage.h"
 
 #include <stdio.h>
 
@@ -16,12 +17,16 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 
+int g_MouseX = 0, g_MouseY = 0;
 int g_OffsetX = 0, g_OffsetY = 0;
 int g_DargStartX = 0, g_DragStartY = 0;
 int g_DragOffsetX = 0, g_DragOffsetY = 0;
 bool g_bDraging = false;
 double g_dbScale = 1.0;
+UINT64 g_ImageWidth, g_ImageHeight;
+
 InfBitmap* gBitmap;
+InfImage* gImage;
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -66,6 +71,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	//gBitmap = InfBitmap::CreateFromBmp("D:/jianbian2.bmp");
 	gBitmap = InfBitmap::CreateFromBmp("D:/1-11.bmp");
+	gImage = new InfImage(gBitmap);
+
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_WINDOWSGDI, szWindowClass, MAX_LOADSTRING);
@@ -196,52 +203,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_PAINT:
 	{
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
-		UINT64 Width, Height;
-		std::unique_ptr<BYTE[]> Data;
-		DWORD ScreenW = rect.right - rect.left;
-		DWORD ScreenH = rect.bottom - rect.top;
-		gBitmap->Scale(g_dbScale, 0, 0, ScreenW, ScreenH, Width, Height, Data);
-		BITMAPINFO* info = (BITMAPINFO*)new BYTE[sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256];
-		//memcpy(info, bmInfo, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 256);
-		info->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		info->bmiHeader.biPlanes = 1;
-		info->bmiHeader.biBitCount = 8;
-		info->bmiHeader.biCompression = 0;
-		info->bmiHeader.biXPelsPerMeter = 0;
-		info->bmiHeader.biYPelsPerMeter = 0;
-		info->bmiHeader.biClrUsed = 256;
-		info->bmiHeader.biClrImportant = 0;
-		info->bmiHeader.biWidth = ScreenW;
-		info->bmiHeader.biHeight = ScreenH;
-		info->bmiHeader.biSizeImage = ScreenW * ScreenH;
-		RGBQUAD* prgbquad = info->bmiColors;
-		for (int i = 0; i < 256; i++)
-		{
-			prgbquad[i].rgbBlue = i;
-			prgbquad[i].rgbGreen = i;
-			prgbquad[i].rgbRed = i;
-			prgbquad[i].rgbReserved = 0;
-		}
-		SetDIBitsToDevice(hdc,
-			0, 0, ScreenW, ScreenH,
-			0,//xSrc
-			0,//ySrc
-			0,
-			ScreenH,
-			Data.get(), info, DIB_RGB_COLORS);
-		delete[] info;
-		EndPaint(hWnd, &ps);
+		gImage->Render(hWnd);
+		break;
 	}
 	break;
 	case WM_LBUTTONDOWN:
 	{
-		g_bDraging = true;
+		
 		g_DargStartX = GET_X_LPARAM(lParam);
 		g_DragStartY = GET_Y_LPARAM(lParam);
+		if (gImage->HitTest(g_DargStartX, g_DragStartY))
+			g_bDraging = true;
 	}
 	break;
 	case WM_LBUTTONUP:
@@ -252,9 +224,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_DragOffsetY = 0;
 		g_bDraging = false;
 		//UpdateWindow(hWnd);
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
-		InvalidateRect(hWnd, &rect, FALSE);
+		InvalidateRect(hWnd, NULL, FALSE);
 	}
 	break;
 	case WM_MOUSEMOVE:
@@ -266,38 +236,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		//if(Interval < 20) break;
 		StartCounter = EndCounter;
 		//printf("Interval:%f\n", Interval);
+		g_MouseX = GET_X_LPARAM(lParam);
+		g_MouseY = GET_Y_LPARAM(lParam);
 		if (g_bDraging)
 		{
-			int X = GET_X_LPARAM(lParam);
-			int Y = GET_Y_LPARAM(lParam);
-			g_DragOffsetX = X - g_DargStartX;
-			g_DragOffsetY = Y - g_DragStartY;
+			g_DragOffsetX = g_MouseX - g_DargStartX;
+			g_DragOffsetY = g_MouseY - g_DragStartY;
+			g_DargStartX = g_MouseX;
+			g_DragStartY = g_MouseY;
+			printf("g_DragOffsetX:%d g_DragOffsetX:%d \n", g_DragOffsetX, g_DragOffsetY);
+
 			//UpdateWindow(hWnd);
-			//RedrawWindow(hWnd,Rect(0,0,100,100),)
-			RECT rect;
-			GetWindowRect(hWnd, &rect);
-			InvalidateRect(hWnd, &rect, FALSE);
+			//RedrawWindow(hWnd,Rect(0,0,100,100)
+			gImage->X() += g_DragOffsetX;
+			gImage->Y() += g_DragOffsetY;
+			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
 	}
 	case WM_MOUSEWHEEL:
 	{
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		double DeltaScale = 1.0;
-		if (zDelta < 0)
+		if (gImage->HitTest(g_MouseX, g_MouseY))
 		{
-			DeltaScale = 0.95 /** (double)abs(zDelta) / WHEEL_DELTA*/;
+			double DeltaScale = 1.0;
+			if (zDelta < 0)
+			{
+				DeltaScale = 0.95 /** (double)abs(zDelta) / WHEEL_DELTA*/;
+			}
+			else
+			{
+				DeltaScale = 1.05/* * (double)abs(zDelta) / WHEEL_DELTA*/;
+			}
+			//g_dbScale *= DeltaScale;
+			int offsetX = (g_MouseX - gImage->X()) * (1.0 - DeltaScale);
+			int offsetY = (g_MouseY - gImage->Y()) * (1.0 - DeltaScale);
+			gImage->X() += offsetX;
+			gImage->Y() += offsetY;
+			gImage->Scale() *= DeltaScale;
 		}
-		else
-		{
-			DeltaScale = 1.05/* * (double)abs(zDelta) / WHEEL_DELTA*/;
-		}
-		g_dbScale *= DeltaScale;
+		
 		//if (g_dbScale < 0.005) g_dbScale = 0.005;
 		//if (g_dbScale > 10.0) g_dbScale = 10.0;
-		printf("zDelta:%d DeltaScale:%f g_dbScale:%f \n", zDelta, DeltaScale, g_dbScale);
-		RECT rect;
-		GetWindowRect(hWnd, &rect);
+		//printf("zDelta:%d DeltaScale:%f g_dbScale:%f \n", zDelta, DeltaScale, g_dbScale);
 		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	}
