@@ -70,7 +70,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	printf("%s\n\n", "*** ** *** Console *** ** ***");
 
 	//gBitmap = InfBitmap::CreateFromBmp("D:/jianbian2.bmp");
-	gBitmap = InfBitmap::CreateFromBmp("D:/1-11.bmp");
+	gBitmap = new InfBitmap();// InfBitmap::CreateFromBmp("D:/1.bmp");
 	gImage = new InfImage(gBitmap);
 
     // Initialize global strings
@@ -188,6 +188,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
+		case IDM_OPEN:
+		{
+			OPENFILENAME ofn;       // common dialog box structure
+			TCHAR szFile[260] = { 0 };       // if using TCHAR macros
+
+			// Initialize OPENFILENAME
+			ZeroMemory(&ofn, sizeof(ofn));
+			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = hWnd;
+			ofn.lpstrFile = szFile;
+			ofn.nMaxFile = sizeof(szFile);
+			ofn.lpstrFilter = TEXT("All\0*.*\0Text\0*.TXT\0");
+			ofn.nFilterIndex = 1;
+			ofn.lpstrFileTitle = NULL;
+			ofn.nMaxFileTitle = 0;
+			ofn.lpstrInitialDir = NULL;
+			ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+			if (GetOpenFileName(&ofn) == TRUE)
+			{
+				char filepath[MAX_PATH] = { 0 };
+				sprintf_s(filepath, "%ws", ofn.lpstrFile);
+				gBitmap = InfBitmap::CreateFromBmp(filepath);
+				gImage = new InfImage(gBitmap);
+				InvalidateRect(hWnd, NULL, true);
+			}
+		}
+			
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
