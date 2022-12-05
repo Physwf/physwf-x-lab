@@ -17,6 +17,8 @@ public:
 	~InfBitmap();
 
 	static InfBitmap* CreateFromBmp(const char* filename);
+	static UINT64 CeilToPowerOf2(UINT64 Value);
+	static UINT64 CeilToTimesOf4(UINT64 Value);
 public:
 	UINT64 Width() const;
 	UINT64 Height() const;
@@ -25,8 +27,6 @@ public:
 	void Render(double dbScale, int X, int Y, UINT32 ScreenW, UINT32 ScreenH, std::unique_ptr<BYTE[]>& OutData);
 private:
 	void GenerateMipMap();
-	UINT64 CeilToPowerOf2(UINT64 Value);
-	UINT64 CeilToTimesOf4(UINT64 Value);
 public:
 	static const UINT64 MipMapThreshold;
 private:

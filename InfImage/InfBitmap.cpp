@@ -71,12 +71,12 @@ public:
 
 	BYTE Pixel(UINT64 X, UINT64 Y) const
 	{
-		return m_Data.get()[Y * m_uWidth + X];
+		return m_Data.get()[Y * InfBitmap::CeilToTimesOf4(m_uWidth) + X];
 	}
 
 	BYTE& Pixel(UINT64 X, UINT64 Y)
 	{
-		return m_Data.get()[Y * m_uWidth + X];
+		return m_Data.get()[Y * InfBitmap::CeilToTimesOf4(m_uWidth) + X];
 	}
 private:
 	UINT64 m_uWidth;
@@ -234,7 +234,10 @@ void InfBitmap::Render(double dbScale, int X, int Y, UINT32 ScreenW, UINT32 Scre
 		int CopyLen = SrcEndX - SrcStartX;
 		for (int y = 0; y < DstEndY - DstStartY; ++y)
 		{
-			memcpy(OutData.get() + (ScreenH - y - DstStartY - 1) * ScreenW + DstStartX, MipMap->Data() + SrcStartX + (y + SrcStartY) * MipMap->Width(), CopyLen);
+			UINT64 Dst = (ScreenH - y - DstStartY - 1) * ScreenW + DstStartX;
+			UINT64 Src = SrcStartX + (y + SrcStartY) * CeilToTimesOf4(MipMap->Width());
+			memcpy(OutData.get() + Dst, MipMap->Data() + Src, CopyLen);
+			//memcpy(OutData.get() + ((UINT64)ScreenH - (UINT64)y - (UINT64)DstStartY - 1) * ScreenW + DstStartX, MipMap->Data() + (UINT64)SrcStartX + ((UINT64)y + (UINT64)SrcStartY) * MipMap->Width(), CopyLen);
 			//memset(Data.get() + y * ScreenW, 0xff, 100);
 		}
 		return;
