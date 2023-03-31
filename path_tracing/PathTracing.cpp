@@ -54,7 +54,14 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 		if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0)
 		{
 			LinearColor Ld = beta * UniformSampleOneLight(isect, scene, arena, sampler, distrib);
-			L += Ld;
+			if (std::isnan(Ld[0]) || std::isnan(Ld[1]) || std::isnan(Ld[2]))
+			{
+				L += 0;
+			}
+			else
+			{
+				L += Ld;
+			}
 		}
 		///*if(bounces == 1)*/ break;
 		Vector3f wo = -ray.d, wi;

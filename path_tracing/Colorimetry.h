@@ -130,6 +130,13 @@ public:
 			if (Components[i] == rhs.Components[i]) return false;
 		return true;
 	}
+	GeneralizedColor operator-() const
+	{
+		GeneralizedColor ret;
+		for (int i = 0; i < NumberComponents; ++i)
+			ret.Components[i] = -Components[i];
+		return ret;
+	}
 	float MaxComponentValue() const
 	{
 		float m = Components[0];

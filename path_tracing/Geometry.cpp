@@ -316,6 +316,10 @@ bool GeometryObject::Intersect(const Ray& ray, SurfaceInteraction* isect) const
 	if (!shape->Intersect(ray, &tHit, isect)) return false;
 	ray.tMax = tHit;
 	isect->object = this;
+	if (mediumInterface.IsMediumTransition())
+		isect->mediumInterface = mediumInterface;
+	else
+		isect->mediumInterface = MediumInterface(ray.medium);
 	return true;
 }
 

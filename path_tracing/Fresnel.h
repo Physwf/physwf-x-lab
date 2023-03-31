@@ -1,6 +1,8 @@
 #pragma once
 #include "Colorimetry.h"
 
+float FrDielectirc(float cosThetaI, float etaI, float etaT);
+
 class Fresnel
 {
 public:

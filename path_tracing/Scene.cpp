@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "Light.h"
+#include "Medium.h"
 
 Scene::Scene(const std::vector<std::shared_ptr<SceneObject>>& Inobjects, const std::vector<std::shared_ptr<Light>> lights) : objects(Inobjects)
 , lights(lights)
@@ -70,4 +71,20 @@ bool Scene::IntersectP(const Ray& ray) const
 // 	}
 // 	return bHit;
 	return Root->IntersectP(ray);
+}
+
+bool Scene::IntersectTr(Ray ray, Sampler& sampler, SurfaceInteraction* isect, LinearColor* Tr) const
+{
+	*Tr = LinearColor(1);
+	while (true)
+	{
+		bool bHitSurface = Intersect(ray, isect);
+		if (ray.medium)
+			*Tr *= ray.medium->Tr(ray, sampler);
+		if (!bHitSurface)
+			return false;
+		if (isect->object->GetMaterial() != nullptr)
+			return true;
+		ray = isect->SpawnRay(ray.d);
+	}
 }

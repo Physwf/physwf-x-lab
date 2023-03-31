@@ -95,6 +95,7 @@ public:
 	virtual bool Intersect(const Ray& ray, SurfaceInteraction* isect) const = 0;
 	virtual bool IntersectP(const Ray& ray) const = 0;
 	virtual AreaLight* GetAreaLight() const = 0;
+	virtual Material* GetMaterial() const = 0;
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const = 0;
 protected:
 	const Transform LocalToWorld;
@@ -110,9 +111,11 @@ public:
 	virtual bool IntersectP(const Ray& ray) const;
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
 	virtual AreaLight* GetAreaLight() const { return nullptr; }
+	virtual Material* GetMaterial() const { return material.get(); }
 private:
 	std::shared_ptr<Shape> shape;
 	std::shared_ptr<Material> material;
+	MediumInterface mediumInterface;
 };
 
 template<typename T>
@@ -354,6 +357,7 @@ public:
 	virtual bool IntersectP(const Ray& ray) const;
 	virtual void ComputeScatteringFunctions(SurfaceInteraction* isect, MemoryArena& arena) const;
 	virtual AreaLight* GetAreaLight() const { return nullptr; }
+	virtual Material* GetMaterial() const { return material.get(); }
 private:
 	friend class Triangle;
 

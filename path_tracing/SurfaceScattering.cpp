@@ -49,11 +49,11 @@ LinearColor MicrofacetReflection::f(const Vector3f& wo, const Vector3f& wi) cons
 {
 	float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
 	Vector3f wh = wi + wo;
-	if (cosThetaI == 0 || cosThetaO == 0) return LinearColor(0.f);
-	if (wh.X == 0 && wh.Y == 0 && wh.Z == 0) return LinearColor(0.f);
+	if (std::abs(cosThetaI) <= 0.000001f || std::abs(cosThetaO) == 0.000001f) return LinearColor(0.f);
+	if (std::abs(wh.X) <= 0.000001f && std::abs(wh.Y) <= 0.000001f && std::abs(wh.Z) <= 0.000001f) return LinearColor(0.f);
 	wh = Normalize(wh);
-	LinearColor F = fresnel->Evaluate(Dot(wi,wh));
-	return R * distribution->D(wh) * distribution->G(wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);
+	LinearColor F = fresnel->Evaluate(Dot(wi, Faceforward(wh, Vector3f(0, 0, 1))));
+	return R * distribution->D(wh) * distribution->G(wo, wi) * F / (4.f * cosThetaI * cosThetaO);
 }
 
 LinearColor MicrofacetReflection::Sample_f(const Vector3f& wo, Vector3f* wi, const Vector2f& u, float* pdf, BxDFType* sampledType) const
@@ -62,6 +62,10 @@ LinearColor MicrofacetReflection::Sample_f(const Vector3f& wo, Vector3f* wi, con
 	Vector3f wh = distribution->Sample_wh(wo, u);
 	if (Dot(wo, wh) < 0) return 0.f;
 	*wi = Reflect(wo, wh);
+	if (std::abs(wi->Z) == 1.0f)
+	{
+		*wi = Normalize(*wi);
+	}
 	if (!SameHemisphere(wo, *wi)) return LinearColor(0);
 	*pdf = distribution->Pdf(wo, wh) / (4 * Dot(wo, wh));
 	return f(wo, *wi);

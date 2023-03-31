@@ -32,8 +32,8 @@ std::shared_ptr<Scene> BuildTestScene()
 	md.indices = {0,1,2,2,3,0};
 
 	//LinearColor eta(0.8f, 0.6f, 0.3f);
-	LinearColor eta(0.0f, 0.0f, 0.0f);
-	LinearColor k(1.0f, 1.0f, 1.0f);
+	LinearColor eta(1.5f, 1.5f, 1.5f);
+	LinearColor k(2.5f, 2.5f, 2.5f);
 	std::shared_ptr<Material> metalMat = std::make_shared<MetalMaterial>(eta, k, 0.1f);
 
 	Transform leftWallR = Transform::Rotate(0, -PI_2, 0);
@@ -63,17 +63,17 @@ std::shared_ptr<Scene> BuildTestScene()
 	std::shared_ptr<SceneObject> bottomWall = std::make_shared<MeshObject>(bottomWallR * bottomWallT, topWallMat, 2, 4, md.Ps.data(), md.Ns.data(), md.UVs.data(), md.indices);
 
 	Transform ballT = Transform::Translate(0, -0.0f, 0);
-	//std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
+	std::shared_ptr<Material> ballMat = std::make_shared<MatteMaterial>(gray);
 
-	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.8f);
+	std::shared_ptr<Shape> sphere = std::make_shared<Sphere>(0.4f);
 	std::shared_ptr<SceneObject> ball = std::make_shared<GeometryObject>(ballT, metalMat, sphere);
 
 	objects.push_back(ball);
-	//objects.push_back(backWall);
-	//objects.push_back(leftWall);
-	//objects.push_back(rightWall);
-	//objects.push_back(topWall);
-	//objects.push_back(bottomWall);
+	objects.push_back(backWall);
+	objects.push_back(leftWall);
+	objects.push_back(rightWall);
+	objects.push_back(topWall);
+	objects.push_back(bottomWall);
 
 	Transform lightR = Transform::Rotate(PI_2, 0, 0);
 	Transform lightT = Transform::Translate(0, 0.99f * fSize, zOffset);
@@ -82,11 +82,11 @@ std::shared_ptr<Scene> BuildTestScene()
 	std::shared_ptr<Shape> d = std::make_shared<Disk>(0.2f);
 	std::shared_ptr<Light> dl = std::make_shared<DisffuseAreaLight>(lightR * lightT, White,d, 1024, false);
 	//lights.push_back(pl);
-	//lights.push_back(dl);
+	lights.push_back(dl);
 
 	Transform Identity = Transform::Identity();
-	std::shared_ptr<Light> il = std::make_shared<InfiniteAreaLight>(Identity,1.f,1024,"piazza_martin_lutero_1k.hdr");
-	lights.push_back(il);
+	std::shared_ptr<Light> il = std::make_shared<InfiniteAreaLight>(Identity,1.f,1024,"immenstadter_horn_1k.hdr");
+	//lights.push_back(il);
 
 	std::shared_ptr<Scene> scene = std::make_shared<Scene>(objects, lights);
 	return scene;
@@ -113,13 +113,14 @@ void OnPathTracingProgress(Vector2i tile)
 void Test_PathTracing()
 {
 	Transform cameraD = Transform::LookAt({ 0,0,zOffset -2.f * fSize }, { 0,0,1 }, { 0,1,0 });
+	//Transform cameraD = Transform::LookAt({ 0,zOffset - 2.f * fSize,0 }, { 0,1,0 }, { 0,0,1 });
 	film = new Film(Vector2i(500, 500),std::make_unique<GaussianFilter>(Vector2f(1.0f, 1.0f),0.1f));
 	camera = std::make_shared<PerspectiveCamera>(Inverse(cameraD), film, PI_2, 1.f,1000.f);
-	sampler = Sampler::CreateStratified(16, 16, 1);
+	sampler = Sampler::CreateStratified(8, 8, 1);
 	buf = std::unique_ptr<BYTE[]>(new BYTE[film->fullResolution.X * film->fullResolution.Y * 3]);
 
 	float rrThreshold = 0.001f;
-	integrator = std::make_shared<PathIntergrator>(8, camera, sampler, rrThreshold);
+	integrator = std::make_shared<PathIntergrator>(32, camera, sampler, rrThreshold);
 	scene = BuildTestScene();
 	integrator->SetProgressListener(OnPathTracingProgress);
 	integrator->Render(*scene.get());

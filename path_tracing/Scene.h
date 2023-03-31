@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Geometry.h"
+#include "Sampler.h"
 
 class Light;
 
@@ -16,6 +17,8 @@ public:
 
 	bool Intersect(const Ray& ray, SurfaceInteraction* isect) const;
 	bool IntersectP(const Ray& ray) const;
+
+	bool IntersectTr(Ray ray, Sampler& sampler, SurfaceInteraction* interaction, LinearColor* Tr) const;
 
 	std::vector<std::shared_ptr<Light>> lights;
 	std::vector<std::shared_ptr<Light>> infiniteLights;

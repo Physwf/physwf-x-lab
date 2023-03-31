@@ -259,7 +259,7 @@ inline float CosDeltaPhi(const Vector3f& va, const Vector3f& vb)
 }
 inline Vector3f Reflect(const Vector3f& wo, const Vector3f& n)
 {
-	return -wo + 2 * Dot(wo, n) * n;
+	return (-wo + 2.f * Dot(wo, n) * n);
 }
 inline bool Refract(const Vector3f& wi, const Vector3f& n,float etaT, Vector3f* wt)
 {
