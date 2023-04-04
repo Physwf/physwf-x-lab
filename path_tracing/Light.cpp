@@ -3,6 +3,25 @@
 #include "Scene.h"
 #include "ParallelFor.h"
 
+LinearColor VisibilityTester::Tr(const Scene& scene, Sampler& sampler) const
+{
+	Ray ray(p0.SpawnRayTo(p1));
+	LinearColor Tr(1.0f);
+	while (true)
+	{
+		SurfaceInteraction isect;
+		bool hitSurface = scene.Intersect(ray, &isect);
+		if (hitSurface && isect.object->GetMaterial() != nullptr)
+			return LinearColor(0.f);
+		if (ray.medium)
+			Tr *= ray.medium->Tr(ray, sampler);
+		if (!hitSurface)
+			break;
+		ray = isect.SpawnRayTo(p1);
+	}
+	return Tr;
+}
+
 bool VisibilityTester::Unoccluded(const Scene& scene) const
 {
 	return !scene.IntersectP(p0.SpawnRayTo(p1));

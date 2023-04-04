@@ -22,6 +22,7 @@ public:
 		: p0(p0),p1(p1) {}
 	const Interaction& P0() const { return p0; }
 	const Interaction& P1() const { return p1; }
+	LinearColor Tr(const Scene& scene, Sampler& sampler) const;
 	bool Unoccluded(const Scene& scene) const;
 private:
 	Interaction p0, p1;

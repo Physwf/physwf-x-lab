@@ -15,6 +15,7 @@ public:
 	{
 		return PhaseHG(Dot(wo, wi), g);
 	}
+	virtual float Sample_p(const Vector3f& wo, Vector3f* wi, const Vector2f& u) const;
 private:
 	float g;
 };
@@ -27,6 +28,7 @@ public:
 	{
 		return Exp(-sigma_t * std::min(ray.tMax *ray.d.Length(),std::numeric_limits<float>::max()));
 	}
+	virtual LinearColor Sample(const Ray& ray, Sampler& sampler, MemoryArena& arena, MediumInteraction* mi) const;
 private:
 	const LinearColor sigma_a, sigma_s, sigma_t;
 	const float g;

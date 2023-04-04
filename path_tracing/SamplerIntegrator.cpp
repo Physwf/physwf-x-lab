@@ -33,7 +33,7 @@ LinearColor UniformSampleOneLight(const Interaction& it, const Scene& scene, Mem
 	return EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena) / lightPdf;
 }
 
-LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, const Light& light, const Vector2f& ulight, const Scene& scene, Sampler& sampler, MemoryArena& arena, bool specular /*= false*/)
+LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, const Light& light, const Vector2f& ulight, const Scene& scene, Sampler& sampler, MemoryArena& arena, bool handleMedia /*= false*/, bool specular /*= false*/)
 {
 	BxDFType bsdfFlags = specular ? BSDF_ALL : BxDFType(BSDF_ALL & ~BSDF_SPECULAR);
 	LinearColor Ld(0.f);
@@ -54,22 +54,26 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 		else
 		{
 			//media
+			const MediumInteraction& mi = (const MediumInteraction&)it;
+			float p = mi.phase->p(mi.wo, wi);
+			f = LinearColor(p);
+			scatteringPdf = p;
 		}
 		if (!f.IsBlack())
 		{
-			if (/*hanleMedia*/false)
+			if (handleMedia)
 			{
-
+				Li *= vt.Tr(scene,sampler);
 			}
 			else
 			{
 				if (!vt.Unoccluded(scene))
 				{
-					//Li = LinearColor(0.f);
+					Li = LinearColor(0.f);
 				}
 				else
 				{
-
+					
 				}
 			}
 
@@ -104,6 +108,10 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 		else
 		{
 			//medium
+			const MediumInteraction& mi = (const MediumInteraction&)it;
+			float p = mi.phase->Sample_p(mi.wo, &wi, uShading);
+			f = LinearColor(p);
+			scatteringPdf = p;
 		}
 
 		if (!f.IsBlack() && scatteringPdf > 0)
@@ -118,8 +126,8 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 
 			SurfaceInteraction lightIsect;
 			Ray ray = it.SpawnRay(wi);
-
-			bool foundSurfaceInteraction = /* handleMedia*/ /*? :*/ scene.Intersect(ray, &lightIsect);
+			LinearColor Tr(1.f);
+			bool foundSurfaceInteraction =  handleMedia ? scene.IntersectTr(ray,sampler,&lightIsect,&Tr) : scene.Intersect(ray, &lightIsect);
 
 			LinearColor Li;
 			if (foundSurfaceInteraction)
@@ -134,7 +142,7 @@ LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, cons
 				Li = light.Le(ray);
 			}
 
-			if (!Li.IsBlack()) Ld += f * Li * weight / scatteringPdf;
+			if (!Li.IsBlack()) Ld += f * Li * Tr * weight / scatteringPdf;
 		}
 		
 	}

@@ -282,5 +282,14 @@ inline void CoordinateSystem(const Vector3<T>& v1, Vector3<T>* v2, Vector3<T>* v
 	}
 	*v3 = Cross(v1, *v2);
 }
+inline Vector3f SphericalDirection(float sinTheta, float cosTheta, float phi)
+{
+	return Vector3f(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+}
+inline Vector3f SphericalDirection(float sinTheta, float cosTheta, float phi, const Vector3f& x, const Vector3f& y, const Vector3f& z)
+{
+	return sinTheta * std::cos(phi) * x + sinTheta * std::sin(phi) * y + cosTheta * z;
+}
 float SphericalTheta(const Vector3f& v);
 float SphericalPhi(const Vector3f& v);
+
