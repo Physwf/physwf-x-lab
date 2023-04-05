@@ -16,3 +16,16 @@ private:
 	const std::string lightSampleStrategy;
 	std::unique_ptr<LightDistribution> lightDistribution;
 };
+
+class VolPathIntegrator : public SamplerIntegrator
+{
+public:
+	VolPathIntegrator(int maxDepth, std::shared_ptr<Camera> camera, std::shared_ptr<Sampler> sampler, float rrThreshold);
+	virtual void Preprocess(const Scene& scene, Sampler& sampler) override;
+	virtual LinearColor Li(const Ray& ray, const Scene& scene, Sampler& sampler, MemoryArena& arena, int depth /* = 0 */) override;
+private:
+	const int maxDepth;
+	const float rrThreshhold;
+	const std::string lightSampleStrategy;
+	std::unique_ptr<LightDistribution> lightDistribution;
+};

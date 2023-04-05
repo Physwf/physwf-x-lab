@@ -82,6 +82,7 @@ struct SurfaceInteraction : public Interaction
 struct MediumInteraction : public Interaction
 {
 public:
+	MediumInteraction(){}
 	MediumInteraction(const Vector3f& InP, const Vector3f& InWo, const Medium* InMedium, const PhaseFunction* InPhase)
 		: Interaction(InP, InWo, InMedium), phase(InPhase) {}
 

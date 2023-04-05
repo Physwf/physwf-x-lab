@@ -43,12 +43,17 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 				}
 			}
 		}
-		
 
-		if(!foundIntersection || bounces >= maxDepth) break;
+
+		if (!foundIntersection || bounces >= maxDepth) break;
 
 		isect.ComputeScatteringFunctions(ray, arena);
-
+		if (!isect.bsdf)
+		{
+			ray = isect.SpawnRay(ray.d);
+			bounces--;
+			continue;
+		}
 		const Distribution1D* distrib = lightDistribution->Lookup(isect.p);
 
 		if (isect.bsdf->NumComponents(BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) > 0)
@@ -91,4 +96,44 @@ LinearColor PathIntergrator::Li(const Ray& r, const Scene& scene, Sampler& sampl
 	}
 	//assert(!std::isnan(L[0]));
 	return L;
+}
+
+VolPathIntegrator::VolPathIntegrator(int maxDepth, std::shared_ptr<Camera> camera, std::shared_ptr<Sampler> sampler, float rrThreshold)
+	: SamplerIntegrator(camera, sampler)
+	, maxDepth(maxDepth)
+	, rrThreshhold(rrThreshold)
+{
+}
+
+void VolPathIntegrator::Preprocess(const Scene& scene, Sampler& sampler)
+{
+
+}
+
+LinearColor VolPathIntegrator::Li(const Ray & r, const Scene & scene, Sampler & sampler, MemoryArena & arena, int depth)
+{
+	LinearColor L(0.f), beta(1.0f);
+	Ray ray(r);
+	bool specularBounce = false;
+	for (int bounce = 0;; ++bounce)
+	{
+		SurfaceInteraction isect;
+		bool foundIntersection = scene.Intersect(ray, &isect);
+		MediumInteraction mi;
+		if (ray.medium)
+			beta *= ray.medium->Sample(ray, sampler, arena, &mi);
+		if(beta.IsBlack())
+			break;
+		if (mi.IsValid())
+		{
+			L += beta * UniformSampleOneLight(mi, scene, arena, sampler,NULL, true);
+			Vector3f wo = -r.d, wi;
+			mi.phase->Sample_p(wo, &wi, sampler.Get2D());
+			ray = mi.SpawnRay(wi);
+		}
+		else
+		{
+			
+		}
+	}
 }

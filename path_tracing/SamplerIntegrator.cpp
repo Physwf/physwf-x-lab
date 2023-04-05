@@ -9,7 +9,7 @@ LinearColor UniformSampleAllLights(const Interaction& it, const Scene& scene, Me
 	return LinearColor(0);
 }
 
-LinearColor UniformSampleOneLight(const Interaction& it, const Scene& scene, MemoryArena& arena, Sampler& sampler, const Distribution1D* lightDistrib /*= nullptr*/)
+LinearColor UniformSampleOneLight(const Interaction& it, const Scene& scene, MemoryArena& arena, Sampler& sampler, const Distribution1D* lightDistrib /*= nullptr*/, bool handleMedia /*= false*/)
 {
 	int nLights = int(scene.lights.size());
 	if (nLights == 0) return LinearColor(0);
@@ -30,7 +30,7 @@ LinearColor UniformSampleOneLight(const Interaction& it, const Scene& scene, Mem
 	const std::shared_ptr<Light>& light = scene.lights[lightIndex];
 	Vector2f uLight = sampler.Get2D();
 	Vector2f uScattering = sampler.Get2D();
-	return EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena) / lightPdf;
+	return EstimateDirect(it, uScattering, *light, uLight, scene, sampler, arena, handleMedia) / lightPdf;
 }
 
 LinearColor EstimateDirect(const Interaction& it, const Vector2f& uShading, const Light& light, const Vector2f& ulight, const Scene& scene, Sampler& sampler, MemoryArena& arena, bool handleMedia /*= false*/, bool specular /*= false*/)
